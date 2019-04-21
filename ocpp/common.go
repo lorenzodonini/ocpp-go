@@ -13,14 +13,22 @@ func (e* PropertyViolation) Error() string {
 type ErrorCode string
 
 const (
-	NOT_IMPLEMENTED = "NotImplemented"
-	NOT_SUPPORTED = "NotSupported"
-	INTERNAL_ERROR = "InternalError"
-	PROTOCOL_ERROR = "ProtocolError"
-	SECURITY_ERROR = "SecurityError"
-	FORMATION_VIOLATION = "FormationViolation"
-	PROPERTY_CONSTRAINT_VIOLATION = "PropertyConstraintViolation"
-	OCCURRENCE_CONSTRAINT_VIOLATION = "OccurrenceConstraintViolation"
-	TYPE_CONSTRAINT_VIOLATION = "TypeConstraintViolation"
-	GENERIC_ERROR = "GenericError"
+	NotImplemented = "NotImplemented"
+	NotSupported = "NotSupported"
+	InternalError = "InternalError"
+	ProtocolError = "ProtocolError"
+	SecurityError = "SecurityError"
+	FormationViolation = "FormationViolation"
+	PropertyConstraintViolation = "PropertyConstraintViolation"
+	OccurrenceConstraintViolation = "OccurrenceConstraintViolation"
+	TypeConstraintViolation = "TypeConstraintViolation"
+	GenericError = "GenericError"
+)
+
+type RegistrationStatus string
+
+const (
+	RegistrationStatusAccepted = "Accepted"
+	RegistrationStatusPending = "Pending"
+	RegistrationStatusRejected = "Rejected"
 )
