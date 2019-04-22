@@ -18,19 +18,21 @@ type Feature interface {
 
 type Request interface {
 	Validatable
-	GetFeature() Feature
+	GetFeatureName() string
 }
 
 type Confirmation interface {
 	Validatable
-	GetFeature() Feature
+	GetFeatureName() string
 }
 
-/*
- Profile
- */
+// -------------------- Profile --------------------
 type Profile struct {
 	Features map[string]Feature
+}
+
+func (p* Profile) AddFeature(feature Feature) {
+	p.Features[feature.GetFeatureName()] = feature
 }
 
 func (p* Profile) SupportsFeature(name string) bool {
@@ -45,17 +47,19 @@ func (p* Profile) ParseRequest(featureName string, rawRequest interface{}) *Requ
 		return nil
 	}
 	requestType := feature.GetRequestType()
-	bytes, ok := rawRequest.([]byte)
+	bytes, _ := json.Marshal(rawRequest)
+	//bytes := []byte(rawRequest)
 	if !ok {
 		log.Printf("Couldn't cast raw request to bytes")
 		return nil
 	}
-	request := reflect.New(requestType)
+	request := reflect.New(requestType).Interface()
 	err := json.Unmarshal(bytes, &request)
 	if err != nil {
 		log.Printf("Error while parsing json %v", err)
 	}
-	return request.Interface().(*Request)
+	result := request.(Request)
+	return &result
 }
 
 func (p* Profile) ParseConfirmation(featureName string, rawConfirmation interface{}) *Confirmation {
@@ -78,11 +82,7 @@ func (p* Profile) ParseConfirmation(featureName string, rawConfirmation interfac
 	return confirmation.Interface().(*Confirmation)
 }
 
-var Profiles []Profile
-
-/*
- Message
- */
+// -------------------- Message --------------------
 type MessageType int
 
 const (
@@ -119,6 +119,16 @@ type CallError struct {
 	ErrorDetails interface{}	`json:"errorDetails"`
 }
 
+// -------------------- Global Variables --------------------
+var Profiles []*Profile
+var PendingRequests map[string]Request
+
+
+// -------------------- Logic --------------------
+func AddProfile(profile *Profile) {
+	Profiles = append(Profiles, profile)
+}
+
 func ParseJsonMessage(dataJson string) []interface{} {
 	var arr []interface{}
 	err := json.Unmarshal([]byte(dataJson), &arr)
@@ -144,19 +154,32 @@ func ParseMessage(arr []interface{}) (error, interface{}) {
 	// Parse message
 	message := Message{MessageTypeId: MessageType(typeId), UniqueId: uniqueId}
 	if typeId == CALL {
+		action := arr[2].(string)
+		profile := GetProfileForFeature(action)
+		request := profile.ParseRequest(action, arr[3])
 		call := Call{
 			Message: message,
-			Action:  arr[2].(string),
-			Payload: nil,
+			Action:  action,
+			Payload: request,
 		}
 		return nil, call
 	} else if typeId == CALL_RESULT {
+		request, ok := PendingRequests[message.UniqueId]
+		if !ok {
+			log.Printf("No previous request %v sent. Discarding response message", message.UniqueId)
+			return nil, nil
+		}
+		profile := GetProfileForFeature(request.GetFeatureName())
+		confirmation := profile.ParseConfirmation(request.GetFeatureName(), arr[2])
+		delete(PendingRequests, message.UniqueId)
 		callResult := CallResult{
 			Message: message,
-			Payload: nil,
+			Payload: confirmation,
 		}
 		return nil, callResult
 	} else if typeId == CALL_ERROR {
+		//TODO: handle error for pending request
+		delete(PendingRequests, message.UniqueId)
 		callError := CallError{
 			Message: message,
 			ErrorCode: arr[2].(ErrorCode),
@@ -168,4 +191,13 @@ func ParseMessage(arr []interface{}) (error, interface{}) {
 		//TODO: return custom error
 		return nil, nil
 	}
+}
+
+func GetProfileForFeature(featureName string) *Profile {
+	for _, p := range Profiles {
+		if p.SupportsFeature(featureName) {
+			return p
+		}
+	}
+	return nil
 }
