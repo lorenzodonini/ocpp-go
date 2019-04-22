@@ -69,17 +69,18 @@ func (p* Profile) ParseConfirmation(featureName string, rawConfirmation interfac
 		return nil
 	}
 	requestType := feature.GetConfirmationType()
-	bytes, ok := rawConfirmation.([]byte)
+	bytes, _ := json.Marshal(rawConfirmation)
 	if !ok {
 		log.Printf("Couldn't cast raw confirmation to bytes")
 		return nil
 	}
-	confirmation := reflect.New(requestType)
+	confirmation := reflect.New(requestType).Interface()
 	err := json.Unmarshal(bytes, &confirmation)
 	if err != nil {
 		log.Printf("Error while parsing json %v", err)
 	}
-	return confirmation.Interface().(*Confirmation)
+	result := confirmation.(Confirmation)
+	return &result
 }
 
 // -------------------- Message --------------------
