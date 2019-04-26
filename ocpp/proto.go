@@ -40,7 +40,7 @@ func (p* Profile) SupportsFeature(name string) bool {
 	return ok
 }
 
-func (p* Profile) ParseRequest(featureName string, rawRequest interface{}) *Request {
+func (p* Profile) ParseRequest(featureName string, rawRequest interface{}) Request {
 	feature, ok := p.Features[featureName]
 	if !ok {
 		log.Printf("Feature %s not found", featureName)
@@ -58,11 +58,13 @@ func (p* Profile) ParseRequest(featureName string, rawRequest interface{}) *Requ
 	if err != nil {
 		log.Printf("Error while parsing json %v", err)
 	}
+	log.Print(reflect.TypeOf(request))
 	result := request.(Request)
-	return &result
+	log.Print(reflect.TypeOf(result))
+	return result
 }
 
-func (p* Profile) ParseConfirmation(featureName string, rawConfirmation interface{}) *Confirmation {
+func (p* Profile) ParseConfirmation(featureName string, rawConfirmation interface{}) Confirmation {
 	feature, ok := p.Features[featureName]
 	if !ok {
 		log.Printf("Feature %s not found", featureName)
@@ -80,7 +82,7 @@ func (p* Profile) ParseConfirmation(featureName string, rawConfirmation interfac
 		log.Printf("Error while parsing json %v", err)
 	}
 	result := confirmation.(Confirmation)
-	return &result
+	return result
 }
 
 // -------------------- Message --------------------
@@ -105,12 +107,12 @@ func (m* Message) validate() error {
 type Call struct {
 	Message
 	Action string				`json:"action"`
-	Payload* Request			`json:"payload"`
+	Payload Request				`json:"payload"`
 }
 
 type CallResult struct {
 	Message
-	Payload* Confirmation		`json:"payload"`
+	Payload Confirmation		`json:"payload"`
 }
 
 type CallError struct {
