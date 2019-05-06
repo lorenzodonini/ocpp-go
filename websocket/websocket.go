@@ -35,13 +35,18 @@ var upgrader = websocket.Upgrader{}
 
 // ---------------------- SERVER ----------------------
 type Server struct {
-	connections map[string]WebSocket
+	connections map[string]*WebSocket
 	httpServer *http.Server
 	messageHandler func(ws *WebSocket, data []byte) error
+	newClientHandler func(ws *WebSocket)
 }
 
 func (server *Server)SetMessageHandler(handler func(ws *WebSocket, data []byte) error) {
 	server.messageHandler = handler
+}
+
+func (server *Server)SetNewClientHandler(handler func(ws *WebSocket)) {
+	server.newClientHandler = handler
 }
 
 func (server *Server) Start(port int, listenPath string) {
@@ -49,7 +54,7 @@ func (server *Server) Start(port int, listenPath string) {
 	router.HandleFunc(listenPath, func(w http.ResponseWriter, r *http.Request) {
 		server.wsHandler(w, r)
 	})
-	server.connections = make(map[string]WebSocket)
+	server.connections = make(map[string]*WebSocket)
 	addr := fmt.Sprintf(":%v", port)
 	server.httpServer = &http.Server{Addr: addr, Handler: router}
 	if err := server.httpServer.ListenAndServe(); err != http.ErrServerClosed {
@@ -73,13 +78,15 @@ func (server *Server)wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	url := r.URL
-	log.Printf("New client on URL %v", url.Path)
-	//log.Printf("Underlying protocol %v", conn.Subprotocol())
+	log.Printf("New client on URL %v", url.String())
 	ws := WebSocket{connection:conn, Id:url.Path, outQueue: make(chan []byte)}
-	server.connections[url.Path] = ws
+	server.connections[url.Path] = &ws
 	// Read and write routines are started in separate goroutines and function will return immediately
 	go server.writePump(&ws)
 	go server.readPump(&ws)
+	if server.newClientHandler != nil {
+		server.newClientHandler(&ws)
+	}
 }
 
 func (server *Server)readPump(ws *WebSocket) {
@@ -102,6 +109,7 @@ func (server *Server)readPump(ws *WebSocket) {
 			}
 			break
 		}
+		log.Printf("Received message from client %v", ws.Id)
 		if server.messageHandler != nil {
 			err = server.messageHandler(ws, message)
 			if err != nil {
@@ -206,6 +214,7 @@ func (client *Client)readPump() {
 			}
 			break
 		}
+		log.Printf("Received message from server")
 		if client.messageHandler != nil {
 			err = client.messageHandler(message)
 			if err != nil {
