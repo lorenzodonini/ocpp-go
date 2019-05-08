@@ -2,10 +2,10 @@ package websocket
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"time"
@@ -34,6 +34,14 @@ const (
 var upgrader = websocket.Upgrader{}
 
 // ---------------------- SERVER ----------------------
+type WsServer interface {
+	Start(port int, listenPath string)
+	Stop()
+	SetMessageHandler(handler func(ws *WebSocket, data []byte) error)
+	SetNewClientHandler(handler func(ws *WebSocket))
+	Write(webSocketId string, data []byte) error
+}
+
 type Server struct {
 	connections map[string]*WebSocket
 	httpServer *http.Server
@@ -59,8 +67,6 @@ func (server *Server) Start(port int, listenPath string) {
 	server.httpServer = &http.Server{Addr: addr, Handler: router}
 	if err := server.httpServer.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatalf("Listen and server error: %v", err)
-	} else {
-		log.Printf("lol")
 	}
 }
 
@@ -69,6 +75,15 @@ func (server *Server) Stop() {
 	if err != nil {
 		log.Printf("Error while shutting down server %v", err)
 	}
+}
+
+func (server *Server)Write(webSocketId string, data []byte) error {
+	ws, ok := server.connections[webSocketId]
+	if !ok {
+		return errors.New(fmt.Sprintf("Couldn't write to websocket. No socket with id %v is open", webSocketId))
+	}
+	ws.outQueue <- data
+	return nil
 }
 
 func (server *Server)wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -144,16 +159,14 @@ func (server *Server)writePump(ws *WebSocket) {
 	}
 }
 
-func (server *Server)Write(webSocketId string, data []byte) error {
-	ws, ok := server.connections[webSocketId]
-	if !ok {
-		return errors.New(fmt.Sprintf("Couldn't write to websocket. No socket with id %v is open", webSocketId))
-	}
-	ws.outQueue <- data
-	return nil
+// ---------------------- CLIENT ----------------------
+type WsClient interface {
+	Start(url string)
+	Stop()
+	SetMessageHandler(handler func(data []byte) error)
+	Write(data []byte)
 }
 
-// ---------------------- CLIENT ----------------------
 type Client struct {
 	webSocket WebSocket
 	messageHandler func(data []byte) error
