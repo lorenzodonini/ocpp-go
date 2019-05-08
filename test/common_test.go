@@ -2,14 +2,74 @@ package test
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/websocket"
+	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
-func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *websocket.Server {
-	wsServer := websocket.Server{}
-	wsServer.SetMessageHandler(func(ws *websocket.WebSocket, data []byte) error {
+// ---------------------- MOCK WEBSOCKET SERVER ----------------------
+type MockWebSocket struct {
+
+}
+
+type MockWebsocketServer struct {
+	mock.Mock
+	ws.WsServer
+}
+
+func (websocketServer MockWebsocketServer)Start(port int, listenPath string) {
+	websocketServer.MethodCalled("Start", port, listenPath)
+}
+
+func (websocketServer MockWebsocketServer)Stop() {
+	websocketServer.MethodCalled("Stop")
+}
+
+func (websocketServer MockWebsocketServer)Write(webSocketId string, data []byte) error {
+	args := websocketServer.MethodCalled("Write", webSocketId, data)
+	return args.Error(0)
+}
+
+func (websocketServer MockWebsocketServer)SetMessageHandler(handler func(ws *ws.WebSocket, data []byte) error) {
+
+}
+
+func (websocketServer MockWebsocketServer)SetNewClientHandler(handler func(ws *ws.WebSocket)) {
+
+}
+
+func (websocketServer MockWebsocketServer)Receive(webSocketId string, data []byte) {
+
+}
+
+
+// ---------------------- MOCK WEBSOCKET CLIENT ----------------------
+type MockWebsocketClient struct {
+	mock.Mock
+	ws.WsClient
+}
+
+func (websocketClient MockWebsocketClient)Start(url string) {
+	websocketClient.MethodCalled("Start", url)
+}
+
+func (websocketClient MockWebsocketClient)Stop() {
+	websocketClient.MethodCalled("Stop")
+}
+
+func (websocketClient MockWebsocketClient)SetMessageHandler(handler func(data []byte) error) {
+}
+
+func (websocketClient MockWebsocketClient)Write(data []byte) {
+	websocketClient.MethodCalled("Write", data)
+}
+
+
+// ---------------------- COMMON UTILITY METHODS ----------------------
+func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
+	wsServer := ws.Server{}
+	wsServer.SetMessageHandler(func(ws *ws.WebSocket, data []byte) error {
 		assert.NotNil(t, ws)
 		assert.NotNil(t, data)
 		if onMessage != nil {
@@ -25,8 +85,8 @@ func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return &wsServer
 }
 
-func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *websocket.Client {
-	wsClient := websocket.Client{}
+func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Client {
+	wsClient := ws.Client{}
 	wsClient.SetMessageHandler(func(data []byte) error {
 		assert.NotNil(t, data)
 		if onMessage != nil {

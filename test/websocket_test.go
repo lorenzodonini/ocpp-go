@@ -3,7 +3,7 @@ package test
 import (
 	"bytes"
 	"fmt"
-	"github.com/lorenzodonini/go-ocpp/websocket"
+	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"net/url"
 	"testing"
@@ -18,7 +18,7 @@ var (
 
 func TestWebsocketEcho(t *testing.T) {
 	message := []byte("Hello WebSocket!")
-	var wsServer *websocket.Server
+	var wsServer *ws.Server
 	wsServer = NewWebsocketServer(t, func(data []byte) ([]byte, error) {
 		assert.True(t, bytes.Equal(message, data))
 		return data, nil
