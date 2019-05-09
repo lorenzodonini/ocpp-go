@@ -11,12 +11,6 @@ import (
 	"time"
 )
 
-type WebSocket struct {
-	connection *websocket.Conn
-	Id string
-	outQueue chan []byte
-}
-
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
@@ -33,27 +27,41 @@ const (
 
 var upgrader = websocket.Upgrader{}
 
+type Channel interface {
+	GetId() string
+}
+
+type WebSocket struct {
+	connection *websocket.Conn
+	id string
+	outQueue chan []byte
+}
+
+func (websocket *WebSocket)GetId() string {
+	return websocket.id
+}
+
 // ---------------------- SERVER ----------------------
 type WsServer interface {
 	Start(port int, listenPath string)
 	Stop()
-	SetMessageHandler(handler func(ws *WebSocket, data []byte) error)
-	SetNewClientHandler(handler func(ws *WebSocket))
+	SetMessageHandler(handler func(ws Channel, data []byte) error)
+	SetNewClientHandler(handler func(ws Channel))
 	Write(webSocketId string, data []byte) error
 }
 
 type Server struct {
 	connections map[string]*WebSocket
 	httpServer *http.Server
-	messageHandler func(ws *WebSocket, data []byte) error
-	newClientHandler func(ws *WebSocket)
+	messageHandler func(ws Channel, data []byte) error
+	newClientHandler func(ws Channel)
 }
 
-func (server *Server)SetMessageHandler(handler func(ws *WebSocket, data []byte) error) {
+func (server *Server)SetMessageHandler(handler func(ws Channel, data []byte) error) {
 	server.messageHandler = handler
 }
 
-func (server *Server)SetNewClientHandler(handler func(ws *WebSocket)) {
+func (server *Server)SetNewClientHandler(handler func(ws Channel)) {
 	server.newClientHandler = handler
 }
 
@@ -94,13 +102,14 @@ func (server *Server)wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	url := r.URL
 	log.Printf("New client on URL %v", url.String())
-	ws := WebSocket{connection:conn, Id:url.Path, outQueue: make(chan []byte)}
+	ws := WebSocket{connection:conn, id:url.Path, outQueue: make(chan []byte)}
 	server.connections[url.Path] = &ws
 	// Read and write routines are started in separate goroutines and function will return immediately
 	go server.writePump(&ws)
 	go server.readPump(&ws)
 	if server.newClientHandler != nil {
-		server.newClientHandler(&ws)
+		var channel Channel = &ws
+		server.newClientHandler(channel)
 	}
 }
 
@@ -124,9 +133,10 @@ func (server *Server)readPump(ws *WebSocket) {
 			}
 			break
 		}
-		log.Printf("Received message from client %v", ws.Id)
+		log.Printf("Received message from client %v", ws.GetId())
 		if server.messageHandler != nil {
-			err = server.messageHandler(ws, message)
+			var channel Channel = ws
+			err = server.messageHandler(channel, message)
 			if err != nil {
 				log.Printf("Error while handling message: %v", err)
 				//TODO: handle error
@@ -253,7 +263,7 @@ func (client* Client) Start(url string) {
 	if err != nil {
 		log.Printf("Error %v", err)
 	}
-	client.webSocket = WebSocket{connection: ws, Id: url, outQueue: make(chan []byte)}
+	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte)}
 	//Start reader and write routine
 	go client.writePump()
 	client.readPump()
