@@ -124,7 +124,7 @@ type CallError struct {
 
 // -------------------- Global Variables --------------------
 var Profiles []*Profile
-var PendingRequests map[string]Request
+var PendingRequests = map[string]Request{}
 
 
 // -------------------- Logic --------------------

@@ -8,39 +8,46 @@ import (
 	"testing"
 )
 
-// ---------------------- MOCK WEBSOCKET SERVER ----------------------
+// ---------------------- MOCK WEBSOCKET ----------------------
 type MockWebSocket struct {
-
+	id string
 }
 
+func (websocket MockWebSocket)GetId() string {
+	return websocket.id
+}
+
+// ---------------------- MOCK WEBSOCKET SERVER ----------------------
 type MockWebsocketServer struct {
 	mock.Mock
 	ws.WsServer
+	messageHandler func(ws ws.Channel, data []byte) error
+	newClientHandler func(ws ws.Channel)
 }
 
-func (websocketServer MockWebsocketServer)Start(port int, listenPath string) {
+func (websocketServer* MockWebsocketServer)Start(port int, listenPath string) {
 	websocketServer.MethodCalled("Start", port, listenPath)
 }
 
-func (websocketServer MockWebsocketServer)Stop() {
+func (websocketServer* MockWebsocketServer)Stop() {
 	websocketServer.MethodCalled("Stop")
 }
 
-func (websocketServer MockWebsocketServer)Write(webSocketId string, data []byte) error {
+func (websocketServer* MockWebsocketServer)Write(webSocketId string, data []byte) error {
 	args := websocketServer.MethodCalled("Write", webSocketId, data)
 	return args.Error(0)
 }
 
-func (websocketServer MockWebsocketServer)SetMessageHandler(handler func(ws *ws.WebSocket, data []byte) error) {
-
+func (websocketServer* MockWebsocketServer)SetMessageHandler(handler func(ws ws.Channel, data []byte) error) {
+	websocketServer.messageHandler = handler
 }
 
-func (websocketServer MockWebsocketServer)SetNewClientHandler(handler func(ws *ws.WebSocket)) {
-
+func (websocketServer* MockWebsocketServer)SetNewClientHandler(handler func(ws ws.Channel)) {
+	websocketServer.newClientHandler = handler
 }
 
-func (websocketServer MockWebsocketServer)Receive(webSocketId string, data []byte) {
-
+func (websocketServer* MockWebsocketServer)NewClient(websocketId string, client interface{}) {
+	websocketServer.MethodCalled("NewClient", websocketId, client)
 }
 
 
@@ -48,20 +55,22 @@ func (websocketServer MockWebsocketServer)Receive(webSocketId string, data []byt
 type MockWebsocketClient struct {
 	mock.Mock
 	ws.WsClient
+	messageHandler func(data []byte) error
 }
 
-func (websocketClient MockWebsocketClient)Start(url string) {
-	websocketClient.MethodCalled("Start", url)
+func (websocketClient* MockWebsocketClient)Start(url string) {
+	websocketClient.Called(url)
 }
 
-func (websocketClient MockWebsocketClient)Stop() {
+func (websocketClient* MockWebsocketClient)Stop() {
 	websocketClient.MethodCalled("Stop")
 }
 
-func (websocketClient MockWebsocketClient)SetMessageHandler(handler func(data []byte) error) {
+func (websocketClient* MockWebsocketClient)SetMessageHandler(handler func(data []byte) error) {
+	websocketClient.messageHandler = handler
 }
 
-func (websocketClient MockWebsocketClient)Write(data []byte) {
+func (websocketClient* MockWebsocketClient)Write(data []byte) {
 	websocketClient.MethodCalled("Write", data)
 }
 
@@ -69,14 +78,14 @@ func (websocketClient MockWebsocketClient)Write(data []byte) {
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
-	wsServer.SetMessageHandler(func(ws *ws.WebSocket, data []byte) error {
+	wsServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
 		assert.NotNil(t, ws)
 		assert.NotNil(t, data)
 		if onMessage != nil {
 			response, err := onMessage(data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = wsServer.Write(ws.Id, data)
+				err = wsServer.Write(ws.GetId(), data)
 				assert.Nil(t, err)
 			}
 		}
@@ -113,8 +122,25 @@ func ParseCall(json string, t* testing.T) *ocpp.Call {
 }
 
 func CheckCall(call* ocpp.Call, t *testing.T, expectedAction string, expectedId string) {
-	assert.Equal(t, ocpp.CALL, call.MessageTypeId)
+	assert.Equal(t, ocpp.CALL, int(call.MessageTypeId))
 	assert.Equal(t, expectedAction, call.Action)
 	assert.Equal(t, expectedId, call.UniqueId)
 	assert.NotNil(t, call.Payload)
+}
+
+func ParseCallResult(json string, t* testing.T) *ocpp.CallResult {
+	parsedData := ocpp.ParseJsonMessage(json)
+	err, result := ocpp.ParseMessage(parsedData)
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+	call, ok := result.(ocpp.CallResult)
+	assert.Equal(t, true, ok)
+	assert.NotNil(t, call)
+	return &call
+}
+
+func CheckCallResult(result* ocpp.CallResult, t *testing.T, expectedId string) {
+	assert.Equal(t, ocpp.CALL_RESULT, int(result.MessageTypeId))
+	assert.Equal(t, expectedId, result.UniqueId)
+	assert.NotNil(t, result.Payload)
 }
