@@ -46,7 +46,8 @@ func TestWebsocketEcho(t *testing.T) {
 		wsClient.Stop()
 		done <- true
 	}()
-	wsClient.Start(u.String())
+	err := wsClient.Start(u.String())
+	assert.Nil(t, err)
 	result := <- done
 	assert.True(t, result)
 }

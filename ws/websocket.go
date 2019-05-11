@@ -171,7 +171,7 @@ func (server *Server)writePump(ws *WebSocket) {
 
 // ---------------------- CLIENT ----------------------
 type WsClient interface {
-	Start(url string)
+	Start(url string) error
 	Stop()
 	SetMessageHandler(handler func(data []byte) error)
 	Write(data []byte)
@@ -252,7 +252,7 @@ func (client *Client)Write(data []byte) {
 	client.webSocket.outQueue <- data
 }
 
-func (client* Client) Start(url string) {
+func (client* Client) Start(url string) error {
 	dialer := websocket.Dialer{
 		ReadBufferSize: 1024,
 		WriteBufferSize: 1024,
@@ -262,11 +262,13 @@ func (client* Client) Start(url string) {
 	ws, _, err := dialer.Dial(url, nil)
 	if err != nil {
 		log.Printf("Error %v", err)
+		return err
 	}
 	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte)}
 	//Start reader and write routine
 	go client.writePump()
 	client.readPump()
+	return nil
 }
 
 func (client* Client) Stop() {
