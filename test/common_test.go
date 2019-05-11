@@ -112,7 +112,7 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 
 func ParseCall(json string, t* testing.T) *ocpp.Call {
 	parsedData := ocpp.ParseJsonMessage(json)
-	err, result := ocpp.ParseMessage(parsedData)
+	result, err := ocpp.ParseMessage(parsedData)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
 	call, ok := result.(ocpp.Call)
@@ -130,7 +130,7 @@ func CheckCall(call* ocpp.Call, t *testing.T, expectedAction string, expectedId 
 
 func ParseCallResult(json string, t* testing.T) *ocpp.CallResult {
 	parsedData := ocpp.ParseJsonMessage(json)
-	err, result := ocpp.ParseMessage(parsedData)
+	result, err := ocpp.ParseMessage(parsedData)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
 	call, ok := result.(ocpp.CallResult)

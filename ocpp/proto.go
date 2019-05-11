@@ -2,7 +2,10 @@ package ocpp
 
 import (
 	"encoding/json"
+	"fmt"
+	errors2 "github.com/pkg/errors"
 	"log"
+	"math/rand"
 	"reflect"
 )
 
@@ -146,7 +149,7 @@ func ParseJsonMessage(dataJson string) []interface{} {
 	return ParseRawJsonMessage(rawJson)
 }
 
-func ParseMessage(arr []interface{}) (error, interface{}) {
+func ParseMessage(arr []interface{}) (interface{}, error) {
 	// Checking message fields
 	if len(arr) < 3 {
 		log.Fatal("Invalid message. Expected array length >= 3")
@@ -170,7 +173,7 @@ func ParseMessage(arr []interface{}) (error, interface{}) {
 			Action:  action,
 			Payload: request,
 		}
-		return nil, call
+		return call, nil
 	} else if typeId == CALL_RESULT {
 		request, ok := PendingRequests[message.UniqueId]
 		if !ok {
@@ -184,7 +187,7 @@ func ParseMessage(arr []interface{}) (error, interface{}) {
 			Message: message,
 			Payload: confirmation,
 		}
-		return nil, callResult
+		return callResult, nil
 	} else if typeId == CALL_ERROR {
 		//TODO: handle error for pending request
 		delete(PendingRequests, message.UniqueId)
@@ -194,11 +197,57 @@ func ParseMessage(arr []interface{}) (error, interface{}) {
 			ErrorDescription: arr[3].(string),
 			ErrorDetails: arr[4],
 		}
-		return nil, callError
+		return callError, nil
 	} else {
-		//TODO: return custom error
-		return nil, nil
+		return nil, errors2.Errorf("Invalid message type ID %v", typeId)
 	}
+}
+
+func CreateCall(request Request) (*Call, error) {
+	action := request.GetFeatureName()
+	profile := GetProfileForFeature(action)
+	if profile == nil {
+		return nil, errors2.Errorf("Couldn't create Call for unsupported action %v", action)
+	}
+	uniqueId := fmt.Sprintf("%v", rand.Uint32())
+	call := Call{
+		Message: Message{MessageTypeId: CALL, UniqueId: uniqueId},
+		Action: action,
+		Payload: request,
+	}
+	PendingRequests[uniqueId] = request
+	return &call, nil
+}
+
+func CreateCallResult(confirmation Confirmation, uniqueId string) (*CallResult, error) {
+	action := confirmation.GetFeatureName()
+	profile := GetProfileForFeature(action)
+	if profile == nil {
+		return nil, errors2.Errorf("Couldn't create Call Result for unsupported action %v", action)
+	}
+	callResult := CallResult{
+		Message: Message{MessageTypeId: CALL_RESULT, UniqueId: uniqueId},
+		Payload: confirmation,
+	}
+	return &callResult, nil
+}
+
+func CreateCallError(uniqueId string, code ErrorCode, description string, details interface{}) *CallError {
+	callError := CallError{
+		Message: Message{MessageTypeId: CALL_ERROR, UniqueId: uniqueId},
+		ErrorCode: code,
+		ErrorDescription: description,
+		ErrorDetails: details,
+	}
+	return &callError
+}
+
+func CreateJsonMessage(message *Message) (string, error) {
+	rawJson, err := json.Marshal(message)
+	if err != nil {
+		return "", err
+	}
+	return string(rawJson), nil
 }
 
 func GetProfileForFeature(featureName string) *Profile {
