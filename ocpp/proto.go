@@ -132,13 +132,18 @@ func AddProfile(profile *Profile) {
 	Profiles = append(Profiles, profile)
 }
 
-func ParseJsonMessage(dataJson string) []interface{} {
+func ParseRawJsonMessage(dataJson []byte) []interface{} {
 	var arr []interface{}
-	err := json.Unmarshal([]byte(dataJson), &arr)
+	err := json.Unmarshal(dataJson, &arr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return arr
+}
+
+func ParseJsonMessage(dataJson string) []interface{} {
+	rawJson := []byte(dataJson)
+	return ParseRawJsonMessage(rawJson)
 }
 
 func ParseMessage(arr []interface{}) (error, interface{}) {
