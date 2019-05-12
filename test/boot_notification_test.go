@@ -14,15 +14,12 @@ import (
 
 type CoreTestSuite struct {
 	suite.Suite
-	chargePoint *ocpp.Endpoint
+	chargePoint *ocpp.ChargePoint
 }
 
 func (suite *CoreTestSuite) SetupTest() {
-	coreProfile := ocpp.Profile{Features: make(map[string]ocpp.Feature)}
-	feature := v16.BootNotificationFeature{}
-	coreProfile.AddFeature(feature)
-	suite.chargePoint = ocpp.NewEndpoint()
-	suite.chargePoint.AddProfile(&coreProfile)
+	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{})
+	suite.chargePoint = ocpp.NewChargePoint("test_id", coreProfile)
 }
 
 func GetBootNotificationRequest(t* testing.T, request ocpp.Request) *v16.BootNotificationRequest {
@@ -33,22 +30,48 @@ func GetBootNotificationRequest(t* testing.T, request ocpp.Request) *v16.BootNot
 	return result
 }
 
-func (suite *CoreTestSuite) TestBootNotificationValid() {
+func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmation) *v16.BootNotificationConfirmation {
+	assert.NotNil(t, confirmation)
+	result := confirmation.(*v16.BootNotificationConfirmation)
+	assert.NotNil(t, result)
+	assert.IsType(t, &v16.BootNotificationConfirmation{}, result)
+	return result
+}
+
+func (suite *CoreTestSuite) TestBootNotificationRequest() {
 	t := suite.T()
-	dataJson := `[2,"1234","BootNotification",{"chargePointModel": "model1", "chargePointVendor": "ABL"}]`
-	call := ParseCall(suite.chargePoint, dataJson, t)
-	CheckCall(call, t, v16.BootNotificationFeatureName, "1234")
+	uniqueId := "1234"
+	modelId := "model1"
+	vendor := "ABL"
+	dataJson := fmt.Sprintf(`[2,"%v","BootNotification",{"chargePointModel": "%v", "chargePointVendor": "%v"}]`, uniqueId, modelId, vendor)
+	call := ParseCall(&suite.chargePoint.Endpoint, dataJson, t)
+	CheckCall(call, t, v16.BootNotificationFeatureName, uniqueId)
 	request := GetBootNotificationRequest(t, call.Payload)
-	assert.Equal(t, "model1", request.ChargePointModel)
-	assert.Equal(t, "ABL", request.ChargePointVendor)
+	assert.Equal(t, modelId, request.ChargePointModel)
+	assert.Equal(t, vendor, request.ChargePointVendor)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationInvalid() {
-
+func (suite *CoreTestSuite) TestBootNotificationConfirmation() {
+	t := suite.T()
+	uniqueId := "5678"
+	rawTime := time.Now().Format(ocpp.ISO8601)
+	currentTime, err := time.Parse(ocpp.ISO8601, rawTime)
+	assert.Nil(t, err)
+	interval := 60
+	status := ocpp.RegistrationStatusAccepted
+	dummyRequest := v16.BootNotificationRequest{}
+	dataJson := fmt.Sprintf(`[3,"%v",{"currentTime": "%v", "interval": 60, "status": "%v"}]`, uniqueId, currentTime.Format(ocpp.ISO8601), status)
+	suite.chargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
+	callResult := ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
+	CheckCallResult(callResult, t, uniqueId)
+	confirmation := GetBootNotificationConfirmation(t, callResult.Payload)
+	assert.Equal(t, status, string(confirmation.Status))
+	assert.Equal(t, interval, confirmation.Interval)
+	assert.Equal(t, currentTime, confirmation.CurrentTime)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationMessage() {
-
+func (suite *CoreTestSuite) TestBootNotificationInvalidMessage() {
+	//TODO: implement
 }
 
 func (suite *CoreTestSuite) TestBootNotificationE2EMocked() {
@@ -72,7 +95,7 @@ func (suite *CoreTestSuite) TestBootNotificationE2EMocked() {
 		assert.Equal(t, requestRaw, data)
 		jsonData := string(data)
 		assert.Equal(t, requestJson, jsonData)
-		call := ParseCall(suite.chargePoint, jsonData, t)
+		call := ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
 		CheckCall(call, t, v16.BootNotificationFeatureName, messageId)
 		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
 		// TODO: generate the response dynamically
@@ -90,7 +113,7 @@ func (suite *CoreTestSuite) TestBootNotificationE2EMocked() {
 		assert.Equal(t, responseRaw, data)
 		jsonData := string(data)
 		assert.Equal(t, responseJson, jsonData)
-		callResult := ParseCallResult(suite.chargePoint, jsonData, t)
+		callResult := ParseCallResult(&suite.chargePoint.Endpoint, jsonData, t)
 		CheckCallResult(callResult, t, messageId)
 		return nil
 	})

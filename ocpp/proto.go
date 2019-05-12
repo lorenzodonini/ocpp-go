@@ -36,7 +36,7 @@ type Profile struct {
 }
 
 func NewProfile(name string, features ...Feature) *Profile {
-	profile := Profile{Name: name}
+	profile := Profile{Name: name, Features: make(map[string]Feature)}
 	for _, feature := range features {
 		profile.AddFeature(feature)
 	}
