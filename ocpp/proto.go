@@ -125,16 +125,8 @@ type CallError struct {
 	ErrorDetails interface{}	`json:"errorDetails"`
 }
 
-// -------------------- Global Variables --------------------
-var Profiles []*Profile
-var PendingRequests = map[string]Request{}
-
 
 // -------------------- Logic --------------------
-func AddProfile(profile *Profile) {
-	Profiles = append(Profiles, profile)
-}
-
 func ParseRawJsonMessage(dataJson []byte) []interface{} {
 	var arr []interface{}
 	err := json.Unmarshal(dataJson, &arr)
@@ -149,7 +141,56 @@ func ParseJsonMessage(dataJson string) []interface{} {
 	return ParseRawJsonMessage(rawJson)
 }
 
-func ParseMessage(arr []interface{}) (interface{}, error) {
+func CreateJsonMessage(message *Message) (string, error) {
+	rawJson, err := json.Marshal(message)
+	if err != nil {
+		return "", err
+	}
+	return string(rawJson), nil
+}
+
+// -------------------- Endpoint --------------------
+type Endpoint struct {
+	Profiles []*Profile
+	PendingRequests map[string]Request
+}
+
+func (endpoint *Endpoint)AddProfile(profile *Profile) {
+	endpoint.Profiles = append(endpoint.Profiles, profile)
+}
+
+func (endpoint *Endpoint)GetProfile(name string) (*Profile, bool) {
+	for _, p := range endpoint.Profiles {
+		if p.Name == name {
+			return p, true
+		}
+	}
+	return nil, false
+}
+
+func (endpoint *Endpoint)GetProfileForFeature(featureName string) (*Profile, bool) {
+	for _, p := range endpoint.Profiles {
+		if p.SupportsFeature(featureName) {
+			return p, true
+		}
+	}
+	return nil, false
+}
+
+func (endpoint *Endpoint)AddPendingRequest(id string, request Request) {
+	endpoint.PendingRequests[id] = request
+}
+
+func (endpoint *Endpoint)GetPendingRequest(id string) (Request, bool) {
+	request, ok := endpoint.PendingRequests[id]
+	return request, ok
+}
+
+func (endpoint *Endpoint)DeletePendingRequest(id string) {
+	delete(endpoint.PendingRequests, id)
+}
+
+func (endpoint *Endpoint)ParseMessage(arr []interface{}) (interface{}, error) {
 	// Checking message fields
 	if len(arr) < 3 {
 		log.Fatal("Invalid message. Expected array length >= 3")
@@ -166,7 +207,8 @@ func ParseMessage(arr []interface{}) (interface{}, error) {
 	message := Message{MessageTypeId: MessageType(typeId), UniqueId: uniqueId}
 	if typeId == CALL {
 		action := arr[2].(string)
-		profile := GetProfileForFeature(action)
+		//TODO: check for ok in GetProfileForFeature
+		profile, _ := endpoint.GetProfileForFeature(action)
 		request := profile.ParseRequest(action, arr[3])
 		call := Call{
 			Message: message,
@@ -175,14 +217,14 @@ func ParseMessage(arr []interface{}) (interface{}, error) {
 		}
 		return call, nil
 	} else if typeId == CALL_RESULT {
-		request, ok := PendingRequests[message.UniqueId]
+		request, ok := endpoint.PendingRequests[message.UniqueId]
 		if !ok {
 			log.Printf("No previous request %v sent. Discarding response message", message.UniqueId)
 			return nil, nil
 		}
-		profile := GetProfileForFeature(request.GetFeatureName())
+		profile, _ := endpoint.GetProfileForFeature(request.GetFeatureName())
 		confirmation := profile.ParseConfirmation(request.GetFeatureName(), arr[2])
-		delete(PendingRequests, message.UniqueId)
+		endpoint.DeletePendingRequest(message.UniqueId)
 		callResult := CallResult{
 			Message: message,
 			Payload: confirmation,
@@ -190,7 +232,7 @@ func ParseMessage(arr []interface{}) (interface{}, error) {
 		return callResult, nil
 	} else if typeId == CALL_ERROR {
 		//TODO: handle error for pending request
-		delete(PendingRequests, message.UniqueId)
+		endpoint.DeletePendingRequest(message.UniqueId)
 		callError := CallError{
 			Message: message,
 			ErrorCode: arr[2].(ErrorCode),
@@ -203,9 +245,9 @@ func ParseMessage(arr []interface{}) (interface{}, error) {
 	}
 }
 
-func CreateCall(request Request) (*Call, error) {
+func (endpoint *Endpoint)CreateCall(request Request) (*Call, error) {
 	action := request.GetFeatureName()
-	profile := GetProfileForFeature(action)
+	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
 		return nil, errors2.Errorf("Couldn't create Call for unsupported action %v", action)
 	}
@@ -215,13 +257,13 @@ func CreateCall(request Request) (*Call, error) {
 		Action: action,
 		Payload: request,
 	}
-	PendingRequests[uniqueId] = request
+	endpoint.AddPendingRequest(uniqueId, request)
 	return &call, nil
 }
 
-func CreateCallResult(confirmation Confirmation, uniqueId string) (*CallResult, error) {
+func (endpoint *Endpoint)CreateCallResult(confirmation Confirmation, uniqueId string) (*CallResult, error) {
 	action := confirmation.GetFeatureName()
-	profile := GetProfileForFeature(action)
+	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
 		return nil, errors2.Errorf("Couldn't create Call Result for unsupported action %v", action)
 	}
@@ -232,7 +274,7 @@ func CreateCallResult(confirmation Confirmation, uniqueId string) (*CallResult, 
 	return &callResult, nil
 }
 
-func CreateCallError(uniqueId string, code ErrorCode, description string, details interface{}) *CallError {
+func (endpoint *Endpoint)CreateCallError(uniqueId string, code ErrorCode, description string, details interface{}) *CallError {
 	callError := CallError{
 		Message: Message{MessageTypeId: CALL_ERROR, UniqueId: uniqueId},
 		ErrorCode: code,
@@ -240,21 +282,4 @@ func CreateCallError(uniqueId string, code ErrorCode, description string, detail
 		ErrorDetails: details,
 	}
 	return &callError
-}
-
-func CreateJsonMessage(message *Message) (string, error) {
-	rawJson, err := json.Marshal(message)
-	if err != nil {
-		return "", err
-	}
-	return string(rawJson), nil
-}
-
-func GetProfileForFeature(featureName string) *Profile {
-	for _, p := range Profiles {
-		if p.SupportsFeature(featureName) {
-			return p
-		}
-	}
-	return nil
 }
