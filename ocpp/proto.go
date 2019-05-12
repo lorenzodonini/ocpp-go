@@ -31,7 +31,16 @@ type Confirmation interface {
 
 // -------------------- Profile --------------------
 type Profile struct {
+	Name string
 	Features map[string]Feature
+}
+
+func NewProfile(name string, features ...Feature) *Profile {
+	profile := Profile{Name: name}
+	for _, feature := range features {
+		profile.AddFeature(feature)
+	}
+	return &profile
 }
 
 func (p* Profile) AddFeature(feature Feature) {
