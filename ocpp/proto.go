@@ -155,6 +155,10 @@ type Endpoint struct {
 	PendingRequests map[string]Request
 }
 
+func NewEndpoint() *Endpoint {
+	return &Endpoint{PendingRequests: map[string]Request{}}
+}
+
 func (endpoint *Endpoint)AddProfile(profile *Profile) {
 	endpoint.Profiles = append(endpoint.Profiles, profile)
 }

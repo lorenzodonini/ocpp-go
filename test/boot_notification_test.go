@@ -14,13 +14,15 @@ import (
 
 type CoreTestSuite struct {
 	suite.Suite
+	chargePoint *ocpp.Endpoint
 }
 
 func (suite *CoreTestSuite) SetupTest() {
 	coreProfile := ocpp.Profile{Features: make(map[string]ocpp.Feature)}
 	feature := v16.BootNotificationFeature{}
 	coreProfile.AddFeature(feature)
-	ocpp.AddProfile(&coreProfile)
+	suite.chargePoint = ocpp.NewEndpoint()
+	suite.chargePoint.AddProfile(&coreProfile)
 }
 
 func GetBootNotificationRequest(t* testing.T, request ocpp.Request) *v16.BootNotificationRequest {
@@ -34,7 +36,7 @@ func GetBootNotificationRequest(t* testing.T, request ocpp.Request) *v16.BootNot
 func (suite *CoreTestSuite) TestBootNotificationValid() {
 	t := suite.T()
 	dataJson := `[2,"1234","BootNotification",{"chargePointModel": "model1", "chargePointVendor": "ABL"}]`
-	call := ParseCall(dataJson, t)
+	call := ParseCall(suite.chargePoint, dataJson, t)
 	CheckCall(call, t, v16.BootNotificationFeatureName, "1234")
 	request := GetBootNotificationRequest(t, call.Payload)
 	assert.Equal(t, "model1", request.ChargePointModel)
@@ -70,9 +72,9 @@ func (suite *CoreTestSuite) TestBootNotificationE2EMocked() {
 		assert.Equal(t, requestRaw, data)
 		jsonData := string(data)
 		assert.Equal(t, requestJson, jsonData)
-		call := ParseCall(jsonData, t)
+		call := ParseCall(suite.chargePoint, jsonData, t)
 		CheckCall(call, t, v16.BootNotificationFeatureName, messageId)
-		ocpp.PendingRequests[messageId] = call.Payload
+		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
 		// TODO: generate the response dynamically
 		err := client.messageHandler(responseRaw)
 		assert.Nil(t, err)
@@ -88,7 +90,7 @@ func (suite *CoreTestSuite) TestBootNotificationE2EMocked() {
 		assert.Equal(t, responseRaw, data)
 		jsonData := string(data)
 		assert.Equal(t, responseJson, jsonData)
-		callResult := ParseCallResult(jsonData, t)
+		callResult := ParseCallResult(suite.chargePoint, jsonData, t)
 		CheckCallResult(callResult, t, messageId)
 		return nil
 	})

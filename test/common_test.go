@@ -110,9 +110,9 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return &wsClient
 }
 
-func ParseCall(json string, t* testing.T) *ocpp.Call {
+func ParseCall(endpoint *ocpp.Endpoint, json string, t* testing.T) *ocpp.Call {
 	parsedData := ocpp.ParseJsonMessage(json)
-	result, err := ocpp.ParseMessage(parsedData)
+	result, err := endpoint.ParseMessage(parsedData)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
 	call, ok := result.(ocpp.Call)
@@ -128,19 +128,29 @@ func CheckCall(call* ocpp.Call, t *testing.T, expectedAction string, expectedId 
 	assert.NotNil(t, call.Payload)
 }
 
-func ParseCallResult(json string, t* testing.T) *ocpp.CallResult {
+func ParseCallResult(endpoint *ocpp.Endpoint, json string, t* testing.T) *ocpp.CallResult {
 	parsedData := ocpp.ParseJsonMessage(json)
-	result, err := ocpp.ParseMessage(parsedData)
+	result, err := endpoint.ParseMessage(parsedData)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
-	call, ok := result.(ocpp.CallResult)
+	callResult, ok := result.(ocpp.CallResult)
 	assert.Equal(t, true, ok)
-	assert.NotNil(t, call)
-	return &call
+	assert.NotNil(t, callResult)
+	return &callResult
 }
 
 func CheckCallResult(result* ocpp.CallResult, t *testing.T, expectedId string) {
 	assert.Equal(t, ocpp.CALL_RESULT, int(result.MessageTypeId))
 	assert.Equal(t, expectedId, result.UniqueId)
 	assert.NotNil(t, result.Payload)
+}
+
+func ParseError(endpoint *ocpp.Endpoint, json string, t* testing.T) *ocpp.CallError {
+	parsedData := ocpp.ParseJsonMessage(json)
+	result, err := endpoint.ParseMessage(parsedData)
+	assert.Nil(t, err)
+	callError, ok := result.(ocpp.CallError)
+	assert.Equal(t, true, ok)
+	assert.NotNil(t, callError)
+	return &callError
 }
