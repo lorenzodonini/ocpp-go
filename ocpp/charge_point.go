@@ -1,6 +1,7 @@
 package ocpp
 
 import (
+	"container/list"
 	"errors"
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ws"
@@ -14,6 +15,7 @@ type ChargePoint struct {
 	callHandler func(call *Call)
 	callResultHandler func(callResult *CallResult)
 	callErrorHandler func(callError *CallError)
+	messageQueue *list.List
 }
 
 func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *ChargePoint {
@@ -22,9 +24,9 @@ func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *Char
 		endpoint.AddProfile(profile)
 	}
 	if wsClient != nil {
-		return &ChargePoint{Endpoint: endpoint, client: wsClient, Id: id}
+		return &ChargePoint{Endpoint: endpoint, client: wsClient, Id: id, messageQueue: list.New()}
 	} else {
-		return &ChargePoint{Endpoint: endpoint, client: &ws.Client{}, Id: id}
+		return &ChargePoint{Endpoint: endpoint, client: &ws.Client{}, Id: id, messageQueue: list.New()}
 	}
 }
 
@@ -59,12 +61,15 @@ func (chargePoint *ChargePoint)Stop() {
 	chargePoint.client.Stop()
 }
 
-func (chargePoint *ChargePoint)SendMessage(message *Message) error {
-	jsonMessage, err := CreateJsonMessage(message)
+func (chargePoint *ChargePoint)SendRequest(request Request) error {
+	if len(chargePoint.PendingRequests) > 0 {
+		chargePoint.messageQueue.PushBack(request)
+		return nil
+	}
+	err := chargePoint.processCallQueue()
 	if err != nil {
 		return err
 	}
-	chargePoint.client.Write([]byte(jsonMessage))
 	//TODO: use promise/future for fetching the result
 	return nil
 }
@@ -92,5 +97,38 @@ func (chargePoint *ChargePoint)ocppMessageHandler(data []byte) error {
 		callError := message.(CallError)
 		chargePoint.callErrorHandler(&callError)
 	}
+	return nil
+}
+
+func (chargePoint *ChargePoint)SendMessage(ocppMessage interface{}) error {
+	message, ok := ocppMessage.(*Message)
+	if !ok {
+		return errors.New("invalid ocpp message. Couldn't send")
+	}
+	if message.MessageTypeId == CALL {
+		call := ocppMessage.(*Call)
+		chargePoint.PendingRequests[message.UniqueId] = call.Payload
+	}
+	jsonMessage, err := message.ToJson()
+	if err != nil {
+		return err
+	}
+	chargePoint.client.Write([]byte(jsonMessage))
+	//TODO: use promise/future for fetching the result
+	return nil
+}
+
+func (chargePoint *ChargePoint)processCallQueue() error {
+	if chargePoint.messageQueue.Len() == 0 {
+		return nil
+	}
+	request := chargePoint.messageQueue.Front().Value
+	call, err := chargePoint.CreateCall(request.(Request))
+	jsonMessage, err := call.ToJson()
+	if err != nil {
+		return err
+	}
+	chargePoint.client.Write([]byte(jsonMessage))
+	//TODO: use promise/future for fetching the result
 	return nil
 }
