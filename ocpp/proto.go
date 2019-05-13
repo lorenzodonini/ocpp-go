@@ -150,8 +150,8 @@ func ParseJsonMessage(dataJson string) []interface{} {
 	return ParseRawJsonMessage(rawJson)
 }
 
-func CreateJsonMessage(message *Message) (string, error) {
-	rawJson, err := json.Marshal(message)
+func (m *Message)ToJson() (string, error) {
+	rawJson, err := json.Marshal(m)
 	if err != nil {
 		return "", err
 	}
