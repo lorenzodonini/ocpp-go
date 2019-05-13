@@ -131,7 +131,8 @@ func (suite *CoreTestSuite) TestBootNotificationE2EMocked() {
 		assert.Nil(t, err)
 	})
 	// Test Run
-	client.Start(wsUrl)
+	err := client.Start(wsUrl)
+	assert.Nil(t, err)
 	client.Write(requestRaw)
 }
 
