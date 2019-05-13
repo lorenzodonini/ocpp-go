@@ -16,14 +16,16 @@ type ChargePoint struct {
 	callErrorHandler func(callError *CallError)
 }
 
-func NewChargePoint(id string, profiles ...*Profile) *ChargePoint {
+func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *ChargePoint {
 	endpoint := Endpoint{PendingRequests: map[string]Request{}}
 	for _, profile := range profiles {
 		endpoint.AddProfile(profile)
 	}
-	client := ws.Client{}
-	chargePoint := ChargePoint{Endpoint: endpoint, client: &client, Id: id}
-	return &chargePoint
+	if wsClient != nil {
+		return &ChargePoint{Endpoint: endpoint, client: wsClient, Id: id}
+	} else {
+		return &ChargePoint{Endpoint: endpoint, client: &ws.Client{}, Id: id}
+	}
 }
 
 func (chargePoint *ChargePoint)SeCallHandler(handler func(call *Call)) {

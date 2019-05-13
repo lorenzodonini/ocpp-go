@@ -58,8 +58,9 @@ type MockWebsocketClient struct {
 	messageHandler func(data []byte) error
 }
 
-func (websocketClient* MockWebsocketClient)Start(url string) {
+func (websocketClient* MockWebsocketClient)Start(url string) error {
 	websocketClient.Called(url)
+	return nil
 }
 
 func (websocketClient* MockWebsocketClient)Stop() {

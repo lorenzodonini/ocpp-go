@@ -12,16 +12,7 @@ import (
 	"time"
 )
 
-type CoreTestSuite struct {
-	suite.Suite
-	chargePoint *ocpp.ChargePoint
-}
-
-func (suite *CoreTestSuite) SetupTest() {
-	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{})
-	suite.chargePoint = ocpp.NewChargePoint("test_id", coreProfile)
-}
-
+// Utility functions
 func GetBootNotificationRequest(t* testing.T, request ocpp.Request) *v16.BootNotificationRequest {
 	assert.NotNil(t, request)
 	result := request.(*v16.BootNotificationRequest)
@@ -36,6 +27,21 @@ func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmatio
 	assert.NotNil(t, result)
 	assert.IsType(t, &v16.BootNotificationConfirmation{}, result)
 	return result
+}
+
+// Tests
+type CoreTestSuite struct {
+	suite.Suite
+	chargePoint *ocpp.ChargePoint
+	mockServer *MockWebsocketServer
+	mockClient *MockWebsocketClient
+}
+
+func (suite *CoreTestSuite) SetupTest() {
+	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{})
+	mockWs := MockWebsocketClient{}
+	suite.mockClient = &mockWs
+	suite.chargePoint = ocpp.NewChargePoint("test_id", suite.mockClient, coreProfile)
 }
 
 func (suite *CoreTestSuite) TestBootNotificationRequest() {
