@@ -47,31 +47,7 @@ func (chargePoint *ChargePoint)SeCalleHandler(handler func(callError *CallError)
 // An error may be returned, if the connection failed or if it broke unexpectedly.
 func (chargePoint *ChargePoint)Start(centralSystemUrl string) error {
 	// Set internal message handler
-	chargePoint.client.SetMessageHandler(func(data []byte) error {
-		parsedJson := ParseRawJsonMessage(data)
-		message, err := chargePoint.ParseMessage(parsedJson)
-		if err != nil {
-			// TODO: handle
-			log.Printf("Error while parsing message: %v", err)
-			return err
-		}
-		ocppMessage, ok := message.(Message)
-		if !ok {
-			return errors.New("couldn't convert parsed data to Message type")
-		}
-		switch ocppMessage.MessageTypeId {
-		case CALL:
-			call := message.(Call)
-			chargePoint.callHandler(&call)
-		case CALL_RESULT:
-			callResult := message.(CallResult)
-			chargePoint.callResultHandler(&callResult)
-		case CALL_ERROR:
-			callError := message.(CallError)
-			chargePoint.callErrorHandler(&callError)
-		}
-		return nil
-	})
+	chargePoint.client.SetMessageHandler(chargePoint.ocppMessageHandler)
 	// Connect & run
 	fullUrl := fmt.Sprintf("%v/%v", centralSystemUrl, chargePoint.Id)
 	return chargePoint.client.Start(fullUrl)
@@ -88,5 +64,31 @@ func (chargePoint *ChargePoint)SendMessage(message *Message) error {
 	}
 	chargePoint.client.Write([]byte(jsonMessage))
 	//TODO: use promise/future for fetching the result
+	return nil
+}
+
+func (chargePoint *ChargePoint)ocppMessageHandler(data []byte) error {
+	parsedJson := ParseRawJsonMessage(data)
+	message, err := chargePoint.ParseMessage(parsedJson)
+	if err != nil {
+		// TODO: handle
+		log.Printf("Error while parsing message: %v", err)
+		return err
+	}
+	ocppMessage, ok := message.(Message)
+	if !ok {
+		return errors.New("couldn't convert parsed data to Message type")
+	}
+	switch ocppMessage.MessageTypeId {
+	case CALL:
+		call := message.(Call)
+		chargePoint.callHandler(&call)
+	case CALL_RESULT:
+		callResult := message.(CallResult)
+		chargePoint.callResultHandler(&callResult)
+	case CALL_ERROR:
+		callError := message.(CallError)
+		chargePoint.callErrorHandler(&callError)
+	}
 	return nil
 }
