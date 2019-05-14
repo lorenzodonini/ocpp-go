@@ -62,10 +62,12 @@ func (chargePoint *ChargePoint)Stop() {
 }
 
 func (chargePoint *ChargePoint)SendRequest(request Request) error {
+	chargePoint.messageQueue.PushBack(request)
 	if len(chargePoint.PendingRequests) > 0 {
-		chargePoint.messageQueue.PushBack(request)
+		// Cannot send right away
 		return nil
 	}
+	// Process queue
 	err := chargePoint.processCallQueue()
 	if err != nil {
 		return err
@@ -93,9 +95,17 @@ func (chargePoint *ChargePoint)ocppMessageHandler(data []byte) error {
 	case CALL_RESULT:
 		callResult := message.(CallResult)
 		chargePoint.callResultHandler(&callResult)
+		err := chargePoint.processCallQueue()
+		if err != nil {
+			return err
+		}
 	case CALL_ERROR:
 		callError := message.(CallError)
 		chargePoint.callErrorHandler(&callError)
+		err := chargePoint.processCallQueue()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -105,13 +115,13 @@ func (chargePoint *ChargePoint)SendMessage(ocppMessage interface{}) error {
 	if !ok {
 		return errors.New("invalid ocpp message. Couldn't send")
 	}
-	if message.MessageTypeId == CALL {
-		call := ocppMessage.(*Call)
-		chargePoint.PendingRequests[message.UniqueId] = call.Payload
-	}
 	jsonMessage, err := message.ToJson()
 	if err != nil {
 		return err
+	}
+	if message.MessageTypeId == CALL {
+		call := ocppMessage.(*Call)
+		chargePoint.PendingRequests[message.UniqueId] = call.Payload
 	}
 	chargePoint.client.Write([]byte(jsonMessage))
 	//TODO: use promise/future for fetching the result
@@ -122,13 +132,15 @@ func (chargePoint *ChargePoint)processCallQueue() error {
 	if chargePoint.messageQueue.Len() == 0 {
 		return nil
 	}
-	request := chargePoint.messageQueue.Front().Value
+	element := chargePoint.messageQueue.Front()
+	request := element.Value
 	call, err := chargePoint.CreateCall(request.(Request))
 	jsonMessage, err := call.ToJson()
 	if err != nil {
 		return err
 	}
 	chargePoint.client.Write([]byte(jsonMessage))
+	chargePoint.messageQueue.Remove(element)
 	//TODO: use promise/future for fetching the result
 	return nil
 }
