@@ -2,7 +2,6 @@ package ocpp
 
 import (
 	"container/list"
-	"errors"
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"log"
@@ -84,24 +83,20 @@ func (chargePoint *ChargePoint)ocppMessageHandler(data []byte) error {
 		log.Printf("Error while parsing message: %v", err)
 		return err
 	}
-	ocppMessage, ok := message.(Message)
-	if !ok {
-		return errors.New("couldn't convert parsed data to Message type")
-	}
-	switch ocppMessage.MessageTypeId {
+	switch message.GetMessageTypeId() {
 	case CALL:
-		call := message.(Call)
-		chargePoint.callHandler(&call)
+		call := message.(*Call)
+		chargePoint.callHandler(call)
 	case CALL_RESULT:
-		callResult := message.(CallResult)
-		chargePoint.callResultHandler(&callResult)
+		callResult := message.(*CallResult)
+		chargePoint.callResultHandler(callResult)
 		err := chargePoint.processCallQueue()
 		if err != nil {
 			return err
 		}
 	case CALL_ERROR:
-		callError := message.(CallError)
-		chargePoint.callErrorHandler(&callError)
+		callError := message.(*CallError)
+		chargePoint.callErrorHandler(callError)
 		err := chargePoint.processCallQueue()
 		if err != nil {
 			return err
@@ -110,18 +105,14 @@ func (chargePoint *ChargePoint)ocppMessageHandler(data []byte) error {
 	return nil
 }
 
-func (chargePoint *ChargePoint)SendMessage(ocppMessage interface{}) error {
-	message, ok := ocppMessage.(*Message)
-	if !ok {
-		return errors.New("invalid ocpp message. Couldn't send")
-	}
-	jsonMessage, err := message.ToJson()
+func (chargePoint *ChargePoint)SendMessage(message Message) error {
+	jsonMessage, err := message.MarshalJSON()
 	if err != nil {
 		return err
 	}
-	if message.MessageTypeId == CALL {
-		call := ocppMessage.(*Call)
-		chargePoint.PendingRequests[message.UniqueId] = call.Payload
+	if message.GetMessageTypeId() == CALL {
+		call := message.(*Call)
+		chargePoint.PendingRequests[message.GetUniqueId()] = call.Payload
 	}
 	chargePoint.client.Write([]byte(jsonMessage))
 	//TODO: use promise/future for fetching the result
@@ -135,7 +126,7 @@ func (chargePoint *ChargePoint)processCallQueue() error {
 	element := chargePoint.messageQueue.Front()
 	request := element.Value
 	call, err := chargePoint.CreateCall(request.(Request))
-	jsonMessage, err := call.ToJson()
+	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
 		return err
 	}

@@ -106,32 +106,92 @@ const (
 	CALL_ERROR 	= 4
 )
 
-type Message struct {
-	MessageTypeId MessageType	`json:"messageTypeId"`
-	UniqueId string 			`json:"uniqueId"`	//Max 36 chars
-	Validatable
+//TODO: make message validatable again?
+type Message interface {
+	GetMessageTypeId() MessageType
+	GetUniqueId() string
+	json.Marshaler
 }
+//func (m* Message) validate() error {
+//	return nil
+//}
 
-func (m* Message) validate() error {
-	return nil
-}
-
+// -------------------- Call --------------------
 type Call struct {
 	Message
-	Action string				`json:"action"`
-	Payload Request				`json:"payload"`
+	MessageTypeId MessageType `json:"messageTypeId"`
+	UniqueId      string      `json:"uniqueId"` //Max 36 chars
+	Action        string      `json:"action"`
+	Payload       Request     `json:"payload"`
 }
 
+func (call* Call)GetMessageTypeId() MessageType {
+	return call.MessageTypeId
+}
+
+func (call* Call)GetUniqueId() string {
+	return call.UniqueId
+}
+
+func (call* Call) MarshalJSON() ([]byte, error) {
+	fields := make([]interface{}, 4)
+	fields[0] = call.MessageTypeId
+	fields[1] = call.UniqueId
+	fields[2] = call.Action
+	fields[3] = call.Payload
+	return json.Marshal(fields)
+}
+
+// -------------------- Call Result --------------------
 type CallResult struct {
 	Message
-	Payload Confirmation		`json:"payload"`
+	MessageTypeId MessageType  `json:"messageTypeId"`
+	UniqueId      string       `json:"uniqueId"` //Max 36 chars
+	Payload       Confirmation `json:"payload"`
 }
 
+func (callResult* CallResult)GetMessageTypeId() MessageType {
+	return callResult.MessageTypeId
+}
+
+func (callResult* CallResult)GetUniqueId() string {
+	return callResult.UniqueId
+}
+
+func (callResult *CallResult) MarshalJSON() ([]byte, error) {
+	fields := make([]interface{}, 3)
+	fields[0] = callResult.MessageTypeId
+	fields[1] = callResult.UniqueId
+	fields[2] = callResult.Payload
+	return json.Marshal(fields)
+}
+
+// -------------------- Call Error --------------------
 type CallError struct {
 	Message
-	ErrorCode ErrorCode			`json:"errorCode"`
-	ErrorDescription string		`json:"errorDescription"`
-	ErrorDetails interface{}	`json:"errorDetails"`
+	MessageTypeId    MessageType `json:"messageTypeId"`
+	UniqueId         string      `json:"uniqueId"` //Max 36 chars
+	ErrorCode        ErrorCode   `json:"errorCode"`
+	ErrorDescription string      `json:"errorDescription"`
+	ErrorDetails     interface{} `json:"errorDetails"`
+}
+
+func (callError* CallError)GetMessageTypeId() MessageType {
+	return callError.MessageTypeId
+}
+
+func (callError* CallError)GetUniqueId() string {
+	return callError.UniqueId
+}
+
+func (callError *CallError) MarshalJSON() ([]byte, error) {
+	fields := make([]interface{}, 5)
+	fields[0] = callError.MessageTypeId
+	fields[1] = callError.UniqueId
+	fields[2] = callError.ErrorCode
+	fields[3] = callError.ErrorDescription
+	fields[4] = callError.ErrorDetails
+	return ocppMessageToJson(callError)
 }
 
 
@@ -150,12 +210,14 @@ func ParseJsonMessage(dataJson string) []interface{} {
 	return ParseRawJsonMessage(rawJson)
 }
 
-func (m *Message)ToJson() (string, error) {
-	rawJson, err := json.Marshal(m)
+func ocppMessageToJson(message interface{}) ([]byte, error) {
+	jsonData, err := json.Marshal(message)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(rawJson), nil
+	jsonData[0] = '['
+	jsonData[len(jsonData) -1] = ']'
+	return jsonData, nil
 }
 
 // -------------------- Endpoint --------------------
@@ -199,7 +261,7 @@ func (endpoint *Endpoint)DeletePendingRequest(id string) {
 	delete(endpoint.PendingRequests, id)
 }
 
-func (endpoint *Endpoint)ParseMessage(arr []interface{}) (interface{}, error) {
+func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, error) {
 	// Checking message fields
 	if len(arr) < 3 {
 		log.Fatal("Invalid message. Expected array length >= 3")
@@ -213,42 +275,44 @@ func (endpoint *Endpoint)ParseMessage(arr []interface{}) (interface{}, error) {
 		log.Printf("Invalid element %v at 1, expected int", arr[1])
 	}
 	// Parse message
-	message := Message{MessageTypeId: MessageType(typeId), UniqueId: uniqueId}
 	if typeId == CALL {
 		action := arr[2].(string)
 		//TODO: check for ok in GetProfileForFeature
 		profile, _ := endpoint.GetProfileForFeature(action)
 		request := profile.ParseRequest(action, arr[3])
 		call := Call{
-			Message: message,
-			Action:  action,
-			Payload: request,
+			MessageTypeId: CALL,
+			UniqueId:      uniqueId,
+			Action:        action,
+			Payload:       request,
 		}
-		return call, nil
+		return &call, nil
 	} else if typeId == CALL_RESULT {
-		request, ok := endpoint.PendingRequests[message.UniqueId]
+		request, ok := endpoint.PendingRequests[uniqueId]
 		if !ok {
-			log.Printf("No previous request %v sent. Discarding response message", message.UniqueId)
+			log.Printf("No previous request %v sent. Discarding response message", uniqueId)
 			return nil, nil
 		}
 		profile, _ := endpoint.GetProfileForFeature(request.GetFeatureName())
 		confirmation := profile.ParseConfirmation(request.GetFeatureName(), arr[2])
-		endpoint.DeletePendingRequest(message.UniqueId)
 		callResult := CallResult{
-			Message: message,
-			Payload: confirmation,
+			MessageTypeId: CALL_RESULT,
+			UniqueId:      uniqueId,
+			Payload:       confirmation,
 		}
-		return callResult, nil
+		endpoint.DeletePendingRequest(callResult.GetUniqueId())
+		return &callResult, nil
 	} else if typeId == CALL_ERROR {
 		//TODO: handle error for pending request
-		endpoint.DeletePendingRequest(message.UniqueId)
 		callError := CallError{
-			Message: message,
-			ErrorCode: arr[2].(ErrorCode),
+			MessageTypeId:    CALL_ERROR,
+			UniqueId:         uniqueId,
+			ErrorCode:        arr[2].(ErrorCode),
 			ErrorDescription: arr[3].(string),
-			ErrorDetails: arr[4],
+			ErrorDetails:     arr[4],
 		}
-		return callError, nil
+		endpoint.DeletePendingRequest(callError.GetUniqueId())
+		return &callError, nil
 	} else {
 		return nil, errors2.Errorf("Invalid message type ID %v", typeId)
 	}
@@ -262,9 +326,10 @@ func (endpoint *Endpoint)CreateCall(request Request) (*Call, error) {
 	}
 	uniqueId := fmt.Sprintf("%v", rand.Uint32())
 	call := Call{
-		Message: Message{MessageTypeId: CALL, UniqueId: uniqueId},
-		Action: action,
-		Payload: request,
+		MessageTypeId: CALL,
+		UniqueId:      uniqueId,
+		Action:        action,
+		Payload:       request,
 	}
 	endpoint.AddPendingRequest(uniqueId, request)
 	return &call, nil
@@ -277,18 +342,20 @@ func (endpoint *Endpoint)CreateCallResult(confirmation Confirmation, uniqueId st
 		return nil, errors2.Errorf("Couldn't create Call Result for unsupported action %v", action)
 	}
 	callResult := CallResult{
-		Message: Message{MessageTypeId: CALL_RESULT, UniqueId: uniqueId},
-		Payload: confirmation,
+		MessageTypeId: CALL_RESULT,
+		UniqueId:      uniqueId,
+		Payload:       confirmation,
 	}
 	return &callResult, nil
 }
 
 func (endpoint *Endpoint)CreateCallError(uniqueId string, code ErrorCode, description string, details interface{}) *CallError {
 	callError := CallError{
-		Message: Message{MessageTypeId: CALL_ERROR, UniqueId: uniqueId},
-		ErrorCode: code,
+		MessageTypeId:    CALL_ERROR,
+		UniqueId:         uniqueId,
+		ErrorCode:        code,
 		ErrorDescription: description,
-		ErrorDetails: details,
+		ErrorDetails:     details,
 	}
 	return &callError
 }

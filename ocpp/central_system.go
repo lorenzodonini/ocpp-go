@@ -2,7 +2,6 @@ package ocpp
 
 import (
 	"container/list"
-	"errors"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"log"
 )
@@ -66,18 +65,14 @@ func (centralSystem *CentralSystem)SendRequest(chargePointId string, request Req
 	return nil
 }
 
-func (centralSystem *CentralSystem)SendMessage(chargePointId string, ocppMessage interface{}) error {
-	message, ok := ocppMessage.(*Message)
-	if !ok {
-		return errors.New("invalid ocpp message. Couldn't send")
-	}
-	jsonMessage, err := message.ToJson()
+func (centralSystem *CentralSystem)SendMessage(chargePointId string, message Message) error {
+	jsonMessage, err := message.MarshalJSON()
 	if err != nil {
 		return err
 	}
-	if message.MessageTypeId == CALL {
-		call := ocppMessage.(*Call)
-		centralSystem.PendingRequests[message.UniqueId] = call.Payload
+	if message.GetMessageTypeId() == CALL {
+		call := message.(*Call)
+		centralSystem.PendingRequests[message.GetUniqueId()] = call.Payload
 	}
 	err = centralSystem.server.Write(chargePointId, []byte(jsonMessage))
 	if err != nil {
@@ -94,7 +89,7 @@ func (centralSystem *CentralSystem)processCallQueue(chargePointId string) error 
 	element := centralSystem.clientQueues[chargePointId].Front()
 	request := element.Value
 	call, err := centralSystem.CreateCall(request.(Request))
-	jsonMessage, err := call.ToJson()
+	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
 		return err
 	}
@@ -114,24 +109,20 @@ func (centralSystem *CentralSystem)ocppMessageHandler(wsChannel ws.Channel, data
 		log.Printf("Error while parsing message: %v", err)
 		return err
 	}
-	ocppMessage, ok := message.(Message)
-	if !ok {
-		return errors.New("couldn't convert parsed data to Message type")
-	}
-	switch ocppMessage.MessageTypeId {
+	switch message.GetMessageTypeId() {
 	case CALL:
-		call := message.(Call)
-		centralSystem.callHandler(wsChannel.GetId(), &call)
+		call := message.(*Call)
+		centralSystem.callHandler(wsChannel.GetId(), call)
 	case CALL_RESULT:
-		callResult := message.(CallResult)
-		centralSystem.callResultHandler(wsChannel.GetId(), &callResult)
+		callResult := message.(*CallResult)
+		centralSystem.callResultHandler(wsChannel.GetId(), callResult)
 		err := centralSystem.processCallQueue(wsChannel.GetId())
 		if err != nil {
 			return err
 		}
 	case CALL_ERROR:
-		callError := message.(CallError)
-		centralSystem.callErrorHandler(wsChannel.GetId(), &callError)
+		callError := message.(*CallError)
+		centralSystem.callErrorHandler(wsChannel.GetId(), callError)
 		err := centralSystem.processCallQueue(wsChannel.GetId())
 		if err != nil {
 			return err

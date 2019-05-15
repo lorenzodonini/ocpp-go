@@ -12,7 +12,7 @@ const (
 
 // -------------------- Boot Notification --------------------
 type BootNotificationRequest struct {
-	ocpp.Request
+	ocpp.Request					`json:"-"`
 	ChargeBoxSerialNumber string 	`json:"chargeBoxSerialNumber,omitempty" valid:"stringlength(0|25)"`
 	ChargePointModel string			`json:"chargePointModel" valid:"stringlength(1|20)"`
 	ChargePointSerialNumber string	`json:"chargePointSerialNumber,omitempty" valid:"stringlength(0|25)"`
@@ -25,14 +25,13 @@ type BootNotificationRequest struct {
 }
 
 type BootNotificationConfirmation struct {
-	ocpp.Confirmation
+	ocpp.Confirmation				`json:"-"`
 	CurrentTime time.Time			`json:"currentTime" valid:"time"`
 	Interval int					`json:"interval" valid:"numeric"`
 	Status ocpp.RegistrationStatus	`json:"status" valid:"registration"`
 }
 
-type BootNotificationFeature struct {
-}
+type BootNotificationFeature struct {}
 
 func (f BootNotificationFeature) GetFeatureName() string {
 	return BootNotificationFeatureName
