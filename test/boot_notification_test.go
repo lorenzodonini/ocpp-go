@@ -33,31 +33,51 @@ func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmatio
 type CoreTestSuite struct {
 	suite.Suite
 	chargePoint *ocpp.ChargePoint
+	centralSystem *ocpp.CentralSystem
 	mockServer *MockWebsocketServer
 	mockClient *MockWebsocketClient
 }
 
 func (suite *CoreTestSuite) SetupTest() {
 	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{})
-	mockWs := MockWebsocketClient{}
-	suite.mockClient = &mockWs
+	mockClient := MockWebsocketClient{}
+	mockServer := MockWebsocketServer{}
+	suite.mockClient = &mockClient
+	suite.mockServer = &mockServer
 	suite.chargePoint = ocpp.NewChargePoint("test_id", suite.mockClient, coreProfile)
+	suite.centralSystem = ocpp.NewCentralSystem(suite.mockServer, coreProfile)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationRequest() {
+func (suite *CoreTestSuite) TestBootNotificationRequestFromJson() {
 	t := suite.T()
 	uniqueId := "1234"
 	modelId := "model1"
 	vendor := "ABL"
 	dataJson := fmt.Sprintf(`[2,"%v","BootNotification",{"chargePointModel": "%v", "chargePointVendor": "%v"}]`, uniqueId, modelId, vendor)
-	call := ParseCall(&suite.chargePoint.Endpoint, dataJson, t)
+	call := ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
 	CheckCall(call, t, v16.BootNotificationFeatureName, uniqueId)
 	request := GetBootNotificationRequest(t, call.Payload)
 	assert.Equal(t, modelId, request.ChargePointModel)
 	assert.Equal(t, vendor, request.ChargePointVendor)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationConfirmation() {
+func (suite *CoreTestSuite) TestBootNotificationRequestToJson() {
+	t := suite.T()
+	modelId := "model1"
+	vendor := "ABL"
+	request := v16.BootNotificationRequest{ChargePointModel: modelId, ChargePointVendor: vendor}
+	call, err := suite.chargePoint.CreateCall(request)
+	uniqueId := call.GetUniqueId()
+	assert.Nil(t, err)
+	assert.NotNil(t, call)
+	jsonData, err := call.MarshalJSON()
+	assert.Nil(t, err)
+	assert.NotNil(t, jsonData)
+	expectedJson := fmt.Sprintf(`[2,"%v","BootNotification",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, uniqueId, modelId, vendor)
+	assert.Equal(t, []byte(expectedJson), jsonData)
+}
+
+func (suite *CoreTestSuite) TestBootNotificationConfirmationFromJson() {
 	t := suite.T()
 	uniqueId := "5678"
 	rawTime := time.Now().Format(ocpp.ISO8601)
@@ -74,6 +94,23 @@ func (suite *CoreTestSuite) TestBootNotificationConfirmation() {
 	assert.Equal(t, status, string(confirmation.Status))
 	assert.Equal(t, interval, confirmation.Interval)
 	assert.Equal(t, currentTime, confirmation.CurrentTime)
+}
+
+func (suite *CoreTestSuite) TestBootNotificationConfirmationToJson() {
+	t := suite.T()
+	uniqueId := "1234"
+	now := time.Now()
+	interval := 60
+	status := ocpp.RegistrationStatusAccepted
+	confirmation := v16.BootNotificationConfirmation{CurrentTime: now, Interval: interval, Status: ocpp.RegistrationStatus(status)}
+	callResult, err := suite.centralSystem.CreateCallResult(confirmation, uniqueId)
+	assert.Nil(t, err)
+	assert.NotNil(t, callResult)
+	jsonData, err := callResult.MarshalJSON()
+	assert.Nil(t, err)
+	assert.NotNil(t, jsonData)
+	expectedJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v","interval":60,"status":"%v"}]`, uniqueId, now.Format(time.RFC3339Nano), status)
+	assert.Equal(t, []byte(expectedJson), jsonData)
 }
 
 func (suite *CoreTestSuite) TestBootNotificationInvalidMessage() {
