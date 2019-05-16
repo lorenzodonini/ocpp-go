@@ -9,10 +9,6 @@ import (
 	"reflect"
 )
 
-type Validatable interface {
-	validate() error
-}
-
 type Feature interface {
 	GetFeatureName() string
 	GetRequestType() reflect.Type
@@ -20,12 +16,10 @@ type Feature interface {
 }
 
 type Request interface {
-	Validatable
 	GetFeatureName() string
 }
 
 type Confirmation interface {
-	Validatable
 	GetFeatureName() string
 }
 
