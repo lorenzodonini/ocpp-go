@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	errors2 "github.com/pkg/errors"
+	"gopkg.in/go-playground/validator.v9"
 	"log"
 	"math/rand"
 	"reflect"
@@ -22,6 +23,8 @@ type Request interface {
 type Confirmation interface {
 	GetFeatureName() string
 }
+
+var validate = validator.New()
 
 // -------------------- Profile --------------------
 type Profile struct {
@@ -100,23 +103,19 @@ const (
 	CALL_ERROR 	= 4
 )
 
-//TODO: make message validatable again?
 type Message interface {
 	GetMessageTypeId() MessageType
 	GetUniqueId() string
 	json.Marshaler
 }
-//func (m* Message) validate() error {
-//	return nil
-//}
 
 // -------------------- Call --------------------
 type Call struct {
-	Message
-	MessageTypeId MessageType `json:"messageTypeId"`
-	UniqueId      string      `json:"uniqueId"` //Max 36 chars
-	Action        string      `json:"action"`
-	Payload       Request     `json:"payload"`
+	Message					  `validate:"-"`
+	MessageTypeId MessageType `json:"messageTypeId" validate:"required,eq=2"`
+	UniqueId      string      `json:"uniqueId" validate:"required,max=36"`
+	Action        string      `json:"action" validate:"required,max=36"`
+	Payload       Request     `json:"payload" validate:"required"`
 }
 
 func (call* Call)GetMessageTypeId() MessageType {
@@ -139,9 +138,9 @@ func (call* Call) MarshalJSON() ([]byte, error) {
 // -------------------- Call Result --------------------
 type CallResult struct {
 	Message
-	MessageTypeId MessageType  `json:"messageTypeId"`
-	UniqueId      string       `json:"uniqueId"` //Max 36 chars
-	Payload       Confirmation `json:"payload"`
+	MessageTypeId MessageType 	`json:"messageTypeId" validate:"required,eq=3"`
+	UniqueId      string      	`json:"uniqueId" validate:"required,max=36"`
+	Payload       Confirmation 	`json:"payload" validate:"required"`
 }
 
 func (callResult* CallResult)GetMessageTypeId() MessageType {
@@ -163,11 +162,11 @@ func (callResult *CallResult) MarshalJSON() ([]byte, error) {
 // -------------------- Call Error --------------------
 type CallError struct {
 	Message
-	MessageTypeId    MessageType `json:"messageTypeId"`
-	UniqueId         string      `json:"uniqueId"` //Max 36 chars
-	ErrorCode        ErrorCode   `json:"errorCode"`
-	ErrorDescription string      `json:"errorDescription"`
-	ErrorDetails     interface{} `json:"errorDetails"`
+	MessageTypeId 	 MessageType 	`json:"messageTypeId" validate:"required,eq=4"`
+	UniqueId      	 string      	`json:"uniqueId" validate:"required,max=36"`
+	ErrorCode        ErrorCode   	`json:"errorCode" validate:"-"` //TODO: check if error is supported
+	ErrorDescription string      	`json:"errorDescription" validate:"required"`
+	ErrorDetails     interface{} 	`json:"errorDetails" validate:"omitempty"`
 }
 
 func (callError* CallError)GetMessageTypeId() MessageType {
@@ -280,6 +279,10 @@ func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, error) {
 			Action:        action,
 			Payload:       request,
 		}
+		err := validate.Struct(call)
+		if err != nil {
+			return nil, err
+		}
 		return &call, nil
 	} else if typeId == CALL_RESULT {
 		request, ok := endpoint.PendingRequests[uniqueId]
@@ -295,6 +298,10 @@ func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, error) {
 			Payload:       confirmation,
 		}
 		endpoint.DeletePendingRequest(callResult.GetUniqueId())
+		err := validate.Struct(callResult)
+		if err != nil {
+			return nil, err
+		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
 		//TODO: handle error for pending request
@@ -306,6 +313,10 @@ func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, error) {
 			ErrorDetails:     arr[4],
 		}
 		endpoint.DeletePendingRequest(callError.GetUniqueId())
+		err := validate.Struct(callError)
+		if err != nil {
+			return nil, err
+		}
 		return &callError, nil
 	} else {
 		return nil, errors2.Errorf("Invalid message type ID %v", typeId)

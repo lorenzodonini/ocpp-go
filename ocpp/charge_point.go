@@ -61,13 +61,17 @@ func (chargePoint *ChargePoint)Stop() {
 }
 
 func (chargePoint *ChargePoint)SendRequest(request Request) error {
+	err := validate.Struct(request)
+	if err != nil {
+		return err
+	}
 	chargePoint.messageQueue.PushBack(request)
 	if len(chargePoint.PendingRequests) > 0 {
 		// Cannot send right away
 		return nil
 	}
 	// Process queue
-	err := chargePoint.processCallQueue()
+	err = chargePoint.processCallQueue()
 	if err != nil {
 		return err
 	}
@@ -106,6 +110,10 @@ func (chargePoint *ChargePoint)ocppMessageHandler(data []byte) error {
 }
 
 func (chargePoint *ChargePoint)SendMessage(message Message) error {
+	err := validate.Struct(message)
+	if err != nil {
+		return err
+	}
 	jsonMessage, err := message.MarshalJSON()
 	if err != nil {
 		return err

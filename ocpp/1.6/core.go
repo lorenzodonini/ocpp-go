@@ -13,15 +13,15 @@ const (
 // -------------------- Boot Notification --------------------
 type BootNotificationRequest struct {
 	ocpp.Request					`json:"-"`
-	ChargeBoxSerialNumber string 	`json:"chargeBoxSerialNumber,omitempty" valid:"stringlength(0|25)"`
-	ChargePointModel string			`json:"chargePointModel" valid:"stringlength(1|20)"`
-	ChargePointSerialNumber string	`json:"chargePointSerialNumber,omitempty" valid:"stringlength(0|25)"`
-	ChargePointVendor string		`json:"chargePointVendor" valid:"stringlength(1|20)"`
-	FirmwareVersion string			`json:"firmwareVersion,omitempty" valid:"stringlength(0|50)"`
-	Iccid string					`json:"iccid,omitempty" valid:"stringlength(0|20)"`
-	Imsi string						`json:"imsi,omitempty" valid:"stringlength(0|20)"`
-	MeterSerialNumber string		`json:"meterSerialNumber,omitempty" valid:"stringlength(0|25)"`
-	MeterType string				`json:"meterType,omitempty" valid:"stringlength(0|25)"`
+	ChargeBoxSerialNumber string 	`json:"chargeBoxSerialNumber,omitempty" validate:"max=25"`
+	ChargePointModel string			`json:"chargePointModel" validate:"required,max=20"`
+	ChargePointSerialNumber string	`json:"chargePointSerialNumber,omitempty" validate:"max=25"`
+	ChargePointVendor string		`json:"chargePointVendor" validate:"required,max=20"`
+	FirmwareVersion string			`json:"firmwareVersion,omitempty" validate:"max=50"`
+	Iccid string					`json:"iccid,omitempty" validate:"max=20"`
+	Imsi string						`json:"imsi,omitempty" validate:"max=20"`
+	MeterSerialNumber string		`json:"meterSerialNumber,omitempty" validate:"max=25"`
+	MeterType string				`json:"meterType,omitempty" validate:"max=25"`
 }
 
 type BootNotificationConfirmation struct {

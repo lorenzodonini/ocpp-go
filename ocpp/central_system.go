@@ -52,12 +52,16 @@ func (centralSystem *CentralSystem)Stop() {
 }
 
 func (centralSystem *CentralSystem)SendRequest(chargePointId string, request Request) error {
+	err := validate.Struct(request)
+	if err != nil {
+		return err
+	}
 	centralSystem.clientQueues[chargePointId].PushBack(request)
 	if centralSystem.clientQueues[chargePointId].Len() > 1 {
 		// Cannot send right away
 		return nil
 	}
-	err := centralSystem.processCallQueue(chargePointId)
+	err = centralSystem.processCallQueue(chargePointId)
 	if err != nil {
 		return err
 	}
@@ -66,6 +70,10 @@ func (centralSystem *CentralSystem)SendRequest(chargePointId string, request Req
 }
 
 func (centralSystem *CentralSystem)SendMessage(chargePointId string, message Message) error {
+	err := validate.Struct(message)
+	if err != nil {
+		return err
+	}
 	jsonMessage, err := message.MarshalJSON()
 	if err != nil {
 		return err
