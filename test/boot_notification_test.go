@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/go-playground/validator.v9"
 	"testing"
 	"time"
 )
@@ -29,6 +30,8 @@ func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmatio
 	return result
 }
 
+var validate = validator.New()
+
 // Tests
 type CoreTestSuite struct {
 	suite.Suite
@@ -46,6 +49,32 @@ func (suite *CoreTestSuite) SetupTest() {
 	suite.mockServer = &mockServer
 	suite.chargePoint = ocpp.NewChargePoint("test_id", suite.mockClient, coreProfile)
 	suite.centralSystem = ocpp.NewCentralSystem(suite.mockServer, coreProfile)
+}
+
+func (suite *CoreTestSuite) TestBootNotificationValidation() {
+	t := suite.T()
+	var testTable = []struct {
+		request ocpp.Request
+		expectedValid bool
+	} {
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test"}, true},
+		{v16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointModel: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, true},
+		{v16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, false},
+		{v16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointModel: "test", ChargePointSerialNumber: "number", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, false},
+		{v16.BootNotificationRequest{ChargeBoxSerialNumber: ">25.......................", ChargePointModel: "test", ChargePointVendor: "test"}, false},
+		{v16.BootNotificationRequest{ChargePointModel: ">20..................", ChargePointVendor: "test"}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointSerialNumber: ">25.......................", ChargePointVendor: "test"}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: ">20.................."}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", FirmwareVersion: ">50................................................"}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", Iccid: ">20.................."}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", Imsi: ">20.................."}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterSerialNumber: ">25......................."}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterType: ">25......................."}, false},
+	}
+	for _, testCase := range testTable {
+		 err := validate.Struct(testCase.request)
+		 assert.Equal(t, testCase.expectedValid, err == nil)
+	}
 }
 
 func (suite *CoreTestSuite) TestBootNotificationRequestFromJson() {
