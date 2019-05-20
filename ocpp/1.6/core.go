@@ -10,6 +10,18 @@ const (
 	BootNotificationFeatureName = "BootNotification"
 )
 
+type coreProfile struct {
+	*ocpp.Profile
+}
+
+func (profile* coreProfile)CreateBootNotification(chargePointModel string, chargePointVendor string) *BootNotificationRequest {
+	return &BootNotificationRequest{ChargePointModel: chargePointModel, ChargePointVendor: chargePointVendor}
+}
+
+var CoreProfile = coreProfile{
+	ocpp.NewProfile("core", BootNotificationFeature{}),
+}
+
 // -------------------- Boot Notification --------------------
 type BootNotificationRequest struct {
 	ocpp.Request					`json:"-"`
