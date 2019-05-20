@@ -24,11 +24,12 @@ type BootNotificationRequest struct {
 	MeterType string				`json:"meterType,omitempty" validate:"max=25"`
 }
 
+//TODO: add custom validator for registration status & interval
 type BootNotificationConfirmation struct {
 	ocpp.Confirmation				`json:"-"`
-	CurrentTime time.Time			`json:"currentTime" valid:"time"`
-	Interval int					`json:"interval" valid:"numeric"`
-	Status ocpp.RegistrationStatus	`json:"status" valid:"registration"`
+	CurrentTime time.Time			`json:"currentTime" validate:"required"`
+	Interval int					`json:"interval" validate:"required,gte=0"`
+	Status ocpp.RegistrationStatus	`json:"status" validate:"required"`
 }
 
 type BootNotificationFeature struct {}

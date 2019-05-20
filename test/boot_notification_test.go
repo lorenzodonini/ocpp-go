@@ -51,9 +51,9 @@ func (suite *CoreTestSuite) SetupTest() {
 	suite.centralSystem = ocpp.NewCentralSystem(suite.mockServer, coreProfile)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationValidation() {
+func (suite *CoreTestSuite) TestBootNotificationRequestValidation() {
 	t := suite.T()
-	var testTable = []struct {
+	var requestTable = []struct {
 		request ocpp.Request
 		expectedValid bool
 	} {
@@ -71,9 +71,30 @@ func (suite *CoreTestSuite) TestBootNotificationValidation() {
 		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterSerialNumber: ">25......................."}, false},
 		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterType: ">25......................."}, false},
 	}
-	for _, testCase := range testTable {
+	for _, testCase := range requestTable {
 		 err := validate.Struct(testCase.request)
 		 assert.Equal(t, testCase.expectedValid, err == nil)
+	}
+}
+
+func (suite *CoreTestSuite) TestBootNotificationConfirmationValidation() {
+	t := suite.T()
+	var confirmationTable = []struct {
+		confirmation ocpp.Confirmation
+		expectedValid bool
+	} {
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusAccepted}, true},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusPending}, true},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusRejected}, true},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60}, false},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Status: ocpp.RegistrationStatusAccepted}, false},
+		{v16.BootNotificationConfirmation{Interval: 60, Status: ocpp.RegistrationStatusAccepted}, false},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: -1, Status: ocpp.RegistrationStatusAccepted}, false},
+		//TODO: incomplete list, see core.go
+	}
+	for _, testCase := range confirmationTable {
+		err := validate.Struct(testCase.confirmation)
+		assert.Equal(t, testCase.expectedValid, err == nil)
 	}
 }
 
