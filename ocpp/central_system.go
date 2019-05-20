@@ -9,6 +9,7 @@ import (
 type CentralSystem struct {
 	Endpoint
 	server ws.WsServer
+	newChargePointHandler func(chargePointId string)
 	callHandler func(chargePointId string, call *Call)
 	callResultHandler func(chargePointId string, callResult *CallResult)
 	callErrorHandler func(chargePointId string, callError *CallError)
@@ -27,20 +28,27 @@ func NewCentralSystem(wsServer ws.WsServer, profiles ...*Profile) *CentralSystem
 	}
 }
 
-func (centralSystem *CentralSystem)SeCallHandler(handler func(chargePointId string, call *Call)) {
+func (centralSystem *CentralSystem)SetCallHandler(handler func(chargePointId string, call *Call)) {
 	centralSystem.callHandler = handler
 }
 
-func (centralSystem *CentralSystem)SeCallResultHandler(handler func(chargePointId string, callResult *CallResult)) {
+func (centralSystem *CentralSystem)SetCallResultHandler(handler func(chargePointId string, callResult *CallResult)) {
 	centralSystem.callResultHandler = handler
 }
 
-func (centralSystem *CentralSystem)SeCalleHandler(handler func(chargePointId string, callError *CallError)) {
+func (centralSystem *CentralSystem)SetCallErrorHandler(handler func(chargePointId string, callError *CallError)) {
 	centralSystem.callErrorHandler = handler
+}
+
+func (centralSystem *CentralSystem)SetNewChargePointHandler(handler func(chargePointId string)) {
+	centralSystem.newChargePointHandler = handler
 }
 
 func (centralSystem *CentralSystem)Start(listenPort int, listenPath string) {
 	// Set internal message handler
+	centralSystem.server.SetNewClientHandler(func(ws ws.Channel) {
+		centralSystem.newChargePointHandler(ws.GetId())
+	})
 	centralSystem.server.SetMessageHandler(centralSystem.ocppMessageHandler)
 	// Serve & run
 	// TODO: return error?

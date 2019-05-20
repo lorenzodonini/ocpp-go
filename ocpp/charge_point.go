@@ -29,15 +29,15 @@ func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *Char
 	}
 }
 
-func (chargePoint *ChargePoint)SeCallHandler(handler func(call *Call)) {
+func (chargePoint *ChargePoint)SetCallHandler(handler func(call *Call)) {
 	chargePoint.callHandler = handler
 }
 
-func (chargePoint *ChargePoint)SeCallResultHandler(handler func(callResult *CallResult)) {
+func (chargePoint *ChargePoint)SetCallResultHandler(handler func(callResult *CallResult)) {
 	chargePoint.callResultHandler = handler
 }
 
-func (chargePoint *ChargePoint)SeCalleHandler(handler func(callError *CallError)) {
+func (chargePoint *ChargePoint)SetCallErrorHandler(handler func(callError *CallError)) {
 	chargePoint.callErrorHandler = handler
 }
 
