@@ -57,6 +57,10 @@ type Server struct {
 	newClientHandler func(ws Channel)
 }
 
+func NewServer() *Server {
+	return &Server{}
+}
+
 func (server *Server)SetMessageHandler(handler func(ws Channel, data []byte) error) {
 	server.messageHandler = handler
 }
@@ -180,6 +184,10 @@ type WsClient interface {
 type Client struct {
 	webSocket WebSocket
 	messageHandler func(data []byte) error
+}
+
+func NewClient() *Client {
+	return &Client{}
 }
 
 func (client *Client)SetMessageHandler(handler func(data []byte) error) {
