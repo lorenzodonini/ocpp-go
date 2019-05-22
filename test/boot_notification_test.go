@@ -53,10 +53,7 @@ func (suite *CoreTestSuite) SetupTest() {
 
 func (suite *CoreTestSuite) TestBootNotificationRequestValidation() {
 	t := suite.T()
-	var requestTable = []struct {
-		request ocpp.Request
-		expectedValid bool
-	} {
+	var requestTable = []RequestTestEntry{
 		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test"}, true},
 		{v16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointModel: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, true},
 		{v16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, false},
@@ -71,18 +68,12 @@ func (suite *CoreTestSuite) TestBootNotificationRequestValidation() {
 		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterSerialNumber: ">25......................."}, false},
 		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterType: ">25......................."}, false},
 	}
-	for _, testCase := range requestTable {
-		 err := validate.Struct(testCase.request)
-		 assert.Equal(t, testCase.expectedValid, err == nil)
-	}
+	executeRequestTestTable(t, requestTable)
 }
 
 func (suite *CoreTestSuite) TestBootNotificationConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []struct {
-		confirmation ocpp.Confirmation
-		expectedValid bool
-	} {
+	var confirmationTable = []ConfirmationTestEntry{
 		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusAccepted}, true},
 		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusPending}, true},
 		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusRejected}, true},
@@ -92,10 +83,7 @@ func (suite *CoreTestSuite) TestBootNotificationConfirmationValidation() {
 		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: -1, Status: ocpp.RegistrationStatusAccepted}, false},
 		//TODO: incomplete list, see core.go
 	}
-	for _, testCase := range confirmationTable {
-		err := validate.Struct(testCase.confirmation)
-		assert.Equal(t, testCase.expectedValid, err == nil)
-	}
+	executeConfirmationTestTable(t, confirmationTable)
 }
 
 func (suite *CoreTestSuite) TestBootNotificationRequestFromJson() {

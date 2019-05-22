@@ -169,3 +169,27 @@ func CheckCallError(t *testing.T, callError *ocpp.CallError, expectedId string, 
 	err := validate.Struct(callError)
 	assert.Nil(t, err)
 }
+
+type RequestTestEntry struct {
+	request ocpp.Request
+	expectedValid bool
+}
+
+type ConfirmationTestEntry struct {
+	confirmation ocpp.Confirmation
+	expectedValid bool
+}
+
+func executeRequestTestTable(t *testing.T, testTable []RequestTestEntry) {
+	for _, testCase := range testTable {
+		err := validate.Struct(testCase.request)
+		assert.Equal(t, testCase.expectedValid, err == nil)
+	}
+}
+
+func executeConfirmationTestTable(t *testing.T, testTable []ConfirmationTestEntry) {
+	for _, testCase := range testTable {
+		err := validate.Struct(testCase.confirmation)
+		assert.Equal(t, testCase.expectedValid, err == nil)
+	}
+}
