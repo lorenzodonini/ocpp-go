@@ -7,8 +7,6 @@ import (
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
-	"gopkg.in/go-playground/validator.v9"
 	"testing"
 	"time"
 )
@@ -30,28 +28,8 @@ func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmatio
 	return result
 }
 
-var validate = validator.New()
-
 // Tests
-type CoreTestSuite struct {
-	suite.Suite
-	chargePoint *ocpp.ChargePoint
-	centralSystem *ocpp.CentralSystem
-	mockServer *MockWebsocketServer
-	mockClient *MockWebsocketClient
-}
-
-func (suite *CoreTestSuite) SetupTest() {
-	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{})
-	mockClient := MockWebsocketClient{}
-	mockServer := MockWebsocketServer{}
-	suite.mockClient = &mockClient
-	suite.mockServer = &mockServer
-	suite.chargePoint = ocpp.NewChargePoint("test_id", suite.mockClient, coreProfile)
-	suite.centralSystem = ocpp.NewCentralSystem(suite.mockServer, coreProfile)
-}
-
-func (suite *CoreTestSuite) TestBootNotificationRequestValidation() {
+func (suite *OcppTestSuite) TestBootNotificationRequestValidation() {
 	t := suite.T()
 	var requestTable = []RequestTestEntry{
 		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test"}, true},
@@ -71,7 +49,7 @@ func (suite *CoreTestSuite) TestBootNotificationRequestValidation() {
 	executeRequestTestTable(t, requestTable)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationConfirmationValidation() {
+func (suite *OcppTestSuite) TestBootNotificationConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []ConfirmationTestEntry{
 		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusAccepted}, true},
@@ -86,7 +64,7 @@ func (suite *CoreTestSuite) TestBootNotificationConfirmationValidation() {
 	executeConfirmationTestTable(t, confirmationTable)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationRequestFromJson() {
+func (suite *OcppTestSuite) TestBootNotificationRequestFromJson() {
 	t := suite.T()
 	uniqueId := "1234"
 	modelId := "model1"
@@ -99,7 +77,7 @@ func (suite *CoreTestSuite) TestBootNotificationRequestFromJson() {
 	assert.Equal(t, vendor, request.ChargePointVendor)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationRequestToJson() {
+func (suite *OcppTestSuite) TestBootNotificationRequestToJson() {
 	t := suite.T()
 	modelId := "model1"
 	vendor := "ABL"
@@ -117,7 +95,7 @@ func (suite *CoreTestSuite) TestBootNotificationRequestToJson() {
 	assert.Equal(t, []byte(expectedJson), jsonData)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationConfirmationFromJson() {
+func (suite *OcppTestSuite) TestBootNotificationConfirmationFromJson() {
 	t := suite.T()
 	uniqueId := "5678"
 	rawTime := time.Now().Format(ocpp.ISO8601)
@@ -136,7 +114,7 @@ func (suite *CoreTestSuite) TestBootNotificationConfirmationFromJson() {
 	assert.Equal(t, currentTime, confirmation.CurrentTime)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationConfirmationToJson() {
+func (suite *OcppTestSuite) TestBootNotificationConfirmationToJson() {
 	t := suite.T()
 	uniqueId := "1234"
 	now := time.Now()
@@ -155,11 +133,11 @@ func (suite *CoreTestSuite) TestBootNotificationConfirmationToJson() {
 	assert.Equal(t, []byte(expectedJson), jsonData)
 }
 
-func (suite *CoreTestSuite) TestBootNotificationInvalidMessage() {
+func (suite *OcppTestSuite) TestBootNotificationInvalidMessage() {
 	//TODO: implement
 }
 
-func (suite *CoreTestSuite) TestBootNotificationE2EMocked() {
+func (suite *OcppTestSuite) TestBootNotificationE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := "1234"
@@ -213,8 +191,4 @@ func (suite *CoreTestSuite) TestBootNotificationE2EMocked() {
 	err := client.Start(wsUrl)
 	assert.Nil(t, err)
 	client.Write(requestRaw)
-}
-
-func TestBootNotification(t *testing.T) {
-	suite.Run(t, new(CoreTestSuite))
 }

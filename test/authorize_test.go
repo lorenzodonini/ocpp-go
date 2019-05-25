@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (suite *CoreTestSuite) TestAuthorizeRequestValidation() {
+func (suite *OcppTestSuite) TestAuthorizeRequestValidation() {
 	t := suite.T()
 	var requestTable = []RequestTestEntry{
 		{v16.AuthorizeRequest{IdTag: "12345"}, true},
@@ -16,7 +16,7 @@ func (suite *CoreTestSuite) TestAuthorizeRequestValidation() {
 	executeRequestTestTable(t, requestTable)
 }
 
-func (suite *CoreTestSuite) TestAuthorizeConfirmationValidation() {
+func (suite *OcppTestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []ConfirmationTestEntry {
 		{v16.AuthorizeConfirmation{IdTagInfo: ocpp.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * 8), ParentIdTag: "00000", Status: ocpp.AuthorizationStatusAccepted}}, true},
