@@ -19,6 +19,10 @@ func (profile* coreProfile)CreateBootNotification(chargePointModel string, charg
 	return &BootNotificationRequest{ChargePointModel: chargePointModel, ChargePointVendor: chargePointVendor}
 }
 
+func (profile* coreProfile)CreateAuthorization(idTag string) *AuthorizeRequest {
+	return &AuthorizeRequest{IdTag: idTag}
+}
+
 var CoreProfile = coreProfile{
 	ocpp.NewProfile("core", BootNotificationFeature{}),
 }
