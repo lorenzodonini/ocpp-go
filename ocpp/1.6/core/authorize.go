@@ -1,7 +1,8 @@
-package v16
+package core
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
 	"reflect"
 )
 
@@ -17,7 +18,7 @@ type AuthorizeConfirmation struct {
 type AuthorizeFeature struct {}
 
 func (f AuthorizeFeature) GetFeatureName() string {
-	return AuthorizeFeatureName
+	return v16.AuthorizeFeatureName
 }
 
 func (f AuthorizeFeature) GetRequestType() reflect.Type {
@@ -29,9 +30,9 @@ func (f AuthorizeFeature) GetConfirmationType() reflect.Type {
 }
 
 func (r AuthorizeRequest) GetFeatureName() string {
-	return AuthorizeFeatureName
+	return v16.AuthorizeFeatureName
 }
 
 func (c AuthorizeConfirmation) GetFeatureName() string {
-	return AuthorizeFeatureName
+	return v16.AuthorizeFeatureName
 }

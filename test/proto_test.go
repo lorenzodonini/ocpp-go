@@ -2,7 +2,7 @@ package test
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
+	"github.com/lorenzodonini/go-ocpp/ocpp/1.6/core"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/go-playground/validator.v9"
 	"testing"
@@ -18,7 +18,7 @@ type OcppTestSuite struct {
 }
 
 func (suite *OcppTestSuite) SetupTest() {
-	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{})
+	coreProfile := ocpp.NewProfile("core",  core.BootNotificationFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockClient = &mockClient

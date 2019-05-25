@@ -1,7 +1,8 @@
-package v16
+package core
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
 	"reflect"
 	"time"
 )
@@ -31,7 +32,7 @@ type BootNotificationConfirmation struct {
 type BootNotificationFeature struct {}
 
 func (f BootNotificationFeature) GetFeatureName() string {
-	return BootNotificationFeatureName
+	return v16.BootNotificationFeatureName
 }
 
 func (f BootNotificationFeature) GetRequestType() reflect.Type {
@@ -43,9 +44,9 @@ func (f BootNotificationFeature) GetConfirmationType() reflect.Type {
 }
 
 func (r BootNotificationRequest) GetFeatureName() string {
-	return BootNotificationFeatureName
+	return v16.BootNotificationFeatureName
 }
 
 func (c BootNotificationConfirmation) GetFeatureName() string {
-	return BootNotificationFeatureName
+	return v16.BootNotificationFeatureName
 }
