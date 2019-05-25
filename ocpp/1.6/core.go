@@ -8,6 +8,7 @@ import (
 const (
 	BootNotificationFeatureName = "BootNotification"
 	AuthorizeFeatureName = "Authorize"
+	ChangeAvailabilityFeatureName = "ChangeAvailability"
 )
 
 type coreProfile struct {
@@ -20,6 +21,10 @@ func (profile* coreProfile)CreateBootNotification(chargePointModel string, charg
 
 func (profile* coreProfile)CreateAuthorization(idTag string) *core.AuthorizeRequest {
 	return &core.AuthorizeRequest{IdTag: idTag}
+}
+
+func (profile* coreProfile)CreateChangeAvailability(connectorId int, availabilityType core.AvailabilityType) *core.ChangeAvailabilityRequest {
+	return &core.ChangeAvailabilityRequest{ConnectorId: connectorId, Type: availabilityType}
 }
 
 var CoreProfile = coreProfile{
