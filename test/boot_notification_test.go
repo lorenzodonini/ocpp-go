@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
-	"github.com/lorenzodonini/go-ocpp/ocpp/1.6/core"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,19 +12,19 @@ import (
 )
 
 // Utility functions
-func GetBootNotificationRequest(t* testing.T, request ocpp.Request) *core.BootNotificationRequest {
+func GetBootNotificationRequest(t* testing.T, request ocpp.Request) *v16.BootNotificationRequest {
 	assert.NotNil(t, request)
-	result := request.(*core.BootNotificationRequest)
+	result := request.(*v16.BootNotificationRequest)
 	assert.NotNil(t, result)
-	assert.IsType(t, &core.BootNotificationRequest{}, result)
+	assert.IsType(t, &v16.BootNotificationRequest{}, result)
 	return result
 }
 
-func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmation) *core.BootNotificationConfirmation {
+func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmation) *v16.BootNotificationConfirmation {
 	assert.NotNil(t, confirmation)
-	result := confirmation.(*core.BootNotificationConfirmation)
+	result := confirmation.(*v16.BootNotificationConfirmation)
 	assert.NotNil(t, result)
-	assert.IsType(t, &core.BootNotificationConfirmation{}, result)
+	assert.IsType(t, &v16.BootNotificationConfirmation{}, result)
 	return result
 }
 
@@ -33,19 +32,19 @@ func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmatio
 func (suite *OcppTestSuite) TestBootNotificationRequestValidation() {
 	t := suite.T()
 	var requestTable = []RequestTestEntry{
-		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test"}, true},
-		{core.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointModel: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, true},
-		{core.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, false},
-		{core.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointModel: "test", ChargePointSerialNumber: "number", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, false},
-		{core.BootNotificationRequest{ChargeBoxSerialNumber: ">25.......................", ChargePointModel: "test", ChargePointVendor: "test"}, false},
-		{core.BootNotificationRequest{ChargePointModel: ">20..................", ChargePointVendor: "test"}, false},
-		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointSerialNumber: ">25.......................", ChargePointVendor: "test"}, false},
-		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: ">20.................."}, false},
-		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", FirmwareVersion: ">50................................................"}, false},
-		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", Iccid: ">20.................."}, false},
-		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", Imsi: ">20.................."}, false},
-		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterSerialNumber: ">25......................."}, false},
-		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterType: ">25......................."}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test"}, true},
+		{v16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointModel: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, true},
+		{v16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, false},
+		{v16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointModel: "test", ChargePointSerialNumber: "number", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, false},
+		{v16.BootNotificationRequest{ChargeBoxSerialNumber: ">25.......................", ChargePointModel: "test", ChargePointVendor: "test"}, false},
+		{v16.BootNotificationRequest{ChargePointModel: ">20..................", ChargePointVendor: "test"}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointSerialNumber: ">25.......................", ChargePointVendor: "test"}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: ">20.................."}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", FirmwareVersion: ">50................................................"}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", Iccid: ">20.................."}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", Imsi: ">20.................."}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterSerialNumber: ">25......................."}, false},
+		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterType: ">25......................."}, false},
 	}
 	executeRequestTestTable(t, requestTable)
 }
@@ -53,13 +52,13 @@ func (suite *OcppTestSuite) TestBootNotificationRequestValidation() {
 func (suite *OcppTestSuite) TestBootNotificationConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []ConfirmationTestEntry{
-		{core.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusAccepted}, true},
-		{core.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusPending}, true},
-		{core.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp.RegistrationStatusRejected}, true},
-		{core.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60}, false},
-		{core.BootNotificationConfirmation{CurrentTime: time.Now(), Status: ocpp.RegistrationStatusAccepted}, false},
-		{core.BootNotificationConfirmation{Interval: 60, Status: ocpp.RegistrationStatusAccepted}, false},
-		{core.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: -1, Status: ocpp.RegistrationStatusAccepted}, false},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: v16.RegistrationStatusAccepted}, true},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: v16.RegistrationStatusPending}, true},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: v16.RegistrationStatusRejected}, true},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60}, false},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Status: v16.RegistrationStatusAccepted}, false},
+		{v16.BootNotificationConfirmation{Interval: 60, Status: v16.RegistrationStatusAccepted}, false},
+		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: -1, Status: v16.RegistrationStatusAccepted}, false},
 		//TODO: incomplete list, see core.go
 	}
 	executeConfirmationTestTable(t, confirmationTable)
@@ -82,7 +81,7 @@ func (suite *OcppTestSuite) TestBootNotificationRequestToJson() {
 	t := suite.T()
 	modelId := "model1"
 	vendor := "ABL"
-	request := core.BootNotificationRequest{ChargePointModel: modelId, ChargePointVendor: vendor}
+	request := v16.BootNotificationRequest{ChargePointModel: modelId, ChargePointVendor: vendor}
 	call, err := suite.chargePoint.CreateCall(request)
 	uniqueId := call.GetUniqueId()
 	assert.Nil(t, err)
@@ -99,18 +98,18 @@ func (suite *OcppTestSuite) TestBootNotificationRequestToJson() {
 func (suite *OcppTestSuite) TestBootNotificationConfirmationFromJson() {
 	t := suite.T()
 	uniqueId := "5678"
-	rawTime := time.Now().Format(ocpp.ISO8601)
-	currentTime, err := time.Parse(ocpp.ISO8601, rawTime)
+	rawTime := time.Now().Format(v16.ISO8601)
+	currentTime, err := time.Parse(v16.ISO8601, rawTime)
 	assert.Nil(t, err)
 	interval := 60
-	status := ocpp.RegistrationStatusAccepted
-	dummyRequest := core.BootNotificationRequest{}
-	dataJson := fmt.Sprintf(`[3,"%v",{"currentTime": "%v", "interval": 60, "status": "%v"}]`, uniqueId, currentTime.Format(ocpp.ISO8601), status)
+	status := v16.RegistrationStatusAccepted
+	dummyRequest := v16.BootNotificationRequest{}
+	dataJson := fmt.Sprintf(`[3,"%v",{"currentTime": "%v", "interval": 60, "status": "%v"}]`, uniqueId, currentTime.Format(v16.ISO8601), status)
 	suite.chargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
 	callResult := ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
 	CheckCallResult(callResult, t, uniqueId)
 	confirmation := GetBootNotificationConfirmation(t, callResult.Payload)
-	assert.Equal(t, status, string(confirmation.Status))
+	assert.Equal(t, status, confirmation.Status)
 	assert.Equal(t, interval, confirmation.Interval)
 	assert.Equal(t, currentTime, confirmation.CurrentTime)
 }
@@ -120,8 +119,8 @@ func (suite *OcppTestSuite) TestBootNotificationConfirmationToJson() {
 	uniqueId := "1234"
 	now := time.Now()
 	interval := 60
-	status := ocpp.RegistrationStatusAccepted
-	confirmation := core.BootNotificationConfirmation{CurrentTime: now, Interval: interval, Status: ocpp.RegistrationStatus(status)}
+	status := v16.RegistrationStatusAccepted
+	confirmation := v16.BootNotificationConfirmation{CurrentTime: now, Interval: interval, Status: v16.RegistrationStatus(status)}
 	callResult, err := suite.centralSystem.CreateCallResult(confirmation, uniqueId)
 	assert.Nil(t, err)
 	assert.NotNil(t, callResult)
@@ -144,7 +143,7 @@ func (suite *OcppTestSuite) TestBootNotificationE2EMocked() {
 	messageId := "1234"
 	wsUrl := "someUrl"
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel": "model1", "chargePointVendor": "ABL"}]`, messageId, v16.BootNotificationFeatureName)
-	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime": "%v", "interval": 60, "status": "%v"}]`, messageId, time.Now().Format(ocpp.ISO8601), ocpp.RegistrationStatusAccepted)
+	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime": "%v", "interval": 60, "status": "%v"}]`, messageId, time.Now().Format(v16.ISO8601), v16.RegistrationStatusAccepted)
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
 	server := MockWebsocketServer{}

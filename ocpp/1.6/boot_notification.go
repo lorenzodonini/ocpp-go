@@ -1,13 +1,20 @@
-package core
+package v16
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
 	"reflect"
 	"time"
 )
 
 // -------------------- Boot Notification --------------------
+type RegistrationStatus string
+
+const (
+	RegistrationStatusAccepted RegistrationStatus = "Accepted"
+	RegistrationStatusPending RegistrationStatus = "Pending"
+	RegistrationStatusRejected RegistrationStatus = "Rejected"
+)
+
 type BootNotificationRequest struct {
 	ocpp.Request					`json:"-"`
 	ChargeBoxSerialNumber string 	`json:"chargeBoxSerialNumber,omitempty" validate:"max=25"`
@@ -26,13 +33,13 @@ type BootNotificationConfirmation struct {
 	ocpp.Confirmation				`json:"-"`
 	CurrentTime time.Time			`json:"currentTime" validate:"required"`
 	Interval int					`json:"interval" validate:"required,gte=0"`
-	Status ocpp.RegistrationStatus	`json:"status" validate:"required"`
+	Status RegistrationStatus		`json:"status" validate:"required"`
 }
 
 type BootNotificationFeature struct {}
 
 func (f BootNotificationFeature) GetFeatureName() string {
-	return v16.BootNotificationFeatureName
+	return BootNotificationFeatureName
 }
 
 func (f BootNotificationFeature) GetRequestType() reflect.Type {
@@ -44,9 +51,9 @@ func (f BootNotificationFeature) GetConfirmationType() reflect.Type {
 }
 
 func (r BootNotificationRequest) GetFeatureName() string {
-	return v16.BootNotificationFeatureName
+	return BootNotificationFeatureName
 }
 
 func (c BootNotificationConfirmation) GetFeatureName() string {
-	return v16.BootNotificationFeatureName
+	return BootNotificationFeatureName
 }

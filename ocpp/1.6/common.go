@@ -1,4 +1,4 @@
-package ocpp
+package v16
 
 import "time"
 
@@ -16,8 +16,6 @@ func (e* PropertyViolation) Error() string {
 	return ""
 }
 
-type ErrorCode string
-
 const (
 	NotImplemented = "NotImplemented"
 	NotSupported = "NotSupported"
@@ -29,14 +27,6 @@ const (
 	OccurrenceConstraintViolation = "OccurrenceConstraintViolation"
 	TypeConstraintViolation = "TypeConstraintViolation"
 	GenericError = "GenericError"
-)
-
-type RegistrationStatus string
-
-const (
-	RegistrationStatusAccepted = "Accepted"
-	RegistrationStatusPending = "Pending"
-	RegistrationStatusRejected = "Rejected"
 )
 
 type AuthorizationStatus string

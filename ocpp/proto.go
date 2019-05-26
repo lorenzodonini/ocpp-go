@@ -160,13 +160,15 @@ func (callResult *CallResult) MarshalJSON() ([]byte, error) {
 }
 
 // -------------------- Call Error --------------------
+type ErrorCode string
+
 type CallError struct {
 	Message
-	MessageTypeId 	 MessageType 	`json:"messageTypeId" validate:"required,eq=4"`
-	UniqueId      	 string      	`json:"uniqueId" validate:"required,max=36"`
-	ErrorCode        ErrorCode   	`json:"errorCode" validate:"-"` //TODO: check if error is supported
-	ErrorDescription string      	`json:"errorDescription" validate:"required"`
-	ErrorDetails     interface{} 	`json:"errorDetails" validate:"omitempty"`
+	MessageTypeId    MessageType   `json:"messageTypeId" validate:"required,eq=4"`
+	UniqueId         string        `json:"uniqueId" validate:"required,max=36"`
+	ErrorCode        ErrorCode 		`json:"errorCode" validate:"-"` //TODO: check if error is supported
+	ErrorDescription string        `json:"errorDescription" validate:"required"`
+	ErrorDetails     interface{}   `json:"errorDetails" validate:"omitempty"`
 }
 
 func (callError* CallError)GetMessageTypeId() MessageType {

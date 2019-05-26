@@ -1,7 +1,6 @@
-package core
+package v16
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
 	"reflect"
 )
 
@@ -10,16 +9,16 @@ import (
 type AvailabilityType string
 
 const (
-	AvailabilityTypeOperative = "Operative"
-	AvailabilityTypeInoperative = "Inoperative"
+	AvailabilityTypeOperative AvailabilityType = "Operative"
+	AvailabilityTypeInoperative AvailabilityType = "Inoperative"
 )
 
 type AvailabilityStatus string
 
 const (
-	AvailabilityStatusAccepted = "Accepted"
-	AvailabilityStatusRejected = "Rejected"
-	AvailabilityStatusScheduled = "Scheduled"
+	AvailabilityStatusAccepted AvailabilityStatus = "Accepted"
+	AvailabilityStatusRejected AvailabilityStatus = "Rejected"
+	AvailabilityStatusScheduled AvailabilityStatus = "Scheduled"
 )
 
 type ChangeAvailabilityRequest struct {
@@ -34,7 +33,7 @@ type ChangeAvailabilityConfirmation struct {
 type ChangeAvailabilityFeature struct {}
 
 func (f ChangeAvailabilityFeature) GetFeatureName() string {
-	return v16.ChangeAvailabilityFeatureName
+	return ChangeAvailabilityFeatureName
 }
 
 func (f ChangeAvailabilityFeature) GetRequestType() reflect.Type {
@@ -46,9 +45,9 @@ func (f ChangeAvailabilityFeature) GetConfirmationType() reflect.Type {
 }
 
 func (r ChangeAvailabilityRequest) GetFeatureName() string {
-	return v16.ChangeAvailabilityFeatureName
+	return ChangeAvailabilityFeatureName
 }
 
 func (c ChangeAvailabilityConfirmation) GetFeatureName() string {
-	return v16.ChangeAvailabilityFeatureName
+	return ChangeAvailabilityFeatureName
 }
