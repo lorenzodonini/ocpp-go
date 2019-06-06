@@ -1,9 +1,9 @@
 package ocpp
 
 import (
-	"container/list"
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ws"
+	"github.com/pkg/errors"
 	"log"
 )
 
@@ -14,7 +14,7 @@ type ChargePoint struct {
 	callHandler func(call *Call)
 	callResultHandler func(callResult *CallResult)
 	callErrorHandler func(callError *CallError)
-	messageQueue *list.List
+	pendingRequest string
 }
 
 func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *ChargePoint {
@@ -23,9 +23,9 @@ func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *Char
 		endpoint.AddProfile(profile)
 	}
 	if wsClient != nil {
-		return &ChargePoint{Endpoint: endpoint, client: wsClient, Id: id, messageQueue: list.New()}
+		return &ChargePoint{Endpoint: endpoint, client: wsClient, Id: id, pendingRequest: ""}
 	} else {
-		return &ChargePoint{Endpoint: endpoint, client: &ws.Client{}, Id: id, messageQueue: list.New()}
+		return &ChargePoint{Endpoint: endpoint, client: &ws.Client{}, Id: id, pendingRequest: ""}
 	}
 }
 
@@ -65,16 +65,17 @@ func (chargePoint *ChargePoint)SendRequest(request Request) error {
 	if err != nil {
 		return err
 	}
-	chargePoint.messageQueue.PushBack(request)
-	if len(chargePoint.PendingRequests) > 0 {
-		// Cannot send right away
-		return nil
+	if chargePoint.pendingRequest != "" {
+		// Cannot send. Protocol is based on response-confirmation
+		return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", chargePoint.pendingRequest)
 	}
-	// Process queue
-	err = chargePoint.processCallQueue()
+	call, err := chargePoint.CreateCall(request.(Request))
+	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
 		return err
 	}
+	chargePoint.pendingRequest = call.UniqueId
+	chargePoint.client.Write([]byte(jsonMessage))
 	//TODO: use promise/future for fetching the result
 	return nil
 }
@@ -93,18 +94,12 @@ func (chargePoint *ChargePoint)ocppMessageHandler(data []byte) error {
 		chargePoint.callHandler(call)
 	case CALL_RESULT:
 		callResult := message.(*CallResult)
+		chargePoint.pendingRequest = ""
 		chargePoint.callResultHandler(callResult)
-		err := chargePoint.processCallQueue()
-		if err != nil {
-			return err
-		}
 	case CALL_ERROR:
 		callError := message.(*CallError)
+		chargePoint.pendingRequest = ""
 		chargePoint.callErrorHandler(callError)
-		err := chargePoint.processCallQueue()
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -123,23 +118,6 @@ func (chargePoint *ChargePoint)SendMessage(message Message) error {
 		chargePoint.PendingRequests[message.GetUniqueId()] = call.Payload
 	}
 	chargePoint.client.Write([]byte(jsonMessage))
-	//TODO: use promise/future for fetching the result
-	return nil
-}
-
-func (chargePoint *ChargePoint)processCallQueue() error {
-	if chargePoint.messageQueue.Len() == 0 {
-		return nil
-	}
-	element := chargePoint.messageQueue.Front()
-	request := element.Value
-	call, err := chargePoint.CreateCall(request.(Request))
-	jsonMessage, err := call.MarshalJSON()
-	if err != nil {
-		return err
-	}
-	chargePoint.client.Write([]byte(jsonMessage))
-	chargePoint.messageQueue.Remove(element)
 	//TODO: use promise/future for fetching the result
 	return nil
 }
