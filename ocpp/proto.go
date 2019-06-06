@@ -49,6 +49,10 @@ func (p* Profile) SupportsFeature(name string) bool {
 	return ok
 }
 
+func (p* Profile) GetFeature(name string) Feature {
+	return p.Features[name]
+}
+
 func (p* Profile) ParseRequest(featureName string, rawRequest interface{}) Request {
 	feature, ok := p.Features[featureName]
 	if !ok {
