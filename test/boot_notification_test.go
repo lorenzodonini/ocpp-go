@@ -29,7 +29,7 @@ func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmatio
 }
 
 // Tests
-func (suite *OcppTestSuite) TestBootNotificationRequestValidation() {
+func (suite *OcppV16TestSuite) TestBootNotificationRequestValidation() {
 	t := suite.T()
 	var requestTable = []RequestTestEntry{
 		{v16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test"}, true},
@@ -49,7 +49,7 @@ func (suite *OcppTestSuite) TestBootNotificationRequestValidation() {
 	executeRequestTestTable(t, requestTable)
 }
 
-func (suite *OcppTestSuite) TestBootNotificationConfirmationValidation() {
+func (suite *OcppV16TestSuite) TestBootNotificationConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []ConfirmationTestEntry{
 		{v16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: v16.RegistrationStatusAccepted}, true},
@@ -64,7 +64,7 @@ func (suite *OcppTestSuite) TestBootNotificationConfirmationValidation() {
 	executeConfirmationTestTable(t, confirmationTable)
 }
 
-func (suite *OcppTestSuite) TestBootNotificationRequestFromJson() {
+func (suite *OcppV16TestSuite) TestBootNotificationRequestFromJson() {
 	t := suite.T()
 	uniqueId := "1234"
 	modelId := "model1"
@@ -77,7 +77,7 @@ func (suite *OcppTestSuite) TestBootNotificationRequestFromJson() {
 	assert.Equal(t, vendor, request.ChargePointVendor)
 }
 
-func (suite *OcppTestSuite) TestBootNotificationRequestToJson() {
+func (suite *OcppV16TestSuite) TestBootNotificationRequestToJson() {
 	t := suite.T()
 	modelId := "model1"
 	vendor := "ABL"
@@ -95,7 +95,7 @@ func (suite *OcppTestSuite) TestBootNotificationRequestToJson() {
 	assert.Equal(t, []byte(expectedJson), jsonData)
 }
 
-func (suite *OcppTestSuite) TestBootNotificationConfirmationFromJson() {
+func (suite *OcppV16TestSuite) TestBootNotificationConfirmationFromJson() {
 	t := suite.T()
 	uniqueId := "5678"
 	rawTime := time.Now().Format(v16.ISO8601)
@@ -114,7 +114,7 @@ func (suite *OcppTestSuite) TestBootNotificationConfirmationFromJson() {
 	assert.Equal(t, currentTime, confirmation.CurrentTime)
 }
 
-func (suite *OcppTestSuite) TestBootNotificationConfirmationToJson() {
+func (suite *OcppV16TestSuite) TestBootNotificationConfirmationToJson() {
 	t := suite.T()
 	uniqueId := "1234"
 	now := time.Now()
@@ -133,11 +133,11 @@ func (suite *OcppTestSuite) TestBootNotificationConfirmationToJson() {
 	assert.Equal(t, []byte(expectedJson), jsonData)
 }
 
-func (suite *OcppTestSuite) TestBootNotificationInvalidMessage() {
+func (suite *OcppV16TestSuite) TestBootNotificationInvalidMessage() {
 	//TODO: implement
 }
 
-func (suite *OcppTestSuite) TestBootNotificationE2EMocked() {
+func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := "1234"

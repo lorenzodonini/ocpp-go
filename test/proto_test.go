@@ -9,7 +9,7 @@ import (
 )
 
 // Tests
-type OcppTestSuite struct {
+type OcppV16TestSuite struct {
 	suite.Suite
 	chargePoint *ocpp.ChargePoint
 	centralSystem *ocpp.CentralSystem
@@ -17,7 +17,7 @@ type OcppTestSuite struct {
 	mockClient *MockWebsocketClient
 }
 
-func (suite *OcppTestSuite) SetupTest() {
+func (suite *OcppV16TestSuite) SetupTest() {
 	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
@@ -32,5 +32,5 @@ var validate = validator.New()
 //TODO: implement generic protocol tests
 
 func TestOcppProtocol(t *testing.T) {
-	suite.Run(t, new(OcppTestSuite))
+	suite.Run(t, new(OcppV16TestSuite))
 }
