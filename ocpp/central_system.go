@@ -1,8 +1,8 @@
 package ocpp
 
 import (
-	"container/list"
 	"github.com/lorenzodonini/go-ocpp/ws"
+	"github.com/pkg/errors"
 	"log"
 )
 
@@ -13,7 +13,7 @@ type CentralSystem struct {
 	callHandler func(chargePointId string, call *Call)
 	callResultHandler func(chargePointId string, callResult *CallResult)
 	callErrorHandler func(chargePointId string, callError *CallError)
-	clientQueues map[string]*list.List
+	clientPendingMessages map[string]string
 }
 
 func NewCentralSystem(wsServer ws.WsServer, profiles ...*Profile) *CentralSystem {
@@ -22,9 +22,9 @@ func NewCentralSystem(wsServer ws.WsServer, profiles ...*Profile) *CentralSystem
 		endpoint.AddProfile(profile)
 	}
 	if wsServer != nil {
-		return &CentralSystem{Endpoint: endpoint, server: wsServer, clientQueues: map[string]*list.List{}}
+		return &CentralSystem{Endpoint: endpoint, server: wsServer, clientPendingMessages: map[string]string{}}
 	} else {
-		return &CentralSystem{Endpoint: endpoint, server: &ws.Server{}, clientQueues: map[string]*list.List{}}
+		return &CentralSystem{Endpoint: endpoint, server: &ws.Server{}, clientPendingMessages: map[string]string{}}
 	}
 }
 
@@ -64,17 +64,19 @@ func (centralSystem *CentralSystem)SendRequest(chargePointId string, request Req
 	if err != nil {
 		return err
 	}
-	centralSystem.clientQueues[chargePointId].PushBack(request)
-	if centralSystem.clientQueues[chargePointId].Len() > 1 {
-		// Cannot send right away
-		return nil
+	req, ok := centralSystem.clientPendingMessages[chargePointId]
+	if ok {
+		// Cannot send. Protocol is based on response-confirmation
+		return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", req)
 	}
-	err = centralSystem.processCallQueue(chargePointId)
+	call, err := centralSystem.CreateCall(request.(Request))
+	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
 		return err
 	}
+	centralSystem.clientPendingMessages[chargePointId] = call.UniqueId
 	//TODO: use promise/future for fetching the result
-	return nil
+	return centralSystem.server.Write(chargePointId, []byte(jsonMessage))
 }
 
 func (centralSystem *CentralSystem)SendMessage(chargePointId string, message Message) error {
@@ -88,26 +90,13 @@ func (centralSystem *CentralSystem)SendMessage(chargePointId string, message Mes
 	}
 	if message.GetMessageTypeId() == CALL {
 		call := message.(*Call)
+		req, ok := centralSystem.clientPendingMessages[chargePointId]
+		if ok {
+			// Cannot send. Protocol is based on response-confirmation
+			return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", req)
+		}
 		centralSystem.PendingRequests[message.GetUniqueId()] = call.Payload
-	}
-	err = centralSystem.server.Write(chargePointId, []byte(jsonMessage))
-	if err != nil {
-		return err
-	}
-	//TODO: use promise/future for fetching the result
-	return nil
-}
-
-func (centralSystem *CentralSystem)processCallQueue(chargePointId string) error {
-	if centralSystem.clientQueues[chargePointId].Len() == 0 {
-		return nil
-	}
-	element := centralSystem.clientQueues[chargePointId].Front()
-	request := element.Value
-	call, err := centralSystem.CreateCall(request.(Request))
-	jsonMessage, err := call.MarshalJSON()
-	if err != nil {
-		return err
+		centralSystem.clientPendingMessages[chargePointId] = call.UniqueId
 	}
 	err = centralSystem.server.Write(chargePointId, []byte(jsonMessage))
 	if err != nil {
@@ -131,18 +120,12 @@ func (centralSystem *CentralSystem)ocppMessageHandler(wsChannel ws.Channel, data
 		centralSystem.callHandler(wsChannel.GetId(), call)
 	case CALL_RESULT:
 		callResult := message.(*CallResult)
+		delete(centralSystem.clientPendingMessages, wsChannel.GetId())
 		centralSystem.callResultHandler(wsChannel.GetId(), callResult)
-		err := centralSystem.processCallQueue(wsChannel.GetId())
-		if err != nil {
-			return err
-		}
 	case CALL_ERROR:
 		callError := message.(*CallError)
+		delete(centralSystem.clientPendingMessages, wsChannel.GetId())
 		centralSystem.callErrorHandler(wsChannel.GetId(), callError)
-		err := centralSystem.processCallQueue(wsChannel.GetId())
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }

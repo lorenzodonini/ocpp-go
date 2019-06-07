@@ -5,7 +5,7 @@ import (
 	"github.com/lorenzodonini/go-ocpp/ws"
 )
 
-// v1.6 Charge Point
+// -------------------- v1.6 Charge Point --------------------
 type ChargePoint interface {
 	BootNotification(chargePointModel string, chargePointVendor string) *BootNotificationRequest
 	Authorize(idTag string) *AuthorizeRequest
@@ -14,6 +14,7 @@ type ChargePoint interface {
 	// Logic
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, *ocpp.CallError, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, callError *ocpp.CallError)) error
+	Start(centralSystemUrl string) error
 }
 
 type chargePoint struct {
@@ -62,6 +63,11 @@ func (cp chargePoint)SendRequestAsync(request ocpp.Request, callback func(confir
 	return err
 }
 
+func (cp chargePoint)Start(centralSystemUrl string) error {
+	// TODO: implement auto-reconnect logic
+	return cp.chargePoint.Start(centralSystemUrl)
+}
+
 func NewChargePoint(id string) ChargePoint {
 	cp := chargePoint{chargePoint: ocpp.NewChargePoint(id, ws.NewClient(), CoreProfile.Profile), confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan *ocpp.CallError)}
 	cp.chargePoint.SetCallResultHandler(func(callResult *ocpp.CallResult) {
@@ -73,8 +79,7 @@ func NewChargePoint(id string) ChargePoint {
 	return cp
 }
 
-// v1.6 Central System
-
+// -------------------- v1.6 Central System --------------------
 type CentralSystem interface {
 	//TODO: add missing profile methods
 

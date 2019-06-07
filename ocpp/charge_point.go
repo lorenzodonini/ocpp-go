@@ -115,7 +115,12 @@ func (chargePoint *ChargePoint)SendMessage(message Message) error {
 	}
 	if message.GetMessageTypeId() == CALL {
 		call := message.(*Call)
+		if chargePoint.pendingRequest != "" {
+			// Cannot send. Protocol is based on response-confirmation
+			return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", chargePoint.pendingRequest)
+		}
 		chargePoint.PendingRequests[message.GetUniqueId()] = call.Payload
+		chargePoint.pendingRequest = call.UniqueId
 	}
 	chargePoint.client.Write([]byte(jsonMessage))
 	//TODO: use promise/future for fetching the result
