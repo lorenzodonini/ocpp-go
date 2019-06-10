@@ -32,11 +32,11 @@ const (
 type AuthorizationStatus string
 
 const (
-	AuthorizationStatusAccepted = "Accepted"
-	AuthorizationStatusBlocked = "Blocked"
-	AuthorizationStatusExpired = "Expired"
-	AuthorizationStatusInvalid = "Invalid"
-	AuthorizationStatusConcurrentTx = "ConcurrentTx"
+	AuthorizationStatusAccepted AuthorizationStatus = "Accepted"
+	AuthorizationStatusBlocked AuthorizationStatus = "Blocked"
+	AuthorizationStatusExpired AuthorizationStatus = "Expired"
+	AuthorizationStatusInvalid AuthorizationStatus = "Invalid"
+	AuthorizationStatusConcurrentTx AuthorizationStatus = "ConcurrentTx"
 )
 
 type IdTagInfo struct {
