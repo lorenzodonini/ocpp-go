@@ -70,6 +70,9 @@ func (centralSystem *CentralSystem)SendRequest(chargePointId string, request Req
 		return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", req)
 	}
 	call, err := centralSystem.CreateCall(request.(Request))
+	if err != nil {
+		return err
+	}
 	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
 		return err
