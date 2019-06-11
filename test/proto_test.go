@@ -18,7 +18,7 @@ type OcppV16TestSuite struct {
 }
 
 func (suite *OcppV16TestSuite) SetupTest() {
-	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{}, v16.AuthorizeFeature{})
+	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{}, v16.AuthorizeFeature{}, v16.ChangeAvailabilityFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockClient = &mockClient
