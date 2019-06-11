@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
+	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
 )
@@ -118,4 +120,62 @@ func (suite *OcppV16TestSuite) TestAuthorizeConfirmationToJson() {
 	assert.NotNil(t, jsonData)
 	expectedJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, uniqueId, expiryDate.Format(time.RFC3339Nano), parentIdTag, status)
 	assert.Equal(t, []byte(expectedJson), jsonData)
+}
+
+func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
+	t := suite.T()
+	wsId := "test_id"
+	messageId := "1234"
+	wsUrl := "someUrl"
+	idTag := "tag1"
+	parentIdTag := "parentTag1"
+	status := v16.AuthorizationStatusAccepted
+	expiryDate := time.Now().Add(time.Hour * 8)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, v16.AuthorizeFeatureName, idTag)
+	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.Format(time.RFC3339Nano), parentIdTag, status)
+	requestRaw := []byte(requestJson)
+	responseRaw := []byte(responseJson)
+	channel := MockWebSocket{id: wsId}
+	// Setting server handlers
+	suite.mockServer.SetNewClientHandler(func(ws ws.Channel) {
+		assert.NotNil(t, ws)
+		assert.Equal(t, wsId, ws.GetId())
+	})
+	suite.mockServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
+		assert.Equal(t, requestRaw, data)
+		jsonData := string(data)
+		assert.Equal(t, requestJson, jsonData)
+		call := ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
+		CheckCall(call, t, v16.AuthorizeFeatureName, messageId)
+		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
+		// TODO: generate the response dynamically
+		err := suite.mockClient.messageHandler(responseRaw)
+		assert.Nil(t, err)
+		return nil
+	})
+	// Setting client handlers
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return().Run(func(args mock.Arguments) {
+		u := args.String(0)
+		assert.Equal(t, wsUrl, u)
+		suite.mockServer.newClientHandler(channel)
+	})
+	suite.mockClient.SetMessageHandler(func(data []byte) error {
+		assert.Equal(t, responseRaw, data)
+		jsonData := string(data)
+		assert.Equal(t, responseJson, jsonData)
+		callResult := ParseCallResult(&suite.chargePoint.Endpoint, jsonData, t)
+		CheckCallResult(callResult, t, messageId)
+		return nil
+	})
+	suite.mockClient.On("Write", mock.Anything).Return().Run(func(args mock.Arguments) {
+		data := args.Get(0)
+		bytes := data.([]byte)
+		assert.NotNil(t, bytes)
+		err := suite.mockServer.messageHandler(channel, bytes)
+		assert.Nil(t, err)
+	})
+	// Test Run
+	err := suite.mockClient.Start(wsUrl)
+	assert.Nil(t, err)
+	suite.mockClient.Write(requestRaw)
 }
