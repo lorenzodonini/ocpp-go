@@ -67,7 +67,7 @@ func (centralSystem *CentralSystem)SendRequest(chargePointId string, request Req
 	req, ok := centralSystem.clientPendingMessages[chargePointId]
 	if ok {
 		// Cannot send. Protocol is based on response-confirmation
-		return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", req)
+		return errors.Errorf("There already is a pending request %v for client %v. Cannot send a further one before receiving a confirmation first", req, chargePointId)
 	}
 	call, err := centralSystem.CreateCall(request.(Request))
 	if err != nil {

@@ -31,6 +31,6 @@ var validate = validator.New()
 
 //TODO: implement generic protocol tests
 
-func TestOcppProtocol(t *testing.T) {
+func TestOcpp16Protocol(t *testing.T) {
 	suite.Run(t, new(OcppV16TestSuite))
 }
