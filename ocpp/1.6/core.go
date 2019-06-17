@@ -14,6 +14,41 @@ type coreProfile struct {
 	*ocpp.Profile
 }
 
+type CentralSystemCoreListener interface {
+	onAuthorize(request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
+	onBootNotification(request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
+	//onDataTransfer()
+	//onDiagnosticsStatusNotification()
+	//onFirmwareStatusNotification()
+	//onHeartbeat()
+	//onMeterValues()
+	//onStatusNotification()
+	//onStartTransaction()
+	//onStopTransaction()
+}
+
+type ChargePointCoreListener interface {
+	//onCancelReservation()
+	onChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
+	//onChangeConfiguration()
+	//onClearCache()
+	//onClearChargingProfile()
+	//onDataTransfer()
+	//onGetCompositeSchedule()
+	//onGetConfiguration()
+	//onGetDiagnostics()
+	//onGetLocalListVersion()
+	//onRemoteStartTransaction()
+	//onRemoteStopTransaction()
+	//onReserveNow()
+	//onReset()
+	//onSendLocalList()
+	//onSetChargingProfile()
+	//onTriggerMessage()
+	//onUnlockConnector()
+	//onUpdateFirmware()
+}
+
 func (profile* coreProfile)CreateBootNotification(chargePointModel string, chargePointVendor string) *BootNotificationRequest {
 	return &BootNotificationRequest{ChargePointModel: chargePointModel, ChargePointVendor: chargePointVendor}
 }
