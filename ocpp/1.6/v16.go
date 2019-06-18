@@ -107,7 +107,7 @@ func (cp chargePoint)handleIncomingCall(call *ocpp.Call) {
 	var err error = nil
 	switch call.Action {
 	case ChangeAvailabilityFeatureName:
-		confirmation, err = cp.coreListener.onChangeAvailability(call.Payload.(*ChangeAvailabilityRequest))
+		confirmation, err = cp.coreListener.OnChangeAvailability(call.Payload.(*ChangeAvailabilityRequest))
 	default:
 		log.Printf("Unsupported action %v on charge point", call.Action)
 		//TODO: send back CallError
@@ -136,6 +136,7 @@ type CentralSystem interface {
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, callError *ocpp.CallError)) error
+	Start(listenPort int, listenPath string)
 }
 
 type centralSystem struct {
@@ -171,6 +172,10 @@ func (cs centralSystem)SendRequestAsync(clientId string, request ocpp.Request, c
 	}
 	cs.callbacks[clientId] = callback
 	return nil
+}
+
+func (cs centralSystem)Start(listenPort int, listenPath string) {
+	cs.centralSystem.Start(listenPort, listenPath)
 }
 
 func (cs centralSystem)sendResponse(chargePointId string, call *ocpp.Call, confirmation ocpp.Confirmation, err error) {

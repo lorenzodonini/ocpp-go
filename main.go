@@ -1,29 +1,33 @@
 package main
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
-	"github.com/lorenzodonini/go-ocpp/ws"
 	"log"
 	"os"
 	"strconv"
 )
 
+type CentralSystemListener struct {
+	chargePoints map[string]string
+}
+
+func (csl CentralSystemListener)OnAuthorize(chargePointId string, request *v16.AuthorizeRequest) (confirmation *v16.AuthorizeConfirmation, err error) {
+	log.Printf("Received Authorize request from %v", chargePointId)
+	return nil, nil
+}
+
+func (csl CentralSystemListener)OnBootNotification(chargePointId string, request *v16.BootNotificationRequest) (confirmation *v16.BootNotificationConfirmation, err error) {
+	log.Printf("Received Boot Notification request from %v", chargePointId)
+	return nil, nil
+}
+
 func runCentralSystem(args []string) {
-	wsServer := ws.NewServer()
-	centralSystem := ocpp.NewCentralSystem(wsServer, v16.CoreProfile.Profile)
+	centralSystem := v16.NewCentralSystem()
+	listener := CentralSystemListener{chargePoints: map[string]string{}}
 	centralSystem.SetNewChargePointHandler(func(chargePointId string) {
 		log.Printf("New charge point %v connected", chargePointId)
 	})
-	centralSystem.SetCallHandler(func(chargePointId string, call *ocpp.Call) {
-		log.Printf("Call received from charge point %v: %v", chargePointId, call)
-	})
-	centralSystem.SetCallResultHandler(func(chargePointId string, callResult *ocpp.CallResult) {
-		log.Printf("Call result received from charge point %v: %v", chargePointId, callResult)
-	})
-	centralSystem.SetCallErrorHandler(func(chargePointId string, callError *ocpp.CallError) {
-		log.Printf("Call error received from charge point %v: %v", chargePointId, callError)
-	})
+	centralSystem.SetCentralSystemCoreListener(listener)
 	log.Print("Starting central system...")
 	var listenPort int
 	if len(args) > 1 {
@@ -38,8 +42,15 @@ func runCentralSystem(args []string) {
 	log.Print("Stopped central system")
 }
 
+type ChargePointListener struct {
+}
+
+func (cpl ChargePointListener)OnChangeAvailability(request *v16.ChangeAvailabilityRequest) (confirmation *v16.ChangeAvailabilityConfirmation, err error) {
+	log.Printf("Received change availability request from central system")
+	return nil, nil
+}
+
 func runChargePoint(args []string) {
-	wsClient := ws.NewClient()
 	if len(args) != 3 {
 		log.Print("Invalid client: chargePointId and centralSystemUrl are required")
 		log.Print("Usage:\n\tocpp server [listenPort]\n\tocpp client id")
@@ -47,16 +58,9 @@ func runChargePoint(args []string) {
 	}
 	id := args[1]
 	csUrl := args[2]
-	chargePoint := ocpp.NewChargePoint(id, wsClient, v16.CoreProfile.Profile)
-	chargePoint.SetCallHandler(func(call *ocpp.Call) {
-		log.Printf("Call received from central system: %v", call)
-	})
-	chargePoint.SetCallResultHandler(func(callResult *ocpp.CallResult) {
-		log.Printf("Call result received from central system: %v", callResult)
-	})
-	chargePoint.SetCallErrorHandler(func(callError *ocpp.CallError) {
-		log.Printf("Call error received from central system: %v", callError)
-	})
+	chargePoint := v16.NewChargePoint(id)
+	listener := ChargePointListener{}
+	chargePoint.SetChargePointCoreListener(listener)
 	err := chargePoint.Start(csUrl)
 	if err != nil {
 		log.Print(err)

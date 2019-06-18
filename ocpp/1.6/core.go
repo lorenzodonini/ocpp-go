@@ -29,7 +29,7 @@ type CentralSystemCoreListener interface {
 
 type ChargePointCoreListener interface {
 	//onCancelReservation()
-	onChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
+	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	//onChangeConfiguration()
 	//onClearCache()
 	//onClearChargingProfile()
