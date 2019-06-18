@@ -10,10 +10,6 @@ const (
 	ChangeAvailabilityFeatureName = "ChangeAvailability"
 )
 
-type coreProfile struct {
-	*ocpp.Profile
-}
-
 type CentralSystemCoreListener interface {
 	OnAuthorize(chargePointId string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
 	OnBootNotification(chargePointId string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
@@ -49,18 +45,4 @@ type ChargePointCoreListener interface {
 	//onUpdateFirmware()
 }
 
-func (profile* coreProfile)CreateBootNotification(chargePointModel string, chargePointVendor string) *BootNotificationRequest {
-	return &BootNotificationRequest{ChargePointModel: chargePointModel, ChargePointVendor: chargePointVendor}
-}
-
-func (profile* coreProfile)CreateAuthorization(idTag string) *AuthorizeRequest {
-	return &AuthorizeRequest{IdTag: idTag}
-}
-
-func (profile* coreProfile)CreateChangeAvailability(connectorId int, availabilityType AvailabilityType) *ChangeAvailabilityRequest {
-	return &ChangeAvailabilityRequest{ConnectorId: connectorId, Type: availabilityType}
-}
-
-var CoreProfile = coreProfile{
-	ocpp.NewProfile("core", BootNotificationFeature{}),
-}
+var CoreProfile = ocpp.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{})

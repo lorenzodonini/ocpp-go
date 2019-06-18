@@ -34,3 +34,11 @@ func (r AuthorizeRequest) GetFeatureName() string {
 func (c AuthorizeConfirmation) GetFeatureName() string {
 	return AuthorizeFeatureName
 }
+
+func NewAuthorizationRequest(idTag string) *AuthorizeRequest {
+	return &AuthorizeRequest{IdTag: idTag}
+}
+
+func NewAuthorizationConfirmation(idTagInfo IdTagInfo) *AuthorizeConfirmation {
+	return &AuthorizeConfirmation{IdTagInfo: idTagInfo}
+}

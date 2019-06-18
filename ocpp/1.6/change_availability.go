@@ -51,3 +51,11 @@ func (r ChangeAvailabilityRequest) GetFeatureName() string {
 func (c ChangeAvailabilityConfirmation) GetFeatureName() string {
 	return ChangeAvailabilityFeatureName
 }
+
+func NewChangeAvailabilityRequest(connectorId int, availabilityType AvailabilityType) *ChangeAvailabilityRequest {
+	return &ChangeAvailabilityRequest{ConnectorId: connectorId, Type: availabilityType}
+}
+
+func NewChangeAvailabilityConfirmation(status AvailabilityStatus) *ChangeAvailabilityConfirmation {
+	return &ChangeAvailabilityConfirmation{Status: status}
+}

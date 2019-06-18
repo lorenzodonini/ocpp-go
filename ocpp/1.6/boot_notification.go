@@ -57,3 +57,11 @@ func (r BootNotificationRequest) GetFeatureName() string {
 func (c BootNotificationConfirmation) GetFeatureName() string {
 	return BootNotificationFeatureName
 }
+
+func NewBootNotificationRequest(chargePointModel string, chargePointVendor string) *BootNotificationRequest {
+	return &BootNotificationRequest{ChargePointModel: chargePointModel, ChargePointVendor: chargePointVendor}
+}
+
+func NewBootNotificationConfirmation(currentTime time.Time, interval int, status RegistrationStatus) *BootNotificationConfirmation {
+	return &BootNotificationConfirmation{CurrentTime: currentTime, Interval: interval, Status: status}
+}
