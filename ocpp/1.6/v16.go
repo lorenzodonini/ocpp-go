@@ -194,24 +194,27 @@ func (cs centralSystem)sendResponse(chargePointId string, call *ocpp.Call, confi
 
 func (cs centralSystem)handleIncomingCall(chargePointId string, call *ocpp.Call) {
 	if cs.coreListener == nil {
-		log.Printf("Cannot handle call %v from charge point %v. Sending CallError instead")
+		log.Printf("Cannot handle call %v from charge point %v. Sending CallError instead", call.UniqueId, chargePointId)
 		//TODO: send call error
 		return
 	}
 	var confirmation ocpp.Confirmation = nil
 	var err error = nil
-	switch call.Action {
-	case BootNotificationFeatureName:
-		confirmation, err = cs.coreListener.OnBootNotification(chargePointId, call.Payload.(*BootNotificationRequest))
-		break
-	case AuthorizeFeatureName:
-		confirmation, err = cs.coreListener.OnAuthorize(chargePointId, call.Payload.(*AuthorizeRequest))
-		break
-	default:
-		log.Printf("Unsupported action %v on central system", call.Action)
-		//TODO: send back CallError
-	}
-	cs.sendResponse(chargePointId, call, confirmation, err)
+	// Execute in separate goroutine, so the caller goroutine is available
+	go func() {
+		switch call.Action {
+		case BootNotificationFeatureName:
+			confirmation, err = cs.coreListener.OnBootNotification(chargePointId, call.Payload.(*BootNotificationRequest))
+			break
+		case AuthorizeFeatureName:
+			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, call.Payload.(*AuthorizeRequest))
+			break
+		default:
+			log.Printf("Unsupported action %v on central system", call.Action)
+			//TODO: send back CallError
+		}
+		cs.sendResponse(chargePointId, call, confirmation, err)
+	}()
 }
 
 func (cs centralSystem)handleIncomingCallResult(chargePointId string, callResult *ocpp.CallResult) {
