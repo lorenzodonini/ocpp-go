@@ -15,8 +15,8 @@ type coreProfile struct {
 }
 
 type CentralSystemCoreListener interface {
-	onAuthorize(request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
-	onBootNotification(request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
+	OnAuthorize(chargePointId string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
+	OnBootNotification(chargePointId string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
 	//onDataTransfer()
 	//onDiagnosticsStatusNotification()
 	//onFirmwareStatusNotification()

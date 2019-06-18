@@ -131,7 +131,7 @@ func NewChargePoint(id string) ChargePoint {
 type CentralSystem interface {
 	// Message
 	//TODO: add missing profile methods
-	ChangeAvailability(connectorId int, availabilityType AvailabilityType) *ChangeAvailabilityRequest
+	ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, callError *ocpp.CallError), connectorId int, availabilityType AvailabilityType, props... func(request *ChangeAvailabilityRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
@@ -144,8 +144,16 @@ type centralSystem struct {
 	callbacks map[string]func(confirmation ocpp.Confirmation, callError *ocpp.CallError)
 }
 
-func (cs centralSystem)ChangeAvailability(connectorId int, availabilityType AvailabilityType) *ChangeAvailabilityRequest {
-	return CoreProfile.CreateChangeAvailability(connectorId, availabilityType)
+func (cs centralSystem)ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, callError *ocpp.CallError), connectorId int, availabilityType AvailabilityType, props... func(request *ChangeAvailabilityRequest)) error {
+	request := CoreProfile.CreateChangeAvailability(connectorId, availabilityType)
+	genericCallback := func(confirmation ocpp.Confirmation, callError *ocpp.CallError) {
+		if confirmation != nil {
+			callback(confirmation.(*ChangeAvailabilityConfirmation), callError)
+		} else {
+			callback(nil, callError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
 func (cs centralSystem)SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
@@ -189,10 +197,10 @@ func (cs centralSystem)handleIncomingCall(chargePointId string, call *ocpp.Call)
 	var err error = nil
 	switch call.Action {
 	case BootNotificationFeatureName:
-		confirmation, err = cs.coreListener.onBootNotification(call.Payload.(*BootNotificationRequest))
+		confirmation, err = cs.coreListener.OnBootNotification(chargePointId, call.Payload.(*BootNotificationRequest))
 		break
 	case AuthorizeFeatureName:
-		confirmation, err = cs.coreListener.onAuthorize(call.Payload.(*AuthorizeRequest))
+		confirmation, err = cs.coreListener.OnAuthorize(chargePointId, call.Payload.(*AuthorizeRequest))
 		break
 	default:
 		log.Printf("Unsupported action %v on central system", call.Action)
