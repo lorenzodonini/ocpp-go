@@ -1,10 +1,10 @@
-package test
+package test_v16
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
+	"github.com/lorenzodonini/go-ocpp/test"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/go-playground/validator.v9"
 	"testing"
 )
 
@@ -13,21 +13,19 @@ type OcppV16TestSuite struct {
 	suite.Suite
 	chargePoint   *ocpp.ChargePoint
 	centralSystem *ocpp.CentralSystem
-	mockServer    *MockWebsocketServer
-	mockClient    *MockWebsocketClient
+	mockServer    *test.MockWebsocketServer
+	mockClient    *test.MockWebsocketClient
 }
 
 func (suite *OcppV16TestSuite) SetupTest() {
 	coreProfile := ocpp.NewProfile("core", v16.BootNotificationFeature{}, v16.AuthorizeFeature{}, v16.ChangeAvailabilityFeature{})
-	mockClient := MockWebsocketClient{}
-	mockServer := MockWebsocketServer{}
+	mockClient := test.MockWebsocketClient{}
+	mockServer := test.MockWebsocketServer{}
 	suite.mockClient = &mockClient
 	suite.mockServer = &mockServer
 	suite.chargePoint = ocpp.NewChargePoint("test_id", suite.mockClient, coreProfile)
 	suite.centralSystem = ocpp.NewCentralSystem(suite.mockServer, coreProfile)
 }
-
-var validate = validator.New()
 
 //TODO: implement generic protocol tests
 

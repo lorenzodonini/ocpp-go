@@ -5,6 +5,7 @@ import (
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"gopkg.in/go-playground/validator.v9"
 	"testing"
 )
 
@@ -17,12 +18,16 @@ func (websocket MockWebSocket) GetId() string {
 	return websocket.id
 }
 
+func NewMockWebSocket(id string) MockWebSocket {
+	return MockWebSocket{id: id}
+}
+
 // ---------------------- MOCK WEBSOCKET SERVER ----------------------
 type MockWebsocketServer struct {
 	mock.Mock
 	ws.WsServer
-	messageHandler   func(ws ws.Channel, data []byte) error
-	newClientHandler func(ws ws.Channel)
+	MessageHandler   func(ws ws.Channel, data []byte) error
+	NewClientHandler func(ws ws.Channel)
 }
 
 func (websocketServer *MockWebsocketServer) Start(port int, listenPath string) {
@@ -39,11 +44,11 @@ func (websocketServer *MockWebsocketServer) Write(webSocketId string, data []byt
 }
 
 func (websocketServer *MockWebsocketServer) SetMessageHandler(handler func(ws ws.Channel, data []byte) error) {
-	websocketServer.messageHandler = handler
+	websocketServer.MessageHandler = handler
 }
 
 func (websocketServer *MockWebsocketServer) SetNewClientHandler(handler func(ws ws.Channel)) {
-	websocketServer.newClientHandler = handler
+	websocketServer.NewClientHandler = handler
 }
 
 func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client interface{}) {
@@ -54,7 +59,7 @@ func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client
 type MockWebsocketClient struct {
 	mock.Mock
 	ws.WsClient
-	messageHandler func(data []byte) error
+	MessageHandler func(data []byte) error
 }
 
 func (websocketClient *MockWebsocketClient) Start(url string) error {
@@ -67,7 +72,7 @@ func (websocketClient *MockWebsocketClient) Stop() {
 }
 
 func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(data []byte) error) {
-	websocketClient.messageHandler = handler
+	websocketClient.MessageHandler = handler
 }
 
 func (websocketClient *MockWebsocketClient) Write(data []byte) {
@@ -125,7 +130,7 @@ func CheckCall(call *ocpp.Call, t *testing.T, expectedAction string, expectedId 
 	assert.Equal(t, expectedAction, call.Action)
 	assert.Equal(t, expectedId, call.GetUniqueId())
 	assert.NotNil(t, call.Payload)
-	err := validate.Struct(call)
+	err := Validate.Struct(call)
 	assert.Nil(t, err)
 }
 
@@ -144,7 +149,7 @@ func CheckCallResult(result *ocpp.CallResult, t *testing.T, expectedId string) {
 	assert.Equal(t, ocpp.CALL_RESULT, result.GetMessageTypeId())
 	assert.Equal(t, expectedId, result.GetUniqueId())
 	assert.NotNil(t, result.Payload)
-	err := validate.Struct(result)
+	err := Validate.Struct(result)
 	assert.Nil(t, err)
 }
 
@@ -164,30 +169,32 @@ func CheckCallError(t *testing.T, callError *ocpp.CallError, expectedId string, 
 	assert.Equal(t, expectedError, callError.ErrorCode)
 	assert.Equal(t, expectedDescription, callError.ErrorDescription)
 	assert.Equal(t, expectedDetails, callError.ErrorDetails)
-	err := validate.Struct(callError)
+	err := Validate.Struct(callError)
 	assert.Nil(t, err)
 }
 
 type RequestTestEntry struct {
-	request       ocpp.Request
-	expectedValid bool
+	Request       ocpp.Request
+	ExpectedValid bool
 }
 
 type ConfirmationTestEntry struct {
-	confirmation  ocpp.Confirmation
-	expectedValid bool
+	Confirmation  ocpp.Confirmation
+	ExpectedValid bool
 }
 
-func executeRequestTestTable(t *testing.T, testTable []RequestTestEntry) {
+func ExecuteRequestTestTable(t *testing.T, testTable []RequestTestEntry) {
 	for _, testCase := range testTable {
-		err := validate.Struct(testCase.request)
-		assert.Equal(t, testCase.expectedValid, err == nil)
+		err := Validate.Struct(testCase.Request)
+		assert.Equal(t, testCase.ExpectedValid, err == nil)
 	}
 }
 
-func executeConfirmationTestTable(t *testing.T, testTable []ConfirmationTestEntry) {
+func ExecuteConfirmationTestTable(t *testing.T, testTable []ConfirmationTestEntry) {
 	for _, testCase := range testTable {
-		err := validate.Struct(testCase.confirmation)
-		assert.Equal(t, testCase.expectedValid, err == nil)
+		err := Validate.Struct(testCase.Confirmation)
+		assert.Equal(t, testCase.ExpectedValid, err == nil)
 	}
 }
+
+var Validate = validator.New()
