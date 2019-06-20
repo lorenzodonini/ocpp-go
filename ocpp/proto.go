@@ -193,6 +193,19 @@ func (callError *CallError) MarshalJSON() ([]byte, error) {
 	return ocppMessageToJson(callError)
 }
 
+const (
+	NotImplemented ErrorCode = "NotImplemented"
+	NotSupported ErrorCode = "NotSupported"
+	InternalError ErrorCode = "InternalError"
+	ProtocolError ErrorCode = "ProtocolError"
+	SecurityError ErrorCode = "SecurityError"
+	FormationViolation ErrorCode = "FormationViolation"
+	PropertyConstraintViolation ErrorCode = "PropertyConstraintViolation"
+	OccurrenceConstraintViolation ErrorCode = "OccurrenceConstraintViolation"
+	TypeConstraintViolation ErrorCode = "TypeConstraintViolation"
+	GenericError ErrorCode = "GenericError"
+)
+
 
 // -------------------- Logic --------------------
 func ParseRawJsonMessage(dataJson []byte) []interface{} {

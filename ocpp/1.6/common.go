@@ -14,7 +14,7 @@ type DateTime struct {
 	time.Time
 }
 
-var DateTimeFormat = ""
+var DateTimeFormat = ISO8601
 
 func (dt *DateTime) UnmarshalJSON(input []byte) error {
 	strInput := string(input)
@@ -52,19 +52,6 @@ type PropertyViolation struct {
 func (e* PropertyViolation) Error() string {
 	return ""
 }
-
-const (
-	NotImplemented = "NotImplemented"
-	NotSupported = "NotSupported"
-	InternalError = "InternalError"
-	ProtocolError = "ProtocolError"
-	SecurityError = "SecurityError"
-	FormationViolation = "FormationViolation"
-	PropertyConstraintViolation = "PropertyConstraintViolation"
-	OccurrenceConstraintViolation = "OccurrenceConstraintViolation"
-	TypeConstraintViolation = "TypeConstraintViolation"
-	GenericError = "GenericError"
-)
 
 type AuthorizationStatus string
 
