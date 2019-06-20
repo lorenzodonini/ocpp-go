@@ -316,10 +316,11 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 	if len(arr) < 3 {
 		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid message. Expected array length >= 3")}
 	}
-	typeId, ok := arr[0].(float64)
+	rawTypeId, ok := arr[0].(float64)
 	if !ok {
 		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 0, expected int", arr[0])}
 	}
+	typeId := MessageType(rawTypeId)
 	uniqueId, ok := arr[1].(string)
 	if !ok {
 		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 1, expected int", arr[1])}

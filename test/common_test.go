@@ -121,7 +121,7 @@ func ParseCall(endpoint *ocpp.Endpoint, json string, t *testing.T) *ocpp.Call {
 }
 
 func CheckCall(call *ocpp.Call, t *testing.T, expectedAction string, expectedId string) {
-	assert.Equal(t, ocpp.CALL, int(call.GetMessageTypeId()))
+	assert.Equal(t, ocpp.CALL, call.GetMessageTypeId())
 	assert.Equal(t, expectedAction, call.Action)
 	assert.Equal(t, expectedId, call.GetUniqueId())
 	assert.NotNil(t, call.Payload)
@@ -141,7 +141,7 @@ func ParseCallResult(endpoint *ocpp.Endpoint, json string, t *testing.T) *ocpp.C
 }
 
 func CheckCallResult(result *ocpp.CallResult, t *testing.T, expectedId string) {
-	assert.Equal(t, ocpp.CALL_RESULT, int(result.GetMessageTypeId()))
+	assert.Equal(t, ocpp.CALL_RESULT, result.GetMessageTypeId())
 	assert.Equal(t, expectedId, result.GetUniqueId())
 	assert.NotNil(t, result.Payload)
 	err := validate.Struct(result)
@@ -159,7 +159,7 @@ func ParseCallError(endpoint *ocpp.Endpoint, json string, t *testing.T) *ocpp.Ca
 }
 
 func CheckCallError(t *testing.T, callError *ocpp.CallError, expectedId string, expectedError ocpp.CallError, expectedDescription string, expectedDetails interface{}) {
-	assert.Equal(t, ocpp.CALL_ERROR, int(callError.GetMessageTypeId()))
+	assert.Equal(t, ocpp.CALL_ERROR, callError.GetMessageTypeId())
 	assert.Equal(t, expectedId, callError.GetUniqueId())
 	assert.Equal(t, expectedError, callError.ErrorCode)
 	assert.Equal(t, expectedDescription, callError.ErrorDescription)
