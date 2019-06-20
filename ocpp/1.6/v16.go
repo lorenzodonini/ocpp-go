@@ -1,6 +1,7 @@
 package v16
 
 import (
+	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"log"
@@ -82,12 +83,15 @@ func (cp chargePoint) sendResponse(call *ocpp.Call, confirmation ocpp.Confirmati
 		callResult := ocpp.CallResult{MessageTypeId: ocpp.CALL_RESULT, UniqueId: call.UniqueId, Payload: confirmation}
 		err := cp.chargePoint.SendMessage(&callResult)
 		if err != nil {
+			log.Printf("Unknown error %v while replying to message %v with CallError", err, call.UniqueId)
 			//TODO: handle error somehow
-			log.Print(err)
 		}
 	} else {
-		//TODO: create call error
-		return
+		callError := cp.chargePoint.CreateCallError(call.UniqueId, ocpp.InternalError, "Couldn't generate valid confirmation", nil)
+		err := cp.chargePoint.SendMessage(callError)
+		if err != nil {
+			log.Printf("Unknown error %v while replying to message %v with CallError", err, call.UniqueId)
+		}
 	}
 }
 
@@ -99,7 +103,11 @@ func (cp chargePoint) Start(centralSystemUrl string) error {
 func (cp chargePoint) handleIncomingCall(call *ocpp.Call) {
 	if cp.coreListener == nil {
 		log.Printf("Cannot handle call %v from central system. Sending CallError instead", call.UniqueId)
-		//TODO: send call error
+		callError := cp.chargePoint.CreateCallError(call.UniqueId, ocpp.NotImplemented, fmt.Sprintf("No handler for action %v implemented", call.Action), nil)
+		err := cp.chargePoint.SendMessage(callError)
+		if err != nil {
+			log.Printf("Unknown error %v while replying to message %v with CallError", err, call.UniqueId)
+		}
 		return
 	}
 	var confirmation ocpp.Confirmation = nil
@@ -108,8 +116,12 @@ func (cp chargePoint) handleIncomingCall(call *ocpp.Call) {
 	case ChangeAvailabilityFeatureName:
 		confirmation, err = cp.coreListener.OnChangeAvailability(call.Payload.(*ChangeAvailabilityRequest))
 	default:
-		log.Printf("Unsupported action %v on charge point", call.Action)
-		//TODO: send back CallError
+		callError := cp.chargePoint.CreateCallError(call.UniqueId, ocpp.NotSupported, fmt.Sprintf("Unsupported action %v on charge point", call.Action), nil)
+		err := cp.chargePoint.SendMessage(callError)
+		if err != nil {
+			log.Printf("Unknown error %v while replying to message %v with CallError", err, call.UniqueId)
+		}
+		return
 	}
 	cp.sendResponse(call, confirmation, err)
 }
@@ -186,16 +198,22 @@ func (cs centralSystem) sendResponse(chargePointId string, call *ocpp.Call, conf
 			log.Print(err)
 		}
 	} else {
-		//TODO: create call error
-		return
+		callError := cs.centralSystem.CreateCallError(call.UniqueId, ocpp.InternalError, "Couldn't generate valid confirmation", nil)
+		err := cs.centralSystem.SendMessage(chargePointId, callError)
+		if err != nil {
+			log.Printf("Unknown error %v while replying to message %v with CallError", err, call.UniqueId)
+		}
 	}
 }
 
 func (cs centralSystem) handleIncomingCall(chargePointId string, call *ocpp.Call) {
 	if cs.coreListener == nil {
 		log.Printf("Cannot handle call %v from charge point %v. Sending CallError instead", call.UniqueId, chargePointId)
-		//TODO: send call error
-		return
+		callError := cs.centralSystem.CreateCallError(call.UniqueId, ocpp.NotImplemented, fmt.Sprintf("No handler for action %v implemented", call.Action), nil)
+		err := cs.centralSystem.SendMessage(chargePointId, callError)
+		if err != nil {
+			log.Printf("Unknown error %v while replying to message %v with CallError", err, call.UniqueId)
+		}
 	}
 	var confirmation ocpp.Confirmation = nil
 	var err error = nil
@@ -209,8 +227,12 @@ func (cs centralSystem) handleIncomingCall(chargePointId string, call *ocpp.Call
 			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, call.Payload.(*AuthorizeRequest))
 			break
 		default:
-			log.Printf("Unsupported action %v on central system", call.Action)
-			//TODO: send back CallError
+			callError := cs.centralSystem.CreateCallError(call.UniqueId, ocpp.NotSupported, fmt.Sprintf("Unsupported action %v on central system", call.Action), nil)
+			err := cs.centralSystem.SendMessage(chargePointId, callError)
+			if err != nil {
+				log.Printf("Unknown error %v while replying to message %v with CallError", err, call.UniqueId)
+			}
+			return
 		}
 		cs.sendResponse(chargePointId, call, confirmation, err)
 	}()
