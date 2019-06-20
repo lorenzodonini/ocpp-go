@@ -9,28 +9,28 @@ import (
 type AvailabilityType string
 
 const (
-	AvailabilityTypeOperative AvailabilityType = "Operative"
+	AvailabilityTypeOperative   AvailabilityType = "Operative"
 	AvailabilityTypeInoperative AvailabilityType = "Inoperative"
 )
 
 type AvailabilityStatus string
 
 const (
-	AvailabilityStatusAccepted AvailabilityStatus = "Accepted"
-	AvailabilityStatusRejected AvailabilityStatus = "Rejected"
+	AvailabilityStatusAccepted  AvailabilityStatus = "Accepted"
+	AvailabilityStatusRejected  AvailabilityStatus = "Rejected"
 	AvailabilityStatusScheduled AvailabilityStatus = "Scheduled"
 )
 
 type ChangeAvailabilityRequest struct {
-	ConnectorId int				`json:"connectorId" validate:"gte=0"`
-	Type AvailabilityType		`json:"type" validate:"required"`
+	ConnectorId int              `json:"connectorId" validate:"gte=0"`
+	Type        AvailabilityType `json:"type" validate:"required"`
 }
 
 type ChangeAvailabilityConfirmation struct {
-	Status AvailabilityStatus	`json:"status" validate:"required"`
+	Status AvailabilityStatus `json:"status" validate:"required"`
 }
 
-type ChangeAvailabilityFeature struct {}
+type ChangeAvailabilityFeature struct{}
 
 func (f ChangeAvailabilityFeature) GetFeatureName() string {
 	return ChangeAvailabilityFeatureName

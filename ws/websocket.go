@@ -33,11 +33,11 @@ type Channel interface {
 
 type WebSocket struct {
 	connection *websocket.Conn
-	id string
-	outQueue chan []byte
+	id         string
+	outQueue   chan []byte
 }
 
-func (websocket *WebSocket)GetId() string {
+func (websocket *WebSocket) GetId() string {
 	return websocket.id
 }
 
@@ -51,9 +51,9 @@ type WsServer interface {
 }
 
 type Server struct {
-	connections map[string]*WebSocket
-	httpServer *http.Server
-	messageHandler func(ws Channel, data []byte) error
+	connections      map[string]*WebSocket
+	httpServer       *http.Server
+	messageHandler   func(ws Channel, data []byte) error
 	newClientHandler func(ws Channel)
 }
 
@@ -61,11 +61,11 @@ func NewServer() *Server {
 	return &Server{}
 }
 
-func (server *Server)SetMessageHandler(handler func(ws Channel, data []byte) error) {
+func (server *Server) SetMessageHandler(handler func(ws Channel, data []byte) error) {
 	server.messageHandler = handler
 }
 
-func (server *Server)SetNewClientHandler(handler func(ws Channel)) {
+func (server *Server) SetNewClientHandler(handler func(ws Channel)) {
 	server.newClientHandler = handler
 }
 
@@ -89,7 +89,7 @@ func (server *Server) Stop() {
 	}
 }
 
-func (server *Server)Write(webSocketId string, data []byte) error {
+func (server *Server) Write(webSocketId string, data []byte) error {
 	ws, ok := server.connections[webSocketId]
 	if !ok {
 		return errors.New(fmt.Sprintf("Couldn't write to websocket. No socket with id %v is open", webSocketId))
@@ -98,7 +98,7 @@ func (server *Server)Write(webSocketId string, data []byte) error {
 	return nil
 }
 
-func (server *Server)wsHandler(w http.ResponseWriter, r *http.Request) {
+func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -106,7 +106,7 @@ func (server *Server)wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	url := r.URL
 	log.Printf("New client on URL %v", url.String())
-	ws := WebSocket{connection:conn, id:url.Path, outQueue: make(chan []byte)}
+	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte)}
 	server.connections[url.Path] = &ws
 	// Read and write routines are started in separate goroutines and function will return immediately
 	go server.writePump(&ws)
@@ -117,7 +117,7 @@ func (server *Server)wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (server *Server)readPump(ws *WebSocket) {
+func (server *Server) readPump(ws *WebSocket) {
 	conn := ws.connection
 	defer func() {
 		_ = conn.Close()
@@ -149,7 +149,7 @@ func (server *Server)readPump(ws *WebSocket) {
 	}
 }
 
-func (server *Server)writePump(ws *WebSocket) {
+func (server *Server) writePump(ws *WebSocket) {
 	conn := ws.connection
 
 	for {
@@ -182,7 +182,7 @@ type WsClient interface {
 }
 
 type Client struct {
-	webSocket WebSocket
+	webSocket      WebSocket
 	messageHandler func(data []byte) error
 }
 
@@ -190,11 +190,11 @@ func NewClient() *Client {
 	return &Client{}
 }
 
-func (client *Client)SetMessageHandler(handler func(data []byte) error) {
+func (client *Client) SetMessageHandler(handler func(data []byte) error) {
 	client.messageHandler = handler
 }
 
-func (client *Client)writePump() {
+func (client *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
 	conn := client.webSocket.connection
@@ -216,7 +216,7 @@ func (client *Client)writePump() {
 				//TODO: handle error
 				log.Printf("Error writing to websocket %v", err)
 			}
-		case <- ticker.C:
+		case <-ticker.C:
 			log.Println("Ping triggered")
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
@@ -227,7 +227,7 @@ func (client *Client)writePump() {
 	}
 }
 
-func (client *Client)readPump() {
+func (client *Client) readPump() {
 	conn := client.webSocket.connection
 	defer func() {
 		_ = conn.Close()
@@ -236,7 +236,7 @@ func (client *Client)readPump() {
 	conn.SetPongHandler(func(string) error {
 		_ = conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
-		})
+	})
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
@@ -256,16 +256,16 @@ func (client *Client)readPump() {
 	}
 }
 
-func (client *Client)Write(data []byte) {
+func (client *Client) Write(data []byte) {
 	client.webSocket.outQueue <- data
 }
 
-func (client* Client) Start(url string) error {
+func (client *Client) Start(url string) error {
 	dialer := websocket.Dialer{
-		ReadBufferSize: 1024,
-		WriteBufferSize: 1024,
+		ReadBufferSize:   1024,
+		WriteBufferSize:  1024,
 		HandshakeTimeout: 30 * time.Second,
-		Subprotocols: []string{"ocpp1.6"},
+		Subprotocols:     []string{"ocpp1.6"},
 	}
 	ws, _, err := dialer.Dial(url, nil)
 	if err != nil {
@@ -279,6 +279,6 @@ func (client* Client) Start(url string) error {
 	return nil
 }
 
-func (client* Client) Stop() {
+func (client *Client) Stop() {
 	close(client.webSocket.outQueue)
 }

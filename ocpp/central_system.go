@@ -8,11 +8,11 @@ import (
 
 type CentralSystem struct {
 	Endpoint
-	server ws.WsServer
+	server                ws.WsServer
 	newChargePointHandler func(chargePointId string)
-	callHandler func(chargePointId string, call *Call)
-	callResultHandler func(chargePointId string, callResult *CallResult)
-	callErrorHandler func(chargePointId string, callError *CallError)
+	callHandler           func(chargePointId string, call *Call)
+	callResultHandler     func(chargePointId string, callResult *CallResult)
+	callErrorHandler      func(chargePointId string, callError *CallError)
 	clientPendingMessages map[string]string
 }
 
@@ -28,23 +28,23 @@ func NewCentralSystem(wsServer ws.WsServer, profiles ...*Profile) *CentralSystem
 	}
 }
 
-func (centralSystem *CentralSystem)SetCallHandler(handler func(chargePointId string, call *Call)) {
+func (centralSystem *CentralSystem) SetCallHandler(handler func(chargePointId string, call *Call)) {
 	centralSystem.callHandler = handler
 }
 
-func (centralSystem *CentralSystem)SetCallResultHandler(handler func(chargePointId string, callResult *CallResult)) {
+func (centralSystem *CentralSystem) SetCallResultHandler(handler func(chargePointId string, callResult *CallResult)) {
 	centralSystem.callResultHandler = handler
 }
 
-func (centralSystem *CentralSystem)SetCallErrorHandler(handler func(chargePointId string, callError *CallError)) {
+func (centralSystem *CentralSystem) SetCallErrorHandler(handler func(chargePointId string, callError *CallError)) {
 	centralSystem.callErrorHandler = handler
 }
 
-func (centralSystem *CentralSystem)SetNewChargePointHandler(handler func(chargePointId string)) {
+func (centralSystem *CentralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
 	centralSystem.newChargePointHandler = handler
 }
 
-func (centralSystem *CentralSystem)Start(listenPort int, listenPath string) {
+func (centralSystem *CentralSystem) Start(listenPort int, listenPath string) {
 	// Set internal message handler
 	centralSystem.server.SetNewClientHandler(func(ws ws.Channel) {
 		centralSystem.newChargePointHandler(ws.GetId())
@@ -55,11 +55,11 @@ func (centralSystem *CentralSystem)Start(listenPort int, listenPath string) {
 	centralSystem.server.Start(listenPort, listenPath)
 }
 
-func (centralSystem *CentralSystem)Stop() {
+func (centralSystem *CentralSystem) Stop() {
 	centralSystem.server.Stop()
 }
 
-func (centralSystem *CentralSystem)SendRequest(chargePointId string, request Request) error {
+func (centralSystem *CentralSystem) SendRequest(chargePointId string, request Request) error {
 	err := validate.Struct(request)
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (centralSystem *CentralSystem)SendRequest(chargePointId string, request Req
 	return centralSystem.server.Write(chargePointId, []byte(jsonMessage))
 }
 
-func (centralSystem *CentralSystem)SendMessage(chargePointId string, message Message) error {
+func (centralSystem *CentralSystem) SendMessage(chargePointId string, message Message) error {
 	err := validate.Struct(message)
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (centralSystem *CentralSystem)SendMessage(chargePointId string, message Mes
 	return nil
 }
 
-func (centralSystem *CentralSystem)ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
+func (centralSystem *CentralSystem) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 	parsedJson := ParseRawJsonMessage(data)
 	message, err := centralSystem.ParseMessage(parsedJson)
 	if err != nil {
@@ -136,5 +136,3 @@ func (centralSystem *CentralSystem)ocppMessageHandler(wsChannel ws.Channel, data
 	}
 	return nil
 }
-
-

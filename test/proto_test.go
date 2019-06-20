@@ -11,14 +11,14 @@ import (
 // Tests
 type OcppV16TestSuite struct {
 	suite.Suite
-	chargePoint *ocpp.ChargePoint
+	chargePoint   *ocpp.ChargePoint
 	centralSystem *ocpp.CentralSystem
-	mockServer *MockWebsocketServer
-	mockClient *MockWebsocketClient
+	mockServer    *MockWebsocketServer
+	mockClient    *MockWebsocketClient
 }
 
 func (suite *OcppV16TestSuite) SetupTest() {
-	coreProfile := ocpp.NewProfile("core",  v16.BootNotificationFeature{}, v16.AuthorizeFeature{}, v16.ChangeAvailabilityFeature{})
+	coreProfile := ocpp.NewProfile("core", v16.BootNotificationFeature{}, v16.AuthorizeFeature{}, v16.ChangeAvailabilityFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockClient = &mockClient

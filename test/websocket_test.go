@@ -13,7 +13,7 @@ import (
 var (
 	serverPort = 8887
 	serverPath = "/ws/{id}"
-	testPath = "/ws/testws"
+	testPath   = "/ws/testws"
 )
 
 func TestWebsocketEcho(t *testing.T) {
@@ -48,6 +48,6 @@ func TestWebsocketEcho(t *testing.T) {
 	}()
 	err := wsClient.Start(u.String())
 	assert.Nil(t, err)
-	result := <- done
+	result := <-done
 	assert.True(t, result)
 }

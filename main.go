@@ -11,12 +11,12 @@ type CentralSystemListener struct {
 	chargePoints map[string]string
 }
 
-func (csl CentralSystemListener)OnAuthorize(chargePointId string, request *v16.AuthorizeRequest) (confirmation *v16.AuthorizeConfirmation, err error) {
+func (csl CentralSystemListener) OnAuthorize(chargePointId string, request *v16.AuthorizeRequest) (confirmation *v16.AuthorizeConfirmation, err error) {
 	log.Printf("Received Authorize request from %v", chargePointId)
 	return nil, nil
 }
 
-func (csl CentralSystemListener)OnBootNotification(chargePointId string, request *v16.BootNotificationRequest) (confirmation *v16.BootNotificationConfirmation, err error) {
+func (csl CentralSystemListener) OnBootNotification(chargePointId string, request *v16.BootNotificationRequest) (confirmation *v16.BootNotificationConfirmation, err error) {
 	log.Printf("Received Boot Notification request from %v", chargePointId)
 	return nil, nil
 }
@@ -45,7 +45,7 @@ func runCentralSystem(args []string) {
 type ChargePointListener struct {
 }
 
-func (cpl ChargePointListener)OnChangeAvailability(request *v16.ChangeAvailabilityRequest) (confirmation *v16.ChangeAvailabilityConfirmation, err error) {
+func (cpl ChargePointListener) OnChangeAvailability(request *v16.ChangeAvailabilityRequest) (confirmation *v16.ChangeAvailabilityConfirmation, err error) {
 	log.Printf("Received change availability request from central system")
 	return nil, nil
 }

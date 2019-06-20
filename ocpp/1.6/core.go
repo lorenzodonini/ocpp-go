@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	BootNotificationFeatureName = "BootNotification"
-	AuthorizeFeatureName = "Authorize"
+	BootNotificationFeatureName   = "BootNotification"
+	AuthorizeFeatureName          = "Authorize"
 	ChangeAvailabilityFeatureName = "ChangeAvailability"
 )
 

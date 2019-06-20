@@ -12,7 +12,7 @@ import (
 )
 
 // Utility functions
-func GetAuthorizeRequest(t* testing.T, request ocpp.Request) *v16.AuthorizeRequest {
+func GetAuthorizeRequest(t *testing.T, request ocpp.Request) *v16.AuthorizeRequest {
 	assert.NotNil(t, request)
 	result := request.(*v16.AuthorizeRequest)
 	assert.NotNil(t, result)
@@ -20,7 +20,7 @@ func GetAuthorizeRequest(t* testing.T, request ocpp.Request) *v16.AuthorizeReque
 	return result
 }
 
-func GetAuthorizeConfirmation(t* testing.T, confirmation ocpp.Confirmation) *v16.AuthorizeConfirmation {
+func GetAuthorizeConfirmation(t *testing.T, confirmation ocpp.Confirmation) *v16.AuthorizeConfirmation {
 	assert.NotNil(t, confirmation)
 	result := confirmation.(*v16.AuthorizeConfirmation)
 	assert.NotNil(t, result)
@@ -41,7 +41,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {
 
 func (suite *OcppV16TestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry {
+	var confirmationTable = []ConfirmationTestEntry{
 		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * 8), ParentIdTag: "00000", Status: v16.AuthorizationStatusAccepted}}, true},
 		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{ParentIdTag: "00000", Status: v16.AuthorizationStatusAccepted}}, true},
 		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * 8), Status: v16.AuthorizationStatusAccepted}}, true},

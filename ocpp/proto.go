@@ -25,7 +25,7 @@ type Confirmation interface {
 }
 
 type ProtoError struct {
-	Error error
+	Error     error
 	ErrorCode ErrorCode
 	MessageId string
 }
@@ -34,7 +34,7 @@ var validate = validator.New()
 
 // -------------------- Profile --------------------
 type Profile struct {
-	Name string
+	Name     string
 	Features map[string]Feature
 }
 
@@ -46,20 +46,20 @@ func NewProfile(name string, features ...Feature) *Profile {
 	return &profile
 }
 
-func (p* Profile) AddFeature(feature Feature) {
+func (p *Profile) AddFeature(feature Feature) {
 	p.Features[feature.GetFeatureName()] = feature
 }
 
-func (p* Profile) SupportsFeature(name string) bool {
+func (p *Profile) SupportsFeature(name string) bool {
 	_, ok := p.Features[name]
 	return ok
 }
 
-func (p* Profile) GetFeature(name string) Feature {
+func (p *Profile) GetFeature(name string) Feature {
 	return p.Features[name]
 }
 
-func (p* Profile) ParseRequest(featureName string, rawRequest interface{}) Request {
+func (p *Profile) ParseRequest(featureName string, rawRequest interface{}) Request {
 	feature, ok := p.Features[featureName]
 	if !ok {
 		log.Printf("Feature %s not found", featureName)
@@ -83,7 +83,7 @@ func (p* Profile) ParseRequest(featureName string, rawRequest interface{}) Reque
 	return result
 }
 
-func (p* Profile) ParseConfirmation(featureName string, rawConfirmation interface{}) Confirmation {
+func (p *Profile) ParseConfirmation(featureName string, rawConfirmation interface{}) Confirmation {
 	feature, ok := p.Features[featureName]
 	if !ok {
 		log.Printf("Feature %s not found", featureName)
@@ -108,9 +108,9 @@ func (p* Profile) ParseConfirmation(featureName string, rawConfirmation interfac
 type MessageType int
 
 const (
-	CALL 		= 2
-	CALL_RESULT = 3
-	CALL_ERROR 	= 4
+	CALL        MessageType = 2
+	CALL_RESULT MessageType = 3
+	CALL_ERROR  MessageType = 4
 )
 
 type Message interface {
@@ -121,22 +121,22 @@ type Message interface {
 
 // -------------------- Call --------------------
 type Call struct {
-	Message					  `validate:"-"`
+	Message       `validate:"-"`
 	MessageTypeId MessageType `json:"messageTypeId" validate:"required,eq=2"`
 	UniqueId      string      `json:"uniqueId" validate:"required,max=36"`
 	Action        string      `json:"action" validate:"required,max=36"`
 	Payload       Request     `json:"payload" validate:"required"`
 }
 
-func (call* Call)GetMessageTypeId() MessageType {
+func (call *Call) GetMessageTypeId() MessageType {
 	return call.MessageTypeId
 }
 
-func (call* Call)GetUniqueId() string {
+func (call *Call) GetUniqueId() string {
 	return call.UniqueId
 }
 
-func (call* Call) MarshalJSON() ([]byte, error) {
+func (call *Call) MarshalJSON() ([]byte, error) {
 	fields := make([]interface{}, 4)
 	fields[0] = call.MessageTypeId
 	fields[1] = call.UniqueId
@@ -148,16 +148,16 @@ func (call* Call) MarshalJSON() ([]byte, error) {
 // -------------------- Call Result --------------------
 type CallResult struct {
 	Message
-	MessageTypeId MessageType 	`json:"messageTypeId" validate:"required,eq=3"`
-	UniqueId      string      	`json:"uniqueId" validate:"required,max=36"`
-	Payload       Confirmation 	`json:"payload" validate:"required"`
+	MessageTypeId MessageType  `json:"messageTypeId" validate:"required,eq=3"`
+	UniqueId      string       `json:"uniqueId" validate:"required,max=36"`
+	Payload       Confirmation `json:"payload" validate:"required"`
 }
 
-func (callResult* CallResult)GetMessageTypeId() MessageType {
+func (callResult *CallResult) GetMessageTypeId() MessageType {
 	return callResult.MessageTypeId
 }
 
-func (callResult* CallResult)GetUniqueId() string {
+func (callResult *CallResult) GetUniqueId() string {
 	return callResult.UniqueId
 }
 
@@ -174,18 +174,18 @@ type ErrorCode string
 
 type CallError struct {
 	Message
-	MessageTypeId    MessageType   `json:"messageTypeId" validate:"required,eq=4"`
-	UniqueId         string        `json:"uniqueId" validate:"required,max=36"`
-	ErrorCode        ErrorCode 		`json:"errorCode" validate:"-"` //TODO: check if error is supported
-	ErrorDescription string        `json:"errorDescription" validate:"required"`
-	ErrorDetails     interface{}   `json:"errorDetails" validate:"omitempty"`
+	MessageTypeId    MessageType `json:"messageTypeId" validate:"required,eq=4"`
+	UniqueId         string      `json:"uniqueId" validate:"required,max=36"`
+	ErrorCode        ErrorCode   `json:"errorCode" validate:"-"` //TODO: check if error is supported
+	ErrorDescription string      `json:"errorDescription" validate:"required"`
+	ErrorDetails     interface{} `json:"errorDetails" validate:"omitempty"`
 }
 
-func (callError* CallError)GetMessageTypeId() MessageType {
+func (callError *CallError) GetMessageTypeId() MessageType {
 	return callError.MessageTypeId
 }
 
-func (callError* CallError)GetUniqueId() string {
+func (callError *CallError) GetUniqueId() string {
 	return callError.UniqueId
 }
 
@@ -200,18 +200,17 @@ func (callError *CallError) MarshalJSON() ([]byte, error) {
 }
 
 const (
-	NotImplemented ErrorCode = "NotImplemented"
-	NotSupported ErrorCode = "NotSupported"
-	InternalError ErrorCode = "InternalError"
-	ProtocolError ErrorCode = "ProtocolError"
-	SecurityError ErrorCode = "SecurityError"
-	FormationViolation ErrorCode = "FormationViolation"
-	PropertyConstraintViolation ErrorCode = "PropertyConstraintViolation"
+	NotImplemented                ErrorCode = "NotImplemented"
+	NotSupported                  ErrorCode = "NotSupported"
+	InternalError                 ErrorCode = "InternalError"
+	ProtocolError                 ErrorCode = "ProtocolError"
+	SecurityError                 ErrorCode = "SecurityError"
+	FormationViolation            ErrorCode = "FormationViolation"
+	PropertyConstraintViolation   ErrorCode = "PropertyConstraintViolation"
 	OccurrenceConstraintViolation ErrorCode = "OccurrenceConstraintViolation"
-	TypeConstraintViolation ErrorCode = "TypeConstraintViolation"
-	GenericError ErrorCode = "GenericError"
+	TypeConstraintViolation       ErrorCode = "TypeConstraintViolation"
+	GenericError                  ErrorCode = "GenericError"
 )
-
 
 // -------------------- Logic --------------------
 func ParseRawJsonMessage(dataJson []byte) []interface{} {
@@ -234,7 +233,7 @@ func ocppMessageToJson(message interface{}) ([]byte, error) {
 		return nil, err
 	}
 	jsonData[0] = '['
-	jsonData[len(jsonData) -1] = ']'
+	jsonData[len(jsonData)-1] = ']'
 	return jsonData, nil
 }
 
@@ -253,35 +252,35 @@ func newProtoError(validationErrors validator.ValidationErrors, messageId string
 	for _, el := range validationErrors {
 		switch el.ActualTag() {
 		case "required":
-			return &ProtoError{MessageId: messageId, ErrorCode:OccurrenceConstraintViolation, Error: errors2.Errorf("Field %v required but not found", el.Namespace())}
+			return &ProtoError{MessageId: messageId, ErrorCode: OccurrenceConstraintViolation, Error: errors2.Errorf("Field %v required but not found", el.Namespace())}
 		case "max":
-			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be maximum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be maximum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
 		case "min":
-			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be minimum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be minimum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
 		case "gte":
-			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be >= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be >= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
 		case "gt":
-			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be > %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be > %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
 		case "lte":
-			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be <= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be <= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
 		case "lt":
-			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be < %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be < %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
 		}
 	}
-	return &ProtoError{MessageId: messageId, ErrorCode:GenericError, Error: errors2.Errorf("%v", validationErrors.Error())}
+	return &ProtoError{MessageId: messageId, ErrorCode: GenericError, Error: errors2.Errorf("%v", validationErrors.Error())}
 }
 
 // -------------------- Endpoint --------------------
 type Endpoint struct {
-	Profiles []*Profile
+	Profiles        []*Profile
 	PendingRequests map[string]Request
 }
 
-func (endpoint *Endpoint)AddProfile(profile *Profile) {
+func (endpoint *Endpoint) AddProfile(profile *Profile) {
 	endpoint.Profiles = append(endpoint.Profiles, profile)
 }
 
-func (endpoint *Endpoint)GetProfile(name string) (*Profile, bool) {
+func (endpoint *Endpoint) GetProfile(name string) (*Profile, bool) {
 	for _, p := range endpoint.Profiles {
 		if p.Name == name {
 			return p, true
@@ -290,7 +289,7 @@ func (endpoint *Endpoint)GetProfile(name string) (*Profile, bool) {
 	return nil, false
 }
 
-func (endpoint *Endpoint)GetProfileForFeature(featureName string) (*Profile, bool) {
+func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*Profile, bool) {
 	for _, p := range endpoint.Profiles {
 		if p.SupportsFeature(featureName) {
 			return p, true
@@ -299,38 +298,38 @@ func (endpoint *Endpoint)GetProfileForFeature(featureName string) (*Profile, boo
 	return nil, false
 }
 
-func (endpoint *Endpoint)AddPendingRequest(id string, request Request) {
+func (endpoint *Endpoint) AddPendingRequest(id string, request Request) {
 	endpoint.PendingRequests[id] = request
 }
 
-func (endpoint *Endpoint)GetPendingRequest(id string) (Request, bool) {
+func (endpoint *Endpoint) GetPendingRequest(id string) (Request, bool) {
 	request, ok := endpoint.PendingRequests[id]
 	return request, ok
 }
 
-func (endpoint *Endpoint)DeletePendingRequest(id string) {
+func (endpoint *Endpoint) DeletePendingRequest(id string) {
 	delete(endpoint.PendingRequests, id)
 }
 
-func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, *ProtoError) {
+func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError) {
 	// Checking message fields
 	if len(arr) < 3 {
-		return nil, &ProtoError{ErrorCode:FormationViolation, Error: errors2.Errorf("Invalid message. Expected array length >= 3")}
+		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid message. Expected array length >= 3")}
 	}
 	typeId, ok := arr[0].(float64)
 	if !ok {
-		return nil, &ProtoError{ErrorCode:FormationViolation, Error: errors2.Errorf("Invalid element %v at 0, expected int", arr[0])}
+		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 0, expected int", arr[0])}
 	}
 	uniqueId, ok := arr[1].(string)
 	if !ok {
-		return nil, &ProtoError{ErrorCode:FormationViolation, Error: errors2.Errorf("Invalid element %v at 1, expected int", arr[1])}
+		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 1, expected int", arr[1])}
 	}
 	// Parse message
 	if typeId == CALL {
 		action := arr[2].(string)
 		profile, ok := endpoint.GetProfileForFeature(action)
 		if !ok {
-			return nil, &ProtoError{ MessageId: uniqueId, ErrorCode: NotSupported, Error: errors2.Errorf("Unsupported feature %v", action)}
+			return nil, &ProtoError{MessageId: uniqueId, ErrorCode: NotSupported, Error: errors2.Errorf("Unsupported feature %v", action)}
 		}
 		request := profile.ParseRequest(action, arr[3])
 		call := Call{
@@ -381,11 +380,11 @@ func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, *ProtoError) 
 		}
 		return &callError, nil
 	} else {
-		return nil, &ProtoError{MessageId: uniqueId, ErrorCode:FormationViolation, Error: errors2.Errorf("Invalid message type ID %v", typeId)}
+		return nil, &ProtoError{MessageId: uniqueId, ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid message type ID %v", typeId)}
 	}
 }
 
-func (endpoint *Endpoint)CreateCall(request Request) (*Call, error) {
+func (endpoint *Endpoint) CreateCall(request Request) (*Call, error) {
 	action := request.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
@@ -402,7 +401,7 @@ func (endpoint *Endpoint)CreateCall(request Request) (*Call, error) {
 	return &call, nil
 }
 
-func (endpoint *Endpoint)CreateCallResult(confirmation Confirmation, uniqueId string) (*CallResult, error) {
+func (endpoint *Endpoint) CreateCallResult(confirmation Confirmation, uniqueId string) (*CallResult, error) {
 	action := confirmation.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
@@ -416,7 +415,7 @@ func (endpoint *Endpoint)CreateCallResult(confirmation Confirmation, uniqueId st
 	return &callResult, nil
 }
 
-func (endpoint *Endpoint)CreateCallError(uniqueId string, code ErrorCode, description string, details interface{}) *CallError {
+func (endpoint *Endpoint) CreateCallError(uniqueId string, code ErrorCode, description string, details interface{}) *CallError {
 	callError := CallError{
 		MessageTypeId:    CALL_ERROR,
 		UniqueId:         uniqueId,

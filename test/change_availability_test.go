@@ -11,7 +11,7 @@ import (
 )
 
 // Utility functions
-func GetChangeAvailabilityRequest(t* testing.T, request ocpp.Request) *v16.ChangeAvailabilityRequest {
+func GetChangeAvailabilityRequest(t *testing.T, request ocpp.Request) *v16.ChangeAvailabilityRequest {
 	assert.NotNil(t, request)
 	result := request.(*v16.ChangeAvailabilityRequest)
 	assert.NotNil(t, result)
@@ -19,7 +19,7 @@ func GetChangeAvailabilityRequest(t* testing.T, request ocpp.Request) *v16.Chang
 	return result
 }
 
-func GetChangeAvailabilityConfirmation(t* testing.T, confirmation ocpp.Confirmation) *v16.ChangeAvailabilityConfirmation {
+func GetChangeAvailabilityConfirmation(t *testing.T, confirmation ocpp.Confirmation) *v16.ChangeAvailabilityConfirmation {
 	assert.NotNil(t, confirmation)
 	result := confirmation.(*v16.ChangeAvailabilityConfirmation)
 	assert.NotNil(t, result)

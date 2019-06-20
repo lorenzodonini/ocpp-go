@@ -12,7 +12,7 @@ import (
 )
 
 // Utility functions
-func GetBootNotificationRequest(t* testing.T, request ocpp.Request) *v16.BootNotificationRequest {
+func GetBootNotificationRequest(t *testing.T, request ocpp.Request) *v16.BootNotificationRequest {
 	assert.NotNil(t, request)
 	result := request.(*v16.BootNotificationRequest)
 	assert.NotNil(t, result)
@@ -20,7 +20,7 @@ func GetBootNotificationRequest(t* testing.T, request ocpp.Request) *v16.BootNot
 	return result
 }
 
-func GetBootNotificationConfirmation(t* testing.T, confirmation ocpp.Confirmation) *v16.BootNotificationConfirmation {
+func GetBootNotificationConfirmation(t *testing.T, confirmation ocpp.Confirmation) *v16.BootNotificationConfirmation {
 	assert.NotNil(t, confirmation)
 	result := confirmation.(*v16.BootNotificationConfirmation)
 	assert.NotNil(t, result)

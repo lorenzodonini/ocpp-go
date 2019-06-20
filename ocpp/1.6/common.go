@@ -49,22 +49,22 @@ type PropertyViolation struct {
 	Property string
 }
 
-func (e* PropertyViolation) Error() string {
+func (e *PropertyViolation) Error() string {
 	return ""
 }
 
 type AuthorizationStatus string
 
 const (
-	AuthorizationStatusAccepted AuthorizationStatus = "Accepted"
-	AuthorizationStatusBlocked AuthorizationStatus = "Blocked"
-	AuthorizationStatusExpired AuthorizationStatus = "Expired"
-	AuthorizationStatusInvalid AuthorizationStatus = "Invalid"
+	AuthorizationStatusAccepted     AuthorizationStatus = "Accepted"
+	AuthorizationStatusBlocked      AuthorizationStatus = "Blocked"
+	AuthorizationStatusExpired      AuthorizationStatus = "Expired"
+	AuthorizationStatusInvalid      AuthorizationStatus = "Invalid"
 	AuthorizationStatusConcurrentTx AuthorizationStatus = "ConcurrentTx"
 )
 
 type IdTagInfo struct {
-	ExpiryDate time.Time		`json:"expiryDate" validate:"omitempty,gt"`
-	ParentIdTag string			`json:"parentIdTag" validate:"omitempty,max=20"`
-	Status AuthorizationStatus	`json:"status" validate:"required"`
+	ExpiryDate  time.Time           `json:"expiryDate" validate:"omitempty,gt"`
+	ParentIdTag string              `json:"parentIdTag" validate:"omitempty,max=20"`
+	Status      AuthorizationStatus `json:"status" validate:"required"`
 }
