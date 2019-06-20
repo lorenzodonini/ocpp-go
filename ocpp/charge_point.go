@@ -79,7 +79,6 @@ func (chargePoint *ChargePoint)SendRequest(request Request) error {
 	}
 	chargePoint.pendingRequest = call.UniqueId
 	chargePoint.client.Write([]byte(jsonMessage))
-	//TODO: use promise/future for fetching the result
 	return nil
 }
 
@@ -87,9 +86,15 @@ func (chargePoint *ChargePoint)ocppMessageHandler(data []byte) error {
 	parsedJson := ParseRawJsonMessage(data)
 	message, err := chargePoint.ParseMessage(parsedJson)
 	if err != nil {
-		// TODO: handle
-		log.Printf("Error while parsing message: %v", err)
-		return err
+		if err.MessageId != "" {
+			callError := chargePoint.CreateCallError(err.MessageId, err.ErrorCode, err.Error.Error(), nil)
+			err2 := chargePoint.SendMessage(callError)
+			if err2 != nil {
+				return err2
+			}
+		}
+		log.Print(err)
+		return err.Error
 	}
 	switch message.GetMessageTypeId() {
 	case CALL:
@@ -126,6 +131,5 @@ func (chargePoint *ChargePoint)SendMessage(message Message) error {
 		chargePoint.pendingRequest = call.UniqueId
 	}
 	chargePoint.client.Write([]byte(jsonMessage))
-	//TODO: use promise/future for fetching the result
 	return nil
 }

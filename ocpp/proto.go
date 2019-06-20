@@ -24,6 +24,12 @@ type Confirmation interface {
 	GetFeatureName() string
 }
 
+type ProtoError struct {
+	Error error
+	ErrorCode ErrorCode
+	MessageId string
+}
+
 var validate = validator.New()
 
 // -------------------- Profile --------------------
@@ -232,6 +238,39 @@ func ocppMessageToJson(message interface{}) ([]byte, error) {
 	return jsonData, nil
 }
 
+func getValueLength(value interface{}) int {
+	switch value.(type) {
+	case int:
+		return value.(int)
+	case string:
+		return len(value.(string))
+	default:
+		return 0
+	}
+}
+
+func newProtoError(validationErrors validator.ValidationErrors, messageId string) *ProtoError {
+	for _, el := range validationErrors {
+		switch el.ActualTag() {
+		case "required":
+			return &ProtoError{MessageId: messageId, ErrorCode:OccurrenceConstraintViolation, Error: errors2.Errorf("Field %v required but not found", el.Namespace())}
+		case "max":
+			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be maximum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+		case "min":
+			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be minimum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+		case "gte":
+			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be >= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+		case "gt":
+			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be > %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+		case "lte":
+			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be <= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+		case "lt":
+			return &ProtoError{MessageId: messageId, ErrorCode:PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be < %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+		}
+	}
+	return &ProtoError{MessageId: messageId, ErrorCode:GenericError, Error: errors2.Errorf("%v", validationErrors.Error())}
+}
+
 // -------------------- Endpoint --------------------
 type Endpoint struct {
 	Profiles []*Profile
@@ -273,24 +312,26 @@ func (endpoint *Endpoint)DeletePendingRequest(id string) {
 	delete(endpoint.PendingRequests, id)
 }
 
-func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, error) {
+func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, *ProtoError) {
 	// Checking message fields
 	if len(arr) < 3 {
-		log.Fatal("Invalid message. Expected array length >= 3")
+		return nil, &ProtoError{ErrorCode:FormationViolation, Error: errors2.Errorf("Invalid message. Expected array length >= 3")}
 	}
 	typeId, ok := arr[0].(float64)
 	if !ok {
-		log.Printf("Invalid element %v at 0, expected int", arr[0])
+		return nil, &ProtoError{ErrorCode:FormationViolation, Error: errors2.Errorf("Invalid element %v at 0, expected int", arr[0])}
 	}
 	uniqueId, ok := arr[1].(string)
 	if !ok {
-		log.Printf("Invalid element %v at 1, expected int", arr[1])
+		return nil, &ProtoError{ErrorCode:FormationViolation, Error: errors2.Errorf("Invalid element %v at 1, expected int", arr[1])}
 	}
 	// Parse message
 	if typeId == CALL {
 		action := arr[2].(string)
-		//TODO: check for ok in GetProfileForFeature
-		profile, _ := endpoint.GetProfileForFeature(action)
+		profile, ok := endpoint.GetProfileForFeature(action)
+		if !ok {
+			return nil, &ProtoError{ MessageId: uniqueId, ErrorCode: NotSupported, Error: errors2.Errorf("Unsupported feature %v", action)}
+		}
 		request := profile.ParseRequest(action, arr[3])
 		call := Call{
 			MessageTypeId: CALL,
@@ -300,7 +341,8 @@ func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, error) {
 		}
 		err := validate.Struct(call)
 		if err != nil {
-			return nil, err
+			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
+			return nil, protoError
 		}
 		return &call, nil
 	} else if typeId == CALL_RESULT {
@@ -319,11 +361,11 @@ func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, error) {
 		endpoint.DeletePendingRequest(callResult.GetUniqueId())
 		err := validate.Struct(callResult)
 		if err != nil {
-			return nil, err
+			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
+			return nil, protoError
 		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
-		//TODO: handle error for pending request
 		callError := CallError{
 			MessageTypeId:    CALL_ERROR,
 			UniqueId:         uniqueId,
@@ -334,11 +376,12 @@ func (endpoint *Endpoint)ParseMessage(arr []interface{}) (Message, error) {
 		endpoint.DeletePendingRequest(callError.GetUniqueId())
 		err := validate.Struct(callError)
 		if err != nil {
-			return nil, err
+			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
+			return nil, protoError
 		}
 		return &callError, nil
 	} else {
-		return nil, errors2.Errorf("Invalid message type ID %v", typeId)
+		return nil, &ProtoError{MessageId: uniqueId, ErrorCode:FormationViolation, Error: errors2.Errorf("Invalid message type ID %v", typeId)}
 	}
 }
 

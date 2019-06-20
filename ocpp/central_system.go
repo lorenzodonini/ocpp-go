@@ -78,7 +78,6 @@ func (centralSystem *CentralSystem)SendRequest(chargePointId string, request Req
 		return err
 	}
 	centralSystem.clientPendingMessages[chargePointId] = call.UniqueId
-	//TODO: use promise/future for fetching the result
 	return centralSystem.server.Write(chargePointId, []byte(jsonMessage))
 }
 
@@ -105,7 +104,6 @@ func (centralSystem *CentralSystem)SendMessage(chargePointId string, message Mes
 	if err != nil {
 		return err
 	}
-	//TODO: use promise/future for fetching the result
 	return nil
 }
 
@@ -113,9 +111,15 @@ func (centralSystem *CentralSystem)ocppMessageHandler(wsChannel ws.Channel, data
 	parsedJson := ParseRawJsonMessage(data)
 	message, err := centralSystem.ParseMessage(parsedJson)
 	if err != nil {
-		// TODO: handle
-		log.Printf("Error while parsing message: %v", err)
-		return err
+		if err.MessageId != "" {
+			callError := centralSystem.CreateCallError(err.MessageId, err.ErrorCode, err.Error.Error(), nil)
+			err2 := centralSystem.SendMessage(wsChannel.GetId(), callError)
+			if err2 != nil {
+				return err2
+			}
+		}
+		log.Print(err)
+		return err.Error
 	}
 	switch message.GetMessageTypeId() {
 	case CALL:
