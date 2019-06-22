@@ -163,7 +163,7 @@ func ParseCallError(endpoint *ocpp.Endpoint, json string, t *testing.T) *ocpp.Ca
 	return callError
 }
 
-func CheckCallError(t *testing.T, callError *ocpp.CallError, expectedId string, expectedError ocpp.CallError, expectedDescription string, expectedDetails interface{}) {
+func CheckCallError(t *testing.T, callError *ocpp.CallError, expectedId string, expectedError ocpp.ErrorCode, expectedDescription string, expectedDetails interface{}) {
 	assert.Equal(t, ocpp.CALL_ERROR, callError.GetMessageTypeId())
 	assert.Equal(t, expectedId, callError.GetUniqueId())
 	assert.Equal(t, expectedError, callError.ErrorCode)
