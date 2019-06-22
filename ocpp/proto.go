@@ -398,6 +398,10 @@ func (endpoint *Endpoint) CreateCall(request Request) (*Call, error) {
 		Action:        action,
 		Payload:       request,
 	}
+	err := validate.Struct(call)
+	if err != nil {
+		return nil, err
+	}
 	endpoint.AddPendingRequest(uniqueId, request)
 	return &call, nil
 }
@@ -412,6 +416,10 @@ func (endpoint *Endpoint) CreateCallResult(confirmation Confirmation, uniqueId s
 		MessageTypeId: CALL_RESULT,
 		UniqueId:      uniqueId,
 		Payload:       confirmation,
+	}
+	err := validate.Struct(callResult)
+	if err != nil {
+		return nil, err
 	}
 	return &callResult, nil
 }
