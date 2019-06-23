@@ -138,7 +138,7 @@ func (call *Call) GetUniqueId() string {
 
 func (call *Call) MarshalJSON() ([]byte, error) {
 	fields := make([]interface{}, 4)
-	fields[0] = call.MessageTypeId
+	fields[0] = int(call.MessageTypeId)
 	fields[1] = call.UniqueId
 	fields[2] = call.Action
 	fields[3] = call.Payload
@@ -163,7 +163,7 @@ func (callResult *CallResult) GetUniqueId() string {
 
 func (callResult *CallResult) MarshalJSON() ([]byte, error) {
 	fields := make([]interface{}, 3)
-	fields[0] = callResult.MessageTypeId
+	fields[0] = int(callResult.MessageTypeId)
 	fields[1] = callResult.UniqueId
 	fields[2] = callResult.Payload
 	return json.Marshal(fields)
@@ -191,7 +191,7 @@ func (callError *CallError) GetUniqueId() string {
 
 func (callError *CallError) MarshalJSON() ([]byte, error) {
 	fields := make([]interface{}, 5)
-	fields[0] = callError.MessageTypeId
+	fields[0] = int(callError.MessageTypeId)
 	fields[1] = callError.UniqueId
 	fields[2] = callError.ErrorCode
 	fields[3] = callError.ErrorDescription
@@ -217,6 +217,7 @@ func ParseRawJsonMessage(dataJson []byte) []interface{} {
 	var arr []interface{}
 	err := json.Unmarshal(dataJson, &arr)
 	if err != nil {
+		// TODO: return error
 		log.Fatal(err)
 	}
 	return arr
@@ -318,12 +319,12 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 	}
 	rawTypeId, ok := arr[0].(float64)
 	if !ok {
-		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 0, expected int", arr[0])}
+		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 0, expected message type (int)", arr[0])}
 	}
 	typeId := MessageType(rawTypeId)
 	uniqueId, ok := arr[1].(string)
 	if !ok {
-		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 1, expected int", arr[1])}
+		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 1, expected unique ID (string)", arr[1])}
 	}
 	// Parse message
 	if typeId == CALL {
