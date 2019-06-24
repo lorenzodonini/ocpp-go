@@ -246,7 +246,95 @@ func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
 	assert.Equal(t, fmt.Sprintf("Invalid message type ID %v", invalidTypeId), protoErr.Error.Error())
 }
 
-//TODO: implement generic protocol tests
+func (suite *OcppJTestSuite) TestParseMessageUnsupported() {
+	t := suite.T()
+	mockMessage := make([]interface{}, 4)
+	messageId := "12345"
+	invalidAction := "SomeAction"
+	// Test invalid message length
+	mockMessage[0] = float64(ocpp.CALL)			// Message Type ID
+	mockMessage[1] = messageId 					// Unique ID
+	mockMessage[2] = invalidAction				// Action
+	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
+	assert.Nil(t, message)
+	assert.NotNil(t, protoErr)
+	assert.Equal(t, messageId, protoErr.MessageId)
+	assert.Equal(t, ocpp.NotSupported, protoErr.ErrorCode)
+	assert.Equal(t, fmt.Sprintf("Unsupported feature %v", invalidAction), protoErr.Error.Error())
+}
+
+func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
+	t := suite.T()
+	mockMessage := make([]interface{}, 3)
+	messageId := "12345"
+	// Test invalid message length
+	mockMessage[0] = float64(ocpp.CALL)			// Message Type ID
+	mockMessage[1] = messageId 					// Unique ID
+	mockMessage[2] = MockFeatureName
+	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
+	assert.Nil(t, message)
+	assert.NotNil(t, protoErr)
+	assert.Equal(t, messageId, protoErr.MessageId)
+	assert.Equal(t, ocpp.FormationViolation, protoErr.ErrorCode)
+	assert.Equal(t, "Invalid Call message. Expected array length 4", protoErr.Error.Error())
+}
+
+func (suite *OcppJTestSuite) TestParseMessageInvalidCallResult() {
+	t := suite.T()
+	mockMessage := make([]interface{}, 3)
+	messageId := "12345"
+	mockConfirmation := newMockConfirmation("testValue")
+	// Test invalid message length
+	mockMessage[0] = float64(ocpp.CALL_RESULT)			// Message Type ID
+	mockMessage[1] = messageId 							// Unique ID
+	mockMessage[2] = mockConfirmation
+	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
+	// Both message and error should be nil
+	assert.Nil(t, message)
+	assert.Nil(t, protoErr)
+}
+
+func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
+	t := suite.T()
+	mockMessage := make([]interface{}, 3)
+	messageId := "12345"
+	// Test invalid message length
+	mockMessage[0] = float64(ocpp.CALL_ERROR)			// Message Type ID
+	mockMessage[1] = messageId 							// Unique ID
+	mockMessage[2] = ocpp.GenericError
+	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
+	assert.Nil(t, message)
+	assert.NotNil(t, protoErr)
+	assert.Equal(t, messageId, protoErr.MessageId)
+	assert.Equal(t, ocpp.FormationViolation, protoErr.ErrorCode)
+	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Error.Error())
+}
+
+func (suite *OcppJTestSuite) TestParseCall() {
+	t := suite.T()
+	mockMessage := make([]interface{}, 4)
+	messageId := "12345"
+	mockValue := "somevalue"
+	mockRequest := newMockRequest(mockValue)
+	// Test invalid message length
+	mockMessage[0] = float64(ocpp.CALL) 	// Message Type ID
+	mockMessage[1] = messageId 				// Unique ID
+	mockMessage[2] = MockFeatureName
+	mockMessage[3] = mockRequest
+	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
+	assert.Nil(t, protoErr)
+	assert.NotNil(t, message)
+	assert.Equal(t, ocpp.CALL, message.GetMessageTypeId())
+	assert.Equal(t, messageId, message.GetUniqueId())
+	assert.IsType(t, new(ocpp.Call), message)
+	call := message.(*ocpp.Call)
+	assert.Equal(t, MockFeatureName, call.Action)
+	assert.IsType(t, new(MockRequest), call.Payload)
+	mockRequest = call.Payload.(*MockRequest)
+	assert.Equal(t, mockValue, mockRequest.MockValue)
+}
+
+//TODO: implement further ocpp-j protocol tests
 
 func TestOcppJ(t *testing.T) {
 	suite.Run(t, new(OcppJTestSuite))
