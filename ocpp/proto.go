@@ -329,7 +329,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 	// Parse message
 	if typeId == CALL {
 		if len(arr) != 4 {
-			return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid Call message. Expected array length 4")}
+			return nil, &ProtoError{MessageId: uniqueId, ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid Call message. Expected array length 4")}
 		}
 		action := arr[2].(string)
 		profile, ok := endpoint.GetProfileForFeature(action)
@@ -371,7 +371,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
 		if len(arr) < 4 {
-			return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid Call Error message. Expected array length >= 4")}
+			return nil, &ProtoError{MessageId: uniqueId, ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid Call Error message. Expected array length >= 4")}
 		}
 		var details interface{}
 		if len(arr) > 4 {
