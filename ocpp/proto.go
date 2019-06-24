@@ -328,6 +328,9 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 	}
 	// Parse message
 	if typeId == CALL {
+		if len(arr) != 4 {
+			return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid Call message. Expected array length 4")}
+		}
 		action := arr[2].(string)
 		profile, ok := endpoint.GetProfileForFeature(action)
 		if !ok {
@@ -367,12 +370,19 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
+		if len(arr) < 4 {
+			return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid Call Error message. Expected array length >= 4")}
+		}
+		var details interface{}
+		if len(arr) > 4 {
+			details = arr[4]
+		}
 		callError := CallError{
 			MessageTypeId:    CALL_ERROR,
 			UniqueId:         uniqueId,
 			ErrorCode:        arr[2].(ErrorCode),
 			ErrorDescription: arr[3].(string),
-			ErrorDetails:     arr[4],
+			ErrorDetails:     details,
 		}
 		endpoint.DeletePendingRequest(callError.GetUniqueId())
 		err := validate.Struct(callError)
