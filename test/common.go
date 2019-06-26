@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/go-playground/validator.v9"
+	"reflect"
 	"testing"
 )
 
@@ -78,6 +79,54 @@ func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(data 
 func (websocketClient *MockWebsocketClient) Write(data []byte) {
 	websocketClient.MethodCalled("Write", data)
 }
+
+// ---------------------- MOCK FEATURE ----------------------
+const (
+	MockFeatureName = "Mock"
+)
+
+type MockRequest struct {
+	mock.Mock
+	MockValue string `json:"mockValue" validate:"required,max=10"`
+}
+
+type MockConfirmation struct {
+	mock.Mock
+	MockValue string `json:"mockValue" validate:"required,min=5"`
+}
+
+type MockFeature struct {
+	mock.Mock
+}
+
+func (f MockFeature) GetFeatureName() string {
+	return MockFeatureName
+}
+
+func (f MockFeature) GetRequestType() reflect.Type {
+	return reflect.TypeOf(MockRequest{})
+}
+
+func (f MockFeature) GetConfirmationType() reflect.Type {
+	return reflect.TypeOf(MockConfirmation{})
+}
+
+func (r MockRequest) GetFeatureName() string {
+	return MockFeatureName
+}
+
+func (c MockConfirmation) GetFeatureName() string {
+	return MockFeatureName
+}
+
+func newMockRequest(value string) *MockRequest {
+	return &MockRequest{MockValue: value}
+}
+
+func newMockConfirmation(value string) *MockConfirmation {
+	return &MockConfirmation{MockValue: value}
+}
+
 
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {

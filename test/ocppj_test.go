@@ -4,59 +4,11 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 	"testing"
 )
-
-// Mock Feature
-const (
-	MockFeatureName = "Mock"
-)
-
-type MockRequest struct {
-	mock.Mock
-	MockValue string `json:"mockValue" validate:"required,max=10"`
-}
-
-type MockConfirmation struct {
-	mock.Mock
-	MockValue string `json:"mockValue" validate:"required,min=5"`
-}
-
-type MockFeature struct {
-	mock.Mock
-}
-
-func (f MockFeature) GetFeatureName() string {
-	return MockFeatureName
-}
-
-func (f MockFeature) GetRequestType() reflect.Type {
-	return reflect.TypeOf(MockRequest{})
-}
-
-func (f MockFeature) GetConfirmationType() reflect.Type {
-	return reflect.TypeOf(MockConfirmation{})
-}
-
-func (r MockRequest) GetFeatureName() string {
-	return MockFeatureName
-}
-
-func (c MockConfirmation) GetFeatureName() string {
-	return MockFeatureName
-}
-
-func newMockRequest(value string) *MockRequest {
-	return &MockRequest{MockValue: value}
-}
-
-func newMockConfirmation(value string) *MockConfirmation {
-	return &MockConfirmation{MockValue: value}
-}
 
 // Tests
 type OcppJTestSuite struct {
