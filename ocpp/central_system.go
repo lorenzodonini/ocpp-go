@@ -17,7 +17,7 @@ type CentralSystem struct {
 }
 
 func NewCentralSystem(wsServer ws.WsServer, profiles ...*Profile) *CentralSystem {
-	endpoint := Endpoint{PendingRequests: map[string]Request{}}
+	endpoint := Endpoint{pendingRequests: map[string]Request{}}
 	for _, profile := range profiles {
 		endpoint.AddProfile(profile)
 	}
@@ -97,7 +97,7 @@ func (centralSystem *CentralSystem) SendMessage(chargePointId string, message Me
 			// Cannot send. Protocol is based on response-confirmation
 			return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", req)
 		}
-		centralSystem.PendingRequests[message.GetUniqueId()] = call.Payload
+		centralSystem.AddPendingRequest(message.GetUniqueId(), call.Payload)
 		centralSystem.clientPendingMessages[chargePointId] = call.UniqueId
 	}
 	err = centralSystem.server.Write(chargePointId, []byte(jsonMessage))

@@ -18,7 +18,7 @@ type ChargePoint struct {
 }
 
 func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *ChargePoint {
-	endpoint := Endpoint{PendingRequests: map[string]Request{}}
+	endpoint := Endpoint{pendingRequests: map[string]Request{}}
 	for _, profile := range profiles {
 		endpoint.AddProfile(profile)
 	}
@@ -127,7 +127,7 @@ func (chargePoint *ChargePoint) SendMessage(message Message) error {
 			// Cannot send. Protocol is based on response-confirmation
 			return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", chargePoint.pendingRequest)
 		}
-		chargePoint.PendingRequests[message.GetUniqueId()] = call.Payload
+		chargePoint.pendingRequests[message.GetUniqueId()] = call.Payload
 		chargePoint.pendingRequest = call.UniqueId
 	}
 	chargePoint.client.Write([]byte(jsonMessage))

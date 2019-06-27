@@ -274,7 +274,7 @@ func newProtoError(validationErrors validator.ValidationErrors, messageId string
 // -------------------- Endpoint --------------------
 type Endpoint struct {
 	Profiles        []*Profile
-	PendingRequests map[string]Request
+	pendingRequests map[string]Request
 }
 
 func (endpoint *Endpoint) AddProfile(profile *Profile) {
@@ -300,16 +300,16 @@ func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*Profile, bo
 }
 
 func (endpoint *Endpoint) AddPendingRequest(id string, request Request) {
-	endpoint.PendingRequests[id] = request
+	endpoint.pendingRequests[id] = request
 }
 
 func (endpoint *Endpoint) GetPendingRequest(id string) (Request, bool) {
-	request, ok := endpoint.PendingRequests[id]
+	request, ok := endpoint.pendingRequests[id]
 	return request, ok
 }
 
 func (endpoint *Endpoint) DeletePendingRequest(id string) {
-	delete(endpoint.PendingRequests, id)
+	delete(endpoint.pendingRequests, id)
 }
 
 func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError) {
@@ -350,7 +350,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 		}
 		return &call, nil
 	} else if typeId == CALL_RESULT {
-		request, ok := endpoint.PendingRequests[uniqueId]
+		request, ok := endpoint.pendingRequests[uniqueId]
 		if !ok {
 			log.Printf("No previous request %v sent. Discarding response message", uniqueId)
 			return nil, nil
