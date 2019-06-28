@@ -196,7 +196,7 @@ func (callError *CallError) MarshalJSON() ([]byte, error) {
 	fields[2] = callError.ErrorCode
 	fields[3] = callError.ErrorDescription
 	fields[4] = callError.ErrorDetails
-	return ocppMessageToJson(callError)
+	return ocppMessageToJson(fields)
 }
 
 const (
