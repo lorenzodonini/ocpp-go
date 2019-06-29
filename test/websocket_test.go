@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var (
+const (
 	serverPort = 8887
 	serverPath = "/ws/{id}"
 	testPath   = "/ws/testws"

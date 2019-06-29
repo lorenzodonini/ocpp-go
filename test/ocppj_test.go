@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
@@ -27,6 +28,8 @@ func (suite *OcppJTestSuite) SetupTest() {
 	suite.mockServer = &mockServer
 	suite.chargePoint = ocpp.NewChargePoint("mock_id", suite.mockClient, mockProfile)
 	suite.centralSystem = ocpp.NewCentralSystem(suite.mockServer, mockProfile)
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.mockClient.On("write", mock.Anything).Return()
 }
 
 // Protocol functions test

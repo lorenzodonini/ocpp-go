@@ -76,6 +76,7 @@ func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(data 
 	websocketClient.MessageHandler = handler
 }
 
+//TODO: Write should return error, same as for server
 func (websocketClient *MockWebsocketClient) Write(data []byte) {
 	websocketClient.MethodCalled("Write", data)
 }
