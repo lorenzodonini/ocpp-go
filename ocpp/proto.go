@@ -377,10 +377,12 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 		if len(arr) > 4 {
 			details = arr[4]
 		}
+		rawErrorCode := arr[2].(string)
+		errorCode := ErrorCode(rawErrorCode)
 		callError := CallError{
 			MessageTypeId:    CALL_ERROR,
 			UniqueId:         uniqueId,
-			ErrorCode:        arr[2].(ErrorCode),
+			ErrorCode:        errorCode,
 			ErrorDescription: arr[3].(string),
 			ErrorDetails:     details,
 		}
