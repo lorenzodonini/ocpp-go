@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
@@ -20,6 +19,10 @@ type OcppJTestSuite struct {
 	mockClient    *MockWebsocketClient
 }
 
+func TestOcppJ(t *testing.T) {
+	suite.Run(t, new(OcppJTestSuite))
+}
+
 func (suite *OcppJTestSuite) SetupTest() {
 	mockProfile := ocpp.NewProfile("mock", MockFeature{})
 	mockClient := MockWebsocketClient{}
@@ -28,8 +31,6 @@ func (suite *OcppJTestSuite) SetupTest() {
 	suite.mockServer = &mockServer
 	suite.chargePoint = ocpp.NewChargePoint("mock_id", suite.mockClient, mockProfile)
 	suite.centralSystem = ocpp.NewCentralSystem(suite.mockServer, mockProfile)
-	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
-	suite.mockClient.On("write", mock.Anything).Return()
 }
 
 // Protocol functions test
@@ -371,7 +372,3 @@ func (suite *OcppJTestSuite) TestParseCall() {
 }
 
 //TODO: implement further ocpp-j protocol tests
-
-func TestOcppJ(t *testing.T) {
-	suite.Run(t, new(OcppJTestSuite))
-}
