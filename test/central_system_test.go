@@ -73,7 +73,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendInvalidMessage() {
 	assert.NotNil(t, err)
 }
 
-func (suite *OcppJTestSuite) TestCentralSystemSenddMessageFailed() {
+func (suite *OcppJTestSuite) TestCentralSystemSenddessageFailed() {
 	t := suite.T()
 	mockChargePointId := "1234"
 	mockCallId := "6789"
@@ -90,7 +90,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSenddMessageFailed() {
 	assert.NotNil(t, err)
 }
 
-func (suite *OcppJTestSuite) TestCallHandler() {
+func (suite *OcppJTestSuite) TestCentralSystemCallHandler() {
 	t := suite.T()
 	mockChargePointId := "1234"
 	mockUniqueId := "5678"
@@ -109,7 +109,7 @@ func (suite *OcppJTestSuite) TestCallHandler() {
 	suite.centralSystem.Start(8887, "somePath")
 }
 
-func (suite *OcppJTestSuite) TestCallResultHandler() {
+func (suite *OcppJTestSuite) TestCentralSystemCallResultHandler() {
 	t := suite.T()
 	mockChargePointId := "1234"
 	mockUniqueId := "5678"
@@ -130,7 +130,7 @@ func (suite *OcppJTestSuite) TestCallResultHandler() {
 	suite.centralSystem.Start(8887, "somePath")
 }
 
-func (suite *OcppJTestSuite) TestCallErrorHandler() {
+func (suite *OcppJTestSuite) TestCentralSystemCallErrorHandler() {
 	t := suite.T()
 	mockChargePointId := "1234"
 	mockUniqueId := "5678"
