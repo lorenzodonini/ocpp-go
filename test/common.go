@@ -64,8 +64,8 @@ type MockWebsocketClient struct {
 }
 
 func (websocketClient *MockWebsocketClient) Start(url string) error {
-	websocketClient.Called(url)
-	return nil
+	args := websocketClient.MethodCalled("Start", url)
+	return args.Error(0)
 }
 
 func (websocketClient *MockWebsocketClient) Stop() {
@@ -77,8 +77,9 @@ func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(data 
 }
 
 //TODO: Write should return error, same as for server
-func (websocketClient *MockWebsocketClient) Write(data []byte) {
-	websocketClient.MethodCalled("Write", data)
+func (websocketClient *MockWebsocketClient) Write(data []byte) error {
+	args := websocketClient.MethodCalled("Write", data)
+	return args.Error(0)
 }
 
 // ---------------------- MOCK FEATURE ----------------------

@@ -78,8 +78,7 @@ func (chargePoint *ChargePoint) SendRequest(request Request) error {
 		return err
 	}
 	chargePoint.pendingRequest = call.UniqueId
-	chargePoint.client.Write([]byte(jsonMessage))
-	return nil
+	return chargePoint.client.Write([]byte(jsonMessage))
 }
 
 func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {

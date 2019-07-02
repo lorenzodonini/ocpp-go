@@ -178,7 +178,7 @@ type WsClient interface {
 	Start(url string) error
 	Stop()
 	SetMessageHandler(handler func(data []byte) error)
-	Write(data []byte)
+	Write(data []byte) error
 }
 
 type Client struct {
@@ -256,8 +256,9 @@ func (client *Client) readPump() {
 	}
 }
 
-func (client *Client) Write(data []byte) {
+func (client *Client) Write(data []byte) error {
 	client.webSocket.outQueue <- data
+	return nil
 }
 
 func (client *Client) Start(url string) error {
