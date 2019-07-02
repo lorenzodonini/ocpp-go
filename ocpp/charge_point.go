@@ -129,6 +129,5 @@ func (chargePoint *ChargePoint) SendMessage(message Message) error {
 		chargePoint.pendingRequests[message.GetUniqueId()] = call.Payload
 		chargePoint.pendingRequest = call.UniqueId
 	}
-	chargePoint.client.Write([]byte(jsonMessage))
-	return nil
+	return chargePoint.client.Write([]byte(jsonMessage))
 }
