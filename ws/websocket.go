@@ -32,9 +32,10 @@ type Channel interface {
 }
 
 type WebSocket struct {
-	connection *websocket.Conn
-	id         string
-	outQueue   chan []byte
+	connection  *websocket.Conn
+	id          string
+	outQueue    chan []byte
+	closeSignal chan bool
 }
 
 func (websocket *WebSocket) GetId() string {
@@ -47,14 +48,16 @@ type WsServer interface {
 	Stop()
 	SetMessageHandler(handler func(ws Channel, data []byte) error)
 	SetNewClientHandler(handler func(ws Channel))
+	SetDisconnectedHandler(handler func(ws Channel))
 	Write(webSocketId string, data []byte) error
 }
 
 type Server struct {
-	connections      map[string]*WebSocket
-	httpServer       *http.Server
-	messageHandler   func(ws Channel, data []byte) error
-	newClientHandler func(ws Channel)
+	connections         map[string]*WebSocket
+	httpServer          *http.Server
+	messageHandler      func(ws Channel, data []byte) error
+	newClientHandler    func(ws Channel)
+	disconnectedHandler func(ws Channel)
 }
 
 func NewServer() *Server {
@@ -67,6 +70,10 @@ func (server *Server) SetMessageHandler(handler func(ws Channel, data []byte) er
 
 func (server *Server) SetNewClientHandler(handler func(ws Channel)) {
 	server.newClientHandler = handler
+}
+
+func (server *Server) SetDisconnectedHandler(handler func(ws Channel)) {
+	server.disconnectedHandler = handler
 }
 
 func (server *Server) Start(port int, listenPath string) {
@@ -121,6 +128,10 @@ func (server *Server) readPump(ws *WebSocket) {
 	conn := ws.connection
 	defer func() {
 		_ = conn.Close()
+		ws.closeSignal <- true
+		if server.disconnectedHandler != nil {
+			server.disconnectedHandler(ws)
+		}
 	}()
 
 	_ = conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -129,6 +140,7 @@ func (server *Server) readPump(ws *WebSocket) {
 		_ = conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
+
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
@@ -143,7 +155,7 @@ func (server *Server) readPump(ws *WebSocket) {
 			err = server.messageHandler(channel, message)
 			if err != nil {
 				log.Printf("Error while handling message: %v", err)
-				//TODO: handle error
+				continue
 			}
 		}
 	}
@@ -151,6 +163,9 @@ func (server *Server) readPump(ws *WebSocket) {
 
 func (server *Server) writePump(ws *WebSocket) {
 	conn := ws.connection
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	for {
 		select {
@@ -166,8 +181,12 @@ func (server *Server) writePump(ws *WebSocket) {
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				//TODO: handle error
 				log.Printf("Error writing to websocket %v", err)
+				return
+			}
+		case closed, ok := <-ws.closeSignal:
+			if !ok || closed {
+				return
 			}
 		}
 	}
@@ -205,7 +224,7 @@ func (client *Client) writePump() {
 	conn := client.webSocket.connection
 	defer func() {
 		ticker.Stop()
-		_ := conn.Close()
+		_ = conn.Close()
 	}()
 
 	for {
