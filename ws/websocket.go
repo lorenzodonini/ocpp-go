@@ -178,12 +178,14 @@ type WsClient interface {
 	Start(url string) error
 	Stop()
 	SetMessageHandler(handler func(data []byte) error)
+	SetDisconnectHandler(handler func(err error))
 	Write(data []byte) error
 }
 
 type Client struct {
-	webSocket      WebSocket
-	messageHandler func(data []byte) error
+	webSocket           WebSocket
+	messageHandler      func(data []byte) error
+	disconnectedHandler func(err error)
 }
 
 func NewClient() *Client {
@@ -194,17 +196,24 @@ func (client *Client) SetMessageHandler(handler func(data []byte) error) {
 	client.messageHandler = handler
 }
 
+func (client *Client) SetDisconnectHandler(handler func(err error)) {
+	client.disconnectedHandler = handler
+}
+
 func (client *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
-	defer ticker.Stop()
 	conn := client.webSocket.connection
+	defer func() {
+		ticker.Stop()
+		_ := conn.Close()
+	}()
 
 	for {
 		select {
 		case data, ok := <-client.webSocket.outQueue:
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
-				// Closing connection
+				// Closing connection normally
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				if err != nil {
 					log.Printf("Error while closing client -> %v", err)
@@ -213,14 +222,18 @@ func (client *Client) writePump() {
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				//TODO: handle error
 				log.Printf("Error writing to websocket %v", err)
+				return
 			}
 		case <-ticker.C:
 			log.Println("Ping triggered")
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				log.Printf("Couldn't send ping message -> %v", err)
+				return
+			}
+		case closed, ok := <-client.webSocket.closeSignal:
+			if !ok || closed {
 				return
 			}
 		}
@@ -231,11 +244,11 @@ func (client *Client) readPump() {
 	conn := client.webSocket.connection
 	defer func() {
 		_ = conn.Close()
+		client.webSocket.closeSignal <- true
 	}()
 	_ = conn.SetReadDeadline(time.Now().Add(pongWait))
 	conn.SetPongHandler(func(string) error {
-		_ = conn.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
+		return conn.SetReadDeadline(time.Now().Add(pongWait))
 	})
 	for {
 		_, message, err := conn.ReadMessage()
@@ -243,14 +256,14 @@ func (client *Client) readPump() {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
 				log.Printf("error while reading from ws: %v", err)
 			}
-			break
+			return
 		}
 		log.Printf("Received message from server")
 		if client.messageHandler != nil {
 			err = client.messageHandler(message)
 			if err != nil {
 				log.Printf("Error while handling message: %v", err)
-				//TODO: handle error
+				continue
 			}
 		}
 	}
@@ -266,7 +279,7 @@ func (client *Client) Start(url string) error {
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
 		HandshakeTimeout: 30 * time.Second,
-		Subprotocols:     []string{"ocpp1.6"},
+		Subprotocols:     []string{"ocpp1.6"}, //TODO: move out of websocket file
 	}
 	ws, _, err := dialer.Dial(url, nil)
 	if err != nil {
