@@ -129,9 +129,6 @@ func (server *Server) readPump(ws *WebSocket) {
 	defer func() {
 		_ = conn.Close()
 		ws.closeSignal <- true
-		if server.disconnectedHandler != nil {
-			server.disconnectedHandler(ws)
-		}
 	}()
 
 	_ = conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -146,6 +143,9 @@ func (server *Server) readPump(ws *WebSocket) {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
 				log.Printf("error while reading from ws: %v", err)
+			}
+			if server.disconnectedHandler != nil {
+				server.disconnectedHandler(ws)
 			}
 			break
 		}
