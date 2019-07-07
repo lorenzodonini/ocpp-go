@@ -197,14 +197,12 @@ type WsClient interface {
 	Start(url string) error
 	Stop()
 	SetMessageHandler(handler func(data []byte) error)
-	SetDisconnectHandler(handler func(err error))
 	Write(data []byte) error
 }
 
 type Client struct {
 	webSocket           WebSocket
 	messageHandler      func(data []byte) error
-	disconnectedHandler func(err error)
 }
 
 func NewClient() *Client {
@@ -213,10 +211,6 @@ func NewClient() *Client {
 
 func (client *Client) SetMessageHandler(handler func(data []byte) error) {
 	client.messageHandler = handler
-}
-
-func (client *Client) SetDisconnectHandler(handler func(err error)) {
-	client.disconnectedHandler = handler
 }
 
 func (client *Client) writePump() {
