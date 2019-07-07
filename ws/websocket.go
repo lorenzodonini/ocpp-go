@@ -113,7 +113,7 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	url := r.URL
 	log.Printf("New client on URL %v", url.String())
-	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte)}
+	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte), closeSignal: make(chan bool, 1)}
 	server.connections[url.Path] = &ws
 	// Read and write routines are started in separate goroutines and function will return immediately
 	go server.writePump(&ws)
@@ -299,7 +299,7 @@ func (client *Client) Start(url string) error {
 		log.Printf("Error %v", err)
 		return err
 	}
-	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte)}
+	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte), closeSignal: make(chan bool, 1)}
 	//Start reader and write routine
 	go client.writePump()
 	client.readPump()
