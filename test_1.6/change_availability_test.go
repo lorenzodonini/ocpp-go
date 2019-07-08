@@ -144,7 +144,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 		return nil
 	})
 	// Setting client handlers
-	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return().Run(func(args mock.Arguments) {
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
 		u := args.String(0)
 		assert.Equal(t, wsUrl, u)
 		suite.mockServer.NewClientHandler(channel)
@@ -157,7 +157,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 		test.CheckCallResult(callResult, t, messageId)
 		return nil
 	})
-	suite.mockClient.On("Write", mock.Anything).Return().Run(func(args mock.Arguments) {
+	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		data := args.Get(0)
 		bytes := data.([]byte)
 		assert.NotNil(t, bytes)
@@ -167,5 +167,6 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	// Test Run
 	err := suite.mockClient.Start(wsUrl)
 	assert.Nil(t, err)
-	suite.mockClient.Write(requestRaw)
+	err = suite.mockClient.Write(requestRaw)
+	assert.Nil(t, err)
 }
