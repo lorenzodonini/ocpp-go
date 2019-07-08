@@ -86,3 +86,64 @@ func TestWebsocketEcho(t *testing.T) {
 	result := <-done
 	assert.True(t, result)
 }
+
+func TestWebsocketClientConnectionBreak(t *testing.T) {
+	newClient := make(chan bool)
+	disconnected := make(chan bool)
+	var wsServer *Server
+	wsServer = NewWebsocketServer(t, nil)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		newClient <- true
+	})
+	wsServer.SetDisconnectedHandler(func(ws Channel) {
+		disconnected <- true
+	})
+	go wsServer.Start(serverPort, serverPath)
+
+	// Test
+	wsClient := NewWebsocketClient(t, nil)
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	// Wait for connection to be established, then break the connection
+	go func() {
+		timer := time.NewTimer(1 * time.Second)
+		<-timer.C
+		err := wsClient.webSocket.connection.Close()
+		assert.Nil(t, err)
+	}()
+	err := wsClient.Start(u.String())
+	assert.Nil(t, err)
+	result := <-newClient
+	assert.True(t, result)
+	result = <-disconnected
+	assert.True(t, result)
+}
+
+func TestWebsocketServerConnectionBreak(t *testing.T) {
+	var wsServer *Server
+	disconnected := make(chan bool)
+	wsServer = NewWebsocketServer(t, nil)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		assert.NotNil(t, ws)
+		conn := wsServer.connections[ws.GetId()]
+		assert.NotNil(t, conn)
+		// Simulate connection closed as soon client is connected
+		err := conn.connection.Close()
+		assert.Nil(t, err)
+	})
+	wsServer.SetDisconnectedHandler(func(ws Channel) {
+		disconnected <- true
+	})
+	go wsServer.Start(serverPort, serverPath)
+
+	// Test
+	wsClient := NewWebsocketClient(t, nil)
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	err := wsClient.Start(u.String())
+	assert.Nil(t, err)
+	result := <-disconnected
+	assert.True(t, result)
+	// Cleanup
+	wsServer.Stop()
+}
