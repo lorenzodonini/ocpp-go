@@ -23,6 +23,12 @@ const (
 
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
+
+	// Time allowed for the initial handshake to complete.
+	handshakeTimeout = 30 * time.Second
+
+	// Default sub-protocol to send to peer upon connection.
+	defaultSubProtocol = "ocpp1.6"
 )
 
 var upgrader = websocket.Upgrader{}
@@ -287,12 +293,12 @@ func (client *Client) Write(data []byte) error {
 	return nil
 }
 
-func (client *Client) Start(url string) error {
+func (client *Client) Start(url string, dialOptions ...func(websocket.Dialer)) error {
 	dialer := websocket.Dialer{
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
-		HandshakeTimeout: 30 * time.Second,
-		Subprotocols:     []string{"ocpp1.6"}, //TODO: move out of websocket file
+		HandshakeTimeout: handshakeTimeout,
+		Subprotocols:     []string{defaultSubProtocol},
 	}
 	ws, _, err := dialer.Dial(url, nil)
 	if err != nil {
