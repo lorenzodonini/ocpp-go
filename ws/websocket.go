@@ -300,6 +300,9 @@ func (client *Client) Start(url string, dialOptions ...func(websocket.Dialer)) e
 		HandshakeTimeout: handshakeTimeout,
 		Subprotocols:     []string{defaultSubProtocol},
 	}
+	for _, option := range dialOptions {
+		option(dialer)
+	}
 	ws, _, err := dialer.Dial(url, nil)
 	if err != nil {
 		log.Printf("Error %v", err)
