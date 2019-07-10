@@ -85,6 +85,8 @@ func TestWebsocketEcho(t *testing.T) {
 	assert.Nil(t, err)
 	result := <-done
 	assert.True(t, result)
+	// Cleanup
+	wsServer.Stop()
 }
 
 func TestWebsocketClientConnectionBreak(t *testing.T) {
@@ -117,6 +119,8 @@ func TestWebsocketClientConnectionBreak(t *testing.T) {
 	assert.True(t, result)
 	result = <-disconnected
 	assert.True(t, result)
+	// Cleanup
+	wsServer.Stop()
 }
 
 func TestWebsocketServerConnectionBreak(t *testing.T) {
