@@ -200,7 +200,7 @@ func (server *Server) writePump(ws *WebSocket) {
 
 // ---------------------- CLIENT ----------------------
 type WsClient interface {
-	Start(url string) error
+	Start(url string, dialOptions ...func(websocket.Dialer)) error
 	Stop()
 	SetMessageHandler(handler func(data []byte) error)
 	Write(data []byte) error

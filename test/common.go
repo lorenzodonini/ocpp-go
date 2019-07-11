@@ -1,6 +1,7 @@
 package test
 
 import (
+	"github.com/gorilla/websocket"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +64,7 @@ type MockWebsocketClient struct {
 	MessageHandler func(data []byte) error
 }
 
-func (websocketClient *MockWebsocketClient) Start(url string) error {
+func (websocketClient *MockWebsocketClient) Start(url string, dialOptions ...func(websocket.Dialer)) error {
 	args := websocketClient.MethodCalled("Start", url)
 	return args.Error(0)
 }

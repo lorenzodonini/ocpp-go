@@ -25,7 +25,7 @@ func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *Char
 	if wsClient != nil {
 		return &ChargePoint{Endpoint: endpoint, client: wsClient, Id: id, pendingRequest: ""}
 	} else {
-		return &ChargePoint{Endpoint: endpoint, client: &ws.Client{}, Id: id, pendingRequest: ""}
+		return &ChargePoint{Endpoint: endpoint, client: ws.NewClient(), Id: id, pendingRequest: ""}
 	}
 }
 
