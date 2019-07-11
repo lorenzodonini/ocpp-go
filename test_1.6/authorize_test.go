@@ -2,8 +2,8 @@ package test_v16
 
 import (
 	"fmt"
+	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
 	"github.com/lorenzodonini/go-ocpp/test"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
@@ -13,19 +13,19 @@ import (
 )
 
 // Utility functions
-func GetAuthorizeRequest(t *testing.T, request ocpp.Request) *v16.AuthorizeRequest {
+func GetAuthorizeRequest(t *testing.T, request ocpp.Request) *ocpp16.AuthorizeRequest {
 	assert.NotNil(t, request)
-	result := request.(*v16.AuthorizeRequest)
+	result := request.(*ocpp16.AuthorizeRequest)
 	assert.NotNil(t, result)
-	assert.IsType(t, &v16.AuthorizeRequest{}, result)
+	assert.IsType(t, &ocpp16.AuthorizeRequest{}, result)
 	return result
 }
 
-func GetAuthorizeConfirmation(t *testing.T, confirmation ocpp.Confirmation) *v16.AuthorizeConfirmation {
+func GetAuthorizeConfirmation(t *testing.T, confirmation ocpp.Confirmation) *ocpp16.AuthorizeConfirmation {
 	assert.NotNil(t, confirmation)
-	result := confirmation.(*v16.AuthorizeConfirmation)
+	result := confirmation.(*ocpp16.AuthorizeConfirmation)
 	assert.NotNil(t, result)
-	assert.IsType(t, &v16.AuthorizeConfirmation{}, result)
+	assert.IsType(t, &ocpp16.AuthorizeConfirmation{}, result)
 	return result
 }
 
@@ -33,9 +33,9 @@ func GetAuthorizeConfirmation(t *testing.T, confirmation ocpp.Confirmation) *v16
 func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {
 	t := suite.T()
 	var requestTable = []test.RequestTestEntry{
-		{v16.AuthorizeRequest{IdTag: "12345"}, true},
-		{v16.AuthorizeRequest{}, false},
-		{v16.AuthorizeRequest{IdTag: ">20.................."}, false},
+		{ocpp16.AuthorizeRequest{IdTag: "12345"}, true},
+		{ocpp16.AuthorizeRequest{}, false},
+		{ocpp16.AuthorizeRequest{IdTag: ">20.................."}, false},
 	}
 	test.ExecuteRequestTestTable(t, requestTable)
 }
@@ -43,16 +43,16 @@ func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {
 func (suite *OcppV16TestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []test.ConfirmationTestEntry{
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * 8), ParentIdTag: "00000", Status: v16.AuthorizationStatusAccepted}}, true},
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{ParentIdTag: "00000", Status: v16.AuthorizationStatusAccepted}}, true},
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * 8), Status: v16.AuthorizationStatusAccepted}}, true},
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{Status: v16.AuthorizationStatusAccepted}}, true},
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{Status: v16.AuthorizationStatusBlocked}}, true},
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{Status: v16.AuthorizationStatusExpired}}, true},
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{Status: v16.AuthorizationStatusInvalid}}, true},
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{Status: v16.AuthorizationStatusConcurrentTx}}, true},
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{ParentIdTag: ">20..................", Status: v16.AuthorizationStatusAccepted}}, false},
-		{v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * -8), Status: v16.AuthorizationStatusAccepted}}, false},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * 8), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * 8), Status: ocpp16.AuthorizationStatusAccepted}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusAccepted}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusBlocked}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusExpired}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusInvalid}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusConcurrentTx}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ParentIdTag: ">20..................", Status: ocpp16.AuthorizationStatusAccepted}}, false},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * -8), Status: ocpp16.AuthorizationStatusAccepted}}, false},
 	}
 	test.ExecuteConfirmationTestTable(t, confirmationTable)
 }
@@ -63,7 +63,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeRequestFromJson() {
 	idTag := "tag1"
 	dataJson := fmt.Sprintf(`[2,"%v","Authorize",{"idTag":"%v"}]`, uniqueId, idTag)
 	call := test.ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
-	test.CheckCall(call, t, v16.AuthorizeFeatureName, uniqueId)
+	test.CheckCall(call, t, ocpp16.AuthorizeFeatureName, uniqueId)
 	request := GetAuthorizeRequest(t, call.Payload)
 	assert.Equal(t, idTag, request.IdTag)
 }
@@ -71,7 +71,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeRequestFromJson() {
 func (suite *OcppV16TestSuite) TestAuthorizeRequestToJson() {
 	t := suite.T()
 	idTag := "tag2"
-	request := v16.AuthorizeRequest{IdTag: idTag}
+	request := ocpp16.AuthorizeRequest{IdTag: idTag}
 	call, err := suite.chargePoint.CreateCall(request)
 	assert.Nil(t, err)
 	uniqueId := call.GetUniqueId()
@@ -88,13 +88,13 @@ func (suite *OcppV16TestSuite) TestAuthorizeRequestToJson() {
 func (suite *OcppV16TestSuite) TestAuthorizeConfirmationFromJson() {
 	t := suite.T()
 	uniqueId := "5678"
-	rawTime := time.Now().Add(time.Hour * 8).Format(v16.ISO8601)
-	expiryDate, err := time.Parse(v16.ISO8601, rawTime)
+	rawTime := time.Now().Add(time.Hour * 8).Format(ocpp16.ISO8601)
+	expiryDate, err := time.Parse(ocpp16.ISO8601, rawTime)
 	assert.Nil(t, err)
 	parentIdTag := "parentTag1"
-	status := v16.AuthorizationStatusAccepted
-	dummyRequest := v16.AuthorizeRequest{}
-	dataJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, uniqueId, expiryDate.Format(v16.ISO8601), parentIdTag, status)
+	status := ocpp16.AuthorizationStatusAccepted
+	dummyRequest := ocpp16.AuthorizeRequest{}
+	dataJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, uniqueId, expiryDate.Format(ocpp16.ISO8601), parentIdTag, status)
 	suite.chargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
 	callResult := test.ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
 	test.CheckCallResult(callResult, t, uniqueId)
@@ -109,8 +109,8 @@ func (suite *OcppV16TestSuite) TestAuthorizeConfirmationToJson() {
 	uniqueId := "1234"
 	parentIdTag := "parentTag1"
 	expiryDate := time.Now().Add(time.Hour * 8)
-	status := v16.AuthorizationStatusAccepted
-	confirmation := v16.AuthorizeConfirmation{IdTagInfo: v16.IdTagInfo{Status: status, ParentIdTag: parentIdTag, ExpiryDate: expiryDate}}
+	status := ocpp16.AuthorizationStatusAccepted
+	confirmation := ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: status, ParentIdTag: parentIdTag, ExpiryDate: expiryDate}}
 	callResult, err := suite.centralSystem.CreateCallResult(confirmation, uniqueId)
 	assert.Nil(t, err)
 	assert.NotNil(t, callResult)
@@ -130,9 +130,9 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	wsUrl := "someUrl"
 	idTag := "tag1"
 	parentIdTag := "parentTag1"
-	status := v16.AuthorizationStatusAccepted
+	status := ocpp16.AuthorizationStatusAccepted
 	expiryDate := time.Now().Add(time.Hour * 8)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, v16.AuthorizeFeatureName, idTag)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, ocpp16.AuthorizeFeatureName, idTag)
 	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.Format(time.RFC3339Nano), parentIdTag, status)
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
@@ -147,7 +147,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 		jsonData := string(data)
 		assert.Equal(t, requestJson, jsonData)
 		call := test.ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
-		test.CheckCall(call, t, v16.AuthorizeFeatureName, messageId)
+		test.CheckCall(call, t, ocpp16.AuthorizeFeatureName, messageId)
 		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
 		// TODO: generate the response dynamically
 		err := suite.mockClient.MessageHandler(responseRaw)

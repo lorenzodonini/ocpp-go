@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
+	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"log"
 	"os"
 	"strconv"
@@ -11,18 +11,18 @@ type CentralSystemListener struct {
 	chargePoints map[string]string
 }
 
-func (csl CentralSystemListener) OnAuthorize(chargePointId string, request *v16.AuthorizeRequest) (confirmation *v16.AuthorizeConfirmation, err error) {
+func (csl CentralSystemListener) OnAuthorize(chargePointId string, request *ocpp16.AuthorizeRequest) (confirmation *ocpp16.AuthorizeConfirmation, err error) {
 	log.Printf("Received Authorize request from %v", chargePointId)
 	return nil, nil
 }
 
-func (csl CentralSystemListener) OnBootNotification(chargePointId string, request *v16.BootNotificationRequest) (confirmation *v16.BootNotificationConfirmation, err error) {
+func (csl CentralSystemListener) OnBootNotification(chargePointId string, request *ocpp16.BootNotificationRequest) (confirmation *ocpp16.BootNotificationConfirmation, err error) {
 	log.Printf("Received Boot Notification request from %v", chargePointId)
 	return nil, nil
 }
 
 func runCentralSystem(args []string) {
-	centralSystem := v16.NewCentralSystem()
+	centralSystem := ocpp16.NewCentralSystem()
 	listener := CentralSystemListener{chargePoints: map[string]string{}}
 	centralSystem.SetNewChargePointHandler(func(chargePointId string) {
 		log.Printf("New charge point %v connected", chargePointId)
@@ -45,7 +45,7 @@ func runCentralSystem(args []string) {
 type ChargePointListener struct {
 }
 
-func (cpl ChargePointListener) OnChangeAvailability(request *v16.ChangeAvailabilityRequest) (confirmation *v16.ChangeAvailabilityConfirmation, err error) {
+func (cpl ChargePointListener) OnChangeAvailability(request *ocpp16.ChangeAvailabilityRequest) (confirmation *ocpp16.ChangeAvailabilityConfirmation, err error) {
 	log.Printf("Received change availability request from central system")
 	return nil, nil
 }
@@ -58,7 +58,7 @@ func runChargePoint(args []string) {
 	}
 	id := args[1]
 	csUrl := args[2]
-	chargePoint := v16.NewChargePoint(id)
+	chargePoint := ocpp16.NewChargePoint(id)
 	listener := ChargePointListener{}
 	chargePoint.SetChargePointCoreListener(listener)
 	err := chargePoint.Start(csUrl)

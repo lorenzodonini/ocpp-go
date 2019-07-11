@@ -2,7 +2,7 @@ package test_v16
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
+	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/test"
 	"github.com/stretchr/testify/suite"
 	"testing"
@@ -18,7 +18,7 @@ type OcppV16TestSuite struct {
 }
 
 func (suite *OcppV16TestSuite) SetupTest() {
-	coreProfile := ocpp.NewProfile("core", v16.BootNotificationFeature{}, v16.AuthorizeFeature{}, v16.ChangeAvailabilityFeature{})
+	coreProfile := ocpp.NewProfile("core", ocpp16.BootNotificationFeature{}, ocpp16.AuthorizeFeature{}, ocpp16.ChangeAvailabilityFeature{})
 	mockClient := test.MockWebsocketClient{}
 	mockServer := test.MockWebsocketServer{}
 	suite.mockClient = &mockClient

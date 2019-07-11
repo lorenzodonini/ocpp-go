@@ -2,8 +2,8 @@ package test_v16
 
 import (
 	"fmt"
+	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/ocpp/1.6"
 	"github.com/lorenzodonini/go-ocpp/test"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
@@ -12,30 +12,30 @@ import (
 )
 
 // Utility functions
-func GetChangeAvailabilityRequest(t *testing.T, request ocpp.Request) *v16.ChangeAvailabilityRequest {
+func GetChangeAvailabilityRequest(t *testing.T, request ocpp.Request) *ocpp16.ChangeAvailabilityRequest {
 	assert.NotNil(t, request)
-	result := request.(*v16.ChangeAvailabilityRequest)
+	result := request.(*ocpp16.ChangeAvailabilityRequest)
 	assert.NotNil(t, result)
-	assert.IsType(t, &v16.ChangeAvailabilityRequest{}, result)
+	assert.IsType(t, &ocpp16.ChangeAvailabilityRequest{}, result)
 	return result
 }
 
-func GetChangeAvailabilityConfirmation(t *testing.T, confirmation ocpp.Confirmation) *v16.ChangeAvailabilityConfirmation {
+func GetChangeAvailabilityConfirmation(t *testing.T, confirmation ocpp.Confirmation) *ocpp16.ChangeAvailabilityConfirmation {
 	assert.NotNil(t, confirmation)
-	result := confirmation.(*v16.ChangeAvailabilityConfirmation)
+	result := confirmation.(*ocpp16.ChangeAvailabilityConfirmation)
 	assert.NotNil(t, result)
-	assert.IsType(t, &v16.ChangeAvailabilityConfirmation{}, result)
+	assert.IsType(t, &ocpp16.ChangeAvailabilityConfirmation{}, result)
 	return result
 }
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
 	t := suite.T()
 	var testTable = []test.RequestTestEntry{
-		{v16.ChangeAvailabilityRequest{ConnectorId: 0, Type: v16.AvailabilityTypeOperative}, true},
-		{v16.ChangeAvailabilityRequest{ConnectorId: 0, Type: v16.AvailabilityTypeInoperative}, true},
-		{v16.ChangeAvailabilityRequest{ConnectorId: 0}, false},
-		{v16.ChangeAvailabilityRequest{Type: v16.AvailabilityTypeOperative}, true},
-		{v16.ChangeAvailabilityRequest{ConnectorId: -1, Type: v16.AvailabilityTypeOperative}, false},
+		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0, Type: ocpp16.AvailabilityTypeOperative}, true},
+		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0, Type: ocpp16.AvailabilityTypeInoperative}, true},
+		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0}, false},
+		{ocpp16.ChangeAvailabilityRequest{Type: ocpp16.AvailabilityTypeOperative}, true},
+		{ocpp16.ChangeAvailabilityRequest{ConnectorId: -1, Type: ocpp16.AvailabilityTypeOperative}, false},
 	}
 	test.ExecuteRequestTestTable(t, testTable)
 }
@@ -43,10 +43,10 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
 func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationValidation() {
 	t := suite.T()
 	var testTable = []test.ConfirmationTestEntry{
-		{v16.ChangeAvailabilityConfirmation{Status: v16.AvailabilityStatusAccepted}, true},
-		{v16.ChangeAvailabilityConfirmation{Status: v16.AvailabilityStatusRejected}, true},
-		{v16.ChangeAvailabilityConfirmation{Status: v16.AvailabilityStatusScheduled}, true},
-		{v16.ChangeAvailabilityConfirmation{}, false},
+		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusAccepted}, true},
+		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusRejected}, true},
+		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusScheduled}, true},
+		{ocpp16.ChangeAvailabilityConfirmation{}, false},
 	}
 	test.ExecuteConfirmationTestTable(t, testTable)
 }
@@ -56,10 +56,10 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestFromJson() {
 	t := suite.T()
 	uniqueId := "1234"
 	connectorId := 1
-	availabilityType := v16.AvailabilityTypeOperative
+	availabilityType := ocpp16.AvailabilityTypeOperative
 	dataJson := fmt.Sprintf(`[2,"%v","ChangeAvailability",{"connectorId":%v,"type":"%v"}]`, uniqueId, connectorId, availabilityType)
 	call := test.ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
-	test.CheckCall(call, t, v16.ChangeAvailabilityFeatureName, uniqueId)
+	test.CheckCall(call, t, ocpp16.ChangeAvailabilityFeatureName, uniqueId)
 	request := GetChangeAvailabilityRequest(t, call.Payload)
 	assert.Equal(t, connectorId, request.ConnectorId)
 	assert.Equal(t, availabilityType, request.Type)
@@ -68,8 +68,8 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestFromJson() {
 func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestToJson() {
 	t := suite.T()
 	connectorId := 1
-	availabilityType := v16.AvailabilityTypeOperative
-	request := v16.ChangeAvailabilityRequest{ConnectorId: connectorId, Type: availabilityType}
+	availabilityType := ocpp16.AvailabilityTypeOperative
+	request := ocpp16.ChangeAvailabilityRequest{ConnectorId: connectorId, Type: availabilityType}
 	call, err := suite.chargePoint.CreateCall(request)
 	assert.Nil(t, err)
 	uniqueId := call.GetUniqueId()
@@ -86,8 +86,8 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestToJson() {
 func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationFromJson() {
 	t := suite.T()
 	uniqueId := "5678"
-	status := v16.AvailabilityStatusAccepted
-	dummyRequest := v16.ChangeAvailabilityRequest{}
+	status := ocpp16.AvailabilityStatusAccepted
+	dummyRequest := ocpp16.ChangeAvailabilityRequest{}
 	dataJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, uniqueId, status)
 	suite.chargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
 	callResult := test.ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
@@ -99,8 +99,8 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationFromJson() {
 func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationToJson() {
 	t := suite.T()
 	uniqueId := "1234"
-	status := v16.AvailabilityStatusAccepted
-	confirmation := v16.ChangeAvailabilityConfirmation{Status: status}
+	status := ocpp16.AvailabilityStatusAccepted
+	confirmation := ocpp16.ChangeAvailabilityConfirmation{Status: status}
 	callResult, err := suite.centralSystem.CreateCallResult(confirmation, uniqueId)
 	assert.Nil(t, err)
 	assert.NotNil(t, callResult)
@@ -119,9 +119,9 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	messageId := "1234"
 	wsUrl := "someUrl"
 	connectorId := 1
-	availabilityType := v16.AvailabilityTypeOperative
-	status := v16.AvailabilityStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, v16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
+	availabilityType := ocpp16.AvailabilityTypeOperative
+	status := ocpp16.AvailabilityStatusAccepted
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
@@ -136,7 +136,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 		jsonData := string(data)
 		assert.Equal(t, requestJson, jsonData)
 		call := test.ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
-		test.CheckCall(call, t, v16.ChangeAvailabilityFeatureName, messageId)
+		test.CheckCall(call, t, ocpp16.ChangeAvailabilityFeatureName, messageId)
 		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
 		// TODO: generate the response dynamically
 		err := suite.mockClient.MessageHandler(responseRaw)

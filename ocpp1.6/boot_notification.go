@@ -1,4 +1,4 @@
-package v16
+package ocpp16
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ocpp"
