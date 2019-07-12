@@ -1,4 +1,4 @@
-package test
+package ocppj_test
 
 import (
 	"errors"
