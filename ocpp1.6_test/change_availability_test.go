@@ -1,10 +1,9 @@
-package test_v16
+package ocpp16_test
 
 import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
-	"github.com/lorenzodonini/go-ocpp/test"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,25 +29,25 @@ func GetChangeAvailabilityConfirmation(t *testing.T, confirmation ocppj.Confirma
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
 	t := suite.T()
-	var testTable = []test.RequestTestEntry{
+	var testTable = []RequestTestEntry{
 		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0, Type: ocpp16.AvailabilityTypeOperative}, true},
 		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0, Type: ocpp16.AvailabilityTypeInoperative}, true},
 		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0}, false},
 		{ocpp16.ChangeAvailabilityRequest{Type: ocpp16.AvailabilityTypeOperative}, true},
 		{ocpp16.ChangeAvailabilityRequest{ConnectorId: -1, Type: ocpp16.AvailabilityTypeOperative}, false},
 	}
-	test.ExecuteRequestTestTable(t, testTable)
+	ExecuteRequestTestTable(t, testTable)
 }
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationValidation() {
 	t := suite.T()
-	var testTable = []test.ConfirmationTestEntry{
+	var testTable = []ConfirmationTestEntry{
 		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusAccepted}, true},
 		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusRejected}, true},
 		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusScheduled}, true},
 		{ocpp16.ChangeAvailabilityConfirmation{}, false},
 	}
-	test.ExecuteConfirmationTestTable(t, testTable)
+	ExecuteConfirmationTestTable(t, testTable)
 }
 
 // Test
@@ -58,8 +57,8 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestFromJson() {
 	connectorId := 1
 	availabilityType := ocpp16.AvailabilityTypeOperative
 	dataJson := fmt.Sprintf(`[2,"%v","ChangeAvailability",{"connectorId":%v,"type":"%v"}]`, uniqueId, connectorId, availabilityType)
-	call := test.ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
-	test.CheckCall(call, t, ocpp16.ChangeAvailabilityFeatureName, uniqueId)
+	call := ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
+	CheckCall(call, t, ocpp16.ChangeAvailabilityFeatureName, uniqueId)
 	request := GetChangeAvailabilityRequest(t, call.Payload)
 	assert.Equal(t, connectorId, request.ConnectorId)
 	assert.Equal(t, availabilityType, request.Type)
@@ -74,7 +73,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestToJson() {
 	assert.Nil(t, err)
 	uniqueId := call.GetUniqueId()
 	assert.NotNil(t, call)
-	err = test.Validate.Struct(call)
+	err = Validate.Struct(call)
 	assert.Nil(t, err)
 	jsonData, err := call.MarshalJSON()
 	assert.Nil(t, err)
@@ -90,8 +89,8 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationFromJson() {
 	dummyRequest := ocpp16.ChangeAvailabilityRequest{}
 	dataJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, uniqueId, status)
 	suite.chargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
-	callResult := test.ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
-	test.CheckCallResult(callResult, t, uniqueId)
+	callResult := ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
+	CheckCallResult(callResult, t, uniqueId)
 	confirmation := GetChangeAvailabilityConfirmation(t, callResult.Payload)
 	assert.Equal(t, status, confirmation.Status)
 }
@@ -104,7 +103,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationToJson() {
 	callResult, err := suite.centralSystem.CreateCallResult(confirmation, uniqueId)
 	assert.Nil(t, err)
 	assert.NotNil(t, callResult)
-	err = test.Validate.Struct(callResult)
+	err = Validate.Struct(callResult)
 	assert.Nil(t, err)
 	jsonData, err := callResult.MarshalJSON()
 	assert.Nil(t, err)
@@ -125,7 +124,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
-	channel := test.NewMockWebSocket(wsId)
+	channel := NewMockWebSocket(wsId)
 	// Setting server handlers
 	suite.mockServer.SetNewClientHandler(func(ws ws.Channel) {
 		assert.NotNil(t, ws)
@@ -135,8 +134,8 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 		assert.Equal(t, requestRaw, data)
 		jsonData := string(data)
 		assert.Equal(t, requestJson, jsonData)
-		call := test.ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
-		test.CheckCall(call, t, ocpp16.ChangeAvailabilityFeatureName, messageId)
+		call := ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
+		CheckCall(call, t, ocpp16.ChangeAvailabilityFeatureName, messageId)
 		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
 		// TODO: generate the response dynamically
 		err := suite.mockClient.MessageHandler(responseRaw)
@@ -153,8 +152,8 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 		assert.Equal(t, responseRaw, data)
 		jsonData := string(data)
 		assert.Equal(t, responseJson, jsonData)
-		callResult := test.ParseCallResult(&suite.chargePoint.Endpoint, jsonData, t)
-		test.CheckCallResult(callResult, t, messageId)
+		callResult := ParseCallResult(&suite.chargePoint.Endpoint, jsonData, t)
+		CheckCallResult(callResult, t, messageId)
 		return nil
 	})
 	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {

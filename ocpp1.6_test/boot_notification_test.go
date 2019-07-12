@@ -1,10 +1,9 @@
-package test_v16
+package ocpp16_test
 
 import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
-	"github.com/lorenzodonini/go-ocpp/test"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,7 +31,7 @@ func GetBootNotificationConfirmation(t *testing.T, confirmation ocppj.Confirmati
 // Tests
 func (suite *OcppV16TestSuite) TestBootNotificationRequestValidation() {
 	t := suite.T()
-	var requestTable = []test.RequestTestEntry{
+	var requestTable = []RequestTestEntry{
 		{ocpp16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test"}, true},
 		{ocpp16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointModel: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, true},
 		{ocpp16.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, false},
@@ -47,12 +46,12 @@ func (suite *OcppV16TestSuite) TestBootNotificationRequestValidation() {
 		{ocpp16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterSerialNumber: ">25......................."}, false},
 		{ocpp16.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterType: ">25......................."}, false},
 	}
-	test.ExecuteRequestTestTable(t, requestTable)
+	ExecuteRequestTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestBootNotificationConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []test.ConfirmationTestEntry{
+	var confirmationTable = []ConfirmationTestEntry{
 		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp16.RegistrationStatusAccepted}, true},
 		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp16.RegistrationStatusPending}, true},
 		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp16.RegistrationStatusRejected}, true},
@@ -62,7 +61,7 @@ func (suite *OcppV16TestSuite) TestBootNotificationConfirmationValidation() {
 		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: -1, Status: ocpp16.RegistrationStatusAccepted}, false},
 		//TODO: incomplete list, see core.go
 	}
-	test.ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteConfirmationTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestBootNotificationRequestFromJson() {
@@ -71,8 +70,8 @@ func (suite *OcppV16TestSuite) TestBootNotificationRequestFromJson() {
 	modelId := "model1"
 	vendor := "ABL"
 	dataJson := fmt.Sprintf(`[2,"%v","BootNotification",{"chargePointModel": "%v", "chargePointVendor": "%v"}]`, uniqueId, modelId, vendor)
-	call := test.ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
-	test.CheckCall(call, t, ocpp16.BootNotificationFeatureName, uniqueId)
+	call := ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
+	CheckCall(call, t, ocpp16.BootNotificationFeatureName, uniqueId)
 	request := GetBootNotificationRequest(t, call.Payload)
 	assert.Equal(t, modelId, request.ChargePointModel)
 	assert.Equal(t, vendor, request.ChargePointVendor)
@@ -87,7 +86,7 @@ func (suite *OcppV16TestSuite) TestBootNotificationRequestToJson() {
 	uniqueId := call.GetUniqueId()
 	assert.Nil(t, err)
 	assert.NotNil(t, call)
-	err = test.Validate.Struct(call)
+	err = Validate.Struct(call)
 	assert.Nil(t, err)
 	jsonData, err := call.MarshalJSON()
 	assert.Nil(t, err)
@@ -107,8 +106,8 @@ func (suite *OcppV16TestSuite) TestBootNotificationConfirmationFromJson() {
 	dummyRequest := ocpp16.BootNotificationRequest{}
 	dataJson := fmt.Sprintf(`[3,"%v",{"currentTime": "%v", "interval": 60, "status": "%v"}]`, uniqueId, currentTime.Format(ocpp16.ISO8601), status)
 	suite.chargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
-	callResult := test.ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
-	test.CheckCallResult(callResult, t, uniqueId)
+	callResult := ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
+	CheckCallResult(callResult, t, uniqueId)
 	confirmation := GetBootNotificationConfirmation(t, callResult.Payload)
 	assert.Equal(t, status, confirmation.Status)
 	assert.Equal(t, interval, confirmation.Interval)
@@ -125,7 +124,7 @@ func (suite *OcppV16TestSuite) TestBootNotificationConfirmationToJson() {
 	callResult, err := suite.centralSystem.CreateCallResult(confirmation, uniqueId)
 	assert.Nil(t, err)
 	assert.NotNil(t, callResult)
-	err = test.Validate.Struct(callResult)
+	err = Validate.Struct(callResult)
 	assert.Nil(t, err)
 	jsonData, err := callResult.MarshalJSON()
 	assert.Nil(t, err)
@@ -147,7 +146,7 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime": "%v", "interval": 60, "status": "%v"}]`, messageId, time.Now().Format(ocpp16.ISO8601), ocpp16.RegistrationStatusAccepted)
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
-	channel := test.NewMockWebSocket(wsId)
+	channel := NewMockWebSocket(wsId)
 	// Setting server handlers
 	suite.mockServer.SetNewClientHandler(func(ws ws.Channel) {
 		assert.NotNil(t, ws)
@@ -157,8 +156,8 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 		assert.Equal(t, requestRaw, data)
 		jsonData := string(data)
 		assert.Equal(t, requestJson, jsonData)
-		call := test.ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
-		test.CheckCall(call, t, ocpp16.BootNotificationFeatureName, messageId)
+		call := ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
+		CheckCall(call, t, ocpp16.BootNotificationFeatureName, messageId)
 		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
 		// TODO: generate the response dynamically
 		err := suite.mockClient.MessageHandler(responseRaw)
@@ -175,8 +174,8 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 		assert.Equal(t, responseRaw, data)
 		jsonData := string(data)
 		assert.Equal(t, responseJson, jsonData)
-		callResult := test.ParseCallResult(&suite.chargePoint.Endpoint, jsonData, t)
-		test.CheckCallResult(callResult, t, messageId)
+		callResult := ParseCallResult(&suite.chargePoint.Endpoint, jsonData, t)
+		CheckCallResult(callResult, t, messageId)
 		return nil
 	})
 	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
