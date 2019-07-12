@@ -3,7 +3,7 @@ package test_v16
 import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/lorenzodonini/go-ocpp/test"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +12,7 @@ import (
 )
 
 // Utility functions
-func GetChangeAvailabilityRequest(t *testing.T, request ocpp.Request) *ocpp16.ChangeAvailabilityRequest {
+func GetChangeAvailabilityRequest(t *testing.T, request ocppj.Request) *ocpp16.ChangeAvailabilityRequest {
 	assert.NotNil(t, request)
 	result := request.(*ocpp16.ChangeAvailabilityRequest)
 	assert.NotNil(t, result)
@@ -20,7 +20,7 @@ func GetChangeAvailabilityRequest(t *testing.T, request ocpp.Request) *ocpp16.Ch
 	return result
 }
 
-func GetChangeAvailabilityConfirmation(t *testing.T, confirmation ocpp.Confirmation) *ocpp16.ChangeAvailabilityConfirmation {
+func GetChangeAvailabilityConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.ChangeAvailabilityConfirmation {
 	assert.NotNil(t, confirmation)
 	result := confirmation.(*ocpp16.ChangeAvailabilityConfirmation)
 	assert.NotNil(t, result)

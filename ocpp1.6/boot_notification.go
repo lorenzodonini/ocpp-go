@@ -1,7 +1,7 @@
 package ocpp16
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"reflect"
 	"time"
 )
@@ -16,7 +16,7 @@ const (
 )
 
 type BootNotificationRequest struct {
-	ocpp.Request            `json:"-"`
+	ocppj.Request           `json:"-"`
 	ChargeBoxSerialNumber   string `json:"chargeBoxSerialNumber,omitempty" validate:"max=25"`
 	ChargePointModel        string `json:"chargePointModel" validate:"required,max=20"`
 	ChargePointSerialNumber string `json:"chargePointSerialNumber,omitempty" validate:"max=25"`
@@ -30,10 +30,10 @@ type BootNotificationRequest struct {
 
 //TODO: add custom validator for registration status & interval
 type BootNotificationConfirmation struct {
-	ocpp.Confirmation `json:"-"`
-	CurrentTime       time.Time          `json:"currentTime" validate:"required"`
-	Interval          int                `json:"interval" validate:"required,gte=0"`
-	Status            RegistrationStatus `json:"status" validate:"required"`
+	ocppj.Confirmation `json:"-"`
+	CurrentTime        time.Time          `json:"currentTime" validate:"required"`
+	Interval           int                `json:"interval" validate:"required,gte=0"`
+	Status             RegistrationStatus `json:"status" validate:"required"`
 }
 
 type BootNotificationFeature struct{}

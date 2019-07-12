@@ -1,4 +1,4 @@
-package ocpp
+package ocppj
 
 import (
 	"encoding/json"

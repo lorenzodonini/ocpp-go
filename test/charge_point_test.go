@@ -3,7 +3,7 @@ package test
 import (
 	"errors"
 	"fmt"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -72,8 +72,8 @@ func (suite *OcppJTestSuite) TestChargePointSendInvalidMessage() {
 	mockRequest := newMockRequest("mockValue")
 	suite.chargePoint.AddPendingRequest(mockCallId, mockRequest)
 	mockConfirmation := newMockConfirmation("")
-	mockCallResult := ocpp.CallResult{
-		MessageTypeId: ocpp.CALL_RESULT,
+	mockCallResult := ocppj.CallResult{
+		MessageTypeId: ocppj.CALL_RESULT,
 		UniqueId:      mockInvalidId,
 		Payload:       mockConfirmation,
 	}
@@ -88,8 +88,8 @@ func (suite *OcppJTestSuite) TestChargePointSendMessageFailed() {
 	mockRequest := newMockRequest("mockValue")
 	suite.chargePoint.AddPendingRequest(mockCallId, mockRequest)
 	mockConfirmation := newMockConfirmation("mockValue")
-	mockCallResult := ocpp.CallResult{
-		MessageTypeId: ocpp.CALL_RESULT,
+	mockCallResult := ocppj.CallResult{
+		MessageTypeId: ocppj.CALL_RESULT,
 		UniqueId:      mockCallId,
 		Payload:       mockConfirmation,
 	}
@@ -102,7 +102,7 @@ func (suite *OcppJTestSuite) TestChargePointCallHandler() {
 	mockUniqueId := "5678"
 	mockValue := "someValue"
 	mockRequest := fmt.Sprintf(`[2,"%v","%v",{"mockValue":"%v"}]`, mockUniqueId, MockFeatureName, mockValue)
-	suite.chargePoint.SetCallHandler(func(call *ocpp.Call) {
+	suite.chargePoint.SetCallHandler(func(call *ocppj.Call) {
 		CheckCall(call, t, MockFeatureName, mockUniqueId)
 	})
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
@@ -120,7 +120,7 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.chargePoint.SetCallResultHandler(func(callResult *ocpp.CallResult) {
+	suite.chargePoint.SetCallResultHandler(func(callResult *ocppj.CallResult) {
 		CheckCallResult(callResult, t, mockUniqueId)
 	})
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
@@ -136,7 +136,7 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 	t := suite.T()
 	mockUniqueId := "5678"
-	mockErrorCode := ocpp.GenericError
+	mockErrorCode := ocppj.GenericError
 	mockErrorDescription := "Mock Description"
 	mockValue := "someValue"
 	mockErrorDetails := make(map[string]interface{})
@@ -144,7 +144,7 @@ func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 
 	mockRequest := newMockRequest("testValue")
 	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, mockUniqueId, mockErrorCode, mockErrorDescription, mockValue)
-	suite.chargePoint.SetCallErrorHandler(func(callError *ocpp.CallError) {
+	suite.chargePoint.SetCallErrorHandler(func(callError *ocppj.CallError) {
 		CheckCallError(t, callError, mockUniqueId, mockErrorCode, mockErrorDescription, mockErrorDetails)
 	})
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {

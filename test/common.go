@@ -2,7 +2,7 @@ package test
 
 import (
 	"github.com/gorilla/websocket"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -166,19 +166,19 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return &wsClient
 }
 
-func ParseCall(endpoint *ocpp.Endpoint, json string, t *testing.T) *ocpp.Call {
-	parsedData := ocpp.ParseJsonMessage(json)
+func ParseCall(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.Call {
+	parsedData := ocppj.ParseJsonMessage(json)
 	result, err := endpoint.ParseMessage(parsedData)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
-	call, ok := result.(*ocpp.Call)
+	call, ok := result.(*ocppj.Call)
 	assert.Equal(t, true, ok)
 	assert.NotNil(t, call)
 	return call
 }
 
-func CheckCall(call *ocpp.Call, t *testing.T, expectedAction string, expectedId string) {
-	assert.Equal(t, ocpp.CALL, call.GetMessageTypeId())
+func CheckCall(call *ocppj.Call, t *testing.T, expectedAction string, expectedId string) {
+	assert.Equal(t, ocppj.CALL, call.GetMessageTypeId())
 	assert.Equal(t, expectedAction, call.Action)
 	assert.Equal(t, expectedId, call.GetUniqueId())
 	assert.NotNil(t, call.Payload)
@@ -186,37 +186,37 @@ func CheckCall(call *ocpp.Call, t *testing.T, expectedAction string, expectedId 
 	assert.Nil(t, err)
 }
 
-func ParseCallResult(endpoint *ocpp.Endpoint, json string, t *testing.T) *ocpp.CallResult {
-	parsedData := ocpp.ParseJsonMessage(json)
+func ParseCallResult(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.CallResult {
+	parsedData := ocppj.ParseJsonMessage(json)
 	result, err := endpoint.ParseMessage(parsedData)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
-	callResult, ok := result.(*ocpp.CallResult)
+	callResult, ok := result.(*ocppj.CallResult)
 	assert.Equal(t, true, ok)
 	assert.NotNil(t, callResult)
 	return callResult
 }
 
-func CheckCallResult(result *ocpp.CallResult, t *testing.T, expectedId string) {
-	assert.Equal(t, ocpp.CALL_RESULT, result.GetMessageTypeId())
+func CheckCallResult(result *ocppj.CallResult, t *testing.T, expectedId string) {
+	assert.Equal(t, ocppj.CALL_RESULT, result.GetMessageTypeId())
 	assert.Equal(t, expectedId, result.GetUniqueId())
 	assert.NotNil(t, result.Payload)
 	err := Validate.Struct(result)
 	assert.Nil(t, err)
 }
 
-func ParseCallError(endpoint *ocpp.Endpoint, json string, t *testing.T) *ocpp.CallError {
-	parsedData := ocpp.ParseJsonMessage(json)
+func ParseCallError(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.CallError {
+	parsedData := ocppj.ParseJsonMessage(json)
 	result, err := endpoint.ParseMessage(parsedData)
 	assert.Nil(t, err)
-	callError, ok := result.(*ocpp.CallError)
+	callError, ok := result.(*ocppj.CallError)
 	assert.Equal(t, true, ok)
 	assert.NotNil(t, callError)
 	return callError
 }
 
-func CheckCallError(t *testing.T, callError *ocpp.CallError, expectedId string, expectedError ocpp.ErrorCode, expectedDescription string, expectedDetails interface{}) {
-	assert.Equal(t, ocpp.CALL_ERROR, callError.GetMessageTypeId())
+func CheckCallError(t *testing.T, callError *ocppj.CallError, expectedId string, expectedError ocppj.ErrorCode, expectedDescription string, expectedDetails interface{}) {
+	assert.Equal(t, ocppj.CALL_ERROR, callError.GetMessageTypeId())
 	assert.Equal(t, expectedId, callError.GetUniqueId())
 	assert.Equal(t, expectedError, callError.ErrorCode)
 	assert.Equal(t, expectedDescription, callError.ErrorDescription)
@@ -226,12 +226,12 @@ func CheckCallError(t *testing.T, callError *ocpp.CallError, expectedId string, 
 }
 
 type RequestTestEntry struct {
-	Request       ocpp.Request
+	Request       ocppj.Request
 	ExpectedValid bool
 }
 
 type ConfirmationTestEntry struct {
-	Confirmation  ocpp.Confirmation
+	Confirmation  ocppj.Confirmation
 	ExpectedValid bool
 }
 

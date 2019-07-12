@@ -3,7 +3,7 @@ package test
 import (
 	"errors"
 	"fmt"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -64,8 +64,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSendInvalidMessage() {
 	mockRequest := newMockRequest("mockValue")
 	suite.centralSystem.AddPendingRequest(mockCallId, mockRequest)
 	mockConfirmation := newMockConfirmation("")
-	mockCallResult := ocpp.CallResult{
-		MessageTypeId: ocpp.CALL_RESULT,
+	mockCallResult := ocppj.CallResult{
+		MessageTypeId: ocppj.CALL_RESULT,
 		UniqueId:      mockChargePointId,
 		Payload:       mockConfirmation,
 	}
@@ -81,8 +81,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSenddessageFailed() {
 	mockRequest := newMockRequest("mockValue")
 	suite.centralSystem.AddPendingRequest(mockCallId, mockRequest)
 	mockConfirmation := newMockConfirmation("mockValue")
-	mockCallResult := ocpp.CallResult{
-		MessageTypeId: ocpp.CALL_RESULT,
+	mockCallResult := ocppj.CallResult{
+		MessageTypeId: ocppj.CALL_RESULT,
 		UniqueId:      mockChargePointId,
 		Payload:       mockConfirmation,
 	}
@@ -96,7 +96,7 @@ func (suite *OcppJTestSuite) TestCentralSystemCallHandler() {
 	mockUniqueId := "5678"
 	mockValue := "someValue"
 	mockRequest := fmt.Sprintf(`[2,"%v","%v",{"mockValue":"%v"}]`, mockUniqueId, MockFeatureName, mockValue)
-	suite.centralSystem.SetCallHandler(func(chargePointId string, call *ocpp.Call) {
+	suite.centralSystem.SetCallHandler(func(chargePointId string, call *ocppj.Call) {
 		assert.Equal(t, mockChargePointId, chargePointId)
 		CheckCall(call, t, MockFeatureName, mockUniqueId)
 	})
@@ -116,7 +116,7 @@ func (suite *OcppJTestSuite) TestCentralSystemCallResultHandler() {
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.centralSystem.SetCallResultHandler(func(chargePointId string, callResult *ocpp.CallResult) {
+	suite.centralSystem.SetCallResultHandler(func(chargePointId string, callResult *ocppj.CallResult) {
 		assert.Equal(t, mockChargePointId, chargePointId)
 		CheckCallResult(callResult, t, mockUniqueId)
 	})
@@ -134,7 +134,7 @@ func (suite *OcppJTestSuite) TestCentralSystemCallErrorHandler() {
 	t := suite.T()
 	mockChargePointId := "1234"
 	mockUniqueId := "5678"
-	mockErrorCode := ocpp.GenericError
+	mockErrorCode := ocppj.GenericError
 	mockErrorDescription := "Mock Description"
 	mockValue := "someValue"
 	mockErrorDetails := make(map[string]interface{})
@@ -142,7 +142,7 @@ func (suite *OcppJTestSuite) TestCentralSystemCallErrorHandler() {
 
 	mockRequest := newMockRequest("testValue")
 	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, mockUniqueId, mockErrorCode, mockErrorDescription, mockValue)
-	suite.centralSystem.SetCallErrorHandler(func(chargePointId string, callError *ocpp.CallError) {
+	suite.centralSystem.SetCallErrorHandler(func(chargePointId string, callError *ocppj.CallError) {
 		assert.Equal(t, mockChargePointId, chargePointId)
 		CheckCallError(t, callError, mockUniqueId, mockErrorCode, mockErrorDescription, mockErrorDetails)
 	})

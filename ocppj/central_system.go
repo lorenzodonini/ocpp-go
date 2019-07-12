@@ -1,4 +1,4 @@
-package ocpp
+package ocppj
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ws"

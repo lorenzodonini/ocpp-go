@@ -3,7 +3,7 @@ package test_v16
 import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/lorenzodonini/go-ocpp/test"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 )
 
 // Utility functions
-func GetAuthorizeRequest(t *testing.T, request ocpp.Request) *ocpp16.AuthorizeRequest {
+func GetAuthorizeRequest(t *testing.T, request ocppj.Request) *ocpp16.AuthorizeRequest {
 	assert.NotNil(t, request)
 	result := request.(*ocpp16.AuthorizeRequest)
 	assert.NotNil(t, result)
@@ -21,7 +21,7 @@ func GetAuthorizeRequest(t *testing.T, request ocpp.Request) *ocpp16.AuthorizeRe
 	return result
 }
 
-func GetAuthorizeConfirmation(t *testing.T, confirmation ocpp.Confirmation) *ocpp16.AuthorizeConfirmation {
+func GetAuthorizeConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.AuthorizeConfirmation {
 	assert.NotNil(t, confirmation)
 	result := confirmation.(*ocpp16.AuthorizeConfirmation)
 	assert.NotNil(t, result)
