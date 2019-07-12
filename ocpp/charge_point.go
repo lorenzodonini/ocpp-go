@@ -14,7 +14,7 @@ type ChargePoint struct {
 	callHandler       func(call *Call)
 	callResultHandler func(callResult *CallResult)
 	callErrorHandler  func(callError *CallError)
-	pendingRequest    string
+	hasPendingRequest bool
 }
 
 func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *ChargePoint {
@@ -23,9 +23,9 @@ func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *Char
 		endpoint.AddProfile(profile)
 	}
 	if wsClient != nil {
-		return &ChargePoint{Endpoint: endpoint, client: wsClient, Id: id, pendingRequest: ""}
+		return &ChargePoint{Endpoint: endpoint, client: wsClient, Id: id, hasPendingRequest: false}
 	} else {
-		return &ChargePoint{Endpoint: endpoint, client: ws.NewClient(), Id: id, pendingRequest: ""}
+		return &ChargePoint{Endpoint: endpoint, client: ws.NewClient(), Id: id, hasPendingRequest: false}
 	}
 }
 
@@ -44,7 +44,7 @@ func (chargePoint *ChargePoint) SetCallErrorHandler(handler func(callError *Call
 // Connects to the given centralSystemUrl and starts running the I/O loop for the underlying connection.
 // The write routine runs on a separate goroutine, while the read routine runs on the caller's routine.
 // This means, the function is blocking for as long as the ChargePoint is connected to the CentralSystem.
-// Whenever the connection breaks, the function returns.
+// Whenever the connection is ended, the function returns.
 // Call this function in a separate goroutine, to perform other operations on the main thread.
 //
 // An error may be returned, if the connection failed or if it broke unexpectedly.
@@ -58,6 +58,8 @@ func (chargePoint *ChargePoint) Start(centralSystemUrl string) error {
 
 func (chargePoint *ChargePoint) Stop() {
 	chargePoint.client.Stop()
+	chargePoint.clearPendingRequests()
+	chargePoint.hasPendingRequest = false
 }
 
 func (chargePoint *ChargePoint) SendRequest(request Request) error {
@@ -65,9 +67,9 @@ func (chargePoint *ChargePoint) SendRequest(request Request) error {
 	if err != nil {
 		return err
 	}
-	if chargePoint.pendingRequest != "" {
+	if chargePoint.hasPendingRequest {
 		// Cannot send. Protocol is based on response-confirmation
-		return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", chargePoint.pendingRequest)
+		return errors.Errorf("There already is a pending request. Cannot send a further one before receiving a confirmation first")
 	}
 	call, err := chargePoint.CreateCall(request.(Request))
 	if err != nil {
@@ -77,8 +79,14 @@ func (chargePoint *ChargePoint) SendRequest(request Request) error {
 	if err != nil {
 		return err
 	}
-	chargePoint.pendingRequest = call.UniqueId
-	return chargePoint.client.Write([]byte(jsonMessage))
+	chargePoint.hasPendingRequest = true
+	err = chargePoint.client.Write([]byte(jsonMessage))
+	if err != nil {
+		// Clear pending request
+		chargePoint.DeletePendingRequest(call.GetUniqueId())
+		chargePoint.hasPendingRequest = false
+	}
+	return err
 }
 
 func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
@@ -101,11 +109,11 @@ func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
 		chargePoint.callHandler(call)
 	case CALL_RESULT:
 		callResult := message.(*CallResult)
-		chargePoint.pendingRequest = ""
+		chargePoint.hasPendingRequest = false
 		chargePoint.callResultHandler(callResult)
 	case CALL_ERROR:
 		callError := message.(*CallError)
-		chargePoint.pendingRequest = ""
+		chargePoint.hasPendingRequest = false
 		chargePoint.callErrorHandler(callError)
 	}
 	return nil
@@ -122,12 +130,17 @@ func (chargePoint *ChargePoint) SendMessage(message Message) error {
 	}
 	if message.GetMessageTypeId() == CALL {
 		call := message.(*Call)
-		if chargePoint.pendingRequest != "" {
+		if chargePoint.hasPendingRequest {
 			// Cannot send. Protocol is based on response-confirmation
-			return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", chargePoint.pendingRequest)
+			return errors.Errorf("There already is a pending request. Cannot send a further one before receiving a confirmation first")
 		}
 		chargePoint.pendingRequests[message.GetUniqueId()] = call.Payload
-		chargePoint.pendingRequest = call.UniqueId
+		chargePoint.hasPendingRequest = true
 	}
-	return chargePoint.client.Write([]byte(jsonMessage))
+	err = chargePoint.client.Write([]byte(jsonMessage))
+	if err != nil {
+		chargePoint.DeletePendingRequest(message.GetUniqueId())
+		chargePoint.hasPendingRequest = false
+	}
+	return err
 }

@@ -312,6 +312,10 @@ func (endpoint *Endpoint) DeletePendingRequest(id string) {
 	delete(endpoint.pendingRequests, id)
 }
 
+func (endpoint *Endpoint) clearPendingRequests() {
+	endpoint.pendingRequests = map[string]Request{}
+}
+
 func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError) {
 	// Checking message fields
 	if len(arr) < 3 {

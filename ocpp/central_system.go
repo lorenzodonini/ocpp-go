@@ -57,6 +57,7 @@ func (centralSystem *CentralSystem) Start(listenPort int, listenPath string) {
 
 func (centralSystem *CentralSystem) Stop() {
 	centralSystem.server.Stop()
+	centralSystem.clearPendingRequests()
 }
 
 func (centralSystem *CentralSystem) SendRequest(chargePointId string, request Request) error {
@@ -100,9 +101,10 @@ func (centralSystem *CentralSystem) SendMessage(chargePointId string, message Me
 		centralSystem.AddPendingRequest(message.GetUniqueId(), call.Payload)
 		centralSystem.clientPendingMessages[chargePointId] = call.UniqueId
 	}
-	//TODO: check & clear pending request
 	err = centralSystem.server.Write(chargePointId, []byte(jsonMessage))
 	if err != nil {
+		centralSystem.DeletePendingRequest(message.GetUniqueId())
+		delete(centralSystem.clientPendingMessages, chargePointId)
 		return err
 	}
 	return nil
