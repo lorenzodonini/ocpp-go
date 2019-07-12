@@ -160,7 +160,8 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 			response, err := onMessage(data)
 			assert.Nil(t, err)
 			if response != nil {
-				wsClient.Write(data)
+				err = wsClient.Write(data)
+				assert.Nil(t, err)
 			}
 		}
 		return nil

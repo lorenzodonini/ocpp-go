@@ -160,7 +160,8 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 			response, err := onMessage(data)
 			assert.Nil(t, err)
 			if response != nil {
-				wsClient.Write(data)
+				err = wsClient.Write(data)
+				assert.Nil(t, err)
 			}
 		}
 		return nil
@@ -225,30 +226,6 @@ func CheckCallError(t *testing.T, callError *ocppj.CallError, expectedId string,
 	assert.Equal(t, expectedDetails, callError.ErrorDetails)
 	err := Validate.Struct(callError)
 	assert.Nil(t, err)
-}
-
-type RequestTestEntry struct {
-	Request       ocppj.Request
-	ExpectedValid bool
-}
-
-type ConfirmationTestEntry struct {
-	Confirmation  ocppj.Confirmation
-	ExpectedValid bool
-}
-
-func ExecuteRequestTestTable(t *testing.T, testTable []RequestTestEntry) {
-	for _, testCase := range testTable {
-		err := Validate.Struct(testCase.Request)
-		assert.Equal(t, testCase.ExpectedValid, err == nil)
-	}
-}
-
-func ExecuteConfirmationTestTable(t *testing.T, testTable []ConfirmationTestEntry) {
-	for _, testCase := range testTable {
-		err := Validate.Struct(testCase.Confirmation)
-		assert.Equal(t, testCase.ExpectedValid, err == nil)
-	}
 }
 
 var Validate = validator.New()
