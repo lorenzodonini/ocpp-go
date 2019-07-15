@@ -79,44 +79,75 @@ func (centralSystem *CentralSystem) SendRequest(chargePointId string, request Re
 		return err
 	}
 	centralSystem.clientPendingMessages[chargePointId] = call.UniqueId
+	err = centralSystem.server.Write(chargePointId, []byte(jsonMessage))
+	if err != nil {
+		// Clear pending request
+		centralSystem.DeletePendingRequest(call.GetUniqueId())
+		delete(centralSystem.clientPendingMessages, chargePointId)
+	}
+	return err
+}
+
+func (centralSystem *CentralSystem) SendConfirmation(chargePointId string, requestId string, confirmation Confirmation) error {
+	err := validate.Struct(confirmation)
+	if err != nil {
+		return err
+	}
+	callResult, err := centralSystem.CreateCallResult(confirmation, requestId)
+	if err != nil {
+		return err
+	}
+	jsonMessage, err := callResult.MarshalJSON()
+	if err != nil {
+		return err
+	}
 	return centralSystem.server.Write(chargePointId, []byte(jsonMessage))
 }
 
-func (centralSystem *CentralSystem) SendMessage(chargePointId string, message Message) error {
-	err := validate.Struct(message)
+func (centralSystem *CentralSystem) SendError(chargePointId string, requestId string, errorCode ErrorCode, description string, details interface{}) error {
+	//TODO: check if error code is valid
+	callError := centralSystem.CreateCallError(requestId, errorCode, description, details)
+	err := validate.Struct(callError)
+	jsonMessage, err := callError.MarshalJSON()
 	if err != nil {
 		return err
 	}
-	jsonMessage, err := message.MarshalJSON()
-	if err != nil {
-		return err
-	}
-	if message.GetMessageTypeId() == CALL {
-		call := message.(*Call)
-		req, ok := centralSystem.clientPendingMessages[chargePointId]
-		if ok {
-			// Cannot send. Protocol is based on response-confirmation
-			return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", req)
-		}
-		centralSystem.AddPendingRequest(message.GetUniqueId(), call.Payload)
-		centralSystem.clientPendingMessages[chargePointId] = call.UniqueId
-	}
-	err = centralSystem.server.Write(chargePointId, []byte(jsonMessage))
-	if err != nil {
-		centralSystem.DeletePendingRequest(message.GetUniqueId())
-		delete(centralSystem.clientPendingMessages, chargePointId)
-		return err
-	}
-	return nil
+	return centralSystem.server.Write(chargePointId, []byte(jsonMessage))
 }
+
+//func (centralSystem *CentralSystem) SendMessage(chargePointId string, message Message) error {
+//	err := validate.Struct(message)
+//	if err != nil {
+//		return err
+//	}
+//	jsonMessage, err := message.MarshalJSON()
+//	if err != nil {
+//		return err
+//	}
+//	if message.GetMessageTypeId() == CALL {
+//		call := message.(*Call)
+//		req, ok := centralSystem.clientPendingMessages[chargePointId]
+//		if ok {
+//			// Cannot send. Protocol is based on response-confirmation
+//			return errors.Errorf("There already is a pending request %v. Cannot send a further one before receiving a confirmation first", req)
+//		}
+//		centralSystem.AddPendingRequest(message.GetUniqueId(), call.Payload)
+//		centralSystem.clientPendingMessages[chargePointId] = call.UniqueId
+//	}
+//	err = centralSystem.server.Write(chargePointId, []byte(jsonMessage))
+//	if err != nil && message.GetMessageTypeId() == CALL {
+//		centralSystem.DeletePendingRequest(message.GetUniqueId())
+//		delete(centralSystem.clientPendingMessages, chargePointId)
+//	}
+//	return err
+//}
 
 func (centralSystem *CentralSystem) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 	parsedJson := ParseRawJsonMessage(data)
 	message, err := centralSystem.ParseMessage(parsedJson)
 	if err != nil {
 		if err.MessageId != "" {
-			callError := centralSystem.CreateCallError(err.MessageId, err.ErrorCode, err.Error.Error(), nil)
-			err2 := centralSystem.SendMessage(wsChannel.GetId(), callError)
+			err2 := centralSystem.SendError(wsChannel.GetId(), err.MessageId, err.ErrorCode, err.Error.Error(), nil)
 			if err2 != nil {
 				return err2
 			}
