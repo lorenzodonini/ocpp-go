@@ -89,13 +89,39 @@ func (chargePoint *ChargePoint) SendRequest(request Request) error {
 	return err
 }
 
+func (chargePoint *ChargePoint) SendConfirmation(requestId string, confirmation Confirmation) error {
+	err := validate.Struct(confirmation)
+	if err != nil {
+		return err
+	}
+	callResult, err := chargePoint.CreateCallResult(confirmation, requestId)
+	if err != nil {
+		return err
+	}
+	jsonMessage, err := callResult.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	return chargePoint.client.Write([]byte(jsonMessage))
+}
+
+func (chargePoint *ChargePoint) SendError(requestId string, errorCode ErrorCode, description string, details interface{}) error {
+	//TODO: check if error code is valid
+	callError := chargePoint.CreateCallError(requestId, errorCode, description, details)
+	err := validate.Struct(callError)
+	jsonMessage, err := callError.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	return chargePoint.client.Write([]byte(jsonMessage))
+}
+
 func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
 	parsedJson := ParseRawJsonMessage(data)
 	message, err := chargePoint.ParseMessage(parsedJson)
 	if err != nil {
 		if err.MessageId != "" {
-			callError := chargePoint.CreateCallError(err.MessageId, err.ErrorCode, err.Error.Error(), nil)
-			err2 := chargePoint.SendMessage(callError)
+			err2 := chargePoint.SendError(err.MessageId, err.ErrorCode, err.Error.Error(), nil)
 			if err2 != nil {
 				return err2
 			}
@@ -119,28 +145,28 @@ func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
 	return nil
 }
 
-func (chargePoint *ChargePoint) SendMessage(message Message) error {
-	err := validate.Struct(message)
-	if err != nil {
-		return err
-	}
-	jsonMessage, err := message.MarshalJSON()
-	if err != nil {
-		return err
-	}
-	if message.GetMessageTypeId() == CALL {
-		call := message.(*Call)
-		if chargePoint.hasPendingRequest {
-			// Cannot send. Protocol is based on response-confirmation
-			return errors.Errorf("There already is a pending request. Cannot send a further one before receiving a confirmation first")
-		}
-		chargePoint.pendingRequests[message.GetUniqueId()] = call.Payload
-		chargePoint.hasPendingRequest = true
-	}
-	err = chargePoint.client.Write([]byte(jsonMessage))
-	if err != nil {
-		chargePoint.DeletePendingRequest(message.GetUniqueId())
-		chargePoint.hasPendingRequest = false
-	}
-	return err
-}
+//func (chargePoint *ChargePoint) SendMessage(message Message) error {
+//	err := validate.Struct(message)
+//	if err != nil {
+//		return err
+//	}
+//	jsonMessage, err := message.MarshalJSON()
+//	if err != nil {
+//		return err
+//	}
+//	if message.GetMessageTypeId() == CALL {
+//		call := message.(*Call)
+//		if chargePoint.hasPendingRequest {
+//			// Cannot send. Protocol is based on response-confirmation
+//			return errors.Errorf("There already is a pending request. Cannot send a further one before receiving a confirmation first")
+//		}
+//		chargePoint.pendingRequests[message.GetUniqueId()] = call.Payload
+//		chargePoint.hasPendingRequest = true
+//	}
+//	err = chargePoint.client.Write([]byte(jsonMessage))
+//	if err != nil {
+//		chargePoint.DeletePendingRequest(message.GetUniqueId())
+//		chargePoint.hasPendingRequest = false
+//	}
+//	return err
+//}
