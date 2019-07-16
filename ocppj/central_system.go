@@ -105,9 +105,11 @@ func (centralSystem *CentralSystem) SendConfirmation(chargePointId string, reque
 }
 
 func (centralSystem *CentralSystem) SendError(chargePointId string, requestId string, errorCode ErrorCode, description string, details interface{}) error {
-	//TODO: check if error code is valid
 	callError := centralSystem.CreateCallError(requestId, errorCode, description, details)
 	err := validate.Struct(callError)
+	if err != nil {
+		return err
+	}
 	jsonMessage, err := callError.MarshalJSON()
 	if err != nil {
 		return err

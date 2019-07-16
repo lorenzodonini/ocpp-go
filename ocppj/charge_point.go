@@ -106,9 +106,11 @@ func (chargePoint *ChargePoint) SendConfirmation(requestId string, confirmation 
 }
 
 func (chargePoint *ChargePoint) SendError(requestId string, errorCode ErrorCode, description string, details interface{}) error {
-	//TODO: check if error code is valid
 	callError := chargePoint.CreateCallError(requestId, errorCode, description, details)
 	err := validate.Struct(callError)
+	if err != nil {
+		return err
+	}
 	jsonMessage, err := callError.MarshalJSON()
 	if err != nil {
 		return err

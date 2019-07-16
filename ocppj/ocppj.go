@@ -32,6 +32,10 @@ type ProtoError struct {
 
 var validate = validator.New()
 
+func init() {
+	_ = validate.RegisterValidation("errorCode", IsErrorCodeValid)
+}
+
 // -------------------- Profile --------------------
 type Profile struct {
 	Name     string
@@ -176,7 +180,7 @@ type CallError struct {
 	Message
 	MessageTypeId    MessageType `json:"messageTypeId" validate:"required,eq=4"`
 	UniqueId         string      `json:"uniqueId" validate:"required,max=36"`
-	ErrorCode        ErrorCode   `json:"errorCode" validate:"-"` //TODO: check if error is supported
+	ErrorCode        ErrorCode   `json:"errorCode" validate:"errorCode"`
 	ErrorDescription string      `json:"errorDescription" validate:"required"`
 	ErrorDetails     interface{} `json:"errorDetails" validate:"omitempty"`
 }
@@ -211,6 +215,24 @@ const (
 	TypeConstraintViolation       ErrorCode = "TypeConstraintViolation"
 	GenericError                  ErrorCode = "GenericError"
 )
+
+func IsErrorCodeValid(fl validator.FieldLevel) bool {
+	code := ErrorCode(fl.Field().String())
+	switch code {
+	case NotImplemented:
+	case NotSupported:
+	case InternalError:
+	case ProtocolError:
+	case SecurityError:
+	case FormationViolation:
+	case PropertyConstraintViolation:
+	case OccurrenceConstraintViolation:
+	case TypeConstraintViolation:
+	case GenericError:
+		return true
+	}
+	return false
+}
 
 // -------------------- Logic --------------------
 func ParseRawJsonMessage(dataJson []byte) []interface{} {
