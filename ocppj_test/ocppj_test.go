@@ -230,6 +230,10 @@ func CheckCallError(t *testing.T, callError *ocppj.CallError, expectedId string,
 
 var Validate = validator.New()
 
+func init() {
+	_ = Validate.RegisterValidation("errorCode", ocppj.IsErrorCodeValid)
+}
+
 // ---------------------- TESTS ----------------------
 type OcppJTestSuite struct {
 	suite.Suite

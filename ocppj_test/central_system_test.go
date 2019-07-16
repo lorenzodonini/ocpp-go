@@ -37,59 +37,79 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestPending() {
 
 func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
 	mockChargePointId := "1234"
-	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(errors.New("mockError"))
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(errors.New("networkError"))
 	mockRequest := newMockRequest("mockValue")
 	err := suite.centralSystem.SendRequest(mockChargePointId, mockRequest)
 	assert.NotNil(suite.T(), err)
+	assert.Equal(suite.T(), "networkError", err.Error())
+	//TODO: assert that pending request was removed
 }
 
-// SendMessage
-func (suite *OcppJTestSuite) TestCentralSystemSendMessage() {
+// SendConfirmation
+func (suite *OcppJTestSuite) TestCentralSystemSendConfirmation() {
 	t := suite.T()
-	mockChargePointId := "1234"
-	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
-	mockRequest := newMockRequest("mockValue")
-	mockCall, err := suite.centralSystem.CreateCall(mockRequest)
-	assert.Nil(t, err)
-	assert.NotNil(t, mockCall)
-	err = suite.centralSystem.SendMessage(mockChargePointId, mockCall)
-	assert.Nil(t, err)
-}
-
-func (suite *OcppJTestSuite) TestCentralSystemSendInvalidMessage() {
-	t := suite.T()
-	mockChargePointId := "1234"
-	mockCallId := "6789"
-	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
-	mockRequest := newMockRequest("mockValue")
-	suite.centralSystem.AddPendingRequest(mockCallId, mockRequest)
-	mockConfirmation := newMockConfirmation("")
-	mockCallResult := ocppj.CallResult{
-		MessageTypeId: ocppj.CALL_RESULT,
-		UniqueId:      mockChargePointId,
-		Payload:       mockConfirmation,
-	}
-	err := suite.centralSystem.SendMessage(mockChargePointId, &mockCallResult)
-	assert.NotNil(t, err)
-}
-
-func (suite *OcppJTestSuite) TestCentralSystemSenddessageFailed() {
-	t := suite.T()
-	mockChargePointId := "1234"
-	mockCallId := "6789"
-	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(errors.New("mockError"))
-	mockRequest := newMockRequest("mockValue")
-	suite.centralSystem.AddPendingRequest(mockCallId, mockRequest)
+	mockChargePointId := "0101"
+	mockUniqueId := "1234"
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
 	mockConfirmation := newMockConfirmation("mockValue")
-	mockCallResult := ocppj.CallResult{
-		MessageTypeId: ocppj.CALL_RESULT,
-		UniqueId:      mockChargePointId,
-		Payload:       mockConfirmation,
-	}
-	err := suite.centralSystem.SendMessage(mockChargePointId, &mockCallResult)
+	err := suite.centralSystem.SendConfirmation(mockChargePointId, mockUniqueId, mockConfirmation)
+	assert.Nil(t, err)
+}
+
+func (suite *OcppJTestSuite) TestCentralSystemSendInvalidConfirmation() {
+	t := suite.T()
+	mockChargePointId := "0101"
+	mockUniqueId := "6789"
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	mockConfirmation := newMockConfirmation("")
+	// This is allowed. Endpoint doesn't keep track of incoming requests, but only outgoing ones
+	err := suite.centralSystem.SendConfirmation(mockChargePointId, mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
 }
 
+func (suite *OcppJTestSuite) TestCentralSystemSendConfirmationFailed() {
+	t := suite.T()
+	mockChargePointId := "0101"
+	mockUniqueId := "1234"
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(errors.New("networkError"))
+	mockConfirmation := newMockConfirmation("mockValue")
+	err := suite.centralSystem.SendConfirmation(mockChargePointId, mockUniqueId, mockConfirmation)
+	assert.NotNil(t, err)
+	assert.Equal(t, "networkError", err.Error())
+}
+
+// SendError
+func (suite *OcppJTestSuite) TestCentralSystemSendError() {
+	t := suite.T()
+	mockChargePointId := "0101"
+	mockUniqueId := "1234"
+	mockDescription := "mockDescription"
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	err := suite.centralSystem.SendError(mockChargePointId, mockUniqueId, ocppj.GenericError, mockDescription, nil)
+	assert.Nil(t, err)
+}
+
+func (suite *OcppJTestSuite) TestCentralSystemSendInvalidError() {
+	t := suite.T()
+	mockChargePointId := "0101"
+	mockUniqueId := "6789"
+	mockDescription := "mockDescription"
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	err := suite.centralSystem.SendError(mockChargePointId, mockUniqueId, "InvalidErrorCode", mockDescription, nil)
+	assert.NotNil(t, err)
+}
+
+func (suite *OcppJTestSuite) TestCentralSystemSendErrorFailed() {
+	t := suite.T()
+	mockChargePointId := "0101"
+	mockUniqueId := "1234"
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(errors.New("networkError"))
+	mockConfirmation := newMockConfirmation("mockValue")
+	err := suite.centralSystem.SendConfirmation(mockChargePointId, mockUniqueId, mockConfirmation)
+	assert.NotNil(t, err)
+}
+
+// Call Handlers
 func (suite *OcppJTestSuite) TestCentralSystemCallHandler() {
 	t := suite.T()
 	mockChargePointId := "1234"
