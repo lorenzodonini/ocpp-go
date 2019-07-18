@@ -110,15 +110,17 @@ func (suite *OcppJTestSuite) TestCentralSystemSendErrorFailed() {
 }
 
 // Call Handlers
-func (suite *OcppJTestSuite) TestCentralSystemCallHandler() {
+func (suite *OcppJTestSuite) TestCentralSystemRequestHandler() {
 	t := suite.T()
 	mockChargePointId := "1234"
 	mockUniqueId := "5678"
 	mockValue := "someValue"
 	mockRequest := fmt.Sprintf(`[2,"%v","%v",{"mockValue":"%v"}]`, mockUniqueId, MockFeatureName, mockValue)
-	suite.centralSystem.SetCallHandler(func(chargePointId string, call *ocppj.Call) {
+	suite.centralSystem.SetRequestHandler(func(chargePointId string,  request ocppj.Request, requestId string, action string) {
 		assert.Equal(t, mockChargePointId, chargePointId)
-		CheckCall(call, t, MockFeatureName, mockUniqueId)
+		assert.Equal(t, mockUniqueId, requestId)
+		assert.Equal(t, MockFeatureName, action)
+		assert.NotNil(t, request)
 	})
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return().Run(func(args mock.Arguments) {
 		// Simulate charge point message
@@ -129,16 +131,17 @@ func (suite *OcppJTestSuite) TestCentralSystemCallHandler() {
 	suite.centralSystem.Start(8887, "somePath")
 }
 
-func (suite *OcppJTestSuite) TestCentralSystemCallResultHandler() {
+func (suite *OcppJTestSuite) TestCentralSystemConfirmationHandler() {
 	t := suite.T()
 	mockChargePointId := "1234"
 	mockUniqueId := "5678"
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.centralSystem.SetCallResultHandler(func(chargePointId string, callResult *ocppj.CallResult) {
+	suite.centralSystem.SetConfirmationHandler(func(chargePointId string, confirmation ocppj.Confirmation, requestId string) {
 		assert.Equal(t, mockChargePointId, chargePointId)
-		CheckCallResult(callResult, t, mockUniqueId)
+		assert.Equal(t, mockUniqueId, requestId)
+		assert.NotNil(t, confirmation)
 	})
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return().Run(func(args mock.Arguments) {
 		// Simulate charge point message
@@ -150,7 +153,7 @@ func (suite *OcppJTestSuite) TestCentralSystemCallResultHandler() {
 	suite.centralSystem.Start(8887, "somePath")
 }
 
-func (suite *OcppJTestSuite) TestCentralSystemCallErrorHandler() {
+func (suite *OcppJTestSuite) TestCentralSystemErrorHandler() {
 	t := suite.T()
 	mockChargePointId := "1234"
 	mockUniqueId := "5678"
@@ -162,9 +165,12 @@ func (suite *OcppJTestSuite) TestCentralSystemCallErrorHandler() {
 
 	mockRequest := newMockRequest("testValue")
 	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, mockUniqueId, mockErrorCode, mockErrorDescription, mockValue)
-	suite.centralSystem.SetCallErrorHandler(func(chargePointId string, callError *ocppj.CallError) {
+	suite.centralSystem.SetErrorHandler(func(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
 		assert.Equal(t, mockChargePointId, chargePointId)
-		CheckCallError(t, callError, mockUniqueId, mockErrorCode, mockErrorDescription, mockErrorDetails)
+		assert.Equal(t, mockUniqueId, requestId)
+		assert.Equal(t, mockErrorCode, errorCode)
+		assert.Equal(t, mockErrorDescription, description)
+		assert.Equal(t, mockErrorDetails, details)
 	})
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return().Run(func(args mock.Arguments) {
 		// Simulate charge point message

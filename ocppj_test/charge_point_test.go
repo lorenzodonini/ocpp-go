@@ -119,8 +119,10 @@ func (suite *OcppJTestSuite) TestChargePointCallHandler() {
 	mockUniqueId := "5678"
 	mockValue := "someValue"
 	mockRequest := fmt.Sprintf(`[2,"%v","%v",{"mockValue":"%v"}]`, mockUniqueId, MockFeatureName, mockValue)
-	suite.chargePoint.SetCallHandler(func(call *ocppj.Call) {
-		CheckCall(call, t, MockFeatureName, mockUniqueId)
+	suite.chargePoint.SetRequestHandler(func(request ocppj.Request, requestId string, action string) {
+		assert.Equal(t, mockUniqueId, requestId)
+		assert.Equal(t, MockFeatureName, action)
+		assert.NotNil(t, request)
 	})
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
 		// Simulate central system message
@@ -137,8 +139,9 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.chargePoint.SetCallResultHandler(func(callResult *ocppj.CallResult) {
-		CheckCallResult(callResult, t, mockUniqueId)
+	suite.chargePoint.SetConfirmationHandler(func(confirmation ocppj.Confirmation, requestId string) {
+		assert.Equal(t, mockUniqueId, requestId)
+		assert.NotNil(t, confirmation)
 	})
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
 		// Simulate central system message
@@ -161,8 +164,11 @@ func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 
 	mockRequest := newMockRequest("testValue")
 	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, mockUniqueId, mockErrorCode, mockErrorDescription, mockValue)
-	suite.chargePoint.SetCallErrorHandler(func(callError *ocppj.CallError) {
-		CheckCallError(t, callError, mockUniqueId, mockErrorCode, mockErrorDescription, mockErrorDetails)
+	suite.chargePoint.SetErrorHandler(func(errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
+		assert.Equal(t, mockUniqueId, requestId)
+		assert.Equal(t, mockErrorCode, errorCode)
+		assert.Equal(t, mockErrorDescription, description)
+		assert.Equal(t, mockErrorDetails, details)
 	})
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
 		// Simulate central system message
