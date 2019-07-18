@@ -11,9 +11,9 @@ type ChargePoint struct {
 	Endpoint
 	client            ws.WsClient
 	Id                string
-	callHandler       func(call *Call)
-	callResultHandler func(callResult *CallResult)
-	callErrorHandler  func(callError *CallError)
+	callHandler       func(request Request, requestId string, action string)
+	callResultHandler func(confirmation Confirmation, requestId string)
+	callErrorHandler  func(errorCode ErrorCode, description string, details interface{}, requestId string)
 	hasPendingRequest bool
 }
 
@@ -29,15 +29,15 @@ func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *Char
 	}
 }
 
-func (chargePoint *ChargePoint) SetCallHandler(handler func(call *Call)) {
+func (chargePoint *ChargePoint) SetRequestHandler(handler func(request Request, requestId string, action string)) {
 	chargePoint.callHandler = handler
 }
 
-func (chargePoint *ChargePoint) SetCallResultHandler(handler func(callResult *CallResult)) {
+func (chargePoint *ChargePoint) SetConfirmationHandler(handler func(confirmation Confirmation, requestId string)) {
 	chargePoint.callResultHandler = handler
 }
 
-func (chargePoint *ChargePoint) SetCallErrorHandler(handler func(callError *CallError)) {
+func (chargePoint *ChargePoint) SetErrorHandler(handler func(errorCode ErrorCode, description string, details interface{}, requestId string)) {
 	chargePoint.callErrorHandler = handler
 }
 
@@ -134,15 +134,15 @@ func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
 	switch message.GetMessageTypeId() {
 	case CALL:
 		call := message.(*Call)
-		chargePoint.callHandler(call)
+		chargePoint.callHandler(call.Payload, call.UniqueId, call.Action)
 	case CALL_RESULT:
 		callResult := message.(*CallResult)
 		chargePoint.hasPendingRequest = false
-		chargePoint.callResultHandler(callResult)
+		chargePoint.callResultHandler(callResult.Payload, callResult.UniqueId)
 	case CALL_ERROR:
 		callError := message.(*CallError)
 		chargePoint.hasPendingRequest = false
-		chargePoint.callErrorHandler(callError)
+		chargePoint.callErrorHandler(callError.ErrorCode, callError.ErrorDescription, callError.ErrorDetails, callError.UniqueId)
 	}
 	return nil
 }

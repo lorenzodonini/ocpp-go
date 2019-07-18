@@ -10,9 +10,9 @@ type CentralSystem struct {
 	Endpoint
 	server                ws.WsServer
 	newChargePointHandler func(chargePointId string)
-	callHandler           func(chargePointId string, call *Call)
-	callResultHandler     func(chargePointId string, callResult *CallResult)
-	callErrorHandler      func(chargePointId string, callError *CallError)
+	callHandler           func(chargePointId string, request Request, requestId string, action string)
+	callResultHandler     func(chargePointId string, confirmation Confirmation, requestId string)
+	callErrorHandler      func(chargePointId string, errorCode ErrorCode, description string, details interface{}, requestId string)
 	clientPendingMessages map[string]string
 }
 
@@ -28,15 +28,15 @@ func NewCentralSystem(wsServer ws.WsServer, profiles ...*Profile) *CentralSystem
 	}
 }
 
-func (centralSystem *CentralSystem) SetCallHandler(handler func(chargePointId string, call *Call)) {
+func (centralSystem *CentralSystem) SetRequestHandler(handler func(chargePointId string, request Request, requestId string, action string)) {
 	centralSystem.callHandler = handler
 }
 
-func (centralSystem *CentralSystem) SetCallResultHandler(handler func(chargePointId string, callResult *CallResult)) {
+func (centralSystem *CentralSystem) SetConfirmationHandler(handler func(chargePointId string, confirmation Confirmation, requestId string)) {
 	centralSystem.callResultHandler = handler
 }
 
-func (centralSystem *CentralSystem) SetCallErrorHandler(handler func(chargePointId string, callError *CallError)) {
+func (centralSystem *CentralSystem) SetErrorHandler(handler func(chargePointId string, errorCode ErrorCode, description string, details interface{}, requestId string)) {
 	centralSystem.callErrorHandler = handler
 }
 
@@ -160,15 +160,15 @@ func (centralSystem *CentralSystem) ocppMessageHandler(wsChannel ws.Channel, dat
 	switch message.GetMessageTypeId() {
 	case CALL:
 		call := message.(*Call)
-		centralSystem.callHandler(wsChannel.GetId(), call)
+		centralSystem.callHandler(wsChannel.GetId(), call.Payload, call.UniqueId, call.Action)
 	case CALL_RESULT:
 		callResult := message.(*CallResult)
 		delete(centralSystem.clientPendingMessages, wsChannel.GetId())
-		centralSystem.callResultHandler(wsChannel.GetId(), callResult)
+		centralSystem.callResultHandler(wsChannel.GetId(), callResult.Payload, callResult.UniqueId)
 	case CALL_ERROR:
 		callError := message.(*CallError)
 		delete(centralSystem.clientPendingMessages, wsChannel.GetId())
-		centralSystem.callErrorHandler(wsChannel.GetId(), callError)
+		centralSystem.callErrorHandler(wsChannel.GetId(), callError.ErrorCode, callError.ErrorDescription, callError.ErrorDetails, callError.UniqueId)
 	}
 	return nil
 }
