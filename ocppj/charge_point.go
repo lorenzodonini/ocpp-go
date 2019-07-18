@@ -9,12 +9,12 @@ import (
 
 type ChargePoint struct {
 	Endpoint
-	client            ws.WsClient
-	Id                string
-	callHandler       func(request Request, requestId string, action string)
-	callResultHandler func(confirmation Confirmation, requestId string)
-	callErrorHandler  func(errorCode ErrorCode, description string, details interface{}, requestId string)
-	hasPendingRequest bool
+	client              ws.WsClient
+	Id                  string
+	requestHandler      func(request Request, requestId string, action string)
+	confirmationHandler func(confirmation Confirmation, requestId string)
+	errorHandler        func(errorCode ErrorCode, description string, details interface{}, requestId string)
+	hasPendingRequest   bool
 }
 
 func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *ChargePoint {
@@ -30,15 +30,15 @@ func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *Char
 }
 
 func (chargePoint *ChargePoint) SetRequestHandler(handler func(request Request, requestId string, action string)) {
-	chargePoint.callHandler = handler
+	chargePoint.requestHandler = handler
 }
 
 func (chargePoint *ChargePoint) SetConfirmationHandler(handler func(confirmation Confirmation, requestId string)) {
-	chargePoint.callResultHandler = handler
+	chargePoint.confirmationHandler = handler
 }
 
 func (chargePoint *ChargePoint) SetErrorHandler(handler func(errorCode ErrorCode, description string, details interface{}, requestId string)) {
-	chargePoint.callErrorHandler = handler
+	chargePoint.errorHandler = handler
 }
 
 // Connects to the given centralSystemUrl and starts running the I/O loop for the underlying connection.
@@ -134,15 +134,15 @@ func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
 	switch message.GetMessageTypeId() {
 	case CALL:
 		call := message.(*Call)
-		chargePoint.callHandler(call.Payload, call.UniqueId, call.Action)
+		chargePoint.requestHandler(call.Payload, call.UniqueId, call.Action)
 	case CALL_RESULT:
 		callResult := message.(*CallResult)
 		chargePoint.hasPendingRequest = false
-		chargePoint.callResultHandler(callResult.Payload, callResult.UniqueId)
+		chargePoint.confirmationHandler(callResult.Payload, callResult.UniqueId)
 	case CALL_ERROR:
 		callError := message.(*CallError)
 		chargePoint.hasPendingRequest = false
-		chargePoint.callErrorHandler(callError.ErrorCode, callError.ErrorDescription, callError.ErrorDetails, callError.UniqueId)
+		chargePoint.errorHandler(callError.ErrorCode, callError.ErrorDescription, callError.ErrorDetails, callError.UniqueId)
 	}
 	return nil
 }
