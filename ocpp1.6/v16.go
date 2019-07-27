@@ -29,7 +29,7 @@ type chargePoint struct {
 	errorListener        chan ocppj.ProtoError
 }
 
-func (cp chargePoint) BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, *ocppj.ProtoError, error) {
+func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, *ocppj.ProtoError, error) {
 	request := NewBootNotificationRequest(chargePointModel, chargePointVendor)
 	for _, fn := range props {
 		fn(request)
@@ -38,7 +38,7 @@ func (cp chargePoint) BootNotification(chargePointModel string, chargePointVendo
 	return confirmation.(*BootNotificationConfirmation), protoError, err
 }
 
-func (cp chargePoint) Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, *ocppj.ProtoError, error) {
+func (cp *chargePoint) Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, *ocppj.ProtoError, error) {
 	request := NewAuthorizationRequest(idTag)
 	for _, fn := range props {
 		fn(request)
@@ -47,11 +47,11 @@ func (cp chargePoint) Authorize(idTag string, props ...func(request *AuthorizeRe
 	return confirmation.(*AuthorizeConfirmation), protoError, err
 }
 
-func (cp chargePoint) SetChargePointCoreListener(listener ChargePointCoreListener) {
+func (cp *chargePoint) SetChargePointCoreListener(listener ChargePointCoreListener) {
 	cp.coreListener = listener
 }
 
-func (cp chargePoint) SendRequest(request ocppj.Request) (ocppj.Confirmation, *ocppj.ProtoError, error) {
+func (cp *chargePoint) SendRequest(request ocppj.Request) (ocppj.Confirmation, *ocppj.ProtoError, error) {
 	err := cp.chargePoint.SendRequest(request)
 	if err != nil {
 		return nil, nil, err
@@ -64,7 +64,7 @@ func (cp chargePoint) SendRequest(request ocppj.Request) (ocppj.Confirmation, *o
 	}
 }
 
-func (cp chargePoint) SendRequestAsync(request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
+func (cp *chargePoint) SendRequestAsync(request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
 	err := cp.chargePoint.SendRequest(request)
 	if err == nil {
 		// Retrieve result asynchronously
@@ -80,7 +80,7 @@ func (cp chargePoint) SendRequestAsync(request ocppj.Request, callback func(conf
 	return err
 }
 
-func (cp chargePoint) sendResponse(confirmation ocppj.Confirmation, err error, requestId string) {
+func (cp *chargePoint) sendResponse(confirmation ocppj.Confirmation, err error, requestId string) {
 	if confirmation != nil {
 		err := cp.chargePoint.SendConfirmation(requestId, confirmation)
 		if err != nil {
@@ -95,12 +95,12 @@ func (cp chargePoint) sendResponse(confirmation ocppj.Confirmation, err error, r
 	}
 }
 
-func (cp chargePoint) Start(centralSystemUrl string) error {
+func (cp *chargePoint) Start(centralSystemUrl string) error {
 	// TODO: implement auto-reconnect logic
 	return cp.chargePoint.Start(centralSystemUrl)
 }
 
-func (cp chargePoint) handleIncomingRequest(request ocppj.Request, requestId string, action string) {
+func (cp *chargePoint) handleIncomingRequest(request ocppj.Request, requestId string, action string) {
 	if cp.coreListener == nil {
 		log.Printf("Cannot handle call %v from central system. Sending CallError instead", requestId)
 		err := cp.chargePoint.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("No handler for action %v implemented", action), nil)
@@ -137,7 +137,7 @@ func NewChargePoint(id string, client ws.WsClient) ChargePoint {
 		cp.errorListener <- protoError
 	})
 	cp.chargePoint.SetRequestHandler(cp.handleIncomingRequest)
-	return cp
+	return &cp
 }
 
 // -------------------- v1.6 Central System --------------------
@@ -158,7 +158,7 @@ type centralSystem struct {
 	callbacks     map[string]func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError)
 }
 
-func (cs centralSystem) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, protoError *ocppj.ProtoError), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error {
+func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, protoError *ocppj.ProtoError), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error {
 	request := NewChangeAvailabilityRequest(connectorId, availabilityType)
 	genericCallback := func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError) {
 		if confirmation != nil {
@@ -170,15 +170,15 @@ func (cs centralSystem) ChangeAvailability(clientId string, callback func(confir
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs centralSystem) SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
+func (cs *centralSystem) SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
 	cs.coreListener = listener
 }
 
-func (cs centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
+func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
 	cs.centralSystem.SetNewChargePointHandler(handler)
 }
 
-func (cs centralSystem) SendRequestAsync(clientId string, request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
+func (cs *centralSystem) SendRequestAsync(clientId string, request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
 	err := cs.centralSystem.SendRequest(clientId, request)
 	if err != nil {
 		return err
@@ -187,11 +187,11 @@ func (cs centralSystem) SendRequestAsync(clientId string, request ocppj.Request,
 	return nil
 }
 
-func (cs centralSystem) Start(listenPort int, listenPath string) {
+func (cs *centralSystem) Start(listenPort int, listenPath string) {
 	cs.centralSystem.Start(listenPort, listenPath)
 }
 
-func (cs centralSystem) sendResponse(chargePointId string, confirmation ocppj.Confirmation, err error, requestId string) {
+func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocppj.Confirmation, err error, requestId string) {
 	if confirmation != nil {
 		err := cs.centralSystem.SendConfirmation(chargePointId, requestId, confirmation)
 		if err != nil {
@@ -206,7 +206,7 @@ func (cs centralSystem) sendResponse(chargePointId string, confirmation ocppj.Co
 	}
 }
 
-func (cs centralSystem) handleIncomingRequest(chargePointId string, request ocppj.Request, requestId string, action string) {
+func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocppj.Request, requestId string, action string) {
 	if cs.coreListener == nil {
 		log.Printf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
 		err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("No handler for action %v implemented", action), nil)
@@ -236,7 +236,7 @@ func (cs centralSystem) handleIncomingRequest(chargePointId string, request ocpp
 	}()
 }
 
-func (cs centralSystem) handleIncomingConfirmation(chargePointId string, confirmation ocppj.Confirmation, requestId string) {
+func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confirmation ocppj.Confirmation, requestId string) {
 	if callback, ok := cs.callbacks[chargePointId]; ok {
 		delete(cs.callbacks, chargePointId)
 		callback(confirmation, nil)
@@ -245,7 +245,7 @@ func (cs centralSystem) handleIncomingConfirmation(chargePointId string, confirm
 	}
 }
 
-func (cs centralSystem) handleIncomingError(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
+func (cs *centralSystem) handleIncomingError(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
 	if callback, ok := cs.callbacks[chargePointId]; ok {
 		delete(cs.callbacks, chargePointId)
 		protoError := ocppj.ProtoError{Error: errors.New(description), ErrorCode: errorCode, MessageId: requestId}
@@ -265,5 +265,5 @@ func NewCentralSystem(server ws.WsServer) CentralSystem {
 	cs.centralSystem.SetRequestHandler(cs.handleIncomingRequest)
 	cs.centralSystem.SetConfirmationHandler(cs.handleIncomingConfirmation)
 	cs.centralSystem.SetErrorHandler(cs.handleIncomingError)
-	return cs
+	return &cs
 }
