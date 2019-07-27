@@ -124,8 +124,11 @@ func (cp chargePoint) handleIncomingRequest(request ocppj.Request, requestId str
 	cp.sendResponse(confirmation, err, requestId)
 }
 
-func NewChargePoint(id string) ChargePoint {
-	cp := chargePoint{chargePoint: ocppj.NewChargePoint(id, ws.NewClient(), CoreProfile), confirmationListener: make(chan ocppj.Confirmation), errorListener: make(chan ocppj.ProtoError)}
+func NewChargePoint(id string, client ws.WsClient) ChargePoint {
+	if client == nil {
+		client = ws.NewClient()
+	}
+	cp := chargePoint{chargePoint: ocppj.NewChargePoint(id, client, CoreProfile), confirmationListener: make(chan ocppj.Confirmation), errorListener: make(chan ocppj.ProtoError)}
 	cp.chargePoint.SetConfirmationHandler(func(confirmation ocppj.Confirmation, requestId string) {
 		cp.confirmationListener <- confirmation
 	})
@@ -252,9 +255,12 @@ func (cs centralSystem) handleIncomingError(chargePointId string, errorCode ocpp
 	}
 }
 
-func NewCentralSystem() CentralSystem {
+func NewCentralSystem(server ws.WsServer) CentralSystem {
+	if server == nil {
+		server = ws.NewServer()
+	}
 	cs := centralSystem{
-		centralSystem: ocppj.NewCentralSystem(ws.NewServer(), CoreProfile),
+		centralSystem: ocppj.NewCentralSystem(server, CoreProfile),
 		callbacks:     map[string]func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError){}}
 	cs.centralSystem.SetRequestHandler(cs.handleIncomingRequest)
 	cs.centralSystem.SetConfirmationHandler(cs.handleIncomingConfirmation)
