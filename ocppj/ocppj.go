@@ -123,6 +123,16 @@ type Message interface {
 	json.Marshaler
 }
 
+var messageIdGenerator = func() string {
+	return fmt.Sprintf("%v", rand.Uint32())
+}
+
+func SetMessageIdGenerator(generator func() string) {
+	if generator != nil {
+		messageIdGenerator() = generator()
+	}
+}
+
 // -------------------- Call --------------------
 type Call struct {
 	Message       `validate:"-"`
@@ -430,7 +440,7 @@ func (endpoint *Endpoint) CreateCall(request Request) (*Call, error) {
 	if profile == nil {
 		return nil, errors2.Errorf("Couldn't create Call for unsupported action %v", action)
 	}
-	uniqueId := fmt.Sprintf("%v", rand.Uint32())
+	uniqueId := messageIdGenerator()
 	call := Call{
 		MessageTypeId: CALL,
 		UniqueId:      uniqueId,
