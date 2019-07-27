@@ -129,7 +129,7 @@ var messageIdGenerator = func() string {
 
 func SetMessageIdGenerator(generator func() string) {
 	if generator != nil {
-		messageIdGenerator() = generator()
+		messageIdGenerator = generator
 	}
 }
 
