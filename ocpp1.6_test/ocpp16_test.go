@@ -132,6 +132,33 @@ func newMockConfirmation(value string) *MockConfirmation {
 	return &MockConfirmation{MockValue: value}
 }
 
+// ---------------------- MOCK CS CORE LISTENER ----------------------
+type MockCentralSystemCoreListener struct {
+	mock.Mock
+}
+
+func (coreListener MockCentralSystemCoreListener) OnAuthorize(chargePointId string, request *ocpp16.AuthorizeRequest) (confirmation *ocpp16.AuthorizeConfirmation, err error) {
+	args := coreListener.MethodCalled("OnAuthorize", chargePointId, request)
+	conf := args.Get(0).(*ocpp16.AuthorizeConfirmation)
+	return conf, args.Error(1)
+}
+
+func (coreListener MockCentralSystemCoreListener) OnBootNotification(chargePointId string, request *ocpp16.BootNotificationRequest) (confirmation *ocpp16.BootNotificationConfirmation, err error) {
+	args := coreListener.MethodCalled("OnBootNotification", chargePointId, request)
+	conf := args.Get(0).(*ocpp16.BootNotificationConfirmation)
+	return conf, args.Error(1)
+}
+
+// ---------------------- MOCK CP CORE LISTENER ----------------------
+type MockChargePointCoreListener struct {
+	mock.Mock
+}
+
+func (coreListener MockChargePointCoreListener) OnChangeAvailability(request *ocpp16.ChangeAvailabilityRequest) (confirmation *ocpp16.ChangeAvailabilityConfirmation, err error) {
+	args := coreListener.MethodCalled("OnChangeAvailability", request)
+	conf := args.Get(0).(*ocpp16.ChangeAvailabilityConfirmation)
+	return conf, args.Error(1)
+}
 
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
@@ -257,20 +284,39 @@ var Validate = validator.New()
 // ---------------------- TESTS ----------------------
 type OcppV16TestSuite struct {
 	suite.Suite
-	chargePoint   *ocppj.ChargePoint
-	centralSystem *ocppj.CentralSystem
-	mockServer    *MockWebsocketServer
-	mockClient    *MockWebsocketClient
+	ocppjChargePoint   *ocppj.ChargePoint
+	ocppjCentralSystem *ocppj.CentralSystem
+	mockWsServer       *MockWebsocketServer
+	mockWsClient       *MockWebsocketClient
+	chargePoint        ocpp16.ChargePoint
+	centralSystem      ocpp16.CentralSystem
+	messageIdGenerator TestRandomIdGenerator
 }
+
+type TestRandomIdGenerator struct {
+	generator func() string
+}
+
+func (testGenerator * TestRandomIdGenerator) generateId() string {
+	return testGenerator.generator()
+}
+
+var defaultMessageId = "1234"
 
 func (suite *OcppV16TestSuite) SetupTest() {
 	coreProfile := ocppj.NewProfile("core", ocpp16.BootNotificationFeature{}, ocpp16.AuthorizeFeature{}, ocpp16.ChangeAvailabilityFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
-	suite.mockClient = &mockClient
-	suite.mockServer = &mockServer
-	suite.chargePoint = ocppj.NewChargePoint("test_id", suite.mockClient, coreProfile)
-	suite.centralSystem = ocppj.NewCentralSystem(suite.mockServer, coreProfile)
+	suite.mockWsClient = &mockClient
+	suite.mockWsServer = &mockServer
+	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile)
+	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile)
+	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.mockWsClient)
+	suite.centralSystem = ocpp16.NewCentralSystem(suite.mockWsServer)
+	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
+		return defaultMessageId
+	}}
+	ocppj.SetMessageIdGenerator(suite.messageIdGenerator.generateId)
 }
 
 //TODO: implement generic protocol tests

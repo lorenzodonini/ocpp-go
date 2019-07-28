@@ -378,7 +378,6 @@ func (suite *OcppJTestSuite) TestCreateCallResult() {
 	assert.True(t, ok)
 	assert.NotNil(t, message)
 	assert.Equal(t, mockValue, message.MockValue)
-
 }
 
 func (suite *OcppJTestSuite) TestCreateCallError() {
