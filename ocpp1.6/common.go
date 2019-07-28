@@ -64,7 +64,7 @@ const (
 )
 
 type IdTagInfo struct {
-	ExpiryDate  time.Time           `json:"expiryDate" validate:"omitempty,gt"`
+	ExpiryDate  DateTime            `json:"expiryDate" validate:"omitempty,gt"`
 	ParentIdTag string              `json:"parentIdTag" validate:"omitempty,max=20"`
 	Status      AuthorizationStatus `json:"status" validate:"required"`
 }
