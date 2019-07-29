@@ -35,7 +35,11 @@ func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVend
 		fn(request)
 	}
 	confirmation, protoError, err := cp.SendRequest(request)
-	return confirmation.(*BootNotificationConfirmation), protoError, err
+	if confirmation != nil {
+		return confirmation.(*BootNotificationConfirmation), protoError, err
+	} else {
+		return nil, protoError, err
+	}
 }
 
 func (cp *chargePoint) Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, *ocppj.ProtoError, error) {
@@ -44,7 +48,11 @@ func (cp *chargePoint) Authorize(idTag string, props ...func(request *AuthorizeR
 		fn(request)
 	}
 	confirmation, protoError, err := cp.SendRequest(request)
-	return confirmation.(*AuthorizeConfirmation), protoError, err
+	if confirmation != nil {
+		return confirmation.(*AuthorizeConfirmation), protoError, err
+	} else {
+		return nil, protoError, err
+	}
 }
 
 func (cp *chargePoint) SetChargePointCoreListener(listener ChargePointCoreListener) {
@@ -56,6 +64,7 @@ func (cp *chargePoint) SendRequest(request ocppj.Request) (ocppj.Confirmation, *
 	if err != nil {
 		return nil, nil, err
 	}
+	//TODO: timeouts
 	select {
 	case confirmation := <-cp.confirmationListener:
 		return confirmation, nil, nil
