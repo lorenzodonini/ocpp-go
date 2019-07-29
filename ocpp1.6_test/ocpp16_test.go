@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"fmt"
 	"github.com/gorilla/websocket"
 	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
@@ -253,6 +254,80 @@ func CheckCallError(t *testing.T, callError *ocppj.CallError, expectedId string,
 	assert.Equal(t, expectedDetails, callError.ErrorDetails)
 	err := Validate.Struct(callError)
 	assert.Nil(t, err)
+}
+
+type expectedCentralSystemOptions struct {
+	clientId              string
+	rawWrittenMessage     []byte
+	startReturnArgument   interface{}
+	writeReturnArgument   interface{}
+	forwardWrittenMessage bool
+}
+
+type expectedChargePointOptions struct {
+	serverUrl             string
+	clientId              string
+	createChannelOnStart  bool
+	channel               ws.Channel
+	rawWrittenMessage     []byte
+	startReturnArgument   interface{}
+	writeReturnArgument   interface{}
+	forwardWrittenMessage bool
+}
+
+func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener ocpp16.CentralSystemCoreListener, options expectedCentralSystemOptions) {
+	t := suite.T()
+	suite.centralSystem.SetNewChargePointHandler(func(chargePointId string) {
+		assert.Equal(t, options.clientId, chargePointId)
+	})
+	suite.centralSystem.SetCentralSystemCoreListener(coreListener)
+	// TODO: parametrize return arguments
+	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
+	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
+		clientId := args.String(0)
+		data := args.Get(1)
+		bytes := data.([]byte)
+		assert.Equal(t, options.clientId, clientId)
+		if options.rawWrittenMessage != nil {
+			assert.NotNil(t, bytes)
+			assert.Equal(t, options.rawWrittenMessage, bytes)
+		}
+		if options.forwardWrittenMessage {
+			// Notify client of incoming response
+			err := suite.mockWsClient.MessageHandler(bytes)
+			assert.Nil(t, err)
+		}
+	})
+}
+
+func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener ocpp16.ChargePointCoreListener, options expectedChargePointOptions) {
+	t := suite.T()
+	suite.chargePoint.SetChargePointCoreListener(coreListener)
+	suite.mockWsClient.On("Start", mock.AnythingOfType("string")).Return(options.startReturnArgument).Run(func(args mock.Arguments) {
+		u := args.String(0)
+		assert.Equal(t, fmt.Sprintf("%s/%s", options.serverUrl, options.clientId), u)
+		// Notify server of incoming connection
+		if options.createChannelOnStart {
+			suite.mockWsServer.NewClientHandler(options.channel)
+		}
+	})
+	suite.mockWsClient.On("Write", mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
+		data := args.Get(0)
+		bytes := data.([]byte)
+		if options.rawWrittenMessage != nil {
+			assert.NotNil(t, bytes)
+			assert.Equal(t, options.rawWrittenMessage, bytes)
+		}
+		// Notify server of incoming request
+		if options.forwardWrittenMessage {
+			err := suite.mockWsServer.MessageHandler(options.channel, bytes)
+			assert.Nil(t, err)
+		}
+	})
+}
+
+func assertDateTimeEquality(t *testing.T, expected ocpp16.DateTime, actual ocpp16.DateTime) {
+	assert.Equal(t, expected.Time.Format(ocpp16.ISO8601), actual.Time.Format(ocpp16.ISO8601))
 }
 
 type RequestTestEntry struct {
