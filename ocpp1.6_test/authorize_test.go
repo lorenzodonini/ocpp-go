@@ -1,10 +1,10 @@
 package ocpp16_test
 
 import (
+	"errors"
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
-	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
@@ -12,17 +12,19 @@ import (
 )
 
 // Utility functions
-func GetAuthorizeRequest(t *testing.T, request ocppj.Request) *ocpp16.AuthorizeRequest {
+func getAuthorizeRequest(t *testing.T, request ocppj.Request) *ocpp16.AuthorizeRequest {
 	assert.NotNil(t, request)
-	result := request.(*ocpp16.AuthorizeRequest)
+	result, ok := request.(*ocpp16.AuthorizeRequest)
+	assert.True(t, ok)
 	assert.NotNil(t, result)
 	assert.IsType(t, &ocpp16.AuthorizeRequest{}, result)
 	return result
 }
 
-func GetAuthorizeConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.AuthorizeConfirmation {
+func getAuthorizeConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.AuthorizeConfirmation {
 	assert.NotNil(t, confirmation)
-	result := confirmation.(*ocpp16.AuthorizeConfirmation)
+	result, ok := confirmation.(*ocpp16.AuthorizeConfirmation)
+	assert.True(t, ok)
 	assert.NotNil(t, result)
 	assert.IsType(t, &ocpp16.AuthorizeConfirmation{}, result)
 	return result
@@ -42,141 +44,143 @@ func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {
 func (suite *OcppV16TestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []ConfirmationTestEntry{
-		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * 8), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}, ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
 		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
-		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * 8), Status: ocpp16.AuthorizationStatusAccepted}}, true},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}, Status: ocpp16.AuthorizationStatusAccepted}}, true},
 		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusAccepted}}, true},
 		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusBlocked}}, true},
 		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusExpired}}, true},
 		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusInvalid}}, true},
 		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusConcurrentTx}}, true},
 		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ParentIdTag: ">20..................", Status: ocpp16.AuthorizationStatusAccepted}}, false},
-		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: time.Now().Add(time.Hour * -8), Status: ocpp16.AuthorizationStatusAccepted}}, false},
+		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: ocpp16.DateTime{Time: time.Now().Add(time.Hour * -8)}, Status: ocpp16.AuthorizationStatusAccepted}}, false},
 	}
 	ExecuteConfirmationTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestAuthorizeRequestFromJson() {
 	t := suite.T()
-	uniqueId := "1234"
+	uniqueId := defaultMessageId
 	idTag := "tag1"
+	wsId := "test_id"
+	channel := NewMockWebSocket(wsId)
 	dataJson := fmt.Sprintf(`[2,"%v","Authorize",{"idTag":"%v"}]`, uniqueId, idTag)
-	call := ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
-	CheckCall(call, t, ocpp16.AuthorizeFeatureName, uniqueId)
-	request := GetAuthorizeRequest(t, call.Payload)
-	assert.Equal(t, idTag, request.IdTag)
+
+	coreListener := MockCentralSystemCoreListener{}
+	coreListener.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(nil, nil).Run(func(args mock.Arguments) {
+		clientId := args.String(0)
+		request := args.Get(1).(*ocpp16.AuthorizeRequest)
+		assert.Equal(t, wsId, clientId)
+		assert.Equal(t, idTag, request.IdTag)
+	})
+	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: nil})
+	suite.centralSystem.Start(8887, "somePath")
+	suite.mockWsServer.NewClientHandler(channel)
+	err := suite.mockWsServer.MessageHandler(channel, []byte(dataJson))
+	assert.Nil(t, err)
 }
 
 func (suite *OcppV16TestSuite) TestAuthorizeRequestToJson() {
 	t := suite.T()
 	idTag := "tag2"
-	request := ocpp16.AuthorizeRequest{IdTag: idTag}
-	call, err := suite.chargePoint.CreateCall(request)
+	wsUrl := "someUrl"
+	wsId := "test_id"
+	mockError := "mock"
+	expectedJson := fmt.Sprintf(`[2,"%v","Authorize",{"idTag":"%v"}]`, defaultMessageId, idTag)
+
+	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, rawWrittenMessage: []byte(expectedJson), writeReturnArgument: errors.New(mockError)})
+	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
-	uniqueId := call.GetUniqueId()
-	assert.NotNil(t, call)
-	err = Validate.Struct(call)
-	assert.Nil(t, err)
-	jsonData, err := call.MarshalJSON()
-	assert.Nil(t, err)
-	assert.NotNil(t, jsonData)
-	expectedJson := fmt.Sprintf(`[2,"%v","Authorize",{"idTag":"%v"}]`, uniqueId, idTag)
-	assert.Equal(t, []byte(expectedJson), jsonData)
+	confirmation, protoErr, err := suite.chargePoint.Authorize(idTag)
+	assert.Nil(t, confirmation)
+	assert.Nil(t, protoErr)
+	assert.NotNil(t, err)
+	assert.Equal(t, mockError, err.Error())
 }
 
 func (suite *OcppV16TestSuite) TestAuthorizeConfirmationFromJson() {
 	t := suite.T()
-	uniqueId := "5678"
-	rawTime := time.Now().Add(time.Hour * 8).Format(ocpp16.ISO8601)
-	expiryDate, err := time.Parse(ocpp16.ISO8601, rawTime)
-	assert.Nil(t, err)
-	parentIdTag := "parentTag1"
+	wsUrl := "someUrl"
+	wsId := "test_id"
+	uniqueId := defaultMessageId
 	status := ocpp16.AuthorizationStatusAccepted
+	parentIdTag := "parentTag1"
+	expiryDate := ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}
+	expectedJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, uniqueId, expiryDate.Format(ocpp16.ISO8601), parentIdTag, status)
+
+	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: false})
+	suite.ocppjChargePoint.SetConfirmationHandler(func(confirmation ocppj.Confirmation, requestId string) {
+		authorizeConfirmation := getAuthorizeConfirmation(t, confirmation)
+		assert.NotNil(t, authorizeConfirmation)
+		assert.Equal(t, status, authorizeConfirmation.IdTagInfo.Status)
+		assert.Equal(t, parentIdTag, authorizeConfirmation.IdTagInfo.ParentIdTag)
+		assertDateTimeEquality(t, expiryDate, authorizeConfirmation.IdTagInfo.ExpiryDate)
+	})
+	// Mock pending request
 	dummyRequest := ocpp16.AuthorizeRequest{}
-	dataJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, uniqueId, expiryDate.Format(ocpp16.ISO8601), parentIdTag, status)
-	suite.chargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
-	callResult := ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
-	CheckCallResult(callResult, t, uniqueId)
-	confirmation := GetAuthorizeConfirmation(t, callResult.Payload)
-	assert.Equal(t, status, confirmation.IdTagInfo.Status)
-	assert.Equal(t, parentIdTag, confirmation.IdTagInfo.ParentIdTag)
-	assert.Equal(t, expiryDate, confirmation.IdTagInfo.ExpiryDate)
+	suite.ocppjChargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
+	// Run test
+	err := suite.chargePoint.Start(wsUrl)
+	assert.Nil(t, err)
+	err = suite.mockWsClient.MessageHandler([]byte(expectedJson))
+	assert.Nil(t, err)
 }
 
 func (suite *OcppV16TestSuite) TestAuthorizeConfirmationToJson() {
 	t := suite.T()
 	uniqueId := "1234"
+	idTag := "tag1"
 	parentIdTag := "parentTag1"
-	expiryDate := time.Now().Add(time.Hour * 8)
+	wsId := "test_id"
+	channel := NewMockWebSocket(wsId)
+	expiryDate := ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}
 	status := ocpp16.AuthorizationStatusAccepted
+	dummyRequest := fmt.Sprintf(`[2,"%v","Authorize",{"idTag":"%v"}]`, uniqueId, idTag)
 	confirmation := ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: status, ParentIdTag: parentIdTag, ExpiryDate: expiryDate}}
-	callResult, err := suite.centralSystem.CreateCallResult(confirmation, uniqueId)
+	expectedJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, uniqueId, expiryDate.Format(ocpp16.ISO8601), parentIdTag, status)
+
+	coreListener := MockCentralSystemCoreListener{}
+	coreListener.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(confirmation, nil)
+	suite.centralSystem.SetCentralSystemCoreListener(coreListener)
+	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(expectedJson), forwardWrittenMessage: false})
+
+	suite.centralSystem.Start(8887, "somePath")
+	suite.mockWsServer.NewClientHandler(channel)
+	err := suite.mockWsServer.MessageHandler(channel, []byte(dummyRequest))
 	assert.Nil(t, err)
-	assert.NotNil(t, callResult)
-	err = Validate.Struct(callResult)
-	assert.Nil(t, err)
-	jsonData, err := callResult.MarshalJSON()
-	assert.Nil(t, err)
-	assert.NotNil(t, jsonData)
-	expectedJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, uniqueId, expiryDate.Format(time.RFC3339Nano), parentIdTag, status)
-	assert.Equal(t, []byte(expectedJson), jsonData)
 }
 
 func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
-	messageId := "1234"
+	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	idTag := "tag1"
 	parentIdTag := "parentTag1"
 	status := ocpp16.AuthorizationStatusAccepted
-	expiryDate := time.Now().Add(time.Hour * 8)
+	expiryDate := ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, ocpp16.AuthorizeFeatureName, idTag)
-	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.Format(time.RFC3339Nano), parentIdTag, status)
+	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.Time.Format(ocpp16.ISO8601), parentIdTag, status)
+	authorizeConfirmation := ocpp16.NewAuthorizationConfirmation(ocpp16.IdTagInfo{ExpiryDate: expiryDate, ParentIdTag: parentIdTag, Status: status})
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
 	channel := NewMockWebSocket(wsId)
-	// Setting server handlers
-	suite.mockServer.SetNewClientHandler(func(ws ws.Channel) {
-		assert.NotNil(t, ws)
-		assert.Equal(t, wsId, ws.GetId())
-	})
-	suite.mockServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
-		assert.Equal(t, requestRaw, data)
-		jsonData := string(data)
-		assert.Equal(t, requestJson, jsonData)
-		call := ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
-		CheckCall(call, t, ocpp16.AuthorizeFeatureName, messageId)
-		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
-		// TODO: generate the response dynamically
-		err := suite.mockClient.MessageHandler(responseRaw)
-		assert.Nil(t, err)
-		return nil
-	})
-	// Setting client handlers
-	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
-		u := args.String(0)
-		assert.Equal(t, wsUrl, u)
-		suite.mockServer.NewClientHandler(channel)
-	})
-	suite.mockClient.SetMessageHandler(func(data []byte) error {
-		assert.Equal(t, responseRaw, data)
-		jsonData := string(data)
-		assert.Equal(t, responseJson, jsonData)
-		callResult := ParseCallResult(&suite.chargePoint.Endpoint, jsonData, t)
-		CheckCallResult(callResult, t, messageId)
-		return nil
-	})
-	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		data := args.Get(0)
-		bytes := data.([]byte)
-		assert.NotNil(t, bytes)
-		err := suite.mockServer.MessageHandler(channel, bytes)
-		assert.Nil(t, err)
-	})
-	// Test Run
-	err := suite.mockClient.Start(wsUrl)
+	// CS -> CP
+	coreListener := MockCentralSystemCoreListener{}
+	coreListener.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(authorizeConfirmation, nil)
+	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true})
+	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: requestRaw, forwardWrittenMessage: true})
+	// Run Test
+	suite.centralSystem.Start(8887, "somePath")
+	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
-	err = suite.mockClient.Write(requestRaw)
+	confirmation, protoErr, err := suite.chargePoint.Authorize(idTag)
 	assert.Nil(t, err)
+	assert.Nil(t, protoErr)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, status, confirmation.IdTagInfo.Status)
+	assert.Equal(t, parentIdTag, confirmation.IdTagInfo.ParentIdTag)
+	assertDateTimeEquality(t, expiryDate, confirmation.IdTagInfo.ExpiryDate)
 }
+
+// TODO: test invalid direction

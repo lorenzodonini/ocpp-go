@@ -386,8 +386,8 @@ func (suite *OcppV16TestSuite) SetupTest() {
 	suite.mockWsServer = &mockServer
 	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile)
 	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile)
-	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.mockWsClient)
-	suite.centralSystem = ocpp16.NewCentralSystem(suite.mockWsServer)
+	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
+	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
 		return defaultMessageId
 	}}
