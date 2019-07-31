@@ -3,7 +3,6 @@ package ocpp16
 import (
 	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"reflect"
-	"time"
 )
 
 // -------------------- Boot Notification --------------------
@@ -31,7 +30,7 @@ type BootNotificationRequest struct {
 //TODO: add custom validator for registration status & interval
 type BootNotificationConfirmation struct {
 	ocppj.Confirmation `json:"-"`
-	CurrentTime        time.Time          `json:"currentTime" validate:"required"`
+	CurrentTime        DateTime           `json:"currentTime" validate:"required"`
 	Interval           int                `json:"interval" validate:"required,gte=0"`
 	Status             RegistrationStatus `json:"status" validate:"required"`
 }
@@ -62,6 +61,6 @@ func NewBootNotificationRequest(chargePointModel string, chargePointVendor strin
 	return &BootNotificationRequest{ChargePointModel: chargePointModel, ChargePointVendor: chargePointVendor}
 }
 
-func NewBootNotificationConfirmation(currentTime time.Time, interval int, status RegistrationStatus) *BootNotificationConfirmation {
+func NewBootNotificationConfirmation(currentTime DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
 	return &BootNotificationConfirmation{CurrentTime: currentTime, Interval: interval, Status: status}
 }
