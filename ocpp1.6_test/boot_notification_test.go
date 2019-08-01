@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
-	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
@@ -12,7 +11,7 @@ import (
 )
 
 // Utility functions
-func GetBootNotificationRequest(t *testing.T, request ocppj.Request) *ocpp16.BootNotificationRequest {
+func getBootNotificationRequest(t *testing.T, request ocppj.Request) *ocpp16.BootNotificationRequest {
 	assert.NotNil(t, request)
 	result := request.(*ocpp16.BootNotificationRequest)
 	assert.NotNil(t, result)
@@ -20,7 +19,7 @@ func GetBootNotificationRequest(t *testing.T, request ocppj.Request) *ocpp16.Boo
 	return result
 }
 
-func GetBootNotificationConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.BootNotificationConfirmation {
+func getBootNotificationConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.BootNotificationConfirmation {
 	assert.NotNil(t, confirmation)
 	result := confirmation.(*ocpp16.BootNotificationConfirmation)
 	assert.NotNil(t, result)
@@ -52,89 +51,16 @@ func (suite *OcppV16TestSuite) TestBootNotificationRequestValidation() {
 func (suite *OcppV16TestSuite) TestBootNotificationConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []ConfirmationTestEntry{
-		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp16.RegistrationStatusAccepted}, true},
-		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp16.RegistrationStatusPending}, true},
-		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60, Status: ocpp16.RegistrationStatusRejected}, true},
-		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: 60}, false},
-		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Status: ocpp16.RegistrationStatusAccepted}, false},
+		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now()}, Interval: 60, Status: ocpp16.RegistrationStatusAccepted}, true},
+		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now()}, Interval: 60, Status: ocpp16.RegistrationStatusPending}, true},
+		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now()}, Interval: 60, Status: ocpp16.RegistrationStatusRejected}, true},
+		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now()}, Interval: 60}, false},
+		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now()}, Status: ocpp16.RegistrationStatusAccepted}, false},
 		{ocpp16.BootNotificationConfirmation{Interval: 60, Status: ocpp16.RegistrationStatusAccepted}, false},
-		{ocpp16.BootNotificationConfirmation{CurrentTime: time.Now(), Interval: -1, Status: ocpp16.RegistrationStatusAccepted}, false},
+		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now()}, Interval: -1, Status: ocpp16.RegistrationStatusAccepted}, false},
 		//TODO: incomplete list, see core.go
 	}
 	ExecuteConfirmationTestTable(t, confirmationTable)
-}
-
-func (suite *OcppV16TestSuite) TestBootNotificationRequestFromJson() {
-	t := suite.T()
-	uniqueId := "1234"
-	modelId := "model1"
-	vendor := "ABL"
-	dataJson := fmt.Sprintf(`[2,"%v","BootNotification",{"chargePointModel": "%v", "chargePointVendor": "%v"}]`, uniqueId, modelId, vendor)
-	call := ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
-	CheckCall(call, t, ocpp16.BootNotificationFeatureName, uniqueId)
-	request := GetBootNotificationRequest(t, call.Payload)
-	assert.Equal(t, modelId, request.ChargePointModel)
-	assert.Equal(t, vendor, request.ChargePointVendor)
-}
-
-func (suite *OcppV16TestSuite) TestBootNotificationRequestToJson() {
-	t := suite.T()
-	modelId := "model1"
-	vendor := "ABL"
-	request := ocpp16.BootNotificationRequest{ChargePointModel: modelId, ChargePointVendor: vendor}
-	call, err := suite.chargePoint.CreateCall(request)
-	uniqueId := call.GetUniqueId()
-	assert.Nil(t, err)
-	assert.NotNil(t, call)
-	err = Validate.Struct(call)
-	assert.Nil(t, err)
-	jsonData, err := call.MarshalJSON()
-	assert.Nil(t, err)
-	assert.NotNil(t, jsonData)
-	expectedJson := fmt.Sprintf(`[2,"%v","BootNotification",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, uniqueId, modelId, vendor)
-	assert.Equal(t, []byte(expectedJson), jsonData)
-}
-
-func (suite *OcppV16TestSuite) TestBootNotificationConfirmationFromJson() {
-	t := suite.T()
-	uniqueId := "5678"
-	rawTime := time.Now().Format(ocpp16.ISO8601)
-	currentTime, err := time.Parse(ocpp16.ISO8601, rawTime)
-	assert.Nil(t, err)
-	interval := 60
-	status := ocpp16.RegistrationStatusAccepted
-	dummyRequest := ocpp16.BootNotificationRequest{}
-	dataJson := fmt.Sprintf(`[3,"%v",{"currentTime": "%v", "interval": 60, "status": "%v"}]`, uniqueId, currentTime.Format(ocpp16.ISO8601), status)
-	suite.chargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
-	callResult := ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
-	CheckCallResult(callResult, t, uniqueId)
-	confirmation := GetBootNotificationConfirmation(t, callResult.Payload)
-	assert.Equal(t, status, confirmation.Status)
-	assert.Equal(t, interval, confirmation.Interval)
-	assert.Equal(t, currentTime, confirmation.CurrentTime)
-}
-
-func (suite *OcppV16TestSuite) TestBootNotificationConfirmationToJson() {
-	t := suite.T()
-	uniqueId := "1234"
-	now := time.Now()
-	interval := 60
-	status := ocpp16.RegistrationStatusAccepted
-	confirmation := ocpp16.BootNotificationConfirmation{CurrentTime: now, Interval: interval, Status: ocpp16.RegistrationStatus(status)}
-	callResult, err := suite.centralSystem.CreateCallResult(confirmation, uniqueId)
-	assert.Nil(t, err)
-	assert.NotNil(t, callResult)
-	err = Validate.Struct(callResult)
-	assert.Nil(t, err)
-	jsonData, err := callResult.MarshalJSON()
-	assert.Nil(t, err)
-	assert.NotNil(t, jsonData)
-	expectedJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v","interval":60,"status":"%v"}]`, uniqueId, now.Format(time.RFC3339Nano), status)
-	assert.Equal(t, []byte(expectedJson), jsonData)
-}
-
-func (suite *OcppV16TestSuite) TestBootNotificationInvalidMessage() {
-	//TODO: implement
 }
 
 func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
@@ -142,52 +68,82 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 	wsId := "test_id"
 	messageId := "1234"
 	wsUrl := "someUrl"
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel": "model1", "chargePointVendor": "ABL"}]`, messageId, ocpp16.BootNotificationFeatureName)
-	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime": "%v", "interval": 60, "status": "%v"}]`, messageId, time.Now().Format(ocpp16.ISO8601), ocpp16.RegistrationStatusAccepted)
-	requestRaw := []byte(requestJson)
-	responseRaw := []byte(responseJson)
+	interval := 60
+	chargePointModel := "model1"
+	chargePointVendor := "ABL"
+	registrationStatus := ocpp16.RegistrationStatusAccepted
+	currentTime := ocpp16.DateTime{Time: time.Now()}
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
+	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v","interval":%v,"status":"%v"}]`, messageId, currentTime.Time.Format(ocpp16.ISO8601), interval, registrationStatus)
+	bootNotificationConfirmation := ocpp16.NewBootNotificationConfirmation(currentTime, interval, registrationStatus)
 	channel := NewMockWebSocket(wsId)
-	// Setting server handlers
-	suite.mockServer.SetNewClientHandler(func(ws ws.Channel) {
-		assert.NotNil(t, ws)
-		assert.Equal(t, wsId, ws.GetId())
-	})
-	suite.mockServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
-		assert.Equal(t, requestRaw, data)
-		jsonData := string(data)
-		assert.Equal(t, requestJson, jsonData)
-		call := ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
-		CheckCall(call, t, ocpp16.BootNotificationFeatureName, messageId)
-		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
-		// TODO: generate the response dynamically
-		err := suite.mockClient.MessageHandler(responseRaw)
-		assert.Nil(t, err)
-		return nil
-	})
-	// Setting client handlers
-	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
-		u := args.String(0)
-		assert.Equal(t, wsUrl, u)
-		suite.mockServer.NewClientHandler(channel)
-	})
-	suite.mockClient.SetMessageHandler(func(data []byte) error {
-		assert.Equal(t, responseRaw, data)
-		jsonData := string(data)
-		assert.Equal(t, responseJson, jsonData)
-		callResult := ParseCallResult(&suite.chargePoint.Endpoint, jsonData, t)
-		CheckCallResult(callResult, t, messageId)
-		return nil
-	})
-	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		data := args.Get(0)
-		bytes := data.([]byte)
-		assert.NotNil(t, bytes)
-		err := suite.mockServer.MessageHandler(channel, bytes)
-		assert.Nil(t, err)
-	})
-	// Test Run
-	err := suite.mockClient.Start(wsUrl)
+
+	coreListener := MockCentralSystemCoreListener{}
+	coreListener.On("OnBootNotification", mock.AnythingOfType("string"), mock.Anything).Return(bootNotificationConfirmation, nil)
+	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
+	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	// Run test
+	suite.centralSystem.Start(8887, "somePath")
+	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
-	err = suite.mockClient.Write(requestRaw)
+	confirmation, protoErr, err := suite.chargePoint.BootNotification(chargePointModel, chargePointVendor)
+	assert.Nil(t, err)
+	assert.Nil(t, protoErr)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, registrationStatus, confirmation.Status)
+	assert.Equal(t, interval, confirmation.Interval)
+	assertDateTimeEquality(t, currentTime, confirmation.CurrentTime)
+}
+
+func (suite *OcppV16TestSuite) TestBootNotificationFromCentralSystem() {
+	t := suite.T()
+	wsId := "test_id"
+	messageId := "1234"
+	wsUrl := "someUrl"
+	chargePointModel := "model1"
+	chargePointVendor := "ABL"
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
+
+	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: false, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
+	// Run test
+	err := suite.chargePoint.Start(wsUrl)
+	assert.Nil(t, err)
+	bootNotificationRequest := ocpp16.NewBootNotificationRequest(chargePointModel, chargePointVendor)
+	err = suite.centralSystem.SendRequestAsync(wsId, bootNotificationRequest, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
+		t.Fail()
+	})
+	assert.Error(t, err)
+}
+
+func (suite *OcppV16TestSuite) TestBootNotificationFromCentralSystemResponse() {
+	t := suite.T()
+	wsId := "test_id"
+	messageId := defaultMessageId
+	wsUrl := "someUrl"
+	chargePointModel := "model1"
+	chargePointVendor := "ABL"
+	errorDescription := fmt.Sprintf("Unsupported action %v on charge point", ocpp16.BootNotificationFeatureName)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
+	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
+	channel := NewMockWebSocket(wsId)
+
+	coreListener := MockChargePointCoreListener{}
+	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
+	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
+	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
+		assert.Equal(t, messageId, requestId)
+		assert.Equal(t, wsId, chargePointId)
+		assert.Equal(t, ocppj.NotSupported, errorCode)
+		assert.Equal(t, errorDescription, description)
+		assert.Nil(t, details)
+	})
+	// Mock pending request
+	pendingRequest := ocpp16.NewBootNotificationRequest(chargePointModel, chargePointVendor)
+	suite.ocppjCentralSystem.AddPendingRequest(messageId, pendingRequest)
+	// Run test
+	suite.centralSystem.Start(8887, "somePath")
+	err := suite.chargePoint.Start(wsUrl)
+	assert.Nil(t, err)
+	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
 	assert.Nil(t, err)
 }
