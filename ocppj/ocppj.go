@@ -229,16 +229,7 @@ const (
 func IsErrorCodeValid(fl validator.FieldLevel) bool {
 	code := ErrorCode(fl.Field().String())
 	switch code {
-	case NotImplemented:
-	case NotSupported:
-	case InternalError:
-	case ProtocolError:
-	case SecurityError:
-	case FormationViolation:
-	case PropertyConstraintViolation:
-	case OccurrenceConstraintViolation:
-	case TypeConstraintViolation:
-	case GenericError:
+	case NotImplemented, NotSupported, InternalError, ProtocolError, SecurityError, FormationViolation, PropertyConstraintViolation, OccurrenceConstraintViolation, TypeConstraintViolation, GenericError:
 		return true
 	}
 	return false
