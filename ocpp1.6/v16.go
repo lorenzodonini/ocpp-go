@@ -203,11 +203,12 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocppj.Request
 	default:
 		return fmt.Errorf("unsupported action %v, cannot send request", request.GetFeatureName())
 	}
+	cs.callbacks[clientId] = callback
 	err := cs.centralSystem.SendRequest(clientId, request)
 	if err != nil {
+		delete(cs.callbacks, clientId)
 		return err
 	}
-	cs.callbacks[clientId] = callback
 	return nil
 }
 
