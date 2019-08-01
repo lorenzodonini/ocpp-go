@@ -74,6 +74,12 @@ func (cp *chargePoint) SendRequest(request ocppj.Request) (ocppj.Confirmation, *
 }
 
 func (cp *chargePoint) SendRequestAsync(request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
+	switch request.GetFeatureName() {
+	case AuthorizeFeatureName, BootNotificationFeatureName:
+		break
+	default:
+		return fmt.Errorf("unsupported action %v, cannot send request", request.GetFeatureName())
+	}
 	err := cp.chargePoint.SendRequest(request)
 	if err == nil {
 		// Retrieve result asynchronously
@@ -191,6 +197,12 @@ func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId str
 }
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
+	switch request.GetFeatureName() {
+	case ChangeAvailabilityFeatureName:
+		break
+	default:
+		return fmt.Errorf("unsupported action %v, cannot send request", request.GetFeatureName())
+	}
 	err := cs.centralSystem.SendRequest(clientId, request)
 	if err != nil {
 		return err
