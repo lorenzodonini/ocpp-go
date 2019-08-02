@@ -78,7 +78,7 @@ func (cp *chargePoint) SendRequestAsync(request ocppj.Request, callback func(con
 	case AuthorizeFeatureName, BootNotificationFeatureName:
 		break
 	default:
-		return fmt.Errorf("unsupported action %v, cannot send request", request.GetFeatureName())
+		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
 	}
 	err := cp.chargePoint.SendRequest(request)
 	if err == nil {
@@ -130,7 +130,7 @@ func (cp *chargePoint) handleIncomingRequest(request ocppj.Request, requestId st
 	case ChangeAvailabilityFeatureName:
 		confirmation, err = cp.coreListener.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
 	default:
-		err := cp.chargePoint.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("Unsupported action %v on charge point", action), nil)
+		err := cp.chargePoint.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
 		if err != nil {
 			log.Printf("Unknown error %v while replying to message %v with CallError", err, requestId)
 		}
@@ -201,7 +201,7 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocppj.Request
 	case ChangeAvailabilityFeatureName:
 		break
 	default:
-		return fmt.Errorf("unsupported action %v, cannot send request", request.GetFeatureName())
+		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
 	cs.callbacks[clientId] = callback
 	err := cs.centralSystem.SendRequest(clientId, request)
@@ -251,7 +251,7 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*AuthorizeRequest))
 			break
 		default:
-			err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("Unsupported action %v on central system", action), nil)
+			err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
 			if err != nil {
 				log.Printf("Unknown error %v while replying to message %v with CallError", err, requestId)
 			}

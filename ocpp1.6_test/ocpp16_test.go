@@ -379,6 +379,7 @@ func (testGenerator * TestRandomIdGenerator) generateId() string {
 var defaultMessageId = "1234"
 
 func (suite *OcppV16TestSuite) SetupTest() {
+	// TODO: replace coreProfile with ocpp16.CoreProfile
 	coreProfile := ocppj.NewProfile("core", ocpp16.BootNotificationFeature{}, ocpp16.AuthorizeFeature{}, ocpp16.ChangeAvailabilityFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}

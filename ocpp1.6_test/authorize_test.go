@@ -165,7 +165,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
 	channel := NewMockWebSocket(wsId)
-	// CS -> CP
+
 	coreListener := MockCentralSystemCoreListener{}
 	coreListener.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(authorizeConfirmation, nil)
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true})
