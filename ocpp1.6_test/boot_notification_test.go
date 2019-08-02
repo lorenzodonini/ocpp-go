@@ -95,34 +95,34 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 	assertDateTimeEquality(t, currentTime, confirmation.CurrentTime)
 }
 
-func (suite *OcppV16TestSuite) TestBootNotificationFromCentralSystem() {
+func (suite *OcppV16TestSuite) TestBootNotificationInvalidEndpoint() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := "1234"
-	wsUrl := "someUrl"
 	chargePointModel := "model1"
 	chargePointVendor := "ABL"
+	expectedError := fmt.Sprintf("unsupported action %v on central system, cannot send request", ocpp16.BootNotificationFeatureName)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
 
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: false, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
+	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
 	// Run test
-	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
 	bootNotificationRequest := ocpp16.NewBootNotificationRequest(chargePointModel, chargePointVendor)
-	err = suite.centralSystem.SendRequestAsync(wsId, bootNotificationRequest, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
+	suite.centralSystem.Start(8887, "somePath")
+	err := suite.centralSystem.SendRequestAsync(wsId, bootNotificationRequest, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
 		t.Fail()
 	})
 	assert.Error(t, err)
+	assert.Equal(t, expectedError, err.Error())
 }
 
-func (suite *OcppV16TestSuite) TestBootNotificationFromCentralSystemResponse() {
+func (suite *OcppV16TestSuite) TestBootNotificationInvalidEndpointResponse() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	chargePointModel := "model1"
 	chargePointVendor := "ABL"
-	errorDescription := fmt.Sprintf("Unsupported action %v on charge point", ocpp16.BootNotificationFeatureName)
+	errorDescription := fmt.Sprintf("unsupported action %v on charge point", ocpp16.BootNotificationFeatureName)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
 	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
 	channel := NewMockWebSocket(wsId)
