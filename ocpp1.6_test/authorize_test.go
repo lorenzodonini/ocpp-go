@@ -1,7 +1,6 @@
 package ocpp16_test
 
 import (
-	"errors"
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
@@ -58,98 +57,6 @@ func (suite *OcppV16TestSuite) TestAuthorizeConfirmationValidation() {
 	ExecuteConfirmationTestTable(t, confirmationTable)
 }
 
-func (suite *OcppV16TestSuite) TestAuthorizeRequestFromJson() {
-	t := suite.T()
-	uniqueId := defaultMessageId
-	idTag := "tag1"
-	wsId := "test_id"
-	channel := NewMockWebSocket(wsId)
-	dataJson := fmt.Sprintf(`[2,"%v","Authorize",{"idTag":"%v"}]`, uniqueId, idTag)
-
-	coreListener := MockCentralSystemCoreListener{}
-	coreListener.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(nil, nil).Run(func(args mock.Arguments) {
-		clientId := args.String(0)
-		request := args.Get(1).(*ocpp16.AuthorizeRequest)
-		assert.Equal(t, wsId, clientId)
-		assert.Equal(t, idTag, request.IdTag)
-	})
-	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: nil})
-	suite.centralSystem.Start(8887, "somePath")
-	suite.mockWsServer.NewClientHandler(channel)
-	err := suite.mockWsServer.MessageHandler(channel, []byte(dataJson))
-	assert.Nil(t, err)
-}
-
-func (suite *OcppV16TestSuite) TestAuthorizeRequestToJson() {
-	t := suite.T()
-	idTag := "tag2"
-	wsUrl := "someUrl"
-	wsId := "test_id"
-	mockError := "mock"
-	expectedJson := fmt.Sprintf(`[2,"%v","Authorize",{"idTag":"%v"}]`, defaultMessageId, idTag)
-
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, rawWrittenMessage: []byte(expectedJson), writeReturnArgument: errors.New(mockError)})
-	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
-	confirmation, protoErr, err := suite.chargePoint.Authorize(idTag)
-	assert.Nil(t, confirmation)
-	assert.Nil(t, protoErr)
-	assert.NotNil(t, err)
-	assert.Equal(t, mockError, err.Error())
-}
-
-func (suite *OcppV16TestSuite) TestAuthorizeConfirmationFromJson() {
-	t := suite.T()
-	wsUrl := "someUrl"
-	wsId := "test_id"
-	uniqueId := defaultMessageId
-	status := ocpp16.AuthorizationStatusAccepted
-	parentIdTag := "parentTag1"
-	expiryDate := ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}
-	expectedJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, uniqueId, expiryDate.Format(ocpp16.ISO8601), parentIdTag, status)
-
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: false})
-	suite.ocppjChargePoint.SetConfirmationHandler(func(confirmation ocppj.Confirmation, requestId string) {
-		authorizeConfirmation := getAuthorizeConfirmation(t, confirmation)
-		assert.NotNil(t, authorizeConfirmation)
-		assert.Equal(t, status, authorizeConfirmation.IdTagInfo.Status)
-		assert.Equal(t, parentIdTag, authorizeConfirmation.IdTagInfo.ParentIdTag)
-		assertDateTimeEquality(t, expiryDate, authorizeConfirmation.IdTagInfo.ExpiryDate)
-	})
-	// Mock pending request
-	dummyRequest := ocpp16.AuthorizeRequest{}
-	suite.ocppjChargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
-	// Run test
-	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
-	err = suite.mockWsClient.MessageHandler([]byte(expectedJson))
-	assert.Nil(t, err)
-}
-
-func (suite *OcppV16TestSuite) TestAuthorizeConfirmationToJson() {
-	t := suite.T()
-	uniqueId := "1234"
-	idTag := "tag1"
-	parentIdTag := "parentTag1"
-	wsId := "test_id"
-	channel := NewMockWebSocket(wsId)
-	expiryDate := ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}
-	status := ocpp16.AuthorizationStatusAccepted
-	dummyRequest := fmt.Sprintf(`[2,"%v","Authorize",{"idTag":"%v"}]`, uniqueId, idTag)
-	confirmation := ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: status, ParentIdTag: parentIdTag, ExpiryDate: expiryDate}}
-	expectedJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, uniqueId, expiryDate.Format(ocpp16.ISO8601), parentIdTag, status)
-
-	coreListener := MockCentralSystemCoreListener{}
-	coreListener.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(confirmation, nil)
-	suite.centralSystem.SetCentralSystemCoreListener(coreListener)
-	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(expectedJson), forwardWrittenMessage: false})
-
-	suite.centralSystem.Start(8887, "somePath")
-	suite.mockWsServer.NewClientHandler(channel)
-	err := suite.mockWsServer.MessageHandler(channel, []byte(dummyRequest))
-	assert.Nil(t, err)
-}
-
 func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -183,4 +90,53 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	assertDateTimeEquality(t, expiryDate, confirmation.IdTagInfo.ExpiryDate)
 }
 
-// TODO: test invalid direction
+func (suite *OcppV16TestSuite) TestAuthorizeInvalidEndpoint() {
+	t := suite.T()
+	wsId := "test_id"
+	messageId := "1234"
+	idTag := "tag1"
+	expectedError := fmt.Sprintf("unsupported action %v on central system, cannot send request", ocpp16.AuthorizeFeatureName)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, ocpp16.AuthorizeFeatureName, idTag)
+
+	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
+	// Run test
+	authorizeRequest := ocpp16.NewAuthorizationRequest(idTag)
+	suite.centralSystem.Start(8887, "somePath")
+	err := suite.centralSystem.SendRequestAsync(wsId, authorizeRequest, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
+		t.Fail()
+	})
+	assert.Error(t, err)
+	assert.Equal(t, expectedError, err.Error())
+}
+
+func (suite *OcppV16TestSuite) TestAuthorizeInvalidEndpointResponse() {
+	t := suite.T()
+	wsId := "test_id"
+	messageId := defaultMessageId
+	wsUrl := "someUrl"
+	idTag := "tag1"
+	errorDescription := fmt.Sprintf("unsupported action %v on charge point", ocpp16.AuthorizeFeatureName)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, ocpp16.AuthorizeFeatureName, idTag)
+	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
+	channel := NewMockWebSocket(wsId)
+
+	coreListener := MockChargePointCoreListener{}
+	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
+	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
+	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
+		assert.Equal(t, messageId, requestId)
+		assert.Equal(t, wsId, chargePointId)
+		assert.Equal(t, ocppj.NotSupported, errorCode)
+		assert.Equal(t, errorDescription, description)
+		assert.Nil(t, details)
+	})
+	// Mock pending request
+	pendingRequest := ocpp16.NewAuthorizationRequest(idTag)
+	suite.ocppjCentralSystem.AddPendingRequest(messageId, pendingRequest)
+	// Run test
+	suite.centralSystem.Start(8887, "somePath")
+	err := suite.chargePoint.Start(wsUrl)
+	assert.Nil(t, err)
+	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
+	assert.Nil(t, err)
+}
