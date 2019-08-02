@@ -84,56 +84,19 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 }
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityInvalidEndpoint() {
-	t := suite.T()
-	wsId := "test_id"
 	messageId := defaultMessageId
-	wsUrl := "someUrl"
 	connectorId := 1
 	availabilityType := ocpp16.AvailabilityTypeOperative
-	expectedError := fmt.Sprintf("unsupported action %v on charge point, cannot send request", ocpp16.ChangeAvailabilityFeatureName)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
-
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: false, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
-	// Run test
-	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
 	changeAvailabilityRequest := ocpp16.NewChangeAvailabilityRequest(connectorId, availabilityType)
-	err = suite.chargePoint.SendRequestAsync(changeAvailabilityRequest, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
-		t.Fail()
-	})
-	assert.Error(t, err)
-	assert.Equal(t, expectedError, err.Error())
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
+	testUnsupportedRequestFromChargePoint(suite, changeAvailabilityRequest, requestJson)
 }
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityInvalidEndpointResponse() {
-	t := suite.T()
-	wsId := "test_id"
 	messageId := defaultMessageId
-	wsUrl := "someUrl"
 	connectorId := 1
 	availabilityType := ocpp16.AvailabilityTypeOperative
-	errorDescription := fmt.Sprintf("unsupported action %v on central system", ocpp16.ChangeAvailabilityFeatureName)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
-	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
-	channel := NewMockWebSocket(wsId)
-
-	coreListener := MockCentralSystemCoreListener{}
-	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
-	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
-		assert.Equal(t, messageId, requestId)
-		assert.Equal(t, wsId, chargePointId)
-		assert.Equal(t, ocppj.NotSupported, errorCode)
-		assert.Equal(t, errorDescription, description)
-		assert.Nil(t, details)
-	})
-	// Mock pending request
 	pendingRequest := ocpp16.NewChangeAvailabilityRequest(connectorId, availabilityType)
-	suite.ocppjChargePoint.AddPendingRequest(messageId, pendingRequest)
-	// Run test
-	suite.centralSystem.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
-	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
-	assert.Nil(t, err)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
+	testUnsupportedRequestFromChargePointResponse(suite, pendingRequest, requestJson, messageId)
 }

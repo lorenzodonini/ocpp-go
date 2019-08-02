@@ -96,54 +96,19 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 }
 
 func (suite *OcppV16TestSuite) TestBootNotificationInvalidEndpoint() {
-	t := suite.T()
-	wsId := "test_id"
-	messageId := "1234"
+	messageId := defaultMessageId
 	chargePointModel := "model1"
 	chargePointVendor := "ABL"
-	expectedError := fmt.Sprintf("unsupported action %v on central system, cannot send request", ocpp16.BootNotificationFeatureName)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
-
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
-	// Run test
 	bootNotificationRequest := ocpp16.NewBootNotificationRequest(chargePointModel, chargePointVendor)
-	suite.centralSystem.Start(8887, "somePath")
-	err := suite.centralSystem.SendRequestAsync(wsId, bootNotificationRequest, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
-		t.Fail()
-	})
-	assert.Error(t, err)
-	assert.Equal(t, expectedError, err.Error())
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
+	testUnsupportedRequestFromCentralSystem(suite, bootNotificationRequest, requestJson)
 }
 
 func (suite *OcppV16TestSuite) TestBootNotificationInvalidEndpointResponse() {
-	t := suite.T()
-	wsId := "test_id"
 	messageId := defaultMessageId
-	wsUrl := "someUrl"
 	chargePointModel := "model1"
 	chargePointVendor := "ABL"
-	errorDescription := fmt.Sprintf("unsupported action %v on charge point", ocpp16.BootNotificationFeatureName)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
-	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
-	channel := NewMockWebSocket(wsId)
-
-	coreListener := MockChargePointCoreListener{}
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
-	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
-	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
-		assert.Equal(t, messageId, requestId)
-		assert.Equal(t, wsId, chargePointId)
-		assert.Equal(t, ocppj.NotSupported, errorCode)
-		assert.Equal(t, errorDescription, description)
-		assert.Nil(t, details)
-	})
-	// Mock pending request
 	pendingRequest := ocpp16.NewBootNotificationRequest(chargePointModel, chargePointVendor)
-	suite.ocppjCentralSystem.AddPendingRequest(messageId, pendingRequest)
-	// Run test
-	suite.centralSystem.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
-	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
-	assert.Nil(t, err)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
+	testUnsupportedRequestFromCentralSystemResponse(suite, pendingRequest, requestJson, messageId)
 }
