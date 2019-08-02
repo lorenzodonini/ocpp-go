@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
-	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
 // Utility functions
-func GetChangeAvailabilityRequest(t *testing.T, request ocppj.Request) *ocpp16.ChangeAvailabilityRequest {
+func getChangeAvailabilityRequest(t *testing.T, request ocppj.Request) *ocpp16.ChangeAvailabilityRequest {
 	assert.NotNil(t, request)
 	result := request.(*ocpp16.ChangeAvailabilityRequest)
 	assert.NotNil(t, result)
@@ -19,7 +18,7 @@ func GetChangeAvailabilityRequest(t *testing.T, request ocppj.Request) *ocpp16.C
 	return result
 }
 
-func GetChangeAvailabilityConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.ChangeAvailabilityConfirmation {
+func getChangeAvailabilityConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.ChangeAvailabilityConfirmation {
 	assert.NotNil(t, confirmation)
 	result := confirmation.(*ocpp16.ChangeAvailabilityConfirmation)
 	assert.NotNil(t, result)
@@ -51,121 +50,90 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationValidation() {
 }
 
 // Test
-func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestFromJson() {
-	t := suite.T()
-	uniqueId := "1234"
-	connectorId := 1
-	availabilityType := ocpp16.AvailabilityTypeOperative
-	dataJson := fmt.Sprintf(`[2,"%v","ChangeAvailability",{"connectorId":%v,"type":"%v"}]`, uniqueId, connectorId, availabilityType)
-	call := ParseCall(&suite.centralSystem.Endpoint, dataJson, t)
-	CheckCall(call, t, ocpp16.ChangeAvailabilityFeatureName, uniqueId)
-	request := GetChangeAvailabilityRequest(t, call.Payload)
-	assert.Equal(t, connectorId, request.ConnectorId)
-	assert.Equal(t, availabilityType, request.Type)
-}
-
-func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestToJson() {
-	t := suite.T()
-	connectorId := 1
-	availabilityType := ocpp16.AvailabilityTypeOperative
-	request := ocpp16.ChangeAvailabilityRequest{ConnectorId: connectorId, Type: availabilityType}
-	call, err := suite.chargePoint.CreateCall(request)
-	assert.Nil(t, err)
-	uniqueId := call.GetUniqueId()
-	assert.NotNil(t, call)
-	err = Validate.Struct(call)
-	assert.Nil(t, err)
-	jsonData, err := call.MarshalJSON()
-	assert.Nil(t, err)
-	assert.NotNil(t, jsonData)
-	expectedJson := fmt.Sprintf(`[2,"%v","ChangeAvailability",{"connectorId":%v,"type":"%v"}]`, uniqueId, connectorId, availabilityType)
-	assert.Equal(t, []byte(expectedJson), jsonData)
-}
-
-func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationFromJson() {
-	t := suite.T()
-	uniqueId := "5678"
-	status := ocpp16.AvailabilityStatusAccepted
-	dummyRequest := ocpp16.ChangeAvailabilityRequest{}
-	dataJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, uniqueId, status)
-	suite.chargePoint.Endpoint.AddPendingRequest(uniqueId, dummyRequest)
-	callResult := ParseCallResult(&suite.chargePoint.Endpoint, dataJson, t)
-	CheckCallResult(callResult, t, uniqueId)
-	confirmation := GetChangeAvailabilityConfirmation(t, callResult.Payload)
-	assert.Equal(t, status, confirmation.Status)
-}
-
-func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationToJson() {
-	t := suite.T()
-	uniqueId := "1234"
-	status := ocpp16.AvailabilityStatusAccepted
-	confirmation := ocpp16.ChangeAvailabilityConfirmation{Status: status}
-	callResult, err := suite.centralSystem.CreateCallResult(confirmation, uniqueId)
-	assert.Nil(t, err)
-	assert.NotNil(t, callResult)
-	err = Validate.Struct(callResult)
-	assert.Nil(t, err)
-	jsonData, err := callResult.MarshalJSON()
-	assert.Nil(t, err)
-	assert.NotNil(t, jsonData)
-	expectedJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, uniqueId, status)
-	assert.Equal(t, []byte(expectedJson), jsonData)
-}
-
 func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
-	messageId := "1234"
+	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	connectorId := 1
 	availabilityType := ocpp16.AvailabilityTypeOperative
 	status := ocpp16.AvailabilityStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	requestRaw := []byte(requestJson)
-	responseRaw := []byte(responseJson)
+	changeAvailabilityConfirmation := ocpp16.NewChangeAvailabilityConfirmation(status)
 	channel := NewMockWebSocket(wsId)
-	// Setting server handlers
-	suite.mockServer.SetNewClientHandler(func(ws ws.Channel) {
-		assert.NotNil(t, ws)
-		assert.Equal(t, wsId, ws.GetId())
-	})
-	suite.mockServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
-		assert.Equal(t, requestRaw, data)
-		jsonData := string(data)
-		assert.Equal(t, requestJson, jsonData)
-		call := ParseCall(&suite.chargePoint.Endpoint, jsonData, t)
-		CheckCall(call, t, ocpp16.ChangeAvailabilityFeatureName, messageId)
-		suite.chargePoint.AddPendingRequest(messageId, call.Payload)
-		// TODO: generate the response dynamically
-		err := suite.mockClient.MessageHandler(responseRaw)
-		assert.Nil(t, err)
-		return nil
-	})
-	// Setting client handlers
-	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
-		u := args.String(0)
-		assert.Equal(t, wsUrl, u)
-		suite.mockServer.NewClientHandler(channel)
-	})
-	suite.mockClient.SetMessageHandler(func(data []byte) error {
-		assert.Equal(t, responseRaw, data)
-		jsonData := string(data)
-		assert.Equal(t, responseJson, jsonData)
-		callResult := ParseCallResult(&suite.chargePoint.Endpoint, jsonData, t)
-		CheckCallResult(callResult, t, messageId)
-		return nil
-	})
-	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		data := args.Get(0)
-		bytes := data.([]byte)
-		assert.NotNil(t, bytes)
-		err := suite.mockServer.MessageHandler(channel, bytes)
-		assert.Nil(t, err)
-	})
-	// Test Run
-	err := suite.mockClient.Start(wsUrl)
+	// Setting handlers
+	coreListener := MockChargePointCoreListener{}
+	coreListener.On("OnChangeAvailability", mock.Anything).Return(changeAvailabilityConfirmation, nil)
+	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
+	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	// Run Test
+	suite.centralSystem.Start(8887, "somePath")
+	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
-	err = suite.mockClient.Write(requestRaw)
+	resultChannel := make(chan bool, 1)
+	err = suite.centralSystem.ChangeAvailability(wsId, func(confirmation *ocpp16.ChangeAvailabilityConfirmation, callError *ocppj.ProtoError) {
+		assert.NotNil(t, confirmation)
+		assert.Nil(t, callError)
+		assert.Equal(t, status, confirmation.Status)
+		resultChannel <- true
+	}, connectorId, availabilityType)
+	assert.Nil(t, err)
+	result := <- resultChannel
+	assert.True(t, result)
+}
+
+func (suite *OcppV16TestSuite) TestChangeAvailabilityInvalidEndpoint() {
+	t := suite.T()
+	wsId := "test_id"
+	messageId := defaultMessageId
+	wsUrl := "someUrl"
+	connectorId := 1
+	availabilityType := ocpp16.AvailabilityTypeOperative
+	expectedError := fmt.Sprintf("unsupported action %v on charge point, cannot send request", ocpp16.ChangeAvailabilityFeatureName)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
+
+	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: false, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
+	// Run test
+	err := suite.chargePoint.Start(wsUrl)
+	assert.Nil(t, err)
+	changeAvailabilityRequest := ocpp16.NewChangeAvailabilityRequest(connectorId, availabilityType)
+	err = suite.chargePoint.SendRequestAsync(changeAvailabilityRequest, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
+		t.Fail()
+	})
+	assert.Error(t, err)
+	assert.Equal(t, expectedError, err.Error())
+}
+
+func (suite *OcppV16TestSuite) TestChangeAvailabilityInvalidEndpointResponse() {
+	t := suite.T()
+	wsId := "test_id"
+	messageId := defaultMessageId
+	wsUrl := "someUrl"
+	connectorId := 1
+	availabilityType := ocpp16.AvailabilityTypeOperative
+	errorDescription := fmt.Sprintf("unsupported action %v on central system", ocpp16.ChangeAvailabilityFeatureName)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
+	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
+	channel := NewMockWebSocket(wsId)
+
+	coreListener := MockCentralSystemCoreListener{}
+	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
+	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
+		assert.Equal(t, messageId, requestId)
+		assert.Equal(t, wsId, chargePointId)
+		assert.Equal(t, ocppj.NotSupported, errorCode)
+		assert.Equal(t, errorDescription, description)
+		assert.Nil(t, details)
+	})
+	// Mock pending request
+	pendingRequest := ocpp16.NewChangeAvailabilityRequest(connectorId, availabilityType)
+	suite.ocppjChargePoint.AddPendingRequest(messageId, pendingRequest)
+	// Run test
+	suite.centralSystem.Start(8887, "somePath")
+	err := suite.chargePoint.Start(wsUrl)
+	assert.Nil(t, err)
+	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
 	assert.Nil(t, err)
 }
