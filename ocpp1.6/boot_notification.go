@@ -2,6 +2,7 @@ package ocpp16
 
 import (
 	"github.com/lorenzodonini/go-ocpp/ocppj"
+	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
 
@@ -63,4 +64,15 @@ func NewBootNotificationRequest(chargePointModel string, chargePointVendor strin
 
 func NewBootNotificationConfirmation(currentTime DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
 	return &BootNotificationConfirmation{CurrentTime: currentTime, Interval: interval, Status: status}
+}
+
+func validateBootNotificationConfirmation(sl validator.StructLevel) {
+	confirmation := sl.Current().Interface().(BootNotificationConfirmation)
+	if !validateDateTimeNow(confirmation.CurrentTime) {
+		sl.ReportError(confirmation.CurrentTime, "CurrentTime", "currentTime", "eq", "")
+	}
+}
+
+func init() {
+	Validate.RegisterStructValidation(validateBootNotificationConfirmation, BootNotificationConfirmation{})
 }

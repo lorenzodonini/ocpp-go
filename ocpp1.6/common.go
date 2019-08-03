@@ -2,6 +2,8 @@ package ocpp16
 
 import (
 	"encoding/json"
+	"github.com/lorenzodonini/go-ocpp/ocppj"
+	"gopkg.in/go-playground/validator.v9"
 	"strings"
 	"time"
 )
@@ -67,4 +69,34 @@ type IdTagInfo struct {
 	ExpiryDate  DateTime            `json:"expiryDate" validate:"omitempty,gt"`
 	ParentIdTag string              `json:"parentIdTag" validate:"omitempty,max=20"`
 	Status      AuthorizationStatus `json:"status" validate:"required"`
+}
+
+func IdTagInfoStructLevelValidation(sl validator.StructLevel) {
+	idTagInfo := sl.Current().Interface().(IdTagInfo)
+	if !dateTimeIsNull(idTagInfo.ExpiryDate) && !validateDateTimeGt(idTagInfo.ExpiryDate, time.Now()) {
+		sl.ReportError(idTagInfo.ExpiryDate, "ExpiryDate", "expiryDate", "gt", "")
+	}
+}
+
+func dateTimeIsNull(dateTime DateTime) bool {
+	return dateTime.IsZero()
+}
+
+func validateDateTimeGt(dateTime DateTime, than time.Time) bool {
+	return dateTime.After(than)
+}
+
+func validateDateTimeNow(dateTime DateTime) bool {
+	dur := time.Now().Sub(dateTime.Time).Seconds()
+	return dur < 1
+}
+
+func validateDateTimeLt(dateTime DateTime, than time.Time) bool {
+	return dateTime.Before(than)
+}
+
+var Validate = ocppj.Validate
+
+func init() {
+	Validate.RegisterStructValidation(IdTagInfoStructLevelValidation, IdTagInfo{})
 }
