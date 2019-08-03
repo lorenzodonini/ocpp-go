@@ -63,7 +63,7 @@ func (chargePoint *ChargePoint) Stop() {
 }
 
 func (chargePoint *ChargePoint) SendRequest(request Request) error {
-	err := validate.Struct(request)
+	err := Validate.Struct(request)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (chargePoint *ChargePoint) SendRequest(request Request) error {
 }
 
 func (chargePoint *ChargePoint) SendConfirmation(requestId string, confirmation Confirmation) error {
-	err := validate.Struct(confirmation)
+	err := Validate.Struct(confirmation)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (chargePoint *ChargePoint) SendConfirmation(requestId string, confirmation 
 
 func (chargePoint *ChargePoint) SendError(requestId string, errorCode ErrorCode, description string, details interface{}) error {
 	callError := chargePoint.CreateCallError(requestId, errorCode, description, details)
-	err := validate.Struct(callError)
+	err := Validate.Struct(callError)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
 }
 
 //func (chargePoint *ChargePoint) SendMessage(message Message) error {
-//	err := validate.Struct(message)
+//	err := Validate.Struct(message)
 //	if err != nil {
 //		return err
 //	}

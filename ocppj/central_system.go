@@ -61,7 +61,7 @@ func (centralSystem *CentralSystem) Stop() {
 }
 
 func (centralSystem *CentralSystem) SendRequest(chargePointId string, request Request) error {
-	err := validate.Struct(request)
+	err := Validate.Struct(request)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (centralSystem *CentralSystem) SendRequest(chargePointId string, request Re
 }
 
 func (centralSystem *CentralSystem) SendConfirmation(chargePointId string, requestId string, confirmation Confirmation) error {
-	err := validate.Struct(confirmation)
+	err := Validate.Struct(confirmation)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (centralSystem *CentralSystem) SendConfirmation(chargePointId string, reque
 
 func (centralSystem *CentralSystem) SendError(chargePointId string, requestId string, errorCode ErrorCode, description string, details interface{}) error {
 	callError := centralSystem.CreateCallError(requestId, errorCode, description, details)
-	err := validate.Struct(callError)
+	err := Validate.Struct(callError)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (centralSystem *CentralSystem) SendError(chargePointId string, requestId st
 }
 
 //func (centralSystem *CentralSystem) SendMessage(chargePointId string, message Message) error {
-//	err := validate.Struct(message)
+//	err := Validate.Struct(message)
 //	if err != nil {
 //		return err
 //	}

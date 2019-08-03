@@ -30,10 +30,10 @@ type ProtoError struct {
 	MessageId string
 }
 
-var validate = validator.New()
+var Validate = validator.New()
 
 func init() {
-	_ = validate.RegisterValidation("errorCode", IsErrorCodeValid)
+	_ = Validate.RegisterValidation("errorCode", IsErrorCodeValid)
 }
 
 // -------------------- Profile --------------------
@@ -370,7 +370,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 			Action:        action,
 			Payload:       request,
 		}
-		err := validate.Struct(call)
+		err := Validate.Struct(call)
 		if err != nil {
 			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
 			return nil, protoError
@@ -390,7 +390,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 			Payload:       confirmation,
 		}
 		endpoint.DeletePendingRequest(callResult.GetUniqueId())
-		err := validate.Struct(callResult)
+		err := Validate.Struct(callResult)
 		if err != nil {
 			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
 			return nil, protoError
@@ -414,7 +414,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 			ErrorDetails:     details,
 		}
 		endpoint.DeletePendingRequest(callError.GetUniqueId())
-		err := validate.Struct(callError)
+		err := Validate.Struct(callError)
 		if err != nil {
 			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
 			return nil, protoError
@@ -438,7 +438,7 @@ func (endpoint *Endpoint) CreateCall(request Request) (*Call, error) {
 		Action:        action,
 		Payload:       request,
 	}
-	err := validate.Struct(call)
+	err := Validate.Struct(call)
 	if err != nil {
 		return nil, err
 	}
@@ -457,7 +457,7 @@ func (endpoint *Endpoint) CreateCallResult(confirmation Confirmation, uniqueId s
 		UniqueId:      uniqueId,
 		Payload:       confirmation,
 	}
-	err := validate.Struct(callResult)
+	err := Validate.Struct(callResult)
 	if err != nil {
 		return nil, err
 	}
