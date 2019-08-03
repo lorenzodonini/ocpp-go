@@ -207,8 +207,8 @@ type WsClient interface {
 }
 
 type Client struct {
-	webSocket           WebSocket
-	messageHandler      func(data []byte) error
+	webSocket      WebSocket
+	messageHandler func(data []byte) error
 }
 
 func NewClient() *Client {

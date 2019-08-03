@@ -71,7 +71,6 @@ func (p *Profile) ParseRequest(featureName string, rawRequest interface{}) Reque
 	}
 	requestType := feature.GetRequestType()
 	bytes, _ := json.Marshal(rawRequest)
-	//bytes := []byte(rawRequest)
 	if !ok {
 		log.Printf("Couldn't cast raw request to bytes")
 		return nil

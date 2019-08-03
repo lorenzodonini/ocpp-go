@@ -132,7 +132,6 @@ func newMockConfirmation(value string) *MockConfirmation {
 	return &MockConfirmation{MockValue: value}
 }
 
-
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
@@ -415,8 +414,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidTypeId() {
 	invalidTypeId := "2"
 	messageId := "12345"
 	// Test invalid message length
-	mockMessage[0] = invalidTypeId 	// Message Type ID
-	mockMessage[1] = messageId 		// Unique ID
+	mockMessage[0] = invalidTypeId // Message Type ID
+	mockMessage[1] = messageId     // Unique ID
 	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
@@ -446,8 +445,8 @@ func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
 	messageId := "12345"
 	invalidTypeId := 1
 	// Test invalid message length
-	mockMessage[0] = float64(invalidTypeId)		// Message Type ID
-	mockMessage[1] = messageId 					// Unique ID
+	mockMessage[0] = float64(invalidTypeId) // Message Type ID
+	mockMessage[1] = messageId              // Unique ID
 	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)

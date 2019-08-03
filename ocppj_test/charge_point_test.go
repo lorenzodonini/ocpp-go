@@ -129,7 +129,7 @@ func (suite *OcppJTestSuite) TestChargePointCallHandler() {
 		err := suite.mockClient.MessageHandler([]byte(mockRequest))
 		assert.Nil(t, err)
 	})
-	err := suite.chargePoint.Start( "somePath")
+	err := suite.chargePoint.Start("somePath")
 	assert.Nil(t, err)
 }
 
@@ -149,7 +149,7 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 		assert.Nil(t, err)
 	})
 	suite.chargePoint.AddPendingRequest(mockUniqueId, mockRequest)
-	err := suite.chargePoint.Start( "somePath")
+	err := suite.chargePoint.Start("somePath")
 	assert.Nil(t, err)
 }
 
@@ -176,6 +176,6 @@ func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 		assert.Nil(t, err)
 	})
 	suite.chargePoint.AddPendingRequest(mockUniqueId, mockRequest)
-	err := suite.chargePoint.Start( "someUrl")
+	err := suite.chargePoint.Start("someUrl")
 	assert.Nil(t, err)
 }

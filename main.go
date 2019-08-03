@@ -22,7 +22,7 @@ func (csl CentralSystemListener) OnBootNotification(chargePointId string, reques
 }
 
 func runCentralSystem(args []string) {
-	centralSystem := ocpp16.NewCentralSystem()
+	centralSystem := ocpp16.NewCentralSystem(nil, nil)
 	listener := CentralSystemListener{chargePoints: map[string]string{}}
 	centralSystem.SetNewChargePointHandler(func(chargePointId string) {
 		log.Printf("New charge point %v connected", chargePointId)
@@ -58,7 +58,7 @@ func runChargePoint(args []string) {
 	}
 	id := args[1]
 	csUrl := args[2]
-	chargePoint := ocpp16.NewChargePoint(id)
+	chargePoint := ocpp16.NewChargePoint(id, nil, nil)
 	listener := ChargePointListener{}
 	chargePoint.SetChargePointCoreListener(listener)
 	err := chargePoint.Start(csUrl)

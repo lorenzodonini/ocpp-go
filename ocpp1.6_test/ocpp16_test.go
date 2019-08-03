@@ -398,7 +398,7 @@ type TestRandomIdGenerator struct {
 	generator func() string
 }
 
-func (testGenerator * TestRandomIdGenerator) generateId() string {
+func (testGenerator *TestRandomIdGenerator) generateId() string {
 	return testGenerator.generator()
 }
 

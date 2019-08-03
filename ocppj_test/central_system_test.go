@@ -116,7 +116,7 @@ func (suite *OcppJTestSuite) TestCentralSystemRequestHandler() {
 	mockUniqueId := "5678"
 	mockValue := "someValue"
 	mockRequest := fmt.Sprintf(`[2,"%v","%v",{"mockValue":"%v"}]`, mockUniqueId, MockFeatureName, mockValue)
-	suite.centralSystem.SetRequestHandler(func(chargePointId string,  request ocppj.Request, requestId string, action string) {
+	suite.centralSystem.SetRequestHandler(func(chargePointId string, request ocppj.Request, requestId string, action string) {
 		assert.Equal(t, mockChargePointId, chargePointId)
 		assert.Equal(t, mockUniqueId, requestId)
 		assert.Equal(t, MockFeatureName, action)

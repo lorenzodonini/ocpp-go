@@ -79,7 +79,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 		resultChannel <- true
 	}, connectorId, availabilityType)
 	assert.Nil(t, err)
-	result := <- resultChannel
+	result := <-resultChannel
 	assert.True(t, result)
 }
 
