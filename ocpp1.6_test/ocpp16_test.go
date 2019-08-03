@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 	"testing"
 )
@@ -197,65 +196,6 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return &wsClient
 }
 
-func ParseCall(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.Call {
-	parsedData := ocppj.ParseJsonMessage(json)
-	result, err := endpoint.ParseMessage(parsedData)
-	assert.Nil(t, err)
-	assert.NotNil(t, result)
-	call, ok := result.(*ocppj.Call)
-	assert.Equal(t, true, ok)
-	assert.NotNil(t, call)
-	return call
-}
-
-func CheckCall(call *ocppj.Call, t *testing.T, expectedAction string, expectedId string) {
-	assert.Equal(t, ocppj.CALL, call.GetMessageTypeId())
-	assert.Equal(t, expectedAction, call.Action)
-	assert.Equal(t, expectedId, call.GetUniqueId())
-	assert.NotNil(t, call.Payload)
-	err := Validate.Struct(call)
-	assert.Nil(t, err)
-}
-
-func ParseCallResult(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.CallResult {
-	parsedData := ocppj.ParseJsonMessage(json)
-	result, err := endpoint.ParseMessage(parsedData)
-	assert.Nil(t, err)
-	assert.NotNil(t, result)
-	callResult, ok := result.(*ocppj.CallResult)
-	assert.Equal(t, true, ok)
-	assert.NotNil(t, callResult)
-	return callResult
-}
-
-func CheckCallResult(result *ocppj.CallResult, t *testing.T, expectedId string) {
-	assert.Equal(t, ocppj.CALL_RESULT, result.GetMessageTypeId())
-	assert.Equal(t, expectedId, result.GetUniqueId())
-	assert.NotNil(t, result.Payload)
-	err := Validate.Struct(result)
-	assert.Nil(t, err)
-}
-
-func ParseCallError(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.CallError {
-	parsedData := ocppj.ParseJsonMessage(json)
-	result, err := endpoint.ParseMessage(parsedData)
-	assert.Nil(t, err)
-	callError, ok := result.(*ocppj.CallError)
-	assert.Equal(t, true, ok)
-	assert.NotNil(t, callError)
-	return callError
-}
-
-func CheckCallError(t *testing.T, callError *ocppj.CallError, expectedId string, expectedError ocppj.ErrorCode, expectedDescription string, expectedDetails interface{}) {
-	assert.Equal(t, ocppj.CALL_ERROR, callError.GetMessageTypeId())
-	assert.Equal(t, expectedId, callError.GetUniqueId())
-	assert.Equal(t, expectedError, callError.ErrorCode)
-	assert.Equal(t, expectedDescription, callError.ErrorDescription)
-	assert.Equal(t, expectedDetails, callError.ErrorDetails)
-	err := Validate.Struct(callError)
-	assert.Nil(t, err)
-}
-
 type expectedCentralSystemOptions struct {
 	clientId              string
 	rawWrittenMessage     []byte
@@ -430,19 +370,17 @@ type ConfirmationTestEntry struct {
 
 func ExecuteRequestTestTable(t *testing.T, testTable []RequestTestEntry) {
 	for _, testCase := range testTable {
-		err := Validate.Struct(testCase.Request)
+		err := ocpp16.Validate.Struct(testCase.Request)
 		assert.Equal(t, testCase.ExpectedValid, err == nil)
 	}
 }
 
 func ExecuteConfirmationTestTable(t *testing.T, testTable []ConfirmationTestEntry) {
 	for _, testCase := range testTable {
-		err := Validate.Struct(testCase.Confirmation)
+		err := ocpp16.Validate.Struct(testCase.Confirmation)
 		assert.Equal(t, testCase.ExpectedValid, err == nil)
 	}
 }
-
-var Validate = validator.New()
 
 // ---------------------- TESTS ----------------------
 type OcppV16TestSuite struct {
