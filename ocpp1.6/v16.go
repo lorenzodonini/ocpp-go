@@ -142,6 +142,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocppj.Request, requestId st
 	switch action {
 	case ChangeAvailabilityFeatureName:
 		confirmation, err = cp.coreListener.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
+	case ChangeConfigurationFeatureName:
+		confirmation, err = cp.coreListener.OnChangeConfiguration(request.(*ChangeConfigurationRequest))
 	case DataTransferFeatureName:
 		confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
 	default:
@@ -178,6 +180,7 @@ type CentralSystem interface {
 	// Message
 	//TODO: add missing profile methods
 	ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, callError *ocppj.ProtoError), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error
+	ChangeConfiguration(clientId string, callback func(confirmation *ChangeConfigurationConfirmation, callError *ocppj.ProtoError), key string, value string, props ...func(request *ChangeConfigurationRequest)) error
 	DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, callError *ocppj.ProtoError), vendorId string, props ...func(request *DataTransferRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
@@ -200,6 +203,21 @@ func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confi
 	genericCallback := func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError) {
 		if confirmation != nil {
 			callback(confirmation.(*ChangeAvailabilityConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) ChangeConfiguration(clientId string, callback func(confirmation *ChangeConfigurationConfirmation, callError *ocppj.ProtoError), key string, value string, props ...func(request *ChangeConfigurationRequest)) error {
+	request := NewChangeConfigurationRequest(key, value)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError) {
+		if confirmation != nil {
+			callback(confirmation.(*ChangeConfigurationConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -232,7 +250,7 @@ func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId str
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, DataTransferFeatureName:
+	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, DataTransferFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
