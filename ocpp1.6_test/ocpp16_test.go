@@ -149,6 +149,12 @@ func (coreListener MockCentralSystemCoreListener) OnBootNotification(chargePoint
 	return conf, args.Error(1)
 }
 
+func (coreListener MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *ocpp16.DataTransferRequest) (confirmation *ocpp16.DataTransferConfirmation, err error) {
+	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
+	conf := args.Get(0).(*ocpp16.DataTransferConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CP CORE LISTENER ----------------------
 type MockChargePointCoreListener struct {
 	mock.Mock
@@ -157,6 +163,12 @@ type MockChargePointCoreListener struct {
 func (coreListener MockChargePointCoreListener) OnChangeAvailability(request *ocpp16.ChangeAvailabilityRequest) (confirmation *ocpp16.ChangeAvailabilityConfirmation, err error) {
 	args := coreListener.MethodCalled("OnChangeAvailability", request)
 	conf := args.Get(0).(*ocpp16.ChangeAvailabilityConfirmation)
+	return conf, args.Error(1)
+}
+
+func (coreListener MockChargePointCoreListener) OnDataTransfer(request *ocpp16.DataTransferRequest) (confirmation *ocpp16.DataTransferConfirmation, err error) {
+	args := coreListener.MethodCalled("OnDataTransfer", request)
+	conf := args.Get(0).(*ocpp16.DataTransferConfirmation)
 	return conf, args.Error(1)
 }
 
