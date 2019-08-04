@@ -15,6 +15,16 @@ const (
 	RegistrationStatusRejected RegistrationStatus = "Rejected"
 )
 
+func isValidRegistrationStatus(fl validator.FieldLevel) bool {
+	status := RegistrationStatus(fl.Field().String())
+	switch status {
+	case RegistrationStatusAccepted, RegistrationStatusPending, RegistrationStatusRejected:
+		return true
+	default:
+		return false
+	}
+}
+
 type BootNotificationRequest struct {
 	ocppj.Request           `json:"-"`
 	ChargeBoxSerialNumber   string `json:"chargeBoxSerialNumber,omitempty" validate:"max=25"`
@@ -28,12 +38,11 @@ type BootNotificationRequest struct {
 	MeterType               string `json:"meterType,omitempty" validate:"max=25"`
 }
 
-//TODO: add custom validator for registration status & interval
 type BootNotificationConfirmation struct {
 	ocppj.Confirmation `json:"-"`
 	CurrentTime        DateTime           `json:"currentTime" validate:"required"`
 	Interval           int                `json:"interval" validate:"required,gte=0"`
-	Status             RegistrationStatus `json:"status" validate:"required"`
+	Status             RegistrationStatus `json:"status" validate:"required,registrationStatus"`
 }
 
 type BootNotificationFeature struct{}
@@ -74,5 +83,6 @@ func validateBootNotificationConfirmation(sl validator.StructLevel) {
 }
 
 func init() {
+	_ = Validate.RegisterValidation("registrationStatus", isValidRegistrationStatus)
 	Validate.RegisterStructValidation(validateBootNotificationConfirmation, BootNotificationConfirmation{})
 }

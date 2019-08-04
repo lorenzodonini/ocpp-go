@@ -1,6 +1,7 @@
 package ocpp16
 
 import (
+	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
 
@@ -13,6 +14,16 @@ const (
 	AvailabilityTypeInoperative AvailabilityType = "Inoperative"
 )
 
+func isValidAvailabilityType(fl validator.FieldLevel) bool {
+	status := AvailabilityType(fl.Field().String())
+	switch status {
+	case AvailabilityTypeOperative, AvailabilityTypeInoperative:
+		return true
+	default:
+		return false
+	}
+}
+
 type AvailabilityStatus string
 
 const (
@@ -21,13 +32,23 @@ const (
 	AvailabilityStatusScheduled AvailabilityStatus = "Scheduled"
 )
 
+func isValidAvailabilityStatus(fl validator.FieldLevel) bool {
+	status := AvailabilityStatus(fl.Field().String())
+	switch status {
+	case AvailabilityStatusAccepted, AvailabilityStatusRejected, AvailabilityStatusScheduled:
+		return true
+	default:
+		return false
+	}
+}
+
 type ChangeAvailabilityRequest struct {
 	ConnectorId int              `json:"connectorId" validate:"gte=0"`
-	Type        AvailabilityType `json:"type" validate:"required"`
+	Type        AvailabilityType `json:"type" validate:"required,availabilityType"`
 }
 
 type ChangeAvailabilityConfirmation struct {
-	Status AvailabilityStatus `json:"status" validate:"required"`
+	Status AvailabilityStatus `json:"status" validate:"required,availabilityStatus"`
 }
 
 type ChangeAvailabilityFeature struct{}
@@ -58,4 +79,9 @@ func NewChangeAvailabilityRequest(connectorId int, availabilityType Availability
 
 func NewChangeAvailabilityConfirmation(status AvailabilityStatus) *ChangeAvailabilityConfirmation {
 	return &ChangeAvailabilityConfirmation{Status: status}
+}
+
+func init() {
+	_ = Validate.RegisterValidation("availabilityType", isValidAvailabilityType)
+	_ = Validate.RegisterValidation("availabilityStatus", isValidAvailabilityStatus)
 }

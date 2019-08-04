@@ -29,7 +29,7 @@ func (suite *OcppV16TestSuite) TestDataTransferConfirmationValidation() {
 		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusRejected}, true},
 		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusUnknownMessageId}, true},
 		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusUnknownVendorId}, true},
-		//{ocpp16.DataTransferConfirmation{Status: "invalidDataTransferStatus"}, false},
+		{ocpp16.DataTransferConfirmation{Status: "invalidDataTransferStatus"}, false},
 		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusAccepted, Data: "mockData"}, true},
 	}
 	ExecuteConfirmationTestTable(t, confirmationTable)

@@ -65,10 +65,20 @@ const (
 	AuthorizationStatusConcurrentTx AuthorizationStatus = "ConcurrentTx"
 )
 
+func isValidAuthorizationStatus(fl validator.FieldLevel) bool {
+	status := AuthorizationStatus(fl.Field().String())
+	switch status {
+	case AuthorizationStatusAccepted, AuthorizationStatusBlocked, AuthorizationStatusExpired, AuthorizationStatusInvalid, AuthorizationStatusConcurrentTx:
+		return true
+	default:
+		return false
+	}
+}
+
 type IdTagInfo struct {
 	ExpiryDate  DateTime            `json:"expiryDate" validate:"omitempty,gt"`
 	ParentIdTag string              `json:"parentIdTag" validate:"omitempty,max=20"`
-	Status      AuthorizationStatus `json:"status" validate:"required"`
+	Status      AuthorizationStatus `json:"status" validate:"required,authorizationStatus"`
 }
 
 func IdTagInfoStructLevelValidation(sl validator.StructLevel) {
@@ -98,5 +108,6 @@ func validateDateTimeLt(dateTime DateTime, than time.Time) bool {
 var Validate = ocppj.Validate
 
 func init() {
+	_ = Validate.RegisterValidation("authorizationStatus", isValidAuthorizationStatus)
 	Validate.RegisterStructValidation(IdTagInfoStructLevelValidation, IdTagInfo{})
 }
