@@ -296,14 +296,15 @@ func testUnsupportedRequestFromChargePointResponse(suite *OcppV16TestSuite, requ
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockCentralSystemCoreListener{}
-	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
-	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
+	resultChannel := make(chan bool, 1)
+	suite.ocppjChargePoint.SetErrorHandler(func(errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
 		assert.Equal(t, messageId, requestId)
-		assert.Equal(t, wsId, chargePointId)
 		assert.Equal(t, ocppj.NotSupported, errorCode)
 		assert.Equal(t, errorDescription, description)
 		assert.Nil(t, details)
+		resultChannel <- true
 	})
 	// Mock pending request
 	suite.ocppjChargePoint.AddPendingRequest(messageId, request)
@@ -313,6 +314,8 @@ func testUnsupportedRequestFromChargePointResponse(suite *OcppV16TestSuite, requ
 	assert.Nil(t, err)
 	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
 	assert.Nil(t, err)
+	result := <- resultChannel
+	assert.True(t, result)
 }
 
 func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request ocppj.Request, requestJson string) {
@@ -405,8 +408,7 @@ func (testGenerator *TestRandomIdGenerator) generateId() string {
 var defaultMessageId = "1234"
 
 func (suite *OcppV16TestSuite) SetupTest() {
-	// TODO: replace coreProfile with ocpp16.CoreProfile
-	coreProfile := ocppj.NewProfile("core", ocpp16.BootNotificationFeature{}, ocpp16.AuthorizeFeature{}, ocpp16.ChangeAvailabilityFeature{})
+	coreProfile := ocpp16.CoreProfile
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
