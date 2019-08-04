@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Authorize --------------------
+// -------------------- Authorize (CP -> CS) --------------------
 type AuthorizeRequest struct {
 	IdTag string `json:"idTag" validate:"required,max=20"`
 }

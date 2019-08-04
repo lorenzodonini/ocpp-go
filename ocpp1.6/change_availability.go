@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Change Availability --------------------
+// -------------------- Change Availability (CS -> CP) --------------------
 
 type AvailabilityType string
 

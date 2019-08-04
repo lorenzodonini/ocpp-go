@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Boot Notification --------------------
+// -------------------- Boot Notification (CP -> CS) --------------------
 type RegistrationStatus string
 
 const (

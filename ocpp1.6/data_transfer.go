@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Data Transfer --------------------
+// -------------------- Data Transfer (CP -> CS / CS -> CP) --------------------
 type DataTransferStatus string
 
 const (
