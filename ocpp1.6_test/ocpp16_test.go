@@ -172,6 +172,12 @@ func (coreListener MockChargePointCoreListener) OnDataTransfer(request *ocpp16.D
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnChangeConfiguration(request * ocpp16.ChangeConfigurationRequest) (confirmation *ocpp16.ChangeConfigurationConfirmation, err error) {
+	args := coreListener.MethodCalled("OnChangeConfiguration", request)
+	conf := args.Get(0).(*ocpp16.ChangeConfigurationConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
@@ -233,7 +239,6 @@ func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener ocp
 		assert.Equal(t, options.clientId, chargePointId)
 	})
 	suite.centralSystem.SetCentralSystemCoreListener(coreListener)
-	// TODO: parametrize return arguments
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
 	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
 		clientId := args.String(0)
