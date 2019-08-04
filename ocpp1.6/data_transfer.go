@@ -15,12 +15,12 @@ const (
 type DataTransferRequest struct {
 	VendorId  string      `json:"vendorId" validate:"required,max=255"`
 	MessageId string      `json:"messageId,omitempty" validate:"max=50"`
-	Data      interface{} `json:"data"`
+	Data      interface{} `json:"data,omitempty"`
 }
 
 type DataTransferConfirmation struct {
 	Status DataTransferStatus `json:"status" validate:"required"`
-	Data   interface{}        `json:"data"`
+	Data   interface{}        `json:"data,omitempty"`
 }
 
 type DataTransferFeature struct{}

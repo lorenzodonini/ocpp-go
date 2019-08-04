@@ -13,6 +13,7 @@ type ChargePoint interface {
 	// Message
 	BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, *ocppj.ProtoError, error)
 	Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, *ocppj.ProtoError, error)
+	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, *ocppj.ProtoError, error)
 	//TODO: add missing profile methods
 
 	// Logic
@@ -55,6 +56,19 @@ func (cp *chargePoint) Authorize(idTag string, props ...func(request *AuthorizeR
 	}
 }
 
+func (cp *chargePoint) DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, *ocppj.ProtoError, error) {
+	request := NewDataTransferRequest(vendorId)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, protoError, err := cp.SendRequest(request)
+	if confirmation != nil {
+		return confirmation.(*DataTransferConfirmation), protoError, err
+	} else {
+		return nil, protoError, err
+	}
+}
+
 func (cp *chargePoint) SetChargePointCoreListener(listener ChargePointCoreListener) {
 	cp.coreListener = listener
 }
@@ -75,8 +89,7 @@ func (cp *chargePoint) SendRequest(request ocppj.Request) (ocppj.Confirmation, *
 
 func (cp *chargePoint) SendRequestAsync(request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, BootNotificationFeatureName:
-		break
+	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
 	}
@@ -129,6 +142,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocppj.Request, requestId st
 	switch action {
 	case ChangeAvailabilityFeatureName:
 		confirmation, err = cp.coreListener.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
+	case DataTransferFeatureName:
+		confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
 	default:
 		err := cp.chargePoint.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
 		if err != nil {
@@ -163,6 +178,7 @@ type CentralSystem interface {
 	// Message
 	//TODO: add missing profile methods
 	ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, callError *ocppj.ProtoError), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error
+	DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, callError *ocppj.ProtoError), vendorId string, props ...func(request *DataTransferRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
@@ -178,9 +194,27 @@ type centralSystem struct {
 
 func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, protoError *ocppj.ProtoError), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error {
 	request := NewChangeAvailabilityRequest(connectorId, availabilityType)
+	for _, fn := range props {
+		fn(request)
+	}
 	genericCallback := func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError) {
 		if confirmation != nil {
 			callback(confirmation.(*ChangeAvailabilityConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, callError *ocppj.ProtoError), vendorId string, props ...func(request *DataTransferRequest)) error {
+	request := NewDataTransferRequest(vendorId)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError) {
+		if confirmation != nil {
+			callback(confirmation.(*DataTransferConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -198,8 +232,7 @@ func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId str
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName:
-		break
+	case ChangeAvailabilityFeatureName, DataTransferFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
@@ -246,10 +279,10 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 		switch action {
 		case BootNotificationFeatureName:
 			confirmation, err = cs.coreListener.OnBootNotification(chargePointId, request.(*BootNotificationRequest))
-			break
 		case AuthorizeFeatureName:
 			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*AuthorizeRequest))
-			break
+		case DataTransferFeatureName:
+			confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*DataTransferRequest))
 		default:
 			err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
 			if err != nil {

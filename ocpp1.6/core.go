@@ -8,12 +8,13 @@ const (
 	BootNotificationFeatureName   = "BootNotification"
 	AuthorizeFeatureName          = "Authorize"
 	ChangeAvailabilityFeatureName = "ChangeAvailability"
+	DataTransferFeatureName       = "DataTransfer"
 )
 
 type CentralSystemCoreListener interface {
 	OnAuthorize(chargePointId string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
 	OnBootNotification(chargePointId string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
-	//onDataTransfer()
+	OnDataTransfer(chargePointId string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	//onDiagnosticsStatusNotification()
 	//onFirmwareStatusNotification()
 	//onHeartbeat()
@@ -29,7 +30,7 @@ type ChargePointCoreListener interface {
 	//onChangeConfiguration()
 	//onClearCache()
 	//onClearChargingProfile()
-	//onDataTransfer()
+	OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	//onGetCompositeSchedule()
 	//onGetConfiguration()
 	//onGetDiagnostics()
@@ -45,4 +46,4 @@ type ChargePointCoreListener interface {
 	//onUpdateFirmware()
 }
 
-var CoreProfile = ocppj.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{})
+var CoreProfile = ocppj.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{}, ChangeAvailabilityFeature{}, DataTransferFeature{})
