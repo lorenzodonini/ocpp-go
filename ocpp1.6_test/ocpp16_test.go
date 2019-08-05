@@ -293,34 +293,18 @@ func assertDateTimeEquality(t *testing.T, expected ocpp16.DateTime, actual ocpp1
 	assert.Equal(t, expected.Time.Format(ocpp16.ISO8601), actual.Time.Format(ocpp16.ISO8601))
 }
 
-func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocppj.Request, requestJson string) {
+func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocppj.Request, requestJson string, messageId string) {
 	t := suite.T()
 	wsId := "test_id"
 	wsUrl := "someUrl"
 	expectedError := fmt.Sprintf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
-
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: false, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
-	// Run test
-	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
-	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
-		t.Fail()
-	})
-	assert.Error(t, err)
-	assert.Equal(t, expectedError, err.Error())
-}
-
-func testUnsupportedRequestFromChargePointResponse(suite *OcppV16TestSuite, request ocppj.Request, requestJson string, messageId string) {
-	t := suite.T()
-	wsId := "test_id"
-	wsUrl := "someUrl"
 	errorDescription := fmt.Sprintf("unsupported action %v on central system", request.GetFeatureName())
 	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
 	channel := NewMockWebSocket(wsId)
 
+	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: false})
 	coreListener := MockCentralSystemCoreListener{}
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	resultChannel := make(chan bool, 1)
 	suite.ocppjChargePoint.SetErrorHandler(func(errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
 		assert.Equal(t, messageId, requestId)
@@ -329,43 +313,35 @@ func testUnsupportedRequestFromChargePointResponse(suite *OcppV16TestSuite, requ
 		assert.Nil(t, details)
 		resultChannel <- true
 	})
-	// Mock pending request
-	suite.ocppjChargePoint.AddPendingRequest(messageId, request)
-	// Run test
+	// Start
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
+	// Run request test
+	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
+		t.Fail()
+	})
+	assert.Error(t, err)
+	assert.Equal(t, expectedError, err.Error())
+	// Run response test
+	suite.ocppjChargePoint.AddPendingRequest(messageId, request)
 	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
 	assert.Nil(t, err)
 	result := <- resultChannel
 	assert.True(t, result)
 }
 
-func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request ocppj.Request, requestJson string) {
-	t := suite.T()
-	wsId := "test_id"
-	expectedError := fmt.Sprintf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
-
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
-	// Run test
-	suite.centralSystem.Start(8887, "somePath")
-	err := suite.centralSystem.SendRequestAsync(wsId, request, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
-		t.Fail()
-	})
-	assert.Error(t, err)
-	assert.Equal(t, expectedError, err.Error())
-}
-
-func testUnsupportedRequestFromCentralSystemResponse(suite *OcppV16TestSuite, request ocppj.Request, requestJson string, messageId string) {
+func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request ocppj.Request, requestJson string, messageId string) {
 	t := suite.T()
 	wsId := "test_id"
 	wsUrl := "someUrl"
+	expectedError := fmt.Sprintf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	errorDescription := fmt.Sprintf("unsupported action %v on charge point", request.GetFeatureName())
 	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockChargePointCoreListener{}
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
+	coreListener := MockChargePointCoreListener{}
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
 		assert.Equal(t, messageId, requestId)
@@ -374,12 +350,18 @@ func testUnsupportedRequestFromCentralSystemResponse(suite *OcppV16TestSuite, re
 		assert.Equal(t, errorDescription, description)
 		assert.Nil(t, details)
 	})
-	// Mock pending request
-	suite.ocppjCentralSystem.AddPendingRequest(messageId, request)
-	// Run test
+	// Start
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
+	// Run request test
+	err = suite.centralSystem.SendRequestAsync(wsId, request, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
+		t.Fail()
+	})
+	assert.Error(t, err)
+	assert.Equal(t, expectedError, err.Error())
+	// Run response test
+	suite.ocppjCentralSystem.AddPendingRequest(messageId, request)
 	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
 	assert.Nil(t, err)
 }

@@ -101,14 +101,5 @@ func (suite *OcppV16TestSuite) TestBootNotificationInvalidEndpoint() {
 	chargePointVendor := "ABL"
 	bootNotificationRequest := ocpp16.NewBootNotificationRequest(chargePointModel, chargePointVendor)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
-	testUnsupportedRequestFromCentralSystem(suite, bootNotificationRequest, requestJson)
-}
-
-func (suite *OcppV16TestSuite) TestBootNotificationInvalidEndpointResponse() {
-	messageId := defaultMessageId
-	chargePointModel := "model1"
-	chargePointVendor := "ABL"
-	pendingRequest := ocpp16.NewBootNotificationRequest(chargePointModel, chargePointVendor)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargePointModel":"%v","chargePointVendor":"%v"}]`, messageId, ocpp16.BootNotificationFeatureName, chargePointModel, chargePointVendor)
-	testUnsupportedRequestFromCentralSystemResponse(suite, pendingRequest, requestJson, messageId)
+	testUnsupportedRequestFromCentralSystem(suite, bootNotificationRequest, requestJson, messageId)
 }

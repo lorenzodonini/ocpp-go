@@ -73,14 +73,5 @@ func (suite *OcppV16TestSuite) TestChangeConfigurationInvalidEndpoint() {
 	value := "someValue"
 	changeConfigurationRequest := ocpp16.NewChangeConfigurationRequest(key, value)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"key":"%v","value":"%v"}]`, messageId, ocpp16.ChangeConfigurationFeatureName, key, value)
-	testUnsupportedRequestFromChargePoint(suite, changeConfigurationRequest, requestJson)
-}
-
-func (suite *OcppV16TestSuite) TestChangeConfigurationInvalidEndpointResponse() {
-	messageId := defaultMessageId
-	key := "someKey"
-	value := "someValue"
-	pendingRequest := ocpp16.NewChangeConfigurationRequest(key, value)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"key":"%v","value":"%v"}]`, messageId, ocpp16.ChangeConfigurationFeatureName, key, value)
-	testUnsupportedRequestFromChargePointResponse(suite, pendingRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargePoint(suite, changeConfigurationRequest, requestJson, messageId)
 }

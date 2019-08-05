@@ -96,13 +96,5 @@ func (suite *OcppV16TestSuite) TestAuthorizeInvalidEndpoint() {
 	idTag := "tag1"
 	authorizeRequest := ocpp16.NewAuthorizationRequest(idTag)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, ocpp16.AuthorizeFeatureName, idTag)
-	testUnsupportedRequestFromCentralSystem(suite, authorizeRequest, requestJson)
-}
-
-func (suite *OcppV16TestSuite) TestAuthorizeInvalidEndpointResponse() {
-	messageId := defaultMessageId
-	idTag := "tag1"
-	pendingRequest := ocpp16.NewAuthorizationRequest(idTag)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, ocpp16.AuthorizeFeatureName, idTag)
-	testUnsupportedRequestFromCentralSystemResponse(suite, pendingRequest, requestJson, messageId)
+	testUnsupportedRequestFromCentralSystem(suite, authorizeRequest, requestJson, messageId)
 }

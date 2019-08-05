@@ -91,14 +91,5 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityInvalidEndpoint() {
 	availabilityType := ocpp16.AvailabilityTypeOperative
 	changeAvailabilityRequest := ocpp16.NewChangeAvailabilityRequest(connectorId, availabilityType)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
-	testUnsupportedRequestFromChargePoint(suite, changeAvailabilityRequest, requestJson)
-}
-
-func (suite *OcppV16TestSuite) TestChangeAvailabilityInvalidEndpointResponse() {
-	messageId := defaultMessageId
-	connectorId := 1
-	availabilityType := ocpp16.AvailabilityTypeOperative
-	pendingRequest := ocpp16.NewChangeAvailabilityRequest(connectorId, availabilityType)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
-	testUnsupportedRequestFromChargePointResponse(suite, pendingRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargePoint(suite, changeAvailabilityRequest, requestJson, messageId)
 }

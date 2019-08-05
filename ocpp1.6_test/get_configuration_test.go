@@ -85,15 +85,5 @@ func (suite *OcppV16TestSuite) TestGetConfigurationInvalidEndpoint() {
 	requestKeys := []string{key1, key2}
 	getConfigurationRequest := ocpp16.NewGetConfigurationRequest(requestKeys)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"key":["%v","%v"]}]`, messageId, ocpp16.GetConfigurationFeatureName, key1, key2)
-	testUnsupportedRequestFromChargePoint(suite, getConfigurationRequest, requestJson)
-}
-
-func (suite *OcppV16TestSuite) TestGetConfigurationInvalidEndpointResponse() {
-	messageId := defaultMessageId
-	key1 := "key1"
-	key2 := "key2"
-	requestKeys := []string{key1, key2}
-	pendingRequest := ocpp16.NewGetConfigurationRequest(requestKeys)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"key":["%v","%v"]}]`, messageId, ocpp16.GetConfigurationFeatureName, key1, key2)
-	testUnsupportedRequestFromChargePointResponse(suite, pendingRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargePoint(suite, getConfigurationRequest, requestJson, messageId)
 }
