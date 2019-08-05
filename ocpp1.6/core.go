@@ -10,6 +10,7 @@ const (
 	ChangeAvailabilityFeatureName  = "ChangeAvailability"
 	ChangeConfigurationFeatureName = "ChangeConfiguration"
 	DataTransferFeatureName        = "DataTransfer"
+	GetConfigurationFeatureName    = "GetConfiguration"
 )
 
 type CentralSystemCoreListener interface {
@@ -33,7 +34,7 @@ type ChargePointCoreListener interface {
 	//onClearChargingProfile()
 	OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	//onGetCompositeSchedule()
-	//onGetConfiguration()
+	OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	//onGetDiagnostics()
 	//onGetLocalListVersion()
 	//onRemoteStartTransaction()
@@ -47,4 +48,4 @@ type ChargePointCoreListener interface {
 	//onUpdateFirmware()
 }
 
-var CoreProfile = ocppj.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{}, ChangeAvailabilityFeature{}, ChangeConfigurationFeature{}, DataTransferFeature{})
+var CoreProfile = ocppj.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{}, ChangeAvailabilityFeature{}, ChangeConfigurationFeature{}, DataTransferFeature{}, GetConfigurationFeature{})

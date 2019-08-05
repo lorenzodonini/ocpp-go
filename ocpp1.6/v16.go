@@ -146,6 +146,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocppj.Request, requestId st
 		confirmation, err = cp.coreListener.OnChangeConfiguration(request.(*ChangeConfigurationRequest))
 	case DataTransferFeatureName:
 		confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
+	case GetConfigurationFeatureName:
+		confirmation, err = cp.coreListener.OnGetConfiguration(request.(*GetConfigurationRequest))
 	default:
 		err := cp.chargePoint.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
 		if err != nil {
@@ -179,13 +181,14 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 type CentralSystem interface {
 	// Message
 	//TODO: add missing profile methods
-	ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, callError *ocppj.ProtoError), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error
-	ChangeConfiguration(clientId string, callback func(confirmation *ChangeConfigurationConfirmation, callError *ocppj.ProtoError), key string, value string, props ...func(request *ChangeConfigurationRequest)) error
-	DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, callError *ocppj.ProtoError), vendorId string, props ...func(request *DataTransferRequest)) error
+	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, *ocppj.ProtoError), connectorId int, availabilityType AvailabilityType, props ...func(*ChangeAvailabilityRequest)) error
+	ChangeConfiguration(clientId string, callback func(*ChangeConfigurationConfirmation, *ocppj.ProtoError), key string, value string, props ...func(*ChangeConfigurationRequest)) error
+	DataTransfer(clientId string, callback func(*DataTransferConfirmation, *ocppj.ProtoError), vendorId string, props ...func(*DataTransferRequest)) error
+	GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, *ocppj.ProtoError), keys []string, props ...func(*GetConfigurationRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
-	SendRequestAsync(clientId string, request ocppj.Request, callback func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError)) error
+	SendRequestAsync(clientId string, request ocppj.Request, callback func(ocppj.Confirmation, *ocppj.ProtoError)) error
 	Start(listenPort int, listenPath string)
 }
 
@@ -240,6 +243,21 @@ func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmatio
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirmation *GetConfigurationConfirmation, protoError *ocppj.ProtoError), keys []string, props ...func(request *GetConfigurationRequest)) error {
+	request := NewGetConfigurationRequest(keys)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError) {
+		if confirmation != nil {
+			callback(confirmation.(*GetConfigurationConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *centralSystem) SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
 	cs.coreListener = listener
 }
@@ -250,7 +268,7 @@ func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId str
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocppj.Request, callback func(confirmation ocppj.Confirmation, protoError *ocppj.ProtoError)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, DataTransferFeatureName:
+	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
