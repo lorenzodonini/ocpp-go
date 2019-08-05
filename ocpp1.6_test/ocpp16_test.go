@@ -178,6 +178,12 @@ func (coreListener MockChargePointCoreListener) OnChangeConfiguration(request * 
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnClearCache(request *ocpp16.ClearCacheRequest) (confirmation *ocpp16.ClearCacheConfirmation, err error) {
+	args := coreListener.MethodCalled("OnClearCache", request)
+	conf := args.Get(0).(*ocpp16.ClearCacheConfirmation)
+	return conf, args.Error(1)
+}
+
 func (coreListener MockChargePointCoreListener) OnGetConfiguration(request * ocpp16.GetConfigurationRequest) (confirmation *ocpp16.GetConfigurationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnGetConfiguration", request)
 	conf := args.Get(0).(*ocpp16.GetConfigurationConfirmation)
