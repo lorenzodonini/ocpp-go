@@ -3,6 +3,7 @@ package ocppj_test
 import (
 	"errors"
 	"fmt"
+	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -119,7 +120,7 @@ func (suite *OcppJTestSuite) TestChargePointCallHandler() {
 	mockUniqueId := "5678"
 	mockValue := "someValue"
 	mockRequest := fmt.Sprintf(`[2,"%v","%v",{"mockValue":"%v"}]`, mockUniqueId, MockFeatureName, mockValue)
-	suite.chargePoint.SetRequestHandler(func(request ocppj.Request, requestId string, action string) {
+	suite.chargePoint.SetRequestHandler(func(request ocpp.Request, requestId string, action string) {
 		assert.Equal(t, mockUniqueId, requestId)
 		assert.Equal(t, MockFeatureName, action)
 		assert.NotNil(t, request)
@@ -139,7 +140,7 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.chargePoint.SetConfirmationHandler(func(confirmation ocppj.Confirmation, requestId string) {
+	suite.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
 		assert.Equal(t, mockUniqueId, requestId)
 		assert.NotNil(t, confirmation)
 	})

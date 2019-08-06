@@ -3,6 +3,7 @@ package ocppj_test
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/stretchr/testify/assert"
@@ -247,7 +248,7 @@ func TestOcppJ(t *testing.T) {
 }
 
 func (suite *OcppJTestSuite) SetupTest() {
-	mockProfile := ocppj.NewProfile("mock", MockFeature{})
+	mockProfile := ocpp.NewProfile("mock", MockFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockClient = &mockClient

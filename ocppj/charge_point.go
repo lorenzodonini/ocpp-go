@@ -2,6 +2,7 @@ package ocppj
 
 import (
 	"fmt"
+	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/pkg/errors"
 	"log"
@@ -11,14 +12,14 @@ type ChargePoint struct {
 	Endpoint
 	client              ws.WsClient
 	Id                  string
-	requestHandler      func(request Request, requestId string, action string)
-	confirmationHandler func(confirmation Confirmation, requestId string)
+	requestHandler      func(request ocpp.Request, requestId string, action string)
+	confirmationHandler func(confirmation ocpp.Confirmation, requestId string)
 	errorHandler        func(errorCode ErrorCode, description string, details interface{}, requestId string)
 	hasPendingRequest   bool
 }
 
-func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *ChargePoint {
-	endpoint := Endpoint{pendingRequests: map[string]Request{}}
+func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*ocpp.Profile) *ChargePoint {
+	endpoint := Endpoint{pendingRequests: map[string]ocpp.Request{}}
 	for _, profile := range profiles {
 		endpoint.AddProfile(profile)
 	}
@@ -29,11 +30,11 @@ func NewChargePoint(id string, wsClient ws.WsClient, profiles ...*Profile) *Char
 	}
 }
 
-func (chargePoint *ChargePoint) SetRequestHandler(handler func(request Request, requestId string, action string)) {
+func (chargePoint *ChargePoint) SetRequestHandler(handler func(request ocpp.Request, requestId string, action string)) {
 	chargePoint.requestHandler = handler
 }
 
-func (chargePoint *ChargePoint) SetConfirmationHandler(handler func(confirmation Confirmation, requestId string)) {
+func (chargePoint *ChargePoint) SetConfirmationHandler(handler func(confirmation ocpp.Confirmation, requestId string)) {
 	chargePoint.confirmationHandler = handler
 }
 
@@ -62,7 +63,7 @@ func (chargePoint *ChargePoint) Stop() {
 	chargePoint.hasPendingRequest = false
 }
 
-func (chargePoint *ChargePoint) SendRequest(request Request) error {
+func (chargePoint *ChargePoint) SendRequest(request ocpp.Request) error {
 	err := Validate.Struct(request)
 	if err != nil {
 		return err
@@ -71,7 +72,7 @@ func (chargePoint *ChargePoint) SendRequest(request Request) error {
 		// Cannot send. Protocol is based on response-confirmation
 		return errors.Errorf("There already is a pending request. Cannot send a further one before receiving a confirmation first")
 	}
-	call, err := chargePoint.CreateCall(request.(Request))
+	call, err := chargePoint.CreateCall(request.(ocpp.Request))
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func (chargePoint *ChargePoint) SendRequest(request Request) error {
 	return err
 }
 
-func (chargePoint *ChargePoint) SendConfirmation(requestId string, confirmation Confirmation) error {
+func (chargePoint *ChargePoint) SendConfirmation(requestId string, confirmation ocpp.Confirmation) error {
 	err := Validate.Struct(confirmation)
 	if err != nil {
 		return err

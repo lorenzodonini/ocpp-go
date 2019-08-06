@@ -1,6 +1,7 @@
 package ocppj
 
 import (
+	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ws"
 	"github.com/pkg/errors"
 	"log"
@@ -10,14 +11,14 @@ type CentralSystem struct {
 	Endpoint
 	server                ws.WsServer
 	newChargePointHandler func(chargePointId string)
-	requestHandler        func(chargePointId string, request Request, requestId string, action string)
-	confirmationHandler   func(chargePointId string, confirmation Confirmation, requestId string)
+	requestHandler        func(chargePointId string, request ocpp.Request, requestId string, action string)
+	confirmationHandler   func(chargePointId string, confirmation ocpp.Confirmation, requestId string)
 	errorHandler          func(chargePointId string, errorCode ErrorCode, description string, details interface{}, requestId string)
 	clientPendingMessages map[string]string
 }
 
-func NewCentralSystem(wsServer ws.WsServer, profiles ...*Profile) *CentralSystem {
-	endpoint := Endpoint{pendingRequests: map[string]Request{}}
+func NewCentralSystem(wsServer ws.WsServer, profiles ...*ocpp.Profile) *CentralSystem {
+	endpoint := Endpoint{pendingRequests: map[string]ocpp.Request{}}
 	for _, profile := range profiles {
 		endpoint.AddProfile(profile)
 	}
@@ -28,11 +29,11 @@ func NewCentralSystem(wsServer ws.WsServer, profiles ...*Profile) *CentralSystem
 	}
 }
 
-func (centralSystem *CentralSystem) SetRequestHandler(handler func(chargePointId string, request Request, requestId string, action string)) {
+func (centralSystem *CentralSystem) SetRequestHandler(handler func(chargePointId string, request ocpp.Request, requestId string, action string)) {
 	centralSystem.requestHandler = handler
 }
 
-func (centralSystem *CentralSystem) SetConfirmationHandler(handler func(chargePointId string, confirmation Confirmation, requestId string)) {
+func (centralSystem *CentralSystem) SetConfirmationHandler(handler func(chargePointId string, confirmation ocpp.Confirmation, requestId string)) {
 	centralSystem.confirmationHandler = handler
 }
 
@@ -60,7 +61,7 @@ func (centralSystem *CentralSystem) Stop() {
 	centralSystem.clearPendingRequests()
 }
 
-func (centralSystem *CentralSystem) SendRequest(chargePointId string, request Request) error {
+func (centralSystem *CentralSystem) SendRequest(chargePointId string, request ocpp.Request) error {
 	err := Validate.Struct(request)
 	if err != nil {
 		return err
@@ -70,7 +71,7 @@ func (centralSystem *CentralSystem) SendRequest(chargePointId string, request Re
 		// Cannot send. Protocol is based on response-confirmation
 		return errors.Errorf("There already is a pending request %v for client %v. Cannot send a further one before receiving a confirmation first", req, chargePointId)
 	}
-	call, err := centralSystem.CreateCall(request.(Request))
+	call, err := centralSystem.CreateCall(request.(ocpp.Request))
 	if err != nil {
 		return err
 	}
@@ -88,7 +89,7 @@ func (centralSystem *CentralSystem) SendRequest(chargePointId string, request Re
 	return err
 }
 
-func (centralSystem *CentralSystem) SendConfirmation(chargePointId string, requestId string, confirmation Confirmation) error {
+func (centralSystem *CentralSystem) SendConfirmation(chargePointId string, requestId string, confirmation ocpp.Confirmation) error {
 	err := Validate.Struct(confirmation)
 	if err != nil {
 		return err

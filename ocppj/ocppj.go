@@ -3,26 +3,13 @@ package ocppj
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lorenzodonini/go-ocpp/ocpp"
 	errors2 "github.com/pkg/errors"
 	"gopkg.in/go-playground/validator.v9"
 	"log"
 	"math/rand"
 	"reflect"
 )
-
-type Feature interface {
-	GetFeatureName() string
-	GetRequestType() reflect.Type
-	GetConfirmationType() reflect.Type
-}
-
-type Request interface {
-	GetFeatureName() string
-}
-
-type Confirmation interface {
-	GetFeatureName() string
-}
 
 type ProtoError struct {
 	Error     error
@@ -34,77 +21,6 @@ var Validate = validator.New()
 
 func init() {
 	_ = Validate.RegisterValidation("errorCode", IsErrorCodeValid)
-}
-
-// -------------------- Profile --------------------
-type Profile struct {
-	Name     string
-	Features map[string]Feature
-}
-
-func NewProfile(name string, features ...Feature) *Profile {
-	profile := Profile{Name: name, Features: make(map[string]Feature)}
-	for _, feature := range features {
-		profile.AddFeature(feature)
-	}
-	return &profile
-}
-
-func (p *Profile) AddFeature(feature Feature) {
-	p.Features[feature.GetFeatureName()] = feature
-}
-
-func (p *Profile) SupportsFeature(name string) bool {
-	_, ok := p.Features[name]
-	return ok
-}
-
-func (p *Profile) GetFeature(name string) Feature {
-	return p.Features[name]
-}
-
-func (p *Profile) ParseRequest(featureName string, rawRequest interface{}) Request {
-	feature, ok := p.Features[featureName]
-	if !ok {
-		log.Printf("Feature %s not found", featureName)
-		return nil
-	}
-	requestType := feature.GetRequestType()
-	bytes, _ := json.Marshal(rawRequest)
-	if !ok {
-		log.Printf("Couldn't cast raw request to bytes")
-		return nil
-	}
-	request := reflect.New(requestType).Interface()
-	err := json.Unmarshal(bytes, &request)
-	if err != nil {
-		log.Printf("Error while parsing json %v", err)
-	}
-	log.Print(reflect.TypeOf(request))
-	result := request.(Request)
-	log.Print(reflect.TypeOf(result))
-	return result
-}
-
-func (p *Profile) ParseConfirmation(featureName string, rawConfirmation interface{}) Confirmation {
-	feature, ok := p.Features[featureName]
-	if !ok {
-		log.Printf("Feature %s not found", featureName)
-		return nil
-	}
-	requestType := feature.GetConfirmationType()
-	bytes, _ := json.Marshal(rawConfirmation)
-	if !ok {
-		log.Printf("Couldn't cast raw confirmation to bytes")
-		return nil
-	}
-	confirmation := reflect.New(requestType).Interface()
-	err := json.Unmarshal(bytes, &confirmation)
-	if err != nil {
-		log.Printf("Error while parsing json %v", err)
-	}
-	result := confirmation.(Confirmation)
-	return result
 }
 
 // -------------------- Message --------------------
@@ -135,10 +51,10 @@ func SetMessageIdGenerator(generator func() string) {
 // -------------------- Call --------------------
 type Call struct {
 	Message       `validate:"-"`
-	MessageTypeId MessageType `json:"messageTypeId" validate:"required,eq=2"`
-	UniqueId      string      `json:"uniqueId" validate:"required,max=36"`
-	Action        string      `json:"action" validate:"required,max=36"`
-	Payload       Request     `json:"payload" validate:"required"`
+	MessageTypeId MessageType  `json:"messageTypeId" validate:"required,eq=2"`
+	UniqueId      string       `json:"uniqueId" validate:"required,max=36"`
+	Action        string       `json:"action" validate:"required,max=36"`
+	Payload       ocpp.Request `json:"payload" validate:"required"`
 }
 
 func (call *Call) GetMessageTypeId() MessageType {
@@ -161,9 +77,9 @@ func (call *Call) MarshalJSON() ([]byte, error) {
 // -------------------- Call Result --------------------
 type CallResult struct {
 	Message
-	MessageTypeId MessageType  `json:"messageTypeId" validate:"required,eq=3"`
-	UniqueId      string       `json:"uniqueId" validate:"required,max=36"`
-	Payload       Confirmation `json:"payload" validate:"required"`
+	MessageTypeId MessageType       `json:"messageTypeId" validate:"required,eq=3"`
+	UniqueId      string            `json:"uniqueId" validate:"required,max=36"`
+	Payload       ocpp.Confirmation `json:"payload" validate:"required"`
 }
 
 func (callResult *CallResult) GetMessageTypeId() MessageType {
@@ -295,15 +211,15 @@ func newProtoError(validationErrors validator.ValidationErrors, messageId string
 
 // -------------------- Endpoint --------------------
 type Endpoint struct {
-	Profiles        []*Profile
-	pendingRequests map[string]Request
+	Profiles        []*ocpp.Profile
+	pendingRequests map[string]ocpp.Request
 }
 
-func (endpoint *Endpoint) AddProfile(profile *Profile) {
+func (endpoint *Endpoint) AddProfile(profile *ocpp.Profile) {
 	endpoint.Profiles = append(endpoint.Profiles, profile)
 }
 
-func (endpoint *Endpoint) GetProfile(name string) (*Profile, bool) {
+func (endpoint *Endpoint) GetProfile(name string) (*ocpp.Profile, bool) {
 	for _, p := range endpoint.Profiles {
 		if p.Name == name {
 			return p, true
@@ -312,7 +228,7 @@ func (endpoint *Endpoint) GetProfile(name string) (*Profile, bool) {
 	return nil, false
 }
 
-func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*Profile, bool) {
+func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*ocpp.Profile, bool) {
 	for _, p := range endpoint.Profiles {
 		if p.SupportsFeature(featureName) {
 			return p, true
@@ -321,11 +237,11 @@ func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*Profile, bo
 	return nil, false
 }
 
-func (endpoint *Endpoint) AddPendingRequest(id string, request Request) {
+func (endpoint *Endpoint) AddPendingRequest(id string, request ocpp.Request) {
 	endpoint.pendingRequests[id] = request
 }
 
-func (endpoint *Endpoint) GetPendingRequest(id string) (Request, bool) {
+func (endpoint *Endpoint) GetPendingRequest(id string) (ocpp.Request, bool) {
 	request, ok := endpoint.pendingRequests[id]
 	return request, ok
 }
@@ -335,7 +251,35 @@ func (endpoint *Endpoint) DeletePendingRequest(id string) {
 }
 
 func (endpoint *Endpoint) clearPendingRequests() {
-	endpoint.pendingRequests = map[string]Request{}
+	endpoint.pendingRequests = map[string]ocpp.Request{}
+}
+
+func parseRawJsonRequest(raw interface{}, requestType reflect.Type) (ocpp.Request, error) {
+	bytes, err := json.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+	request := reflect.New(requestType).Interface()
+	err = json.Unmarshal(bytes, &request)
+	if err != nil {
+		return nil, err
+	}
+	result := request.(ocpp.Request)
+	return result, nil
+}
+
+func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (ocpp.Confirmation, error) {
+	bytes, err := json.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+	confirmation := reflect.New(confirmationType).Interface()
+	err = json.Unmarshal(bytes, &confirmation)
+	if err != nil {
+		return nil, err
+	}
+	result := confirmation.(ocpp.Confirmation)
+	return result, nil
 }
 
 func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError) {
@@ -362,14 +306,18 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 		if !ok {
 			return nil, &ProtoError{MessageId: uniqueId, ErrorCode: NotSupported, Error: errors2.Errorf("Unsupported feature %v", action)}
 		}
-		request := profile.ParseRequest(action, arr[3])
+		request, err := profile.ParseRequest(action, arr[3], parseRawJsonRequest)
+		if err != nil {
+			protoError := &ProtoError{Error: err, ErrorCode: FormationViolation, MessageId: uniqueId}
+			return nil, protoError
+		}
 		call := Call{
 			MessageTypeId: CALL,
 			UniqueId:      uniqueId,
 			Action:        action,
 			Payload:       request,
 		}
-		err := Validate.Struct(call)
+		err = Validate.Struct(call)
 		if err != nil {
 			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
 			return nil, protoError
@@ -382,14 +330,18 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 			return nil, nil
 		}
 		profile, _ := endpoint.GetProfileForFeature(request.GetFeatureName())
-		confirmation := profile.ParseConfirmation(request.GetFeatureName(), arr[2])
+		confirmation, err := profile.ParseConfirmation(request.GetFeatureName(), arr[2], parseRawJsonConfirmation)
+		if err != nil {
+			protoError := &ProtoError{Error: err, ErrorCode: FormationViolation, MessageId: uniqueId}
+			return nil, protoError
+		}
 		callResult := CallResult{
 			MessageTypeId: CALL_RESULT,
 			UniqueId:      uniqueId,
 			Payload:       confirmation,
 		}
 		endpoint.DeletePendingRequest(callResult.GetUniqueId())
-		err := Validate.Struct(callResult)
+		err = Validate.Struct(callResult)
 		if err != nil {
 			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
 			return nil, protoError
@@ -424,7 +376,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 	}
 }
 
-func (endpoint *Endpoint) CreateCall(request Request) (*Call, error) {
+func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	action := request.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
@@ -445,7 +397,7 @@ func (endpoint *Endpoint) CreateCall(request Request) (*Call, error) {
 	return &call, nil
 }
 
-func (endpoint *Endpoint) CreateCallResult(confirmation Confirmation, uniqueId string) (*CallResult, error) {
+func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Confirmation, uniqueId string) (*CallResult, error) {
 	action := confirmation.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
