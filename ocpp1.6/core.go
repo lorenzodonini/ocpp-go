@@ -12,6 +12,7 @@ const (
 	DataTransferFeatureName        = "DataTransfer"
 	GetConfigurationFeatureName    = "GetConfiguration"
 	ClearCacheFeatureName          = "ClearCache"
+	HeartbeatFeatureName           = "Heartbeat"
 )
 
 type CentralSystemCoreListener interface {
@@ -20,7 +21,7 @@ type CentralSystemCoreListener interface {
 	OnDataTransfer(chargePointId string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	//onDiagnosticsStatusNotification()
 	//onFirmwareStatusNotification()
-	//onHeartbeat()
+	OnHeartbeat(chargePointId string, request *HeartbeatRequest) (confirmation *HeartbeatConfirmation, err error)
 	//onMeterValues()
 	//onStatusNotification()
 	//onStartTransaction()
@@ -49,4 +50,4 @@ type ChargePointCoreListener interface {
 	//onUpdateFirmware()
 }
 
-var CoreProfile = ocppj.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{}, ChangeAvailabilityFeature{}, ChangeConfigurationFeature{}, ClearCacheFeature{}, DataTransferFeature{}, GetConfigurationFeature{})
+var CoreProfile = ocppj.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{}, ChangeAvailabilityFeature{}, ChangeConfigurationFeature{}, ClearCacheFeature{}, DataTransferFeature{}, GetConfigurationFeature{}, HeartbeatFeature{})

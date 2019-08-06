@@ -97,7 +97,7 @@ func validateDateTimeGt(dateTime DateTime, than time.Time) bool {
 }
 
 func validateDateTimeNow(dateTime DateTime) bool {
-	dur := time.Now().Sub(dateTime.Time).Seconds()
+	dur := time.Now().Sub(dateTime.Time).Minutes()
 	return dur < 1
 }
 

@@ -155,6 +155,12 @@ func (coreListener MockCentralSystemCoreListener) OnDataTransfer(chargePointId s
 	return conf, args.Error(1)
 }
 
+func (coreListener MockCentralSystemCoreListener) OnHeartbeat(chargePointId string, request *ocpp16.HeartbeatRequest) (confirmation *ocpp16.HeartbeatConfirmation, err error) {
+	args := coreListener.MethodCalled("OnHeartbeat", chargePointId, request)
+	conf := args.Get(0).(*ocpp16.HeartbeatConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CP CORE LISTENER ----------------------
 type MockChargePointCoreListener struct {
 	mock.Mock
