@@ -1,7 +1,6 @@
 package ocpp16
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -26,7 +25,6 @@ func isValidRegistrationStatus(fl validator.FieldLevel) bool {
 }
 
 type BootNotificationRequest struct {
-	ocppj.Request           `json:"-"`
 	ChargeBoxSerialNumber   string `json:"chargeBoxSerialNumber,omitempty" validate:"max=25"`
 	ChargePointModel        string `json:"chargePointModel" validate:"required,max=20"`
 	ChargePointSerialNumber string `json:"chargePointSerialNumber,omitempty" validate:"max=25"`
@@ -39,7 +37,6 @@ type BootNotificationRequest struct {
 }
 
 type BootNotificationConfirmation struct {
-	ocppj.Confirmation `json:"-"`
 	CurrentTime        DateTime           `json:"currentTime" validate:"required"`
 	Interval           int                `json:"interval" validate:"required,gte=0"`
 	Status             RegistrationStatus `json:"status" validate:"required,registrationStatus"`

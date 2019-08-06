@@ -3,6 +3,7 @@ package ocpp16_test
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/lorenzodonini/go-ocpp/ocpp"
 	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/lorenzodonini/go-ocpp/ws"
@@ -178,7 +179,7 @@ func (coreListener MockChargePointCoreListener) OnDataTransfer(request *ocpp16.D
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnChangeConfiguration(request * ocpp16.ChangeConfigurationRequest) (confirmation *ocpp16.ChangeConfigurationConfirmation, err error) {
+func (coreListener MockChargePointCoreListener) OnChangeConfiguration(request *ocpp16.ChangeConfigurationRequest) (confirmation *ocpp16.ChangeConfigurationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnChangeConfiguration", request)
 	conf := args.Get(0).(*ocpp16.ChangeConfigurationConfirmation)
 	return conf, args.Error(1)
@@ -190,7 +191,7 @@ func (coreListener MockChargePointCoreListener) OnClearCache(request *ocpp16.Cle
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnGetConfiguration(request * ocpp16.GetConfigurationRequest) (confirmation *ocpp16.GetConfigurationConfirmation, err error) {
+func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp16.GetConfigurationRequest) (confirmation *ocpp16.GetConfigurationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnGetConfiguration", request)
 	conf := args.Get(0).(*ocpp16.GetConfigurationConfirmation)
 	return conf, args.Error(1)
@@ -305,7 +306,7 @@ func assertDateTimeEquality(t *testing.T, expected ocpp16.DateTime, actual ocpp1
 	assert.Equal(t, expected.Time.Format(ocpp16.ISO8601), actual.Time.Format(ocpp16.ISO8601))
 }
 
-func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocppj.Request, requestJson string, messageId string) {
+func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp.Request, requestJson string, messageId string) {
 	t := suite.T()
 	wsId := "test_id"
 	wsUrl := "someUrl"
@@ -330,7 +331,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	// Run request test
-	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
+	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocpp.Confirmation, callError *ocppj.ProtoError) {
 		t.Fail()
 	})
 	assert.Error(t, err)
@@ -339,11 +340,11 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	suite.ocppjChargePoint.AddPendingRequest(messageId, request)
 	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
 	assert.Nil(t, err)
-	result := <- resultChannel
+	result := <-resultChannel
 	assert.True(t, result)
 }
 
-func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request ocppj.Request, requestJson string, messageId string) {
+func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request ocpp.Request, requestJson string, messageId string) {
 	t := suite.T()
 	wsId := "test_id"
 	wsUrl := "someUrl"
@@ -367,7 +368,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	// Run request test
-	err = suite.centralSystem.SendRequestAsync(wsId, request, func(confirmation ocppj.Confirmation, callError *ocppj.ProtoError) {
+	err = suite.centralSystem.SendRequestAsync(wsId, request, func(confirmation ocpp.Confirmation, callError *ocppj.ProtoError) {
 		t.Fail()
 	})
 	assert.Error(t, err)
@@ -379,12 +380,12 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 }
 
 type RequestTestEntry struct {
-	Request       ocppj.Request
+	Request       ocpp.Request
 	ExpectedValid bool
 }
 
 type ConfirmationTestEntry struct {
-	Confirmation  ocppj.Confirmation
+	Confirmation  ocpp.Confirmation
 	ExpectedValid bool
 }
 

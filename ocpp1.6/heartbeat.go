@@ -1,18 +1,15 @@
 package ocpp16
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
 
 // -------------------- Heartbeat (CP -> CS) --------------------
 type HeartbeatRequest struct {
-	ocppj.Request `json:"-"`
 }
 
 type HeartbeatConfirmation struct {
-	ocppj.Confirmation `json:"-"`
 	CurrentTime        DateTime `json:"currentTime" validate:"required"`
 }
 

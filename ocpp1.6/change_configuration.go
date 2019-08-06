@@ -1,7 +1,6 @@
 package ocpp16
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -27,13 +26,11 @@ func isValidConfigurationStatus(fl validator.FieldLevel) bool {
 }
 
 type ChangeConfigurationRequest struct {
-	ocppj.Request `json:"-"`
 	Key           string `json:"key" validate:"required,max=50"`
 	Value         string `json:"value" validate:"required,max=500"`
 }
 
 type ChangeConfigurationConfirmation struct {
-	ocppj.Confirmation `json:"-"`
 	Status             ConfigurationStatus `json:"status" validate:"required,configurationStatus"`
 }
 

@@ -55,7 +55,7 @@ func (suite *OcppV16TestSuite) TestClearCachedE2EMocked() {
 		resultChannel <- true
 	})
 	assert.Nil(t, err)
-	result := <- resultChannel
+	result := <-resultChannel
 	assert.True(t, result)
 }
 

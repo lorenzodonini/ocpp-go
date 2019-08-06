@@ -3,31 +3,10 @@ package ocpp16_test
 import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 	"time"
 )
-
-// Utility functions
-func getAuthorizeRequest(t *testing.T, request ocppj.Request) *ocpp16.AuthorizeRequest {
-	assert.NotNil(t, request)
-	result, ok := request.(*ocpp16.AuthorizeRequest)
-	assert.True(t, ok)
-	assert.NotNil(t, result)
-	assert.IsType(t, &ocpp16.AuthorizeRequest{}, result)
-	return result
-}
-
-func getAuthorizeConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.AuthorizeConfirmation {
-	assert.NotNil(t, confirmation)
-	result, ok := confirmation.(*ocpp16.AuthorizeConfirmation)
-	assert.True(t, ok)
-	assert.NotNil(t, result)
-	assert.IsType(t, &ocpp16.AuthorizeConfirmation{}, result)
-	return result
-}
 
 // Test
 func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {

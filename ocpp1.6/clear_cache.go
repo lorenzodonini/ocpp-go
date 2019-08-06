@@ -1,7 +1,6 @@
 package ocpp16
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -25,11 +24,9 @@ func isValidClearCacheStatus(fl validator.FieldLevel) bool {
 }
 
 type ClearCacheRequest struct {
-	ocppj.Request `json:"-"`
 }
 
 type ClearCacheConfirmation struct {
-	ocppj.Confirmation `json:"-"`
 	Status             ClearCacheStatus `json:"status" validate:"required,cacheStatus"`
 }
 

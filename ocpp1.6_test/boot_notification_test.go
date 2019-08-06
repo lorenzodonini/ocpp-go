@@ -3,29 +3,10 @@ package ocpp16_test
 import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 	"time"
 )
-
-// Utility functions
-func getBootNotificationRequest(t *testing.T, request ocppj.Request) *ocpp16.BootNotificationRequest {
-	assert.NotNil(t, request)
-	result := request.(*ocpp16.BootNotificationRequest)
-	assert.NotNil(t, result)
-	assert.IsType(t, &ocpp16.BootNotificationRequest{}, result)
-	return result
-}
-
-func getBootNotificationConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.BootNotificationConfirmation {
-	assert.NotNil(t, confirmation)
-	result := confirmation.(*ocpp16.BootNotificationConfirmation)
-	assert.NotNil(t, result)
-	assert.IsType(t, &ocpp16.BootNotificationConfirmation{}, result)
-	return result
-}
 
 // Tests
 func (suite *OcppV16TestSuite) TestBootNotificationRequestValidation() {

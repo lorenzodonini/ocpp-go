@@ -1,7 +1,6 @@
 package ocpp16
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"reflect"
 )
 
@@ -13,14 +12,12 @@ type ConfigurationKey struct {
 }
 
 type GetConfigurationRequest struct {
-	ocppj.Request `json:"-"`
 	Key           []string `json:"key" validate:"required,min=1,unique,dive,max=50"`
 }
 
 // TODO: validation of cardinalities for the two fields should be handled somewhere (#configurationKey + #unknownKey > 0)
 // TODO: add uniqueness of configurationKey in slice, once PR is merged (https://github.com/go-playground/validator/pull/496)
 type GetConfigurationConfirmation struct {
-	ocppj.Confirmation `json:"-"`
 	ConfigurationKey   []ConfigurationKey `json:"configurationKey,omitempty" validate:"dive"`
 	UnknownKey         []string           `json:"unknownKey,omitempty" validate:"dive,max=50"`
 }

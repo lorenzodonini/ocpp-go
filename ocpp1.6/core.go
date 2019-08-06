@@ -1,7 +1,7 @@
 package ocpp16
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocppj"
+	"github.com/lorenzodonini/go-ocpp/ocpp"
 )
 
 const (
@@ -50,4 +50,4 @@ type ChargePointCoreListener interface {
 	//onUpdateFirmware()
 }
 
-var CoreProfile = ocppj.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{}, ChangeAvailabilityFeature{}, ChangeConfigurationFeature{}, ClearCacheFeature{}, DataTransferFeature{}, GetConfigurationFeature{}, HeartbeatFeature{})
+var CoreProfile = ocpp.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{}, ChangeAvailabilityFeature{}, ChangeConfigurationFeature{}, ClearCacheFeature{}, DataTransferFeature{}, GetConfigurationFeature{}, HeartbeatFeature{})

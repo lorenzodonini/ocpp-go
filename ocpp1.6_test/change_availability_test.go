@@ -6,25 +6,7 @@ import (
 	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
-
-// Utility functions
-func getChangeAvailabilityRequest(t *testing.T, request ocppj.Request) *ocpp16.ChangeAvailabilityRequest {
-	assert.NotNil(t, request)
-	result := request.(*ocpp16.ChangeAvailabilityRequest)
-	assert.NotNil(t, result)
-	assert.IsType(t, &ocpp16.ChangeAvailabilityRequest{}, result)
-	return result
-}
-
-func getChangeAvailabilityConfirmation(t *testing.T, confirmation ocppj.Confirmation) *ocpp16.ChangeAvailabilityConfirmation {
-	assert.NotNil(t, confirmation)
-	result := confirmation.(*ocpp16.ChangeAvailabilityConfirmation)
-	assert.NotNil(t, result)
-	assert.IsType(t, &ocpp16.ChangeAvailabilityConfirmation{}, result)
-	return result
-}
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
 	t := suite.T()

@@ -63,7 +63,7 @@ func (suite *OcppV16TestSuite) TestChangeConfigurationE2EMocked() {
 		resultChannel <- true
 	}, key, value)
 	assert.Nil(t, err)
-	result := <- resultChannel
+	result := <-resultChannel
 	assert.True(t, result)
 }
 

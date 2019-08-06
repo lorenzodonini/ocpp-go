@@ -74,7 +74,7 @@ func (suite *OcppV16TestSuite) TestGetConfigurationE2EMocked() {
 		resultChannel <- true
 	}, requestKeys)
 	assert.Nil(t, err)
-	result := <- resultChannel
+	result := <-resultChannel
 	assert.True(t, result)
 }
 
