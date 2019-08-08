@@ -14,7 +14,7 @@ type ChargePoint struct {
 	Id                  string
 	requestHandler      func(request ocpp.Request, requestId string, action string)
 	confirmationHandler func(confirmation ocpp.Confirmation, requestId string)
-	errorHandler        func(errorCode ErrorCode, description string, details interface{}, requestId string)
+	errorHandler        func(errorCode ocpp.ErrorCode, description string, details interface{}, requestId string)
 	hasPendingRequest   bool
 }
 
@@ -38,7 +38,7 @@ func (chargePoint *ChargePoint) SetConfirmationHandler(handler func(confirmation
 	chargePoint.confirmationHandler = handler
 }
 
-func (chargePoint *ChargePoint) SetErrorHandler(handler func(errorCode ErrorCode, description string, details interface{}, requestId string)) {
+func (chargePoint *ChargePoint) SetErrorHandler(handler func(errorCode ocpp.ErrorCode, description string, details interface{}, requestId string)) {
 	chargePoint.errorHandler = handler
 }
 
@@ -106,7 +106,7 @@ func (chargePoint *ChargePoint) SendConfirmation(requestId string, confirmation 
 	return chargePoint.client.Write([]byte(jsonMessage))
 }
 
-func (chargePoint *ChargePoint) SendError(requestId string, errorCode ErrorCode, description string, details interface{}) error {
+func (chargePoint *ChargePoint) SendError(requestId string, errorCode ocpp.ErrorCode, description string, details interface{}) error {
 	callError := chargePoint.CreateCallError(requestId, errorCode, description, details)
 	err := Validate.Struct(callError)
 	if err != nil {
@@ -124,13 +124,13 @@ func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
 	message, err := chargePoint.ParseMessage(parsedJson)
 	if err != nil {
 		if err.MessageId != "" {
-			err2 := chargePoint.SendError(err.MessageId, err.ErrorCode, err.Error.Error(), nil)
+			err2 := chargePoint.SendError(err.MessageId, err.Code, err.Description, nil)
 			if err2 != nil {
 				return err2
 			}
 		}
 		log.Print(err)
-		return err.Error
+		return err
 	}
 	switch message.GetMessageTypeId() {
 	case CALL:

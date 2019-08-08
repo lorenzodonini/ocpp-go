@@ -13,7 +13,7 @@ type CentralSystem struct {
 	newChargePointHandler func(chargePointId string)
 	requestHandler        func(chargePointId string, request ocpp.Request, requestId string, action string)
 	confirmationHandler   func(chargePointId string, confirmation ocpp.Confirmation, requestId string)
-	errorHandler          func(chargePointId string, errorCode ErrorCode, description string, details interface{}, requestId string)
+	errorHandler          func(chargePointId string, errorCode ocpp.ErrorCode, description string, details interface{}, requestId string)
 	clientPendingMessages map[string]string
 }
 
@@ -37,7 +37,7 @@ func (centralSystem *CentralSystem) SetConfirmationHandler(handler func(chargePo
 	centralSystem.confirmationHandler = handler
 }
 
-func (centralSystem *CentralSystem) SetErrorHandler(handler func(chargePointId string, errorCode ErrorCode, description string, details interface{}, requestId string)) {
+func (centralSystem *CentralSystem) SetErrorHandler(handler func(chargePointId string, errorCode ocpp.ErrorCode, description string, details interface{}, requestId string)) {
 	centralSystem.errorHandler = handler
 }
 
@@ -105,7 +105,7 @@ func (centralSystem *CentralSystem) SendConfirmation(chargePointId string, reque
 	return centralSystem.server.Write(chargePointId, []byte(jsonMessage))
 }
 
-func (centralSystem *CentralSystem) SendError(chargePointId string, requestId string, errorCode ErrorCode, description string, details interface{}) error {
+func (centralSystem *CentralSystem) SendError(chargePointId string, requestId string, errorCode ocpp.ErrorCode, description string, details interface{}) error {
 	callError := centralSystem.CreateCallError(requestId, errorCode, description, details)
 	err := Validate.Struct(callError)
 	if err != nil {
@@ -150,13 +150,13 @@ func (centralSystem *CentralSystem) ocppMessageHandler(wsChannel ws.Channel, dat
 	message, err := centralSystem.ParseMessage(parsedJson)
 	if err != nil {
 		if err.MessageId != "" {
-			err2 := centralSystem.SendError(wsChannel.GetId(), err.MessageId, err.ErrorCode, err.Error.Error(), nil)
+			err2 := centralSystem.SendError(wsChannel.GetId(), err.MessageId, err.Code, err.Description, nil)
 			if err2 != nil {
 				return err2
 			}
 		}
 		log.Print(err)
-		return err.Error
+		return err
 	}
 	switch message.GetMessageTypeId() {
 	case CALL:

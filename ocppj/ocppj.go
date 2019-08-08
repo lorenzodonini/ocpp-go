@@ -11,12 +11,6 @@ import (
 	"reflect"
 )
 
-type ProtoError struct {
-	Error     error
-	ErrorCode ErrorCode
-	MessageId string
-}
-
 var Validate = validator.New()
 
 func init() {
@@ -99,15 +93,13 @@ func (callResult *CallResult) MarshalJSON() ([]byte, error) {
 }
 
 // -------------------- Call Error --------------------
-type ErrorCode string
-
 type CallError struct {
 	Message
-	MessageTypeId    MessageType `json:"messageTypeId" validate:"required,eq=4"`
-	UniqueId         string      `json:"uniqueId" validate:"required,max=36"`
-	ErrorCode        ErrorCode   `json:"errorCode" validate:"errorCode"`
-	ErrorDescription string      `json:"errorDescription" validate:"required"`
-	ErrorDetails     interface{} `json:"errorDetails" validate:"omitempty"`
+	MessageTypeId    MessageType    `json:"messageTypeId" validate:"required,eq=4"`
+	UniqueId         string         `json:"uniqueId" validate:"required,max=36"`
+	ErrorCode        ocpp.ErrorCode `json:"errorCode" validate:"errorCode"`
+	ErrorDescription string         `json:"errorDescription" validate:"required"`
+	ErrorDetails     interface{}    `json:"errorDetails" validate:"omitempty"`
 }
 
 func (callError *CallError) GetMessageTypeId() MessageType {
@@ -129,20 +121,20 @@ func (callError *CallError) MarshalJSON() ([]byte, error) {
 }
 
 const (
-	NotImplemented                ErrorCode = "NotImplemented"
-	NotSupported                  ErrorCode = "NotSupported"
-	InternalError                 ErrorCode = "InternalError"
-	ProtocolError                 ErrorCode = "ProtocolError"
-	SecurityError                 ErrorCode = "SecurityError"
-	FormationViolation            ErrorCode = "FormationViolation"
-	PropertyConstraintViolation   ErrorCode = "PropertyConstraintViolation"
-	OccurrenceConstraintViolation ErrorCode = "OccurrenceConstraintViolation"
-	TypeConstraintViolation       ErrorCode = "TypeConstraintViolation"
-	GenericError                  ErrorCode = "GenericError"
+	NotImplemented                ocpp.ErrorCode = "NotImplemented"
+	NotSupported                  ocpp.ErrorCode = "NotSupported"
+	InternalError                 ocpp.ErrorCode = "InternalError"
+	ProtocolError                 ocpp.ErrorCode = "ProtocolError"
+	SecurityError                 ocpp.ErrorCode = "SecurityError"
+	FormationViolation            ocpp.ErrorCode = "FormationViolation"
+	PropertyConstraintViolation   ocpp.ErrorCode = "PropertyConstraintViolation"
+	OccurrenceConstraintViolation ocpp.ErrorCode = "OccurrenceConstraintViolation"
+	TypeConstraintViolation       ocpp.ErrorCode = "TypeConstraintViolation"
+	GenericError                  ocpp.ErrorCode = "GenericError"
 )
 
 func IsErrorCodeValid(fl validator.FieldLevel) bool {
-	code := ErrorCode(fl.Field().String())
+	code := ocpp.ErrorCode(fl.Field().String())
 	switch code {
 	case NotImplemented, NotSupported, InternalError, ProtocolError, SecurityError, FormationViolation, PropertyConstraintViolation, OccurrenceConstraintViolation, TypeConstraintViolation, GenericError:
 		return true
@@ -187,26 +179,26 @@ func getValueLength(value interface{}) int {
 	}
 }
 
-func newProtoError(validationErrors validator.ValidationErrors, messageId string) *ProtoError {
+func errorFromValidation(validationErrors validator.ValidationErrors, messageId string) *ocpp.Error {
 	for _, el := range validationErrors {
 		switch el.ActualTag() {
 		case "required":
-			return &ProtoError{MessageId: messageId, ErrorCode: OccurrenceConstraintViolation, Error: errors2.Errorf("Field %v required but not found", el.Namespace())}
+			return ocpp.NewError(OccurrenceConstraintViolation, fmt.Sprintf("Field %v required but not found", el.Namespace()), messageId)
 		case "max":
-			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be maximum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be maximum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
 		case "min":
-			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be minimum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be minimum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
 		case "gte":
-			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be >= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be >= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
 		case "gt":
-			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be > %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be > %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
 		case "lte":
-			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be <= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be <= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
 		case "lt":
-			return &ProtoError{MessageId: messageId, ErrorCode: PropertyConstraintViolation, Error: errors2.Errorf("Field %v must be < %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value()))}
+			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be < %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
 		}
 	}
-	return &ProtoError{MessageId: messageId, ErrorCode: GenericError, Error: errors2.Errorf("%v", validationErrors.Error())}
+	return ocpp.NewError(GenericError, fmt.Sprintf("%v", validationErrors.Error()), messageId)
 }
 
 // -------------------- Endpoint --------------------
@@ -282,34 +274,33 @@ func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (o
 	return result, nil
 }
 
-func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError) {
+func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error) {
 	// Checking message fields
 	if len(arr) < 3 {
-		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid message. Expected array length >= 3")}
+		return nil, ocpp.NewError(FormationViolation, "Invalid message. Expected array length >= 3", "")
 	}
 	rawTypeId, ok := arr[0].(float64)
 	if !ok {
-		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 0, expected message type (int)", arr[0])}
+		return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", arr[0]), "")
 	}
 	typeId := MessageType(rawTypeId)
 	uniqueId, ok := arr[1].(string)
 	if !ok {
-		return nil, &ProtoError{ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid element %v at 1, expected unique ID (string)", arr[1])}
+		return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", arr[1]), uniqueId)
 	}
 	// Parse message
 	if typeId == CALL {
 		if len(arr) != 4 {
-			return nil, &ProtoError{MessageId: uniqueId, ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid Call message. Expected array length 4")}
+			return nil, ocpp.NewError(FormationViolation, "Invalid Call message. Expected array length 4", uniqueId)
 		}
 		action := arr[2].(string)
 		profile, ok := endpoint.GetProfileForFeature(action)
 		if !ok {
-			return nil, &ProtoError{MessageId: uniqueId, ErrorCode: NotSupported, Error: errors2.Errorf("Unsupported feature %v", action)}
+			return nil, ocpp.NewError(NotSupported, fmt.Sprintf("Unsupported feature %v", action), uniqueId)
 		}
 		request, err := profile.ParseRequest(action, arr[3], parseRawJsonRequest)
 		if err != nil {
-			protoError := &ProtoError{Error: err, ErrorCode: FormationViolation, MessageId: uniqueId}
-			return nil, protoError
+			return nil, ocpp.NewError(FormationViolation, err.Error(), uniqueId)
 		}
 		call := Call{
 			MessageTypeId: CALL,
@@ -319,8 +310,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 		}
 		err = Validate.Struct(call)
 		if err != nil {
-			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
-			return nil, protoError
+			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId)
 		}
 		return &call, nil
 	} else if typeId == CALL_RESULT {
@@ -332,8 +322,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 		profile, _ := endpoint.GetProfileForFeature(request.GetFeatureName())
 		confirmation, err := profile.ParseConfirmation(request.GetFeatureName(), arr[2], parseRawJsonConfirmation)
 		if err != nil {
-			protoError := &ProtoError{Error: err, ErrorCode: FormationViolation, MessageId: uniqueId}
-			return nil, protoError
+			return nil, ocpp.NewError(FormationViolation, err.Error(), uniqueId)
 		}
 		callResult := CallResult{
 			MessageTypeId: CALL_RESULT,
@@ -343,20 +332,19 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 		endpoint.DeletePendingRequest(callResult.GetUniqueId())
 		err = Validate.Struct(callResult)
 		if err != nil {
-			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
-			return nil, protoError
+			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId)
 		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
 		if len(arr) < 4 {
-			return nil, &ProtoError{MessageId: uniqueId, ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid Call Error message. Expected array length >= 4")}
+			return nil, ocpp.NewError(FormationViolation, "Invalid Call Error message. Expected array length >= 4", uniqueId)
 		}
 		var details interface{}
 		if len(arr) > 4 {
 			details = arr[4]
 		}
 		rawErrorCode := arr[2].(string)
-		errorCode := ErrorCode(rawErrorCode)
+		errorCode := ocpp.ErrorCode(rawErrorCode)
 		callError := CallError{
 			MessageTypeId:    CALL_ERROR,
 			UniqueId:         uniqueId,
@@ -367,12 +355,11 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ProtoError)
 		endpoint.DeletePendingRequest(callError.GetUniqueId())
 		err := Validate.Struct(callError)
 		if err != nil {
-			protoError := newProtoError(err.(validator.ValidationErrors), uniqueId)
-			return nil, protoError
+			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId)
 		}
 		return &callError, nil
 	} else {
-		return nil, &ProtoError{MessageId: uniqueId, ErrorCode: FormationViolation, Error: errors2.Errorf("Invalid message type ID %v", typeId)}
+		return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid message type ID %v", typeId), uniqueId)
 	}
 }
 
@@ -415,7 +402,7 @@ func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Confirmation, uniqu
 	return &callResult, nil
 }
 
-func (endpoint *Endpoint) CreateCallError(uniqueId string, code ErrorCode, description string, details interface{}) *CallError {
+func (endpoint *Endpoint) CreateCallError(uniqueId string, code ocpp.ErrorCode, description string, details interface{}) *CallError {
 	callError := CallError{
 		MessageTypeId:    CALL_ERROR,
 		UniqueId:         uniqueId,

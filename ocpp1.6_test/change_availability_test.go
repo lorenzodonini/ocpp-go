@@ -3,7 +3,6 @@ package ocpp16_test
 import (
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -56,9 +55,9 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.ChangeAvailability(wsId, func(confirmation *ocpp16.ChangeAvailabilityConfirmation, callError *ocppj.ProtoError) {
+	err = suite.centralSystem.ChangeAvailability(wsId, func(confirmation *ocpp16.ChangeAvailabilityConfirmation, err error) {
 		assert.NotNil(t, confirmation)
-		assert.Nil(t, callError)
+		assert.Nil(t, err)
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
 	}, connectorId, availabilityType)

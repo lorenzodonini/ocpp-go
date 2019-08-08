@@ -3,7 +3,6 @@ package ocpp16_test
 import (
 	"fmt"
 	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -66,8 +65,8 @@ func (suite *OcppV16TestSuite) TestGetConfigurationE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.GetConfiguration(wsId, func(confirmation *ocpp16.GetConfigurationConfirmation, protoErr *ocppj.ProtoError) {
-		assert.Nil(t, protoErr)
+	err = suite.centralSystem.GetConfiguration(wsId, func(confirmation *ocpp16.GetConfigurationConfirmation, err error) {
+		assert.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		assert.Equal(t, unknownKeys, confirmation.UnknownKey)
 		assert.Equal(t, resultKeys, confirmation.ConfigurationKey)

@@ -218,7 +218,7 @@ func ParseCallError(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.
 	return callError
 }
 
-func CheckCallError(t *testing.T, callError *ocppj.CallError, expectedId string, expectedError ocppj.ErrorCode, expectedDescription string, expectedDetails interface{}) {
+func CheckCallError(t *testing.T, callError *ocppj.CallError, expectedId string, expectedError ocpp.ErrorCode, expectedDescription string, expectedDetails interface{}) {
 	assert.Equal(t, ocppj.CALL_ERROR, callError.GetMessageTypeId())
 	assert.Equal(t, expectedId, callError.GetUniqueId())
 	assert.Equal(t, expectedError, callError.ErrorCode)
@@ -405,8 +405,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidLength() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.ErrorCode)
-	assert.Equal(t, "Invalid message. Expected array length >= 3", protoErr.Error.Error())
+	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, "Invalid message. Expected array length >= 3", protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidTypeId() {
@@ -421,8 +421,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidTypeId() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.ErrorCode)
-	assert.Equal(t, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", invalidTypeId), protoErr.Error.Error())
+	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", invalidTypeId), protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidMessageId() {
@@ -436,8 +436,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidMessageId() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.ErrorCode)
-	assert.Equal(t, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", invalidMessageId), protoErr.Error.Error())
+	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", invalidMessageId), protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
@@ -452,8 +452,8 @@ func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.ErrorCode)
-	assert.Equal(t, fmt.Sprintf("Invalid message type ID %v", invalidTypeId), protoErr.Error.Error())
+	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, fmt.Sprintf("Invalid message type ID %v", invalidTypeId), protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageUnsupported() {
@@ -469,8 +469,8 @@ func (suite *OcppJTestSuite) TestParseMessageUnsupported() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.NotSupported, protoErr.ErrorCode)
-	assert.Equal(t, fmt.Sprintf("Unsupported feature %v", invalidAction), protoErr.Error.Error())
+	assert.Equal(t, ocppj.NotSupported, protoErr.Code)
+	assert.Equal(t, fmt.Sprintf("Unsupported feature %v", invalidAction), protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
@@ -485,8 +485,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.ErrorCode)
-	assert.Equal(t, "Invalid Call message. Expected array length 4", protoErr.Error.Error())
+	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, "Invalid Call message. Expected array length 4", protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidCallResult() {
@@ -516,8 +516,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.ErrorCode)
-	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Error.Error())
+	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidRequest() {
@@ -534,14 +534,14 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRequest() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.ErrorCode)
+	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockRequest.MockValue = "somelongvalue"
 	message, protoErr = suite.chargePoint.ParseMessage(mockMessage)
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.PropertyConstraintViolation, protoErr.ErrorCode)
+	assert.Equal(t, ocppj.PropertyConstraintViolation, protoErr.Code)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
@@ -559,7 +559,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.ErrorCode)
+	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockConfirmation.MockValue = "min"
 	suite.chargePoint.AddPendingRequest(messageId, pendingRequest)
@@ -567,7 +567,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.PropertyConstraintViolation, protoErr.ErrorCode)
+	assert.Equal(t, ocppj.PropertyConstraintViolation, protoErr.Code)
 }
 
 func (suite *OcppJTestSuite) TestParseCall() {

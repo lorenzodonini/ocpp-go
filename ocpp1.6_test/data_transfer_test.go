@@ -3,7 +3,6 @@ package ocpp16_test
 import (
 	"fmt"
 	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
-	"github.com/lorenzodonini/go-ocpp/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -55,9 +54,8 @@ func (suite *OcppV16TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
-	confirmation, protoErr, err := suite.chargePoint.DataTransfer(vendorId)
+	confirmation, err := suite.chargePoint.DataTransfer(vendorId)
 	assert.Nil(t, err)
-	assert.Nil(t, protoErr)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.Status)
 }
@@ -83,8 +81,8 @@ func (suite *OcppV16TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *ocpp16.DataTransferConfirmation, callError *ocppj.ProtoError) {
-		assert.Nil(t, callError)
+	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *ocpp16.DataTransferConfirmation, err error) {
+		assert.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true

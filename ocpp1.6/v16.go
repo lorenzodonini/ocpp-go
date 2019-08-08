@@ -1,7 +1,6 @@
 package ocpp16
 
 import (
-	"errors"
 	"fmt"
 	"github.com/lorenzodonini/go-ocpp/ocpp"
 	"github.com/lorenzodonini/go-ocpp/ocppj"
@@ -12,16 +11,16 @@ import (
 // -------------------- v1.6 Charge Point --------------------
 type ChargePoint interface {
 	// Message
-	BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, *ocppj.ProtoError, error)
-	Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, *ocppj.ProtoError, error)
-	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, *ocppj.ProtoError, error)
-	Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, *ocppj.ProtoError, error)
+	BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, error)
+	Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
+	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
+	Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
 	//TODO: add missing profile methods
 
 	// Logic
 	SetChargePointCoreListener(listener ChargePointCoreListener)
-	SendRequest(request ocpp.Request) (ocpp.Confirmation, *ocppj.ProtoError, error)
-	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, callError *ocppj.ProtoError)) error
+	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
+	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
 }
 
@@ -29,58 +28,58 @@ type chargePoint struct {
 	chargePoint          *ocppj.ChargePoint
 	coreListener         ChargePointCoreListener
 	confirmationListener chan ocpp.Confirmation
-	errorListener        chan ocppj.ProtoError
+	errorListener        chan error
 }
 
-func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, *ocppj.ProtoError, error) {
+func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, error) {
 	request := NewBootNotificationRequest(chargePointModel, chargePointVendor)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, protoError, err := cp.SendRequest(request)
-	if confirmation != nil {
-		return confirmation.(*BootNotificationConfirmation), protoError, err
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
 	} else {
-		return nil, protoError, err
+		return confirmation.(*BootNotificationConfirmation), err
 	}
 }
 
-func (cp *chargePoint) Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, *ocppj.ProtoError, error) {
+func (cp *chargePoint) Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error) {
 	request := NewAuthorizationRequest(idTag)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, protoError, err := cp.SendRequest(request)
-	if confirmation != nil {
-		return confirmation.(*AuthorizeConfirmation), protoError, err
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
 	} else {
-		return nil, protoError, err
+		return confirmation.(*AuthorizeConfirmation), err
 	}
 }
 
-func (cp *chargePoint) DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, *ocppj.ProtoError, error) {
+func (cp *chargePoint) DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error) {
 	request := NewDataTransferRequest(vendorId)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, protoError, err := cp.SendRequest(request)
-	if confirmation != nil {
-		return confirmation.(*DataTransferConfirmation), protoError, err
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
 	} else {
-		return nil, protoError, err
+		return confirmation.(*DataTransferConfirmation), err
 	}
 }
 
-func (cp *chargePoint) Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, *ocppj.ProtoError, error) {
+func (cp *chargePoint) Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error) {
 	request := NewHeartbeatRequest()
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, protoError, err := cp.SendRequest(request)
-	if confirmation != nil {
-		return confirmation.(*HeartbeatConfirmation), protoError, err
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
 	} else {
-		return nil, protoError, err
+		return confirmation.(*HeartbeatConfirmation), err
 	}
 }
 
@@ -88,21 +87,21 @@ func (cp *chargePoint) SetChargePointCoreListener(listener ChargePointCoreListen
 	cp.coreListener = listener
 }
 
-func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, *ocppj.ProtoError, error) {
+func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
 	err := cp.chargePoint.SendRequest(request)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	//TODO: timeouts
 	select {
 	case confirmation := <-cp.confirmationListener:
-		return confirmation, nil, nil
-	case protoError := <-cp.errorListener:
-		return nil, &protoError, nil
+		return confirmation, nil
+	case err = <-cp.errorListener:
+		return nil, err
 	}
 }
 
-func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError *ocppj.ProtoError)) error {
+func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
 	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName:
 	default:
@@ -116,7 +115,7 @@ func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(conf
 			case confirmation := <-cp.confirmationListener:
 				callback(confirmation, nil)
 			case protoError := <-cp.errorListener:
-				callback(nil, &protoError)
+				callback(nil, protoError)
 			}
 		}()
 	}
@@ -182,13 +181,13 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 	if dispatcher == nil {
 		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile)
 	}
-	cp := chargePoint{chargePoint: dispatcher, confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan ocppj.ProtoError)}
+	cp := chargePoint{chargePoint: dispatcher, confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan error)}
 	cp.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
 		cp.confirmationListener <- confirmation
 	})
-	cp.chargePoint.SetErrorHandler(func(errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
-		protoError := ocppj.ProtoError{Error: errors.New(description), ErrorCode: errorCode, MessageId: requestId}
-		cp.errorListener <- protoError
+	cp.chargePoint.SetErrorHandler(func(errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
+		err := ocpp.NewError(errorCode, description, requestId)
+		cp.errorListener <- err
 	})
 	cp.chargePoint.SetRequestHandler(cp.handleIncomingRequest)
 	return &cp
@@ -198,30 +197,30 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 type CentralSystem interface {
 	// Message
 	//TODO: add missing profile methods
-	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, *ocppj.ProtoError), connectorId int, availabilityType AvailabilityType, props ...func(*ChangeAvailabilityRequest)) error
-	ChangeConfiguration(clientId string, callback func(*ChangeConfigurationConfirmation, *ocppj.ProtoError), key string, value string, props ...func(*ChangeConfigurationRequest)) error
-	ClearCache(clientId string, callback func(*ClearCacheConfirmation, *ocppj.ProtoError), props ...func(*ClearCacheRequest)) error
-	DataTransfer(clientId string, callback func(*DataTransferConfirmation, *ocppj.ProtoError), vendorId string, props ...func(*DataTransferRequest)) error
-	GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, *ocppj.ProtoError), keys []string, props ...func(*GetConfigurationRequest)) error
+	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, error), connectorId int, availabilityType AvailabilityType, props ...func(*ChangeAvailabilityRequest)) error
+	ChangeConfiguration(clientId string, callback func(*ChangeConfigurationConfirmation, error), key string, value string, props ...func(*ChangeConfigurationRequest)) error
+	ClearCache(clientId string, callback func(*ClearCacheConfirmation, error), props ...func(*ClearCacheRequest)) error
+	DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
+	GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
-	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, *ocppj.ProtoError)) error
+	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
 	Start(listenPort int, listenPath string)
 }
 
 type centralSystem struct {
 	centralSystem *ocppj.CentralSystem
 	coreListener  CentralSystemCoreListener
-	callbacks     map[string]func(confirmation ocpp.Confirmation, callError *ocppj.ProtoError)
+	callbacks     map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
-func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, protoError *ocppj.ProtoError), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error {
+func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error {
 	request := NewChangeAvailabilityRequest(connectorId, availabilityType)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError *ocppj.ProtoError) {
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ChangeAvailabilityConfirmation), protoError)
 		} else {
@@ -231,12 +230,12 @@ func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confi
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ChangeConfiguration(clientId string, callback func(confirmation *ChangeConfigurationConfirmation, callError *ocppj.ProtoError), key string, value string, props ...func(request *ChangeConfigurationRequest)) error {
+func (cs *centralSystem) ChangeConfiguration(clientId string, callback func(confirmation *ChangeConfigurationConfirmation, err error), key string, value string, props ...func(request *ChangeConfigurationRequest)) error {
 	request := NewChangeConfigurationRequest(key, value)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError *ocppj.ProtoError) {
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ChangeConfigurationConfirmation), protoError)
 		} else {
@@ -246,12 +245,12 @@ func (cs *centralSystem) ChangeConfiguration(clientId string, callback func(conf
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ClearCache(clientId string, callback func(*ClearCacheConfirmation, *ocppj.ProtoError), props ...func(*ClearCacheRequest)) error {
+func (cs *centralSystem) ClearCache(clientId string, callback func(confirmation *ClearCacheConfirmation, err error), props ...func(*ClearCacheRequest)) error {
 	request := NewClearCacheRequest()
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError *ocppj.ProtoError) {
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ClearCacheConfirmation), protoError)
 		} else {
@@ -261,12 +260,12 @@ func (cs *centralSystem) ClearCache(clientId string, callback func(*ClearCacheCo
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, callError *ocppj.ProtoError), vendorId string, props ...func(request *DataTransferRequest)) error {
+func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, err error), vendorId string, props ...func(request *DataTransferRequest)) error {
 	request := NewDataTransferRequest(vendorId)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError *ocppj.ProtoError) {
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*DataTransferConfirmation), protoError)
 		} else {
@@ -276,12 +275,12 @@ func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmatio
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirmation *GetConfigurationConfirmation, protoError *ocppj.ProtoError), keys []string, props ...func(request *GetConfigurationRequest)) error {
+func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirmation *GetConfigurationConfirmation, err error), keys []string, props ...func(request *GetConfigurationRequest)) error {
 	request := NewGetConfigurationRequest(keys)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError *ocppj.ProtoError) {
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*GetConfigurationConfirmation), protoError)
 		} else {
@@ -299,7 +298,7 @@ func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId str
 	cs.centralSystem.SetNewChargePointHandler(handler)
 }
 
-func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError *ocppj.ProtoError)) error {
+func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
 	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName:
 	default:
@@ -374,11 +373,11 @@ func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confir
 	}
 }
 
-func (cs *centralSystem) handleIncomingError(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
+func (cs *centralSystem) handleIncomingError(chargePointId string, errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
 	if callback, ok := cs.callbacks[chargePointId]; ok {
 		delete(cs.callbacks, chargePointId)
-		protoError := ocppj.ProtoError{Error: errors.New(description), ErrorCode: errorCode, MessageId: requestId}
-		callback(nil, &protoError)
+		protoError := ocpp.NewError(errorCode, description, requestId)
+		callback(nil, protoError)
 	} else {
 		log.Printf("No handler for Call Result %v from charge point %v", requestId, chargePointId)
 	}
@@ -393,7 +392,7 @@ func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) Centr
 	}
 	cs := centralSystem{
 		centralSystem: dispatcher,
-		callbacks:     map[string]func(confirmation ocpp.Confirmation, callError *ocppj.ProtoError){}}
+		callbacks:     map[string]func(confirmation ocpp.Confirmation, err error){}}
 	cs.centralSystem.SetRequestHandler(cs.handleIncomingRequest)
 	cs.centralSystem.SetConfirmationHandler(cs.handleIncomingConfirmation)
 	cs.centralSystem.SetErrorHandler(cs.handleIncomingError)

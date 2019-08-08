@@ -319,7 +319,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	coreListener := MockCentralSystemCoreListener{}
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	resultChannel := make(chan bool, 1)
-	suite.ocppjChargePoint.SetErrorHandler(func(errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
+	suite.ocppjChargePoint.SetErrorHandler(func(errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
 		assert.Equal(t, messageId, requestId)
 		assert.Equal(t, ocppj.NotSupported, errorCode)
 		assert.Equal(t, errorDescription, description)
@@ -331,7 +331,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	// Run request test
-	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocpp.Confirmation, callError *ocppj.ProtoError) {
+	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocpp.Confirmation, err error) {
 		t.Fail()
 	})
 	assert.Error(t, err)
@@ -356,7 +356,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
 	coreListener := MockChargePointCoreListener{}
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
-	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocppj.ErrorCode, description string, details interface{}, requestId string) {
+	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
 		assert.Equal(t, messageId, requestId)
 		assert.Equal(t, wsId, chargePointId)
 		assert.Equal(t, ocppj.NotSupported, errorCode)
@@ -368,7 +368,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	// Run request test
-	err = suite.centralSystem.SendRequestAsync(wsId, request, func(confirmation ocpp.Confirmation, callError *ocppj.ProtoError) {
+	err = suite.centralSystem.SendRequestAsync(wsId, request, func(confirmation ocpp.Confirmation, err error) {
 		t.Fail()
 	})
 	assert.Error(t, err)
