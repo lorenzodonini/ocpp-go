@@ -26,12 +26,12 @@ func isValidConfigurationStatus(fl validator.FieldLevel) bool {
 }
 
 type ChangeConfigurationRequest struct {
-	Key           string `json:"key" validate:"required,max=50"`
-	Value         string `json:"value" validate:"required,max=500"`
+	Key   string `json:"key" validate:"required,max=50"`
+	Value string `json:"value" validate:"required,max=500"`
 }
 
 type ChangeConfigurationConfirmation struct {
-	Status             ConfigurationStatus `json:"status" validate:"required,configurationStatus"`
+	Status ConfigurationStatus `json:"status" validate:"required,configurationStatus"`
 }
 
 type ChangeConfigurationFeature struct{}

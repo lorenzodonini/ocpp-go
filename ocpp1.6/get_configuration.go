@@ -12,14 +12,14 @@ type ConfigurationKey struct {
 }
 
 type GetConfigurationRequest struct {
-	Key           []string `json:"key" validate:"required,min=1,unique,dive,max=50"`
+	Key []string `json:"key" validate:"required,min=1,unique,dive,max=50"`
 }
 
 // TODO: validation of cardinalities for the two fields should be handled somewhere (#configurationKey + #unknownKey > 0)
 // TODO: add uniqueness of configurationKey in slice, once PR is merged (https://github.com/go-playground/validator/pull/496)
 type GetConfigurationConfirmation struct {
-	ConfigurationKey   []ConfigurationKey `json:"configurationKey,omitempty" validate:"dive"`
-	UnknownKey         []string           `json:"unknownKey,omitempty" validate:"dive,max=50"`
+	ConfigurationKey []ConfigurationKey `json:"configurationKey,omitempty" validate:"dive"`
+	UnknownKey       []string           `json:"unknownKey,omitempty" validate:"dive,max=50"`
 }
 
 type GetConfigurationFeature struct{}

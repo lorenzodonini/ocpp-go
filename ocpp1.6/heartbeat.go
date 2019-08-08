@@ -10,7 +10,7 @@ type HeartbeatRequest struct {
 }
 
 type HeartbeatConfirmation struct {
-	CurrentTime        DateTime `json:"currentTime" validate:"required"`
+	CurrentTime DateTime `json:"currentTime" validate:"required"`
 }
 
 type HeartbeatFeature struct{}

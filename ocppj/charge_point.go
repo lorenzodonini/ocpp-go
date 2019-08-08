@@ -147,29 +147,3 @@ func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
 	}
 	return nil
 }
-
-//func (chargePoint *ChargePoint) SendMessage(message Message) error {
-//	err := Validate.Struct(message)
-//	if err != nil {
-//		return err
-//	}
-//	jsonMessage, err := message.MarshalJSON()
-//	if err != nil {
-//		return err
-//	}
-//	if message.GetMessageTypeId() == CALL {
-//		call := message.(*Call)
-//		if chargePoint.hasPendingRequest {
-//			// Cannot send. Protocol is based on response-confirmation
-//			return errors.Errorf("There already is a pending request. Cannot send a further one before receiving a confirmation first")
-//		}
-//		chargePoint.pendingRequests[message.GetUniqueId()] = call.Payload
-//		chargePoint.hasPendingRequest = true
-//	}
-//	err = chargePoint.client.Write([]byte(jsonMessage))
-//	if err != nil {
-//		chargePoint.DeletePendingRequest(message.GetUniqueId())
-//		chargePoint.hasPendingRequest = false
-//	}
-//	return err
-//}

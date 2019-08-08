@@ -32,7 +32,7 @@ func NewError(errorCode ErrorCode, description string, messageId string) *Error 
 	return &Error{Code: errorCode, Description: description, MessageId: messageId}
 }
 
-func (err* Error) Error() string {
+func (err *Error) Error() string {
 	return fmt.Sprintf("ocpp %v - %v", err.Code, err.Description)
 }
 

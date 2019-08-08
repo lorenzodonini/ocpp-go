@@ -37,9 +37,9 @@ type BootNotificationRequest struct {
 }
 
 type BootNotificationConfirmation struct {
-	CurrentTime        DateTime           `json:"currentTime" validate:"required"`
-	Interval           int                `json:"interval" validate:"required,gte=0"`
-	Status             RegistrationStatus `json:"status" validate:"required,registrationStatus"`
+	CurrentTime DateTime           `json:"currentTime" validate:"required"`
+	Interval    int                `json:"interval" validate:"required,gte=0"`
+	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
 }
 
 type BootNotificationFeature struct{}

@@ -27,7 +27,7 @@ type ClearCacheRequest struct {
 }
 
 type ClearCacheConfirmation struct {
-	Status             ClearCacheStatus `json:"status" validate:"required,cacheStatus"`
+	Status ClearCacheStatus `json:"status" validate:"required,cacheStatus"`
 }
 
 type ClearCacheFeature struct{}
