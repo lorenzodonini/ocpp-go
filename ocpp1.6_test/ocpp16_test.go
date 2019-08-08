@@ -319,10 +319,10 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	coreListener := MockCentralSystemCoreListener{}
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	resultChannel := make(chan bool, 1)
-	suite.ocppjChargePoint.SetErrorHandler(func(errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
-		assert.Equal(t, messageId, requestId)
-		assert.Equal(t, ocppj.NotSupported, errorCode)
-		assert.Equal(t, errorDescription, description)
+	suite.ocppjChargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+		assert.Equal(t, messageId, err.MessageId)
+		assert.Equal(t, ocppj.NotSupported, err.Code)
+		assert.Equal(t, errorDescription, err.Description)
 		assert.Nil(t, details)
 		resultChannel <- true
 	})
@@ -356,11 +356,11 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
 	coreListener := MockChargePointCoreListener{}
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
-	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
-		assert.Equal(t, messageId, requestId)
+	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, err *ocpp.Error, details interface{}) {
+		assert.Equal(t, messageId, err.MessageId)
 		assert.Equal(t, wsId, chargePointId)
-		assert.Equal(t, ocppj.NotSupported, errorCode)
-		assert.Equal(t, errorDescription, description)
+		assert.Equal(t, ocppj.NotSupported, err.Code)
+		assert.Equal(t, errorDescription, err.Description)
 		assert.Nil(t, details)
 	})
 	// Start

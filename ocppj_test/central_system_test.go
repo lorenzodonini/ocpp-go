@@ -166,11 +166,11 @@ func (suite *OcppJTestSuite) TestCentralSystemErrorHandler() {
 
 	mockRequest := newMockRequest("testValue")
 	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, mockUniqueId, mockErrorCode, mockErrorDescription, mockValue)
-	suite.centralSystem.SetErrorHandler(func(chargePointId string, errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
+	suite.centralSystem.SetErrorHandler(func(chargePointId string, err *ocpp.Error, details interface{}) {
 		assert.Equal(t, mockChargePointId, chargePointId)
-		assert.Equal(t, mockUniqueId, requestId)
-		assert.Equal(t, mockErrorCode, errorCode)
-		assert.Equal(t, mockErrorDescription, description)
+		assert.Equal(t, mockUniqueId, err.MessageId)
+		assert.Equal(t, mockErrorCode, err.Code)
+		assert.Equal(t, mockErrorDescription, err.Description)
 		assert.Equal(t, mockErrorDetails, details)
 	})
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return().Run(func(args mock.Arguments) {

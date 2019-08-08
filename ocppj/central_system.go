@@ -13,7 +13,7 @@ type CentralSystem struct {
 	newChargePointHandler func(chargePointId string)
 	requestHandler        func(chargePointId string, request ocpp.Request, requestId string, action string)
 	confirmationHandler   func(chargePointId string, confirmation ocpp.Confirmation, requestId string)
-	errorHandler          func(chargePointId string, errorCode ocpp.ErrorCode, description string, details interface{}, requestId string)
+	errorHandler          func(chargePointId string, err *ocpp.Error, details interface{})
 	clientPendingMessages map[string]string
 }
 
@@ -37,7 +37,7 @@ func (centralSystem *CentralSystem) SetConfirmationHandler(handler func(chargePo
 	centralSystem.confirmationHandler = handler
 }
 
-func (centralSystem *CentralSystem) SetErrorHandler(handler func(chargePointId string, errorCode ocpp.ErrorCode, description string, details interface{}, requestId string)) {
+func (centralSystem *CentralSystem) SetErrorHandler(handler func(chargePointId string, err *ocpp.Error, details interface{})) {
 	centralSystem.errorHandler = handler
 }
 
@@ -169,7 +169,7 @@ func (centralSystem *CentralSystem) ocppMessageHandler(wsChannel ws.Channel, dat
 	case CALL_ERROR:
 		callError := message.(*CallError)
 		delete(centralSystem.clientPendingMessages, wsChannel.GetId())
-		centralSystem.errorHandler(wsChannel.GetId(), callError.ErrorCode, callError.ErrorDescription, callError.ErrorDetails, callError.UniqueId)
+		centralSystem.errorHandler(wsChannel.GetId(), ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
 	}
 	return nil
 }

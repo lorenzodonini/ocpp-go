@@ -185,8 +185,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 	cp.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
 		cp.confirmationListener <- confirmation
 	})
-	cp.chargePoint.SetErrorHandler(func(errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
-		err := ocpp.NewError(errorCode, description, requestId)
+	cp.chargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
 		cp.errorListener <- err
 	})
 	cp.chargePoint.SetRequestHandler(cp.handleIncomingRequest)
@@ -373,13 +372,12 @@ func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confir
 	}
 }
 
-func (cs *centralSystem) handleIncomingError(chargePointId string, errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
+func (cs *centralSystem) handleIncomingError(chargePointId string, err *ocpp.Error, details interface{}) {
 	if callback, ok := cs.callbacks[chargePointId]; ok {
 		delete(cs.callbacks, chargePointId)
-		protoError := ocpp.NewError(errorCode, description, requestId)
-		callback(nil, protoError)
+		callback(nil, err)
 	} else {
-		log.Printf("No handler for Call Result %v from charge point %v", requestId, chargePointId)
+		log.Printf("No handler for Call Result %v from charge point %v", err.MessageId, chargePointId)
 	}
 }
 

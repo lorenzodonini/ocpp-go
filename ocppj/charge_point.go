@@ -14,7 +14,7 @@ type ChargePoint struct {
 	Id                  string
 	requestHandler      func(request ocpp.Request, requestId string, action string)
 	confirmationHandler func(confirmation ocpp.Confirmation, requestId string)
-	errorHandler        func(errorCode ocpp.ErrorCode, description string, details interface{}, requestId string)
+	errorHandler        func(err *ocpp.Error, details interface{})
 	hasPendingRequest   bool
 }
 
@@ -38,7 +38,7 @@ func (chargePoint *ChargePoint) SetConfirmationHandler(handler func(confirmation
 	chargePoint.confirmationHandler = handler
 }
 
-func (chargePoint *ChargePoint) SetErrorHandler(handler func(errorCode ocpp.ErrorCode, description string, details interface{}, requestId string)) {
+func (chargePoint *ChargePoint) SetErrorHandler(handler func(err *ocpp.Error, details interface{})) {
 	chargePoint.errorHandler = handler
 }
 
@@ -143,7 +143,7 @@ func (chargePoint *ChargePoint) ocppMessageHandler(data []byte) error {
 	case CALL_ERROR:
 		callError := message.(*CallError)
 		chargePoint.hasPendingRequest = false
-		chargePoint.errorHandler(callError.ErrorCode, callError.ErrorDescription, callError.ErrorDetails, callError.UniqueId)
+		chargePoint.errorHandler(ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
 	}
 	return nil
 }

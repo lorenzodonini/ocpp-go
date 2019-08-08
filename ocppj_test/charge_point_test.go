@@ -165,10 +165,10 @@ func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 
 	mockRequest := newMockRequest("testValue")
 	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, mockUniqueId, mockErrorCode, mockErrorDescription, mockValue)
-	suite.chargePoint.SetErrorHandler(func(errorCode ocpp.ErrorCode, description string, details interface{}, requestId string) {
-		assert.Equal(t, mockUniqueId, requestId)
-		assert.Equal(t, mockErrorCode, errorCode)
-		assert.Equal(t, mockErrorDescription, description)
+	suite.chargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+		assert.Equal(t, mockUniqueId, err.MessageId)
+		assert.Equal(t, mockErrorCode, err.Code)
+		assert.Equal(t, mockErrorDescription, err.Description)
 		assert.Equal(t, mockErrorDetails, details)
 	})
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil).Run(func(args mock.Arguments) {
