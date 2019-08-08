@@ -13,6 +13,7 @@ const (
 	GetConfigurationFeatureName    = "GetConfiguration"
 	ClearCacheFeatureName          = "ClearCache"
 	HeartbeatFeatureName           = "Heartbeat"
+	ResetFeatureName               = "Reset"
 )
 
 type CentralSystemCoreListener interface {
@@ -42,7 +43,7 @@ type ChargePointCoreListener interface {
 	//onRemoteStartTransaction()
 	//onRemoteStopTransaction()
 	//onReserveNow()
-	//onReset()
+	OnReset(request *ResetRequest) (confirmation *ResetConfirmation, err error)
 	//onSendLocalList()
 	//onSetChargingProfile()
 	//onTriggerMessage()
@@ -50,4 +51,14 @@ type ChargePointCoreListener interface {
 	//onUpdateFirmware()
 }
 
-var CoreProfile = ocpp.NewProfile("core", BootNotificationFeature{}, AuthorizeFeature{}, ChangeAvailabilityFeature{}, ChangeConfigurationFeature{}, ClearCacheFeature{}, DataTransferFeature{}, GetConfigurationFeature{}, HeartbeatFeature{})
+var CoreProfile = ocpp.NewProfile(
+	"core",
+	BootNotificationFeature{},
+	AuthorizeFeature{},
+	ChangeAvailabilityFeature{},
+	ChangeConfigurationFeature{},
+	ClearCacheFeature{},
+	DataTransferFeature{},
+	GetConfigurationFeature{},
+	HeartbeatFeature{},
+	ResetFeature{})
