@@ -1,6 +1,7 @@
 package ocpp
 
 import (
+	"fmt"
 	errors2 "github.com/pkg/errors"
 	"reflect"
 )
@@ -21,10 +22,18 @@ type Confirmation interface {
 
 type ErrorCode string
 
-type OcppError struct {
-	Error error
-	ErrorCode ErrorCode
-	MessageId string
+type Error struct {
+	Code        ErrorCode
+	Description string
+	MessageId   string
+}
+
+func NewError(errorCode ErrorCode, description string, messageId string) *Error {
+	return &Error{Code: errorCode, Description: description, MessageId: messageId}
+}
+
+func (err* Error) Error() string {
+	return fmt.Sprintf("ocpp %v - %v", err.Code, err.Description)
 }
 
 // -------------------- Profile --------------------
