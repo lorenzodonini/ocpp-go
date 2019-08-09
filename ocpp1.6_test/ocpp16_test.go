@@ -162,6 +162,12 @@ func (coreListener MockCentralSystemCoreListener) OnHeartbeat(chargePointId stri
 	return conf, args.Error(1)
 }
 
+func (coreListener MockCentralSystemCoreListener) OnStatusNotification(chargePointId string, request *ocpp16.StatusNotificationRequest) (confirmation *ocpp16.StatusNotificationConfirmation, err error) {
+	args := coreListener.MethodCalled("OnStatusNotification", chargePointId, request)
+	conf := args.Get(0).(*ocpp16.StatusNotificationConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CP CORE LISTENER ----------------------
 type MockChargePointCoreListener struct {
 	mock.Mock

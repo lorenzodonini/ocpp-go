@@ -14,6 +14,7 @@ const (
 	ClearCacheFeatureName          = "ClearCache"
 	HeartbeatFeatureName           = "Heartbeat"
 	ResetFeatureName               = "Reset"
+	StatusNotificationFeatureName  = "StatusNotification"
 )
 
 type CentralSystemCoreListener interface {
@@ -24,7 +25,7 @@ type CentralSystemCoreListener interface {
 	//onFirmwareStatusNotification()
 	OnHeartbeat(chargePointId string, request *HeartbeatRequest) (confirmation *HeartbeatConfirmation, err error)
 	//onMeterValues()
-	//onStatusNotification()
+	OnStatusNotification(chargePointId string, request *StatusNotificationRequest) (confirmation *StatusNotificationConfirmation, err error)
 	//onStartTransaction()
 	//onStopTransaction()
 }
@@ -61,4 +62,5 @@ var CoreProfile = ocpp.NewProfile(
 	DataTransferFeature{},
 	GetConfigurationFeature{},
 	HeartbeatFeature{},
+	StatusNotificationFeature{},
 	ResetFeature{})

@@ -15,6 +15,7 @@ type ChargePoint interface {
 	Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
 	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
 	Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
+	StatusNotification(connectorId int, errorCode ChargePointErrorCode, status ChargePointStatus, props ...func(request *StatusNotificationRequest)) (*StatusNotificationConfirmation, error)
 	//TODO: add missing profile methods
 
 	// Logic
@@ -83,6 +84,19 @@ func (cp *chargePoint) Heartbeat(props ...func(request *HeartbeatRequest)) (*Hea
 	}
 }
 
+func (cp *chargePoint) StatusNotification(connectorId int, errorCode ChargePointErrorCode, status ChargePointStatus, props ...func(request *StatusNotificationRequest)) (*StatusNotificationConfirmation, error) {
+	request := NewStatusNotificationRequest(connectorId, errorCode, status)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*StatusNotificationConfirmation), err
+	}
+}
+
 func (cp *chargePoint) SetChargePointCoreListener(listener ChargePointCoreListener) {
 	cp.coreListener = listener
 }
@@ -103,7 +117,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName:
+	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, StatusNotificationFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
 	}
@@ -370,6 +384,8 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 			confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*DataTransferRequest))
 		case HeartbeatFeatureName:
 			confirmation, err = cs.coreListener.OnHeartbeat(chargePointId, request.(*HeartbeatRequest))
+		case StatusNotificationFeatureName:
+			confirmation, err = cs.coreListener.OnStatusNotification(chargePointId, request.(*StatusNotificationRequest))
 		default:
 			err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
 			if err != nil {
