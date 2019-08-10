@@ -15,6 +15,7 @@ const (
 	HeartbeatFeatureName           = "Heartbeat"
 	ResetFeatureName               = "Reset"
 	StatusNotificationFeatureName  = "StatusNotification"
+	UnlockConnectorFeatureName     = "UnlockConnector"
 )
 
 type CentralSystemCoreListener interface {
@@ -48,7 +49,7 @@ type ChargePointCoreListener interface {
 	//onSendLocalList()
 	//onSetChargingProfile()
 	//onTriggerMessage()
-	//onUnlockConnector()
+	OnUnlockConnector(request *UnlockConnectorRequest) (confirmation *UnlockConnectorConfirmation, err error)
 	//onUpdateFirmware()
 }
 
@@ -63,4 +64,5 @@ var CoreProfile = ocpp.NewProfile(
 	GetConfigurationFeature{},
 	HeartbeatFeature{},
 	StatusNotificationFeature{},
-	ResetFeature{})
+	ResetFeature{},
+	UnlockConnectorFeature{})

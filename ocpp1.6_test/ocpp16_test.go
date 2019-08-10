@@ -209,6 +209,12 @@ func (coreListener MockChargePointCoreListener) OnReset(request *ocpp16.ResetReq
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnUnlockConnector(request *ocpp16.UnlockConnectorRequest) (confirmation *ocpp16.UnlockConnectorConfirmation, err error) {
+	args := coreListener.MethodCalled("OnUnlockConnector", request)
+	conf := args.Get(0).(*ocpp16.UnlockConnectorConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
