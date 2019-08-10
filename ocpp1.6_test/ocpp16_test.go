@@ -162,6 +162,12 @@ func (coreListener MockCentralSystemCoreListener) OnHeartbeat(chargePointId stri
 	return conf, args.Error(1)
 }
 
+func (coreListener MockCentralSystemCoreListener) OnStartTransaction(chargePointId string, request *ocpp16.StartTransactionRequest) (confirmation *ocpp16.StartTransactionConfirmation, err error) {
+	args := coreListener.MethodCalled("OnStartTransaction", chargePointId, request)
+	conf := args.Get(0).(*ocpp16.StartTransactionConfirmation)
+	return conf, args.Error(1)
+}
+
 func (coreListener MockCentralSystemCoreListener) OnStatusNotification(chargePointId string, request *ocpp16.StatusNotificationRequest) (confirmation *ocpp16.StatusNotificationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnStatusNotification", chargePointId, request)
 	conf := args.Get(0).(*ocpp16.StatusNotificationConfirmation)
