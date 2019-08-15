@@ -88,6 +88,104 @@ func IdTagInfoStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// Charging Profiles
+type ChargingProfilePurposeType string
+type ChargingProfileKindType string
+type RecurrencyKindType string
+type ChargingRateUnitType string
+
+const (
+	ChargingProfilePurposeChargePointMaxProfile ChargingProfilePurposeType = "ChargePointMaxProfile"
+	ChargingProfilePurposeTxDefaultProfile      ChargingProfilePurposeType = "TxDefaultProfile"
+	ChargingProfilePurposeTxProfile             ChargingProfilePurposeType = "TxProfile"
+	ChargingProfileKindAbsolute                 ChargingProfileKindType    = "Absolute"
+	ChargingProfileKindRecurring                ChargingProfileKindType    = "Recurring"
+	ChargingProfileKindRelative                 ChargingProfileKindType    = "Relative"
+	RecurrencyKindDaily                         RecurrencyKindType         = "Daily"
+	RecurrencyKindWeekly                        RecurrencyKindType         = "Weekly"
+	ChargingRateUnitWatts                       ChargingRateUnitType       = "W"
+	ChargingRateUnitAmperes                     ChargingRateUnitType       = "A"
+)
+
+func isValidChargingProfilePurpose(fl validator.FieldLevel) bool {
+	purposeType := ChargingProfilePurposeType(fl.Field().String())
+	switch purposeType {
+	case ChargingProfilePurposeChargePointMaxProfile, ChargingProfilePurposeTxDefaultProfile, ChargingProfilePurposeTxProfile:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidChargingProfileKind(fl validator.FieldLevel) bool {
+	purposeType := ChargingProfileKindType(fl.Field().String())
+	switch purposeType {
+	case ChargingProfileKindAbsolute, ChargingProfileKindRecurring, ChargingProfileKindRelative:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidRecurrencyKind(fl validator.FieldLevel) bool {
+	purposeType := RecurrencyKindType(fl.Field().String())
+	switch purposeType {
+	case RecurrencyKindDaily, RecurrencyKindWeekly:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidChargingRateUnit(fl validator.FieldLevel) bool {
+	purposeType := ChargingRateUnitType(fl.Field().String())
+	switch purposeType {
+	case ChargingRateUnitWatts, ChargingRateUnitAmperes:
+		return true
+	default:
+		return false
+	}
+}
+
+type ChargingSchedulePeriod struct {
+	StartPeriod  int     `json:"startPeriod" validate:"gte=0"`
+	Limit        float64 `json:"limit" validate:"gte=0"`
+	NumberPhases int     `json:"numberPhases,omitempty" validate:"gte=0"`
+}
+
+func NewChargingSchedulePeriod(startPeriod int, limit float64) ChargingSchedulePeriod {
+	return ChargingSchedulePeriod{StartPeriod: startPeriod, Limit: limit}
+}
+
+type ChargingSchedule struct {
+	Duration               int                      `json:"duration,omitempty" validate:"gte=0"`
+	StartSchedule          DateTime                 `json:"startSchedule,omitempty"`
+	ChargingRateUnit       ChargingRateUnitType     `json:"chargingRateUnit" validate:"required,chargingRateUnit"`
+	ChargingSchedulePeriod []ChargingSchedulePeriod `json:"chargingSchedulePeriod" validate:"required,min=1"`
+	MinChargingRate        float64                  `json:"minChargingRate,omitempty" validate:"gte=0"`
+}
+
+func NewChargingSchedule(chargingRateUnit ChargingRateUnitType, schedulePeriod ...ChargingSchedulePeriod) *ChargingSchedule {
+	return &ChargingSchedule{ChargingRateUnit: chargingRateUnit, ChargingSchedulePeriod: schedulePeriod}
+}
+
+type ChargingProfile struct {
+	ChargingProfileId      int                        `json:"chargingProfileId" validate:"gte=0"`
+	TransactionId          int                        `json:"transactionId,omitempty"`
+	StackLevel             int                        `json:"stackLevel" validate:"gt=0"`
+	ChargingProfilePurpose ChargingProfilePurposeType `json:"chargingProfilePurpose" validate:"required,chargingProfilePurpose"`
+	ChargingProfileKind    ChargingProfileKindType    `json:"chargingProfileKind" validate:"required,chargingProfileKind"`
+	RecurrencyKind         RecurrencyKindType         `json:"recurrencyKind,omitempty" validate:"omitempty,recurrencyKind"`
+	ValidFrom              DateTime                   `json:"validFrom,omitempty"`
+	ValidTo                DateTime                   `json:"validTo,omitempty"`
+	ChargingSchedule       *ChargingSchedule           `json:"chargingSchedule" validate:"required"`
+}
+
+func NewChargingProfile(chargingProfileId int, stackLevel int, chargingProfilePurpose ChargingProfilePurposeType, chargingProfileKind ChargingProfileKindType, schedule *ChargingSchedule) *ChargingProfile {
+	return &ChargingProfile{ChargingProfileId: chargingProfileId, StackLevel: stackLevel, ChargingProfilePurpose: chargingProfilePurpose, ChargingProfileKind: chargingProfileKind, ChargingSchedule: schedule}
+}
+
+// DateTime Validation
 func dateTimeIsNull(dateTime DateTime) bool {
 	return dateTime.IsZero()
 }
@@ -105,9 +203,14 @@ func validateDateTimeLt(dateTime DateTime, than time.Time) bool {
 	return dateTime.Before(than)
 }
 
+// Initialize validator
 var Validate = ocppj.Validate
 
 func init() {
 	_ = Validate.RegisterValidation("authorizationStatus", isValidAuthorizationStatus)
+	_ = Validate.RegisterValidation("chargingProfilePurpose", isValidChargingProfilePurpose)
+	_ = Validate.RegisterValidation("chargingProfileKind", isValidChargingProfileKind)
+	_ = Validate.RegisterValidation("recurrencyKind", isValidRecurrencyKind)
+	_ = Validate.RegisterValidation("chargingRateUnit", isValidChargingRateUnit)
 	Validate.RegisterStructValidation(IdTagInfoStructLevelValidation, IdTagInfo{})
 }
