@@ -221,6 +221,12 @@ func (coreListener MockChargePointCoreListener) OnUnlockConnector(request *ocpp1
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnRemoteStartTransaction(request *ocpp16.RemoteStartTransactionRequest) (confirmation *ocpp16.RemoteStartTransactionConfirmation, err error) {
+	args := coreListener.MethodCalled("OnRemoteStartTransaction", request)
+	conf := args.Get(0).(*ocpp16.RemoteStartTransactionConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
@@ -403,6 +409,11 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	assert.Nil(t, err)
 }
 
+type GenericTestEntry struct {
+	Element interface{}
+	ExpectedValid bool
+}
+
 type RequestTestEntry struct {
 	Request       ocpp.Request
 	ExpectedValid bool
@@ -411,6 +422,13 @@ type RequestTestEntry struct {
 type ConfirmationTestEntry struct {
 	Confirmation  ocpp.Confirmation
 	ExpectedValid bool
+}
+
+func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
+	for _, testCase := range testTable {
+		err := ocpp16.Validate.Struct(testCase.Element)
+		assert.Equal(t, testCase.ExpectedValid, err == nil)
+	}
 }
 
 func ExecuteRequestTestTable(t *testing.T, testTable []RequestTestEntry) {
