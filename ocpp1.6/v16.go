@@ -192,6 +192,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
 	case GetConfigurationFeatureName:
 		confirmation, err = cp.coreListener.OnGetConfiguration(request.(*GetConfigurationRequest))
+	case RemoteStartTransactionFeatureName:
+		confirmation, err = cp.coreListener.OnRemoteStartTransaction(request.(*RemoteStartTransactionRequest))
 	case ResetFeatureName:
 		confirmation, err = cp.coreListener.OnReset(request.(*ResetRequest))
 	case UnlockConnectorFeatureName:
@@ -233,6 +235,7 @@ type CentralSystem interface {
 	ClearCache(clientId string, callback func(*ClearCacheConfirmation, error), props ...func(*ClearCacheRequest)) error
 	DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
 	GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
+	RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
 	Reset(clientId string, callback func(*ResetConfirmation, error), resetType ResetType, props ...func(*ResetRequest)) error
 	UnlockConnector(clientId string, callback func(*UnlockConnectorConfirmation, error), connectorId int, props ...func(*UnlockConnectorRequest)) error
 	// Logic
@@ -323,6 +326,21 @@ func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirm
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *centralSystem) RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error {
+	request := NewRemoteStartTransactionRequest(idTag)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*RemoteStartTransactionConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *centralSystem) Reset(clientId string, callback func(*ResetConfirmation, error), resetType ResetType, props ...func(request *ResetRequest)) error {
 	request := NewResetRequest(resetType)
 	for _, fn := range props {
@@ -363,7 +381,7 @@ func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId str
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, ResetFeatureName, UnlockConnectorFeatureName:
+	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}

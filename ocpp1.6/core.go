@@ -5,18 +5,19 @@ import (
 )
 
 const (
-	BootNotificationFeatureName    = "BootNotification"
-	AuthorizeFeatureName           = "Authorize"
-	ChangeAvailabilityFeatureName  = "ChangeAvailability"
-	ChangeConfigurationFeatureName = "ChangeConfiguration"
-	DataTransferFeatureName        = "DataTransfer"
-	GetConfigurationFeatureName    = "GetConfiguration"
-	ClearCacheFeatureName          = "ClearCache"
-	HeartbeatFeatureName           = "Heartbeat"
-	ResetFeatureName               = "Reset"
-	StartTransactionFeatureName    = "StartTransaction"
-	StatusNotificationFeatureName  = "StatusNotification"
-	UnlockConnectorFeatureName     = "UnlockConnector"
+	BootNotificationFeatureName       = "BootNotification"
+	AuthorizeFeatureName              = "Authorize"
+	ChangeAvailabilityFeatureName     = "ChangeAvailability"
+	ChangeConfigurationFeatureName    = "ChangeConfiguration"
+	DataTransferFeatureName           = "DataTransfer"
+	GetConfigurationFeatureName       = "GetConfiguration"
+	ClearCacheFeatureName             = "ClearCache"
+	HeartbeatFeatureName              = "Heartbeat"
+	RemoteStartTransactionFeatureName = "RemoteStartTransaction"
+	ResetFeatureName                  = "Reset"
+	StartTransactionFeatureName       = "StartTransaction"
+	StatusNotificationFeatureName     = "StatusNotification"
+	UnlockConnectorFeatureName        = "UnlockConnector"
 )
 
 type CentralSystemCoreListener interface {
@@ -43,7 +44,7 @@ type ChargePointCoreListener interface {
 	OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	//onGetDiagnostics()
 	//onGetLocalListVersion()
-	//onRemoteStartTransaction()
+	OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
 	//onRemoteStopTransaction()
 	//onReserveNow()
 	OnReset(request *ResetRequest) (confirmation *ResetConfirmation, err error)
@@ -64,6 +65,7 @@ var CoreProfile = ocpp.NewProfile(
 	DataTransferFeature{},
 	GetConfigurationFeature{},
 	HeartbeatFeature{},
+	RemoteStartTransactionFeature{},
 	StartTransactionFeature{},
 	StatusNotificationFeature{},
 	ResetFeature{},

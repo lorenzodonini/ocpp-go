@@ -27,7 +27,7 @@ func (suite *OcppV16TestSuite) TestClearCacheConfirmationValidation() {
 	ExecuteConfirmationTestTable(t, confirmationTable)
 }
 
-func (suite *OcppV16TestSuite) TestClearCachedE2EMocked() {
+func (suite *OcppV16TestSuite) TestClearCacheE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
