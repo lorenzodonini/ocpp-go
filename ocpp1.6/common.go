@@ -16,6 +16,10 @@ type DateTime struct {
 	time.Time
 }
 
+func NewDateTime(time time.Time) *DateTime {
+	return &DateTime{Time: time}
+}
+
 var DateTimeFormat = ISO8601
 
 func (dt *DateTime) UnmarshalJSON(input []byte) error {
@@ -159,7 +163,7 @@ func NewChargingSchedulePeriod(startPeriod int, limit float64) ChargingScheduleP
 
 type ChargingSchedule struct {
 	Duration               int                      `json:"duration,omitempty" validate:"gte=0"`
-	StartSchedule          DateTime                 `json:"startSchedule,omitempty"`
+	StartSchedule          *DateTime                `json:"startSchedule,omitempty"`
 	ChargingRateUnit       ChargingRateUnitType     `json:"chargingRateUnit" validate:"required,chargingRateUnit"`
 	ChargingSchedulePeriod []ChargingSchedulePeriod `json:"chargingSchedulePeriod" validate:"required,min=1"`
 	MinChargingRate        float64                  `json:"minChargingRate,omitempty" validate:"gte=0"`
@@ -176,9 +180,9 @@ type ChargingProfile struct {
 	ChargingProfilePurpose ChargingProfilePurposeType `json:"chargingProfilePurpose" validate:"required,chargingProfilePurpose"`
 	ChargingProfileKind    ChargingProfileKindType    `json:"chargingProfileKind" validate:"required,chargingProfileKind"`
 	RecurrencyKind         RecurrencyKindType         `json:"recurrencyKind,omitempty" validate:"omitempty,recurrencyKind"`
-	ValidFrom              DateTime                   `json:"validFrom,omitempty"`
-	ValidTo                DateTime                   `json:"validTo,omitempty"`
-	ChargingSchedule       *ChargingSchedule           `json:"chargingSchedule" validate:"required"`
+	ValidFrom              *DateTime                  `json:"validFrom,omitempty"`
+	ValidTo                *DateTime                  `json:"validTo,omitempty"`
+	ChargingSchedule       *ChargingSchedule          `json:"chargingSchedule" validate:"required"`
 }
 
 func NewChargingProfile(chargingProfileId int, stackLevel int, chargingProfilePurpose ChargingProfilePurposeType, chargingProfileKind ChargingProfileKindType, schedule *ChargingSchedule) *ChargingProfile {
