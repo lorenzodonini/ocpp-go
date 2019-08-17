@@ -14,6 +14,7 @@ const (
 	ClearCacheFeatureName             = "ClearCache"
 	HeartbeatFeatureName              = "Heartbeat"
 	RemoteStartTransactionFeatureName = "RemoteStartTransaction"
+	RemoteStopTransactionFeatureName  = "RemoteStopTransaction"
 	ResetFeatureName                  = "Reset"
 	StartTransactionFeatureName       = "StartTransaction"
 	StatusNotificationFeatureName     = "StatusNotification"
@@ -45,7 +46,7 @@ type ChargePointCoreListener interface {
 	//onGetDiagnostics()
 	//onGetLocalListVersion()
 	OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
-	//onRemoteStopTransaction()
+	OnRemoteStopTransaction(request *RemoteStopTransactionRequest) (confirmation *RemoteStopTransactionConfirmation, err error)
 	//onReserveNow()
 	OnReset(request *ResetRequest) (confirmation *ResetConfirmation, err error)
 	//onSendLocalList()
@@ -66,6 +67,7 @@ var CoreProfile = ocpp.NewProfile(
 	GetConfigurationFeature{},
 	HeartbeatFeature{},
 	RemoteStartTransactionFeature{},
+	RemoteStopTransactionFeature{},
 	StartTransactionFeature{},
 	StatusNotificationFeature{},
 	ResetFeature{},
