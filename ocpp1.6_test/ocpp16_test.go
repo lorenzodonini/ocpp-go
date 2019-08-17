@@ -410,7 +410,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 }
 
 type GenericTestEntry struct {
-	Element interface{}
+	Element       interface{}
 	ExpectedValid bool
 }
 

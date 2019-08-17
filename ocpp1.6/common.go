@@ -189,6 +189,25 @@ func NewChargingProfile(chargingProfileId int, stackLevel int, chargingProfilePu
 	return &ChargingProfile{ChargingProfileId: chargingProfileId, StackLevel: stackLevel, ChargingProfilePurpose: chargingProfilePurpose, ChargingProfileKind: chargingProfileKind, ChargingSchedule: schedule}
 }
 
+// Remote Start/Stop
+
+type RemoteStartStopStatus string
+
+const (
+	RemoteStartStopStatusAccepted RemoteStartStopStatus = "Accepted"
+	RemoteStartStopStatusRejected RemoteStartStopStatus = "Rejected"
+)
+
+func isValidRemoteStartStopStatus(fl validator.FieldLevel) bool {
+	status := RemoteStartStopStatus(fl.Field().String())
+	switch status {
+	case RemoteStartStopStatusAccepted, RemoteStartStopStatusRejected:
+		return true
+	default:
+		return false
+	}
+}
+
 // DateTime Validation
 func dateTimeIsNull(dateTime DateTime) bool {
 	return dateTime.IsZero()
@@ -216,5 +235,6 @@ func init() {
 	_ = Validate.RegisterValidation("chargingProfileKind", isValidChargingProfileKind)
 	_ = Validate.RegisterValidation("recurrencyKind", isValidRecurrencyKind)
 	_ = Validate.RegisterValidation("chargingRateUnit", isValidChargingRateUnit)
+	_ = Validate.RegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
 	Validate.RegisterStructValidation(IdTagInfoStructLevelValidation, IdTagInfo{})
 }
