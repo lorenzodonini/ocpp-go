@@ -58,3 +58,34 @@ func (suite *OcppV16TestSuite) TestChargingProfileValidation() {
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
+
+func (suite *OcppV16TestSuite) TestSampledValueValidation() {
+	t := suite.T()
+	var testTable = []GenericTestEntry{
+		{ocpp16.SampledValue{Value: "value", Context: ocpp16.ReadingContextTransactionEnd, Format: ocpp16.ValueFormatRaw, Measurand: ocpp16.MeasurandPowerActiveExport, Phase: ocpp16.PhaseL2, Location: ocpp16.LocationBody, Unit: ocpp16.UnitOfMeasureKW}, true},
+		{ocpp16.SampledValue{Value: "value", Context: ocpp16.ReadingContextTransactionEnd, Format: ocpp16.ValueFormatRaw, Measurand: ocpp16.MeasurandPowerActiveExport, Phase: ocpp16.PhaseL2, Location: ocpp16.LocationBody}, true},
+		{ocpp16.SampledValue{Value: "value", Context: ocpp16.ReadingContextTransactionEnd, Format: ocpp16.ValueFormatRaw, Measurand: ocpp16.MeasurandPowerActiveExport, Phase: ocpp16.PhaseL2}, true},
+		{ocpp16.SampledValue{Value: "value", Context: ocpp16.ReadingContextTransactionEnd, Format: ocpp16.ValueFormatRaw, Measurand: ocpp16.MeasurandPowerActiveExport}, true},
+		{ocpp16.SampledValue{Value: "value", Context: ocpp16.ReadingContextTransactionEnd, Format: ocpp16.ValueFormatRaw}, true},
+		{ocpp16.SampledValue{Value: "value", Context: ocpp16.ReadingContextTransactionEnd}, true},
+		{ocpp16.SampledValue{Value: "value"}, true},
+		{ocpp16.SampledValue{Value: "value", Context: "invalidContext"}, false},
+		{ocpp16.SampledValue{Value: "value", Format: "invalidFormat"}, false},
+		{ocpp16.SampledValue{Value: "value", Measurand: "invalidMeasurand"}, false},
+		{ocpp16.SampledValue{Value: "value", Phase: "invalidPhase"}, false},
+		{ocpp16.SampledValue{Value: "value", Location: "invalidLocation"}, false},
+		{ocpp16.SampledValue{Value: "value", Unit: "invalidUnit"}, false},
+	}
+	ExecuteGenericTestTable(t, testTable)
+}
+
+func (suite *OcppV16TestSuite) TestMeterValueValidation() {
+	var testTable = []GenericTestEntry{
+		{ocpp16.MeterValue{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}, {Value: "value2", Unit: ocpp16.UnitOfMeasureKW}}}, true},
+		{ocpp16.MeterValue{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}, true},
+		{ocpp16.MeterValue{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{}}, false},
+		{ocpp16.MeterValue{Timestamp: ocpp16.NewDateTime(time.Now())}, false},
+		{ocpp16.MeterValue{SampledValue: []ocpp16.SampledValue{{Value: "value"}}}, false},
+	}
+	ExecuteGenericTestTable(suite.T(), testTable)
+}

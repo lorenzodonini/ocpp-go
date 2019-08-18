@@ -190,7 +190,6 @@ func NewChargingProfile(chargingProfileId int, stackLevel int, chargingProfilePu
 }
 
 // Remote Start/Stop
-
 type RemoteStartStopStatus string
 
 const (
@@ -206,6 +205,155 @@ func isValidRemoteStartStopStatus(fl validator.FieldLevel) bool {
 	default:
 		return false
 	}
+}
+
+// Meter Value
+type ReadingContext string
+type ValueFormat string
+type Measurand string
+type Phase string
+type Location string
+type UnitOfMeasure string
+
+const (
+	ReadingContextInterruptionBegin       ReadingContext = "Interruption.Begin"
+	ReadingContextInterruptionEnd         ReadingContext = "Interruption.End"
+	ReadingContextOther                   ReadingContext = "Other"
+	ReadingContextSampleClock             ReadingContext = "Sample.Clock"
+	ReadingContextSamplePeriodic          ReadingContext = "Sample.Periodic"
+	ReadingContextTransactionBegin        ReadingContext = "Transaction.Begin"
+	ReadingContextTransactionEnd          ReadingContext = "Transaction.End"
+	ReadingContextTrigger                 ReadingContext = "Trigger"
+	ValueFormatRaw                        ValueFormat    = "Raw"
+	ValueFormatSignedData                 ValueFormat    = "SignedData"
+	MeasurandCurrentExport                Measurand      = "Current.Export"
+	MeasurandCurrentImport                Measurand      = "Current.Import"
+	MeasurandCurrentOffered               Measurand      = "Current.Offered"
+	MeasurandEnergyActiveExportRegister   Measurand      = "Energy.Active.Export.Register"
+	MeasurandEnergyActiveImportRegister   Measurand      = "Energy.Active.Import.Register"
+	MeasurandEnergyReactiveExportRegister Measurand      = "Energy.Reactive.Export.Register"
+	MeasurandEnergyReactiveImportRegister Measurand      = "Energy.Reactive.Import.Register"
+	MeasurandEnergyActiveExportInterval   Measurand      = "Energy.Active.Export.Interval"
+	MeasurandEnergyActiveImportInterval   Measurand      = "Energy.Active.Import.Interval"
+	MeasurandEnergyReactiveExportInterval Measurand      = "Energy.Reactive.Export.Interval"
+	MeasurandEnergyReactiveImportInterval Measurand      = "Energy.Reactive.Import.Interval"
+	MeasurandFrequency                    Measurand      = "Frequency"
+	MeasurandPowerActiveExport            Measurand      = "Power.Active.Export"
+	MeasurandPowerActiveImport            Measurand      = "Power.Active.Import"
+	MeasurandPowerFactor                  Measurand      = "Power.Factor"
+	MeasurandPowerOffered                 Measurand      = "Power.Offered"
+	MeasurandPowerReactiveExport          Measurand      = "Power.Reactive.Export"
+	MeasurandPowerReactiveImport          Measurand      = "Power.Reactive.Import"
+	MeasurandRPM                          Measurand      = "RPM"
+	MeasueandSoC                          Measurand      = "SoC"
+	MeasurandTemperature                  Measurand      = "Temperature"
+	MeasurandVoltage                      Measurand      = "Voltage"
+	PhaseL1                               Phase          = "L1"
+	PhaseL2                               Phase          = "L2"
+	PhaseL3                               Phase          = "L3"
+	PhaseN                                Phase          = "N"
+	PhaseL1N                              Phase          = "L1-N"
+	PhaseL2N                              Phase          = "L2-N"
+	PhaseL3N                              Phase          = "L3-N"
+	PhaseL1L2                             Phase          = "L1-L2"
+	PhaseL2L3                             Phase          = "L2-L3"
+	PhaseL3L1                             Phase          = "L3-L1"
+	LocationBody                          Location       = "Body"
+	LocationCable                         Location       = "Cable"
+	LocationEV                            Location       = "EV"
+	LocationInlet                         Location       = "Inlet"
+	LocationOutlet                        Location       = "Outlet"
+	UnitOfMeasureWh                       UnitOfMeasure  = "Wh"
+	UnitOfMeasureKWh                      UnitOfMeasure  = "kWh"
+	UnitOfMeasureVarh                     UnitOfMeasure  = "varh"
+	UnitOfMeasureKvarh                    UnitOfMeasure  = "kvarh"
+	UnitOfMeasureW                        UnitOfMeasure  = "W"
+	UnitOfMeasureKW                       UnitOfMeasure  = "kW"
+	UnitOfMeasureVA                       UnitOfMeasure  = "VA"
+	UnitOfMeasureKVA                      UnitOfMeasure  = "kVA"
+	UnitOfMeasureVar                      UnitOfMeasure  = "var"
+	UnitOfMeasureKvar                     UnitOfMeasure  = "kvar"
+	UnitOfMeasureA                        UnitOfMeasure  = "A"
+	UnitOfMeasureV                        UnitOfMeasure  = "V"
+	UnitOfMeasureCelsius                  UnitOfMeasure  = "Celsius"
+	UnitOfMeasureFahrenheit               UnitOfMeasure  = "Fahrenheit"
+	UnitOfMeasureK                        UnitOfMeasure  = "K"
+	UnitOfMeasurePercent                  UnitOfMeasure  = "Percent"
+)
+
+func isValidReadingContext(fl validator.FieldLevel) bool {
+	readingContext := ReadingContext(fl.Field().String())
+	switch readingContext {
+	case ReadingContextInterruptionBegin, ReadingContextInterruptionEnd, ReadingContextOther, ReadingContextSampleClock, ReadingContextSamplePeriodic, ReadingContextTransactionBegin, ReadingContextTransactionEnd, ReadingContextTrigger:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidValueFormat(fl validator.FieldLevel) bool {
+	valueFormat := ValueFormat(fl.Field().String())
+	switch valueFormat {
+	case ValueFormatRaw, ValueFormatSignedData:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidMeasurand(fl validator.FieldLevel) bool {
+	measurand := Measurand(fl.Field().String())
+	switch measurand {
+	case MeasueandSoC, MeasurandCurrentExport, MeasurandCurrentImport, MeasurandCurrentOffered, MeasurandEnergyActiveExportInterval, MeasurandEnergyActiveExportRegister, MeasurandEnergyReactiveExportInterval, MeasurandEnergyReactiveExportRegister, MeasurandEnergyReactiveImportRegister, MeasurandEnergyReactiveImportInterval, MeasurandEnergyActiveImportInterval, MeasurandEnergyActiveImportRegister, MeasurandFrequency, MeasurandPowerActiveExport, MeasurandPowerActiveImport, MeasurandPowerReactiveImport, MeasurandPowerReactiveExport, MeasurandPowerOffered, MeasurandPowerFactor, MeasurandVoltage, MeasurandTemperature, MeasurandRPM:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidPhase(fl validator.FieldLevel) bool {
+	phase := Phase(fl.Field().String())
+	switch phase {
+	case PhaseL1, PhaseL2, PhaseL3, PhaseN, PhaseL1N, PhaseL2N, PhaseL3N, PhaseL1L2, PhaseL2L3, PhaseL3L1:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidLocation(fl validator.FieldLevel) bool {
+	location := Location(fl.Field().String())
+	switch location {
+	case LocationBody, LocationCable, LocationEV, LocationInlet, LocationOutlet:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidUnitOfMeasure(fl validator.FieldLevel) bool {
+	unitOfMeasure := UnitOfMeasure(fl.Field().String())
+	switch unitOfMeasure {
+	case UnitOfMeasureA, UnitOfMeasureWh, UnitOfMeasureKWh, UnitOfMeasureVarh, UnitOfMeasureKvarh, UnitOfMeasureW, UnitOfMeasureKW, UnitOfMeasureVA, UnitOfMeasureKVA, UnitOfMeasureVar, UnitOfMeasureKvar, UnitOfMeasureV, UnitOfMeasureCelsius, UnitOfMeasureFahrenheit, UnitOfMeasureK, UnitOfMeasurePercent:
+		return true
+	default:
+		return false
+	}
+}
+
+type SampledValue struct {
+	Value     string         `json:"value" validate:"required"`
+	Context   ReadingContext `json:"context,omitempty" validate:"omitempty,readingContext"`
+	Format    ValueFormat    `json:"format,omitempty" validate:"omitempty,valueFormat"`
+	Measurand Measurand      `json:"measurand,omitempty" validate:"omitempty,measurand"`
+	Phase     Phase          `json:"phase,omitempty" validate:"omitempty,phase"`
+	Location  Location       `json:"location,omitempty" validate:"omitempty,location"`
+	Unit      UnitOfMeasure  `json:"unit,omitempty" validate:"omitempty,unitOfMeasure"`
+}
+
+type MeterValue struct {
+	Timestamp    *DateTime      `json:"timestamp" validate:"required"`
+	SampledValue []SampledValue `json:"sampledValue" validate:"required,min=1"`
 }
 
 // DateTime Validation
@@ -236,5 +384,11 @@ func init() {
 	_ = Validate.RegisterValidation("recurrencyKind", isValidRecurrencyKind)
 	_ = Validate.RegisterValidation("chargingRateUnit", isValidChargingRateUnit)
 	_ = Validate.RegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
+	_ = Validate.RegisterValidation("readingContext", isValidReadingContext)
+	_ = Validate.RegisterValidation("valueFormat", isValidValueFormat)
+	_ = Validate.RegisterValidation("measurand", isValidMeasurand)
+	_ = Validate.RegisterValidation("phase", isValidPhase)
+	_ = Validate.RegisterValidation("location", isValidLocation)
+	_ = Validate.RegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
 	Validate.RegisterStructValidation(IdTagInfoStructLevelValidation, IdTagInfo{})
 }
