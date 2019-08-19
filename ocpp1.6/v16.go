@@ -15,6 +15,7 @@ type ChargePoint interface {
 	Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
 	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
 	Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
+	MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error)
 	StartTransaction(connectorId int, idTag string, meterStart int, timestamp DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
 	StatusNotification(connectorId int, errorCode ChargePointErrorCode, status ChargePointStatus, props ...func(request *StatusNotificationRequest)) (*StatusNotificationConfirmation, error)
 	//TODO: add missing profile methods
@@ -85,6 +86,19 @@ func (cp *chargePoint) Heartbeat(props ...func(request *HeartbeatRequest)) (*Hea
 	}
 }
 
+func (cp *chargePoint) MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error) {
+	request := NewMeterValuesRequest(connectorId, meterValues)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*MeterValuesConfirmation), err
+	}
+}
+
 func (cp *chargePoint) StartTransaction(connectorId int, idTag string, meterStart int, timestamp DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error) {
 	request := NewStartTransactionRequest(connectorId, idTag, meterStart, timestamp)
 	for _, fn := range props {
@@ -116,6 +130,7 @@ func (cp *chargePoint) SetChargePointCoreListener(listener ChargePointCoreListen
 }
 
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
+	// TODO: check for supported feature
 	err := cp.chargePoint.SendRequest(request)
 	if err != nil {
 		return nil, err
@@ -131,7 +146,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, StartTransactionFeatureName, StatusNotificationFeatureName:
+	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StatusNotificationFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
 	}
@@ -452,6 +467,8 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 			confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*DataTransferRequest))
 		case HeartbeatFeatureName:
 			confirmation, err = cs.coreListener.OnHeartbeat(chargePointId, request.(*HeartbeatRequest))
+		case MeterValuesFeatureName:
+			confirmation, err = cs.coreListener.OnMeterValues(chargePointId, request.(*MeterValuesRequest))
 		case StartTransactionFeatureName:
 			confirmation, err = cs.coreListener.OnStartTransaction(chargePointId, request.(*StartTransactionRequest))
 		case StatusNotificationFeatureName:
