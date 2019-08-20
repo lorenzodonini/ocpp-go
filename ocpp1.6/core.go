@@ -18,6 +18,7 @@ const (
 	RemoteStopTransactionFeatureName  = "RemoteStopTransaction"
 	ResetFeatureName                  = "Reset"
 	StartTransactionFeatureName       = "StartTransaction"
+	StopTransactionFeatureName        = "StopTransaction"
 	StatusNotificationFeatureName     = "StatusNotification"
 	UnlockConnectorFeatureName        = "UnlockConnector"
 )
@@ -32,7 +33,7 @@ type CentralSystemCoreListener interface {
 	OnMeterValues(chargePointId string, request *MeterValuesRequest) (confirmation *MeterValuesConfirmation, err error)
 	OnStatusNotification(chargePointId string, request *StatusNotificationRequest) (confirmation *StatusNotificationConfirmation, err error)
 	OnStartTransaction(chargePointId string, request *StartTransactionRequest) (confirmation *StartTransactionConfirmation, err error)
-	//onStopTransaction()
+	OnStopTransaction(chargePointId string, request *StopTransactionRequest) (confirmation *StopTransactionConfirmation, err error)
 }
 
 type ChargePointCoreListener interface {
@@ -71,6 +72,7 @@ var CoreProfile = ocpp.NewProfile(
 	RemoteStartTransactionFeature{},
 	RemoteStopTransactionFeature{},
 	StartTransactionFeature{},
+	StopTransactionFeature{},
 	StatusNotificationFeature{},
 	ResetFeature{},
 	UnlockConnectorFeature{})

@@ -180,6 +180,12 @@ func (coreListener MockCentralSystemCoreListener) OnStatusNotification(chargePoi
 	return conf, args.Error(1)
 }
 
+func (coreListener MockCentralSystemCoreListener) OnStopTransaction(chargePointId string, request *ocpp16.StopTransactionRequest) (confirmation *ocpp16.StopTransactionConfirmation, err error) {
+	args := coreListener.MethodCalled("OnStopTransaction", chargePointId, request)
+	conf := args.Get(0).(*ocpp16.StopTransactionConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CP CORE LISTENER ----------------------
 type MockChargePointCoreListener struct {
 	mock.Mock
