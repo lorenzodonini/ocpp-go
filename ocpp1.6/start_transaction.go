@@ -41,11 +41,11 @@ func (c StartTransactionConfirmation) GetFeatureName() string {
 	return StartTransactionFeatureName
 }
 
-func NewStartTransactionRequest(connectorId int, idTag string, meterStart int, timestamp DateTime) *StartTransactionRequest {
+func NewStartTransactionRequest(connectorId int, idTag string, meterStart int, timestamp *DateTime) *StartTransactionRequest {
 	return &StartTransactionRequest{ConnectorId: connectorId, IdTag: idTag, MeterStart: meterStart, Timestamp: timestamp}
 }
 
-func NewStartTransactionConfirmation(idTagInfo IdTagInfo, transactionId int) *StartTransactionConfirmation {
+func NewStartTransactionConfirmation(idTagInfo *IdTagInfo, transactionId int) *StartTransactionConfirmation {
 	return &StartTransactionConfirmation{IdTagInfo: idTagInfo, TransactionId: transactionId}
 }
 

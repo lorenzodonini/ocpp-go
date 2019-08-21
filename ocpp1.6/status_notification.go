@@ -103,7 +103,7 @@ func NewStatusNotificationConfirmation() *StatusNotificationConfirmation {
 
 func validateStatusNotificationRequest(sl validator.StructLevel) {
 	request := sl.Current().Interface().(StatusNotificationRequest)
-	if !dateTimeIsNull(request.Timestamp) && !validateDateTimeLt(request.Timestamp, time.Now()) {
+	if !dateTimeIsNull(&request.Timestamp) && !validateDateTimeLt(request.Timestamp, time.Now()) {
 		sl.ReportError(request.Timestamp, "Timestamp", "timestamp", "lt", "")
 	}
 }

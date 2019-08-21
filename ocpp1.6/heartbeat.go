@@ -45,7 +45,7 @@ func NewHeartbeatConfirmation(currentTime DateTime) *HeartbeatConfirmation {
 
 func validateHeartbeatConfirmation(sl validator.StructLevel) {
 	confirmation := sl.Current().Interface().(HeartbeatConfirmation)
-	if dateTimeIsNull(confirmation.CurrentTime) {
+	if dateTimeIsNull(&confirmation.CurrentTime) {
 		sl.ReportError(confirmation.CurrentTime, "CurrentTime", "currentTime", "required", "")
 	}
 	//if !validateDateTimeNow(confirmation.CurrentTime) {

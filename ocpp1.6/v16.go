@@ -16,7 +16,7 @@ type ChargePoint interface {
 	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
 	Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
 	MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error)
-	StartTransaction(connectorId int, idTag string, meterStart int, timestamp DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
+	StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
 	StopTransaction(meterStop int, timestamp *DateTime, transactionId int, props ...func(request *StopTransactionRequest)) (*StopTransactionConfirmation, error)
 	StatusNotification(connectorId int, errorCode ChargePointErrorCode, status ChargePointStatus, props ...func(request *StatusNotificationRequest)) (*StatusNotificationConfirmation, error)
 	//TODO: add missing profile methods
@@ -100,7 +100,7 @@ func (cp *chargePoint) MeterValues(connectorId int, meterValues []MeterValue, pr
 	}
 }
 
-func (cp *chargePoint) StartTransaction(connectorId int, idTag string, meterStart int, timestamp DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error) {
+func (cp *chargePoint) StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error) {
 	request := NewStartTransactionRequest(connectorId, idTag, meterStart, timestamp)
 	for _, fn := range props {
 		fn(request)

@@ -32,9 +32,9 @@ func (suite *OcppV16TestSuite) TestStopTransactionRequestValidation() {
 func (suite *OcppV16TestSuite) TestStopTransactionConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []ConfirmationTestEntry{
-		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}, ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
+		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
 		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
-		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}, Status: ocpp16.AuthorizationStatusAccepted}}, true},
+		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), Status: ocpp16.AuthorizationStatusAccepted}}, true},
 		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusAccepted}}, true},
 		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusBlocked}}, true},
 		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusExpired}}, true},
@@ -43,7 +43,6 @@ func (suite *OcppV16TestSuite) TestStopTransactionConfirmationValidation() {
 		{ocpp16.StopTransactionConfirmation{}, true},
 		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: "invalidAuthorizationStatus"}}, false},
 		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ParentIdTag: ">20..................", Status: ocpp16.AuthorizationStatusAccepted}}, false},
-		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.DateTime{Time: time.Now().Add(time.Hour * -8)}, Status: ocpp16.AuthorizationStatusAccepted}}, false},
 		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{}}, false},
 	}
 	ExecuteConfirmationTestTable(t, confirmationTable)
@@ -63,7 +62,7 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 	meterValues := []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: mockValue, Unit: mockUnit}}}}
 	parentIdTag := "parentTag1"
 	status := ocpp16.AuthorizationStatusAccepted
-	expiryDate := ocpp16.DateTime{Time: time.Now().Add(time.Hour * 8)}
+	expiryDate := ocpp16.NewDateTime(time.Now().Add(time.Hour * 8))
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v","meterStop":%v,"timestamp":"%v","transactionId":%v,"transactionData":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, ocpp16.StopTransactionFeatureName, idTag, meterStop, timestamp.Format(ocpp16.ISO8601), transactionId, timestamp.Format(ocpp16.ISO8601), mockValue, mockUnit)
 	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.Format(ocpp16.ISO8601), parentIdTag, status)
 	stopTransactionConfirmation := ocpp16.NewStopTransactionConfirmation()
@@ -101,7 +100,7 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.IdTagInfo.Status)
 	assert.Equal(t, parentIdTag, confirmation.IdTagInfo.ParentIdTag)
-	assertDateTimeEquality(t, expiryDate, confirmation.IdTagInfo.ExpiryDate)
+	assertDateTimeEquality(t, *expiryDate, *confirmation.IdTagInfo.ExpiryDate)
 }
 
 func (suite *OcppV16TestSuite) TestStopTransactionInvalidEndpoint() {
