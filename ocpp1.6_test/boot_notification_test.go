@@ -35,9 +35,10 @@ func (suite *OcppV16TestSuite) TestBootNotificationConfirmationValidation() {
 		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now()), Interval: 60, Status: ocpp16.RegistrationStatusAccepted}, true},
 		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now()), Interval: 60, Status: ocpp16.RegistrationStatusPending}, true},
 		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now()), Interval: 60, Status: ocpp16.RegistrationStatusRejected}, true},
+		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now()), Status: ocpp16.RegistrationStatusAccepted}, true},
+		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now()), Interval: -1, Status: ocpp16.RegistrationStatusRejected}, false},
 		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now()), Interval: 60, Status: "invalidRegistrationStatus"}, false},
 		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now()), Interval: 60}, false},
-		{ocpp16.BootNotificationConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now()), Status: ocpp16.RegistrationStatusAccepted}, false},
 		{ocpp16.BootNotificationConfirmation{Interval: 60, Status: ocpp16.RegistrationStatusAccepted}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
