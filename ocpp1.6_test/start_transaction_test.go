@@ -29,16 +29,7 @@ func (suite *OcppV16TestSuite) TestStartTransactionConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []ConfirmationTestEntry{
 		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}, TransactionId: 10}, true},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}, TransactionId: 10}, true},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), Status: ocpp16.AuthorizationStatusAccepted}, TransactionId: 10}, true},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusAccepted}, TransactionId: 10}, true},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusBlocked}, TransactionId: 10}, true},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusExpired}, TransactionId: 10}, true},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusInvalid}, TransactionId: 10}, true},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusConcurrentTx}, TransactionId: 10}, true},
 		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: "invalidAuthorizationStatus"}, TransactionId: 10}, false},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ParentIdTag: ">20..................", Status: ocpp16.AuthorizationStatusAccepted}, TransactionId: 10}, false},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{}, TransactionId: 10}, false},
 		{ocpp16.StartTransactionConfirmation{TransactionId: 10}, false},
 		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, false},
 	}
