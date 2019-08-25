@@ -1,24 +1,28 @@
 package ocpp16
 
 import (
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
 
-// -------------------- Heartbeat (CP -> CS) --------------------
+// -------------------- Start Transaction (CP -> CS) --------------------
+
+// This field definition of the StartTransactionRequest payload sent by the Charge Point to the Central System.
 type StartTransactionRequest struct {
-	ConnectorId   int      `json:"connectorId" validate:"gt=0"`
-	IdTag         string   `json:"idTag" validate:"required,max=20"`
-	MeterStart    int      `json:"meterStart" validate:"required"`
-	ReservationId int      `json:"reservationId,omitempty"`
-	Timestamp     DateTime `json:"timestamp"`
+	ConnectorId   int       `json:"connectorId" validate:"gt=0"`
+	IdTag         string    `json:"idTag" validate:"required,max=20"`
+	MeterStart    int       `json:"meterStart" validate:"required"`
+	ReservationId int       `json:"reservationId,omitempty"`
+	Timestamp     *DateTime `json:"timestamp" validate:"required"`
 }
 
+// This field definition of the StartTransactionConfirmation payload sent by the Central System to the Charge Point in response to a StartTransactionRequest.
 type StartTransactionConfirmation struct {
-	IdTagInfo     IdTagInfo `json:"idTagInfo" validate:"required"`
-	TransactionId int       `json:"transactionId" validate:"required"`
+	IdTagInfo     *IdTagInfo `json:"idTagInfo" validate:"required"`
+	TransactionId int        `json:"transactionId" validate:"required"`
 }
 
+// The Charge Point SHALL send a StartTransactionRequest to the Central System to inform about a transaction that has been started.
+// If this transaction ends a reservation (see ReserveNow operation), then the StartTransaction MUST contain the reservationId.
 type StartTransactionFeature struct{}
 
 func (f StartTransactionFeature) GetFeatureName() string {
@@ -41,24 +45,13 @@ func (c StartTransactionConfirmation) GetFeatureName() string {
 	return StartTransactionFeatureName
 }
 
+// Creates a new StartTransaction request. All signature parameters are required fields.
+// Optional fields may be set directly on the created object.
 func NewStartTransactionRequest(connectorId int, idTag string, meterStart int, timestamp *DateTime) *StartTransactionRequest {
 	return &StartTransactionRequest{ConnectorId: connectorId, IdTag: idTag, MeterStart: meterStart, Timestamp: timestamp}
 }
 
+// Creates a new StartTransaction confirmation. All signature parameters are required fields. There are no optional fields for this message.
 func NewStartTransactionConfirmation(idTagInfo *IdTagInfo, transactionId int) *StartTransactionConfirmation {
 	return &StartTransactionConfirmation{IdTagInfo: idTagInfo, TransactionId: transactionId}
-}
-
-func validateStartTransactionRequest(sl validator.StructLevel) {
-	confirmation := sl.Current().Interface().(StartTransactionRequest)
-	if dateTimeIsNull(confirmation.Timestamp) {
-		sl.ReportError(confirmation.Timestamp, "Timestamp", "timestamp", "required", "")
-	}
-	//if !validateDateTimeNow(confirmation.CurrentTime) {
-	//	sl.ReportError(confirmation.CurrentTime, "CurrentTime", "currentTime", "eq", "")
-	//}
-}
-
-func init() {
-	Validate.RegisterStructValidation(validateStartTransactionRequest, StartTransactionRequest{})
 }
