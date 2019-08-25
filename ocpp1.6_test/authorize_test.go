@@ -11,22 +11,22 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {
 	t := suite.T()
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.AuthorizeRequest{IdTag: "12345"}, true},
 		{ocpp16.AuthorizeRequest{}, false},
 		{ocpp16.AuthorizeRequest{IdTag: ">20.................."}, false},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
 		{ocpp16.AuthorizeConfirmation{IdTagInfo: ocpp16.IdTagInfo{Status: "invalidAuthorizationStatus"}}, false},
 		{ocpp16.AuthorizeConfirmation{}, false},
 	}
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {

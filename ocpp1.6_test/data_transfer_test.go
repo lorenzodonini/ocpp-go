@@ -10,7 +10,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestDataTransferRequestValidation() {
 	t := suite.T()
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.DataTransferRequest{VendorId: "12345"}, true},
 		{ocpp16.DataTransferRequest{VendorId: "12345", MessageId: "6789"}, true},
 		{ocpp16.DataTransferRequest{VendorId: "12345", MessageId: "6789", Data: "mockData"}, true},
@@ -18,12 +18,12 @@ func (suite *OcppV16TestSuite) TestDataTransferRequestValidation() {
 		{ocpp16.DataTransferRequest{VendorId: ">255............................................................................................................................................................................................................................................................"}, false},
 		{ocpp16.DataTransferRequest{VendorId: "12345", MessageId: ">50................................................"}, false},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestDataTransferConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusAccepted}, true},
 		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusRejected}, true},
 		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusUnknownMessageId}, true},
@@ -31,7 +31,7 @@ func (suite *OcppV16TestSuite) TestDataTransferConfirmationValidation() {
 		{ocpp16.DataTransferConfirmation{Status: "invalidDataTransferStatus"}, false},
 		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusAccepted, Data: "mockData"}, true},
 	}
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestDataTransferFromChargePointE2EMocked() {

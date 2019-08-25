@@ -445,21 +445,11 @@ type ConfirmationTestEntry struct {
 func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
 	for _, testCase := range testTable {
 		err := ocpp16.Validate.Struct(testCase.Element)
-		assert.Equal(t, testCase.ExpectedValid, err == nil)
-	}
-}
-
-func ExecuteRequestTestTable(t *testing.T, testTable []RequestTestEntry) {
-	for _, testCase := range testTable {
-		err := ocpp16.Validate.Struct(testCase.Request)
-		assert.Equal(t, testCase.ExpectedValid, err == nil)
-	}
-}
-
-func ExecuteConfirmationTestTable(t *testing.T, testTable []ConfirmationTestEntry) {
-	for _, testCase := range testTable {
-		err := ocpp16.Validate.Struct(testCase.Confirmation)
-		assert.Equal(t, testCase.ExpectedValid, err == nil)
+		if err != nil {
+			assert.Equal(t, testCase.ExpectedValid, false, err.Error())
+		} else {
+			assert.Equal(t, testCase.ExpectedValid, true)
+		}
 	}
 }
 

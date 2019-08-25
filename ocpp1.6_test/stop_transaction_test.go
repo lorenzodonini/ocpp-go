@@ -12,7 +12,7 @@ import (
 func (suite *OcppV16TestSuite) TestStopTransactionRequestValidation() {
 	t := suite.T()
 	transactionData := []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}}
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1, Reason: ocpp16.ReasonEVDisconnected, TransactionData: transactionData}, true},
 		{ocpp16.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1, Reason: ocpp16.ReasonEVDisconnected, TransactionData: []ocpp16.MeterValue{}}, true},
 		{ocpp16.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1, Reason: ocpp16.ReasonEVDisconnected}, true},
@@ -26,17 +26,17 @@ func (suite *OcppV16TestSuite) TestStopTransactionRequestValidation() {
 		{ocpp16.StopTransactionRequest{MeterStop: -1, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1}, false},
 		{ocpp16.StopTransactionRequest{MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1, TransactionData: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{}}}}, false},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestStopTransactionConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
 		{ocpp16.StopTransactionConfirmation{}, true},
 		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: "invalidAuthorizationStatus"}}, false},
 	}
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {

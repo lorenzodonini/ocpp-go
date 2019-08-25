@@ -9,22 +9,22 @@ import (
 
 func (suite *OcppV16TestSuite) TestUnlockConnectorRequestValidation() {
 	t := suite.T()
-	var testTable = []RequestTestEntry{
+	var testTable = []GenericTestEntry{
 		{ocpp16.UnlockConnectorRequest{ConnectorId: 1}, true},
 		{ocpp16.UnlockConnectorRequest{ConnectorId: -1}, false},
 		{ocpp16.UnlockConnectorRequest{}, false},
 	}
-	ExecuteRequestTestTable(t, testTable)
+	ExecuteGenericTestTable(t, testTable)
 }
 
 func (suite *OcppV16TestSuite) TestUnlockConnectorConfirmationValidation() {
 	t := suite.T()
-	var testTable = []ConfirmationTestEntry{
+	var testTable = []GenericTestEntry{
 		{ocpp16.UnlockConnectorConfirmation{Status: ocpp16.UnlockStatusUnlocked}, true},
 		{ocpp16.UnlockConnectorConfirmation{Status: "invalidUnlockStatus"}, false},
 		{ocpp16.UnlockConnectorConfirmation{}, false},
 	}
-	ExecuteConfirmationTestTable(t, testTable)
+	ExecuteGenericTestTable(t, testTable)
 }
 
 // Test

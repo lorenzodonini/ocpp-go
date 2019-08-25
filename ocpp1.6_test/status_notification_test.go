@@ -11,7 +11,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestStatusNotificationRequestValidation() {
 	t := suite.T()
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.StatusNotificationRequest{ConnectorId: 0, ErrorCode: ocpp16.NoError, Info: "mockInfo", Status: ocpp16.ChargePointStatusAvailable, Timestamp: ocpp16.DateTime{Time: time.Now().Add(-1 * time.Hour)}, VendorId: "mockId", VendorErrorCode: "mockErrorCode"}, true},
 		{ocpp16.StatusNotificationRequest{ConnectorId: 0, ErrorCode: ocpp16.NoError, Status: ocpp16.ChargePointStatusAvailable}, true},
 		{ocpp16.StatusNotificationRequest{ErrorCode: ocpp16.NoError, Status: ocpp16.ChargePointStatusAvailable}, true},
@@ -25,15 +25,15 @@ func (suite *OcppV16TestSuite) TestStatusNotificationRequestValidation() {
 		{ocpp16.StatusNotificationRequest{ConnectorId: 0, ErrorCode: ocpp16.NoError, VendorId: ">255............................................................................................................................................................................................................................................................", Status: ocpp16.ChargePointStatusAvailable}, false},
 		//{ocpp16.StatusNotificationRequest{ConnectorId: 0, ErrorCode: ocpp16.NoError, Info: "mockInfo", Status: ocpp16.ChargePointStatusAvailable, Timestamp: ocpp16.DateTime{Time: time.Now().Add(1 * time.Hour)}, VendorId: "mockId", VendorErrorCode: "mockErrorCode"}, false},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestStatusNotificationConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.StatusNotificationConfirmation{}, true},
 	}
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {

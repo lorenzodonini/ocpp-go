@@ -10,7 +10,7 @@ import (
 
 // Test
 func (suite *OcppV16TestSuite) TestMeterValuesRequestValidation() {
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.MeterValuesRequest{ConnectorId: 1, TransactionId: 1, MeterValue: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}}}, true},
 		{ocpp16.MeterValuesRequest{ConnectorId: 1, MeterValue: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}}}, true},
 		{ocpp16.MeterValuesRequest{MeterValue: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}}}, true},
@@ -19,14 +19,14 @@ func (suite *OcppV16TestSuite) TestMeterValuesRequestValidation() {
 		{ocpp16.MeterValuesRequest{ConnectorId: 1}, false},
 		{ocpp16.MeterValuesRequest{ConnectorId: 1, MeterValue: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{}}}}, false},
 	}
-	ExecuteRequestTestTable(suite.T(), requestTable)
+	ExecuteGenericTestTable(suite.T(), requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestMeterValuesConfirmationValidation() {
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.MeterValuesConfirmation{}, true},
 	}
-	ExecuteConfirmationTestTable(suite.T(), confirmationTable)
+	ExecuteGenericTestTable(suite.T(), confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestMeterValuesE2EMocked() {

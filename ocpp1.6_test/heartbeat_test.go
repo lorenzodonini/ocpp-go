@@ -11,21 +11,19 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestHeartbeatRequestValidation() {
 	t := suite.T()
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.HeartbeatRequest{}, true},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestHeartbeatConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.HeartbeatConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now()}}, true},
-		//{ocpp16.HeartbeatConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now().Add(time.Minute * 1)}}, false},
-		//{ocpp16.HeartbeatConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now().Add(time.Minute * -1)}}, false},
 		{ocpp16.HeartbeatConfirmation{}, false},
 	}
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestHeartbeatE2EMocked() {

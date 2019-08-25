@@ -9,7 +9,7 @@ import (
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
 	t := suite.T()
-	var testTable = []RequestTestEntry{
+	var testTable = []GenericTestEntry{
 		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0, Type: ocpp16.AvailabilityTypeOperative}, true},
 		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0, Type: ocpp16.AvailabilityTypeInoperative}, true},
 		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0}, false},
@@ -17,19 +17,19 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
 		{ocpp16.ChangeAvailabilityRequest{Type: "invalidAvailabilityType"}, false},
 		{ocpp16.ChangeAvailabilityRequest{ConnectorId: -1, Type: ocpp16.AvailabilityTypeOperative}, false},
 	}
-	ExecuteRequestTestTable(t, testTable)
+	ExecuteGenericTestTable(t, testTable)
 }
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationValidation() {
 	t := suite.T()
-	var testTable = []ConfirmationTestEntry{
+	var testTable = []GenericTestEntry{
 		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusAccepted}, true},
 		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusRejected}, true},
 		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusScheduled}, true},
 		{ocpp16.ChangeAvailabilityConfirmation{Status: "invalidAvailabilityStatus"}, false},
 		{ocpp16.ChangeAvailabilityConfirmation{}, false},
 	}
-	ExecuteConfirmationTestTable(t, testTable)
+	ExecuteGenericTestTable(t, testTable)
 }
 
 // Test

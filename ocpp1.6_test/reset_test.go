@@ -9,24 +9,24 @@ import (
 
 func (suite *OcppV16TestSuite) TestResetRequestValidation() {
 	t := suite.T()
-	var testTable = []RequestTestEntry{
+	var testTable = []GenericTestEntry{
 		{ocpp16.ResetRequest{Type: ocpp16.ResetTypeHard}, true},
 		{ocpp16.ResetRequest{Type: ocpp16.ResetTypeSoft}, true},
 		{ocpp16.ResetRequest{Type: "invalidResetType"}, false},
 		{ocpp16.ResetRequest{}, false},
 	}
-	ExecuteRequestTestTable(t, testTable)
+	ExecuteGenericTestTable(t, testTable)
 }
 
 func (suite *OcppV16TestSuite) TestResetConfirmationValidation() {
 	t := suite.T()
-	var testTable = []ConfirmationTestEntry{
+	var testTable = []GenericTestEntry{
 		{ocpp16.ResetConfirmation{Status: ocpp16.ResetStatusAccepted}, true},
 		{ocpp16.ResetConfirmation{Status: ocpp16.ResetStatusRejected}, true},
 		{ocpp16.ResetConfirmation{Status: "invalidResetStatus"}, false},
 		{ocpp16.ResetConfirmation{}, false},
 	}
-	ExecuteConfirmationTestTable(t, testTable)
+	ExecuteGenericTestTable(t, testTable)
 }
 
 // Test
