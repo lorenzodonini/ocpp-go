@@ -37,7 +37,7 @@ type BootNotificationRequest struct {
 }
 
 type BootNotificationConfirmation struct {
-	CurrentTime DateTime           `json:"currentTime" validate:"required"`
+	CurrentTime *DateTime          `json:"currentTime" validate:"required"`
 	Interval    int                `json:"interval" validate:"required,gte=0"`
 	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
 }
@@ -68,18 +68,10 @@ func NewBootNotificationRequest(chargePointModel string, chargePointVendor strin
 	return &BootNotificationRequest{ChargePointModel: chargePointModel, ChargePointVendor: chargePointVendor}
 }
 
-func NewBootNotificationConfirmation(currentTime DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
+func NewBootNotificationConfirmation(currentTime *DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
 	return &BootNotificationConfirmation{CurrentTime: currentTime, Interval: interval, Status: status}
-}
-
-func validateBootNotificationConfirmation(sl validator.StructLevel) {
-	confirmation := sl.Current().Interface().(BootNotificationConfirmation)
-	if !validateDateTimeNow(confirmation.CurrentTime) {
-		sl.ReportError(confirmation.CurrentTime, "CurrentTime", "currentTime", "eq", "")
-	}
 }
 
 func init() {
 	_ = Validate.RegisterValidation("registrationStatus", isValidRegistrationStatus)
-	Validate.RegisterStructValidation(validateBootNotificationConfirmation, BootNotificationConfirmation{})
 }
