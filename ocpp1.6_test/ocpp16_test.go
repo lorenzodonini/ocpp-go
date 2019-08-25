@@ -442,13 +442,14 @@ type ConfirmationTestEntry struct {
 	ExpectedValid bool
 }
 
+// TODO: pass expected error value for improved validation and error message
 func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
 	for _, testCase := range testTable {
 		err := ocpp16.Validate.Struct(testCase.Element)
 		if err != nil {
 			assert.Equal(t, testCase.ExpectedValid, false, err.Error())
 		} else {
-			assert.Equal(t, testCase.ExpectedValid, true)
+			assert.Equal(t, testCase.ExpectedValid, true, "%v is valid", testCase.Element)
 		}
 	}
 }
