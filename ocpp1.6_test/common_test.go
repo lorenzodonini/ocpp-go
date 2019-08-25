@@ -6,6 +6,22 @@ import (
 )
 
 // Test
+func (suite *OcppV16TestSuite) TestIdTagInfoValidation() {
+	var testTable = []GenericTestEntry{
+		{ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now()), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}, true},
+		{ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now()), Status: ocpp16.AuthorizationStatusAccepted}, true},
+		{ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusAccepted}, true},
+		{ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusBlocked}, true},
+		{ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusExpired}, true},
+		{ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusInvalid}, true},
+		{ocpp16.IdTagInfo{Status: ocpp16.AuthorizationStatusConcurrentTx}, true},
+		{ocpp16.IdTagInfo{Status: "invalidAuthorizationStatus"}, false},
+		{ocpp16.IdTagInfo{}, false},
+		{ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now()), ParentIdTag: ">20..................", Status: ocpp16.AuthorizationStatusAccepted}, false},
+	}
+	ExecuteGenericTestTable(suite.T(), testTable)
+}
+
 func (suite *OcppV16TestSuite) TestChargingSchedulePeriodValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
