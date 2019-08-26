@@ -23,6 +23,9 @@ type StartTransactionConfirmation struct {
 
 // The Charge Point SHALL send a StartTransactionRequest to the Central System to inform about a transaction that has been started.
 // If this transaction ends a reservation (see ReserveNow operation), then the StartTransaction MUST contain the reservationId.
+// Upon receipt of a StartTransaction.req PDU, the Central System SHOULD respond with a StartTransactionConfirmation.
+// This response MUST include a transaction id and an authorization status value.
+// The Central System MUST verify validity of the identifier in the StartTransactionRequest, because the identifier might have been authorized locally by the Charge Point using outdated information.
 type StartTransactionFeature struct{}
 
 func (f StartTransactionFeature) GetFeatureName() string {
@@ -46,7 +49,7 @@ func (c StartTransactionConfirmation) GetFeatureName() string {
 }
 
 // Creates a new StartTransaction request. All signature parameters are required fields.
-// Optional fields may be set directly on the created object.
+// Optional fields may be set directly on the created request.
 func NewStartTransactionRequest(connectorId int, idTag string, meterStart int, timestamp *DateTime) *StartTransactionRequest {
 	return &StartTransactionRequest{ConnectorId: connectorId, IdTag: idTag, MeterStart: meterStart, Timestamp: timestamp}
 }

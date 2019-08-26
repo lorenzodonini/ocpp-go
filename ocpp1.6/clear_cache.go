@@ -6,6 +6,8 @@ import (
 )
 
 // -------------------- Clear Cache (CS -> CP) --------------------
+
+// Status returned in response to ClearCacheRequest.
 type ClearCacheStatus string
 
 const (
@@ -23,13 +25,20 @@ func isValidClearCacheStatus(fl validator.FieldLevel) bool {
 	}
 }
 
+// The field definition of the ClearCache request payload sent by the Central System to the Charge Point.
 type ClearCacheRequest struct {
 }
 
+// This field definition of the ClearCache confirmation payload, sent by the Charge Point to the Central System in response to a ClearCacheRequest.
+// In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ClearCacheConfirmation struct {
 	Status ClearCacheStatus `json:"status" validate:"required,cacheStatus"`
 }
 
+// Central System can request a Charge Point to clear its Authorization Cache.
+// The Central System SHALL send a ClearCacheRequest PDU for clearing the Charge Point’s Authorization Cache.
+// Upon receipt of a ClearCacheRequest, the Charge Point SHALL respond with a ClearCacheConfirmation PDU.
+// The response PDU SHALL indicate whether the Charge Point was able to clear its Authorization Cache.
 type ClearCacheFeature struct{}
 
 func (f ClearCacheFeature) GetFeatureName() string {
@@ -52,10 +61,12 @@ func (c ClearCacheConfirmation) GetFeatureName() string {
 	return ClearCacheFeatureName
 }
 
+// Creates a new ClearCacheRequest, which doesn't contain any required or optional fields.
 func NewClearCacheRequest() *ClearCacheRequest {
 	return &ClearCacheRequest{}
 }
 
+// Creates a new ClearCacheConfirmation, containing all required fields. There are no optional fields for this message.
 func NewClearCacheConfirmation(status ClearCacheStatus) *ClearCacheConfirmation {
 	return &ClearCacheConfirmation{Status: status}
 }
