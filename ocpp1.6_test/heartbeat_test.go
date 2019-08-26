@@ -20,7 +20,7 @@ func (suite *OcppV16TestSuite) TestHeartbeatRequestValidation() {
 func (suite *OcppV16TestSuite) TestHeartbeatConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp16.HeartbeatConfirmation{CurrentTime: ocpp16.DateTime{Time: time.Now()}}, true},
+		{ocpp16.HeartbeatConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now())}, true},
 		{ocpp16.HeartbeatConfirmation{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
@@ -31,7 +31,7 @@ func (suite *OcppV16TestSuite) TestHeartbeatE2EMocked() {
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	currentTime := ocpp16.DateTime{Time: time.Now()}
+	currentTime := ocpp16.NewDateTime(time.Now())
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, ocpp16.HeartbeatFeatureName)
 	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v"}]`, messageId, currentTime.Time.Format(ocpp16.ISO8601))
 	heartbeatConfirmation := ocpp16.NewHeartbeatConfirmation(currentTime)
@@ -48,7 +48,7 @@ func (suite *OcppV16TestSuite) TestHeartbeatE2EMocked() {
 	confirmation, err := suite.chargePoint.Heartbeat()
 	assert.Nil(t, err)
 	assert.NotNil(t, confirmation)
-	assertDateTimeEquality(t, currentTime, confirmation.CurrentTime)
+	assertDateTimeEquality(t, *currentTime, *confirmation.CurrentTime)
 }
 
 func (suite *OcppV16TestSuite) TestHeartbeatInvalidEndpoint() {
