@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	ISO8601 = "2019-01-01T00:00:00Z"
+	ISO8601 = "2006-01-02T15:04:05Z"
 )
 
 type DateTime struct {
@@ -83,6 +83,10 @@ type IdTagInfo struct {
 	ExpiryDate  *DateTime           `json:"expiryDate,omitempty" validate:"omitempty"`
 	ParentIdTag string              `json:"parentIdTag,omitempty" validate:"omitempty,max=20"`
 	Status      AuthorizationStatus `json:"status" validate:"required,authorizationStatus"`
+}
+
+func NewIdTagInfo(status AuthorizationStatus) *IdTagInfo {
+	return &IdTagInfo{Status: status}
 }
 
 // Charging Profiles
