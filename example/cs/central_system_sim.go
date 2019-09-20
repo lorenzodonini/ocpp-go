@@ -152,7 +152,7 @@ func (handler * CentralSystemHandler) OnStopTransaction(chargePointId string, re
 func main() {
 	args := os.Args[1:]
 	if len(args) < 1 {
-		log.Print("Usage:\n\t[listenPort]")
+		log.Print("Usage:\n\tlistenPort")
 	}
 	centralSystem := ocpp16.NewCentralSystem(nil, nil)
 	handler := &CentralSystemHandler{chargePoints: map[string]*ChargePointState{}}
@@ -162,14 +162,12 @@ func main() {
 	})
 	centralSystem.SetCentralSystemCoreListener(handler)
 	log.Println("Starting central system...")
-	var listenPort int
+	var listenPort = defaultListenPort
 	if len(args) > 1 {
 		port, err := strconv.Atoi(args[1])
 		if err != nil {
 			listenPort = port
 		}
-	} else {
-		listenPort = defaultListenPort
 	}
 	centralSystem.Start(listenPort, "/{ws}")
 	log.Println("Stopped central system")
