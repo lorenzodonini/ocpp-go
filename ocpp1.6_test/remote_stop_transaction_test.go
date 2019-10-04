@@ -10,23 +10,23 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestRemoteStopTransactionRequestValidation() {
 	t := suite.T()
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.RemoteStopTransactionRequest{TransactionId: 1}, true},
 		{ocpp16.RemoteStopTransactionRequest{}, true},
 		{ocpp16.RemoteStopTransactionRequest{TransactionId: -1}, false},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStopTransactionConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.RemoteStopTransactionConfirmation{Status: ocpp16.RemoteStartStopStatusAccepted}, true},
 		{ocpp16.RemoteStopTransactionConfirmation{Status: ocpp16.RemoteStartStopStatusRejected}, true},
 		{ocpp16.RemoteStopTransactionConfirmation{Status: "invalidRemoteStopTransactionStatus"}, false},
 		{ocpp16.RemoteStopTransactionConfirmation{}, false},
 	}
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStopTransactionE2EMocked() {

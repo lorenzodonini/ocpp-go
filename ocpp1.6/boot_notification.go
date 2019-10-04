@@ -6,6 +6,8 @@ import (
 )
 
 // -------------------- Boot Notification (CP -> CS) --------------------
+
+// Result of registration in response to a BootNotification request.
 type RegistrationStatus string
 
 const (
@@ -24,6 +26,7 @@ func isValidRegistrationStatus(fl validator.FieldLevel) bool {
 	}
 }
 
+// The field definition of the BootNotification request payload sent by the Charge Point to the Central System.
 type BootNotificationRequest struct {
 	ChargeBoxSerialNumber   string `json:"chargeBoxSerialNumber,omitempty" validate:"max=25"`
 	ChargePointModel        string `json:"chargePointModel" validate:"required,max=20"`
@@ -36,12 +39,16 @@ type BootNotificationRequest struct {
 	MeterType               string `json:"meterType,omitempty" validate:"max=25"`
 }
 
+// This field definition of the BootNotification confirmation payload, sent by the Central System to the Charge Point in response to a BootNotificationRequest.
+// In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type BootNotificationConfirmation struct {
-	CurrentTime DateTime           `json:"currentTime" validate:"required"`
-	Interval    int                `json:"interval" validate:"required,gte=0"`
+	CurrentTime *DateTime          `json:"currentTime" validate:"required"`
+	Interval    int                `json:"interval" validate:"gte=0"`
 	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
 }
 
+// After each (re)boot, a Charge Point SHALL send a request to the Central System with information about its configuration (e.g. version, vendor, etc.).
+// The Central System SHALL respond to indicate whether it will accept the Charge Point.
 type BootNotificationFeature struct{}
 
 func (f BootNotificationFeature) GetFeatureName() string {
@@ -64,22 +71,16 @@ func (c BootNotificationConfirmation) GetFeatureName() string {
 	return BootNotificationFeatureName
 }
 
+// Creates a new BootNotificationRequest, containing all required fields. Optional fields may be set afterwards.
 func NewBootNotificationRequest(chargePointModel string, chargePointVendor string) *BootNotificationRequest {
 	return &BootNotificationRequest{ChargePointModel: chargePointModel, ChargePointVendor: chargePointVendor}
 }
 
-func NewBootNotificationConfirmation(currentTime DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
+// Creates a new BootNotificationConfirmation. Optional fields may be set afterwards.
+func NewBootNotificationConfirmation(currentTime *DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
 	return &BootNotificationConfirmation{CurrentTime: currentTime, Interval: interval, Status: status}
-}
-
-func validateBootNotificationConfirmation(sl validator.StructLevel) {
-	confirmation := sl.Current().Interface().(BootNotificationConfirmation)
-	if !validateDateTimeNow(confirmation.CurrentTime) {
-		sl.ReportError(confirmation.CurrentTime, "CurrentTime", "currentTime", "eq", "")
-	}
 }
 
 func init() {
 	_ = Validate.RegisterValidation("registrationStatus", isValidRegistrationStatus)
-	Validate.RegisterStructValidation(validateBootNotificationConfirmation, BootNotificationConfirmation{})
 }

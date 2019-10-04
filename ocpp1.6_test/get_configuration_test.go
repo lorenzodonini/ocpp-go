@@ -10,7 +10,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestGetConfigurationRequestValidation() {
 	t := suite.T()
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.GetConfigurationRequest{Key: []string{"key1", "key2"}}, true},
 		{ocpp16.GetConfigurationRequest{Key: []string{"key1", "key2", "key3", "key4", "key5", "key6"}}, true},
 		{ocpp16.GetConfigurationRequest{Key: []string{"key1", "key2", "key2"}}, false},
@@ -18,12 +18,12 @@ func (suite *OcppV16TestSuite) TestGetConfigurationRequestValidation() {
 		{ocpp16.GetConfigurationRequest{Key: []string{}}, false},
 		{ocpp16.GetConfigurationRequest{Key: []string{">50................................................"}}, false},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestGetConfigurationConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.GetConfigurationConfirmation{ConfigurationKey: []ocpp16.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}}}, true},
 		{ocpp16.GetConfigurationConfirmation{ConfigurationKey: []ocpp16.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}, {Key: "key2", Readonly: false, Value: "value2"}}}, true},
 		{ocpp16.GetConfigurationConfirmation{ConfigurationKey: []ocpp16.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}}, UnknownKey: []string{"keyX"}}, true},
@@ -35,7 +35,7 @@ func (suite *OcppV16TestSuite) TestGetConfigurationConfirmationValidation() {
 		//{ocpp16.GetConfigurationConfirmation{ConfigurationKey: []ocpp16.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}, {Key: "key1", Readonly: false, Value: "value2"}}}, false},
 	}
 	//TODO: additional test cases TBD. See get_configuration.go
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestGetConfigurationE2EMocked() {

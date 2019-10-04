@@ -9,12 +9,13 @@ import (
 
 type CentralSystem struct {
 	Endpoint
-	server                ws.WsServer
-	newChargePointHandler func(chargePointId string)
-	requestHandler        func(chargePointId string, request ocpp.Request, requestId string, action string)
-	confirmationHandler   func(chargePointId string, confirmation ocpp.Confirmation, requestId string)
-	errorHandler          func(chargePointId string, err *ocpp.Error, details interface{})
-	clientPendingMessages map[string]string
+	server                         ws.WsServer
+	newChargePointHandler          func(chargePointId string)
+	disconnectedChargePointHandler func(chargePointId string)
+	requestHandler                 func(chargePointId string, request ocpp.Request, requestId string, action string)
+	confirmationHandler            func(chargePointId string, confirmation ocpp.Confirmation, requestId string)
+	errorHandler                   func(chargePointId string, err *ocpp.Error, details interface{})
+	clientPendingMessages          map[string]string
 }
 
 func NewCentralSystem(wsServer ws.WsServer, profiles ...*ocpp.Profile) *CentralSystem {
@@ -45,10 +46,21 @@ func (centralSystem *CentralSystem) SetNewChargePointHandler(handler func(charge
 	centralSystem.newChargePointHandler = handler
 }
 
+func (centralSystem *CentralSystem) SetDisconnectedChargePointHandler(handler func(chargePointId string)) {
+	centralSystem.disconnectedChargePointHandler = handler
+}
+
 func (centralSystem *CentralSystem) Start(listenPort int, listenPath string) {
 	// Set internal message handler
 	centralSystem.server.SetNewClientHandler(func(ws ws.Channel) {
-		centralSystem.newChargePointHandler(ws.GetId())
+		if centralSystem.newChargePointHandler != nil {
+			centralSystem.newChargePointHandler(ws.GetId())
+		}
+	})
+	centralSystem.server.SetDisconnectedClientHandler(func(ws ws.Channel) {
+		if centralSystem.disconnectedChargePointHandler != nil {
+			centralSystem.disconnectedChargePointHandler(ws.GetId())
+		}
 	})
 	centralSystem.server.SetMessageHandler(centralSystem.ocppMessageHandler)
 	// Serve & run

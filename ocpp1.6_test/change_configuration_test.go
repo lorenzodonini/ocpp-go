@@ -10,7 +10,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestChangeConfigurationRequestValidation() {
 	t := suite.T()
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.ChangeConfigurationRequest{Key: "someKey", Value: "someValue"}, true},
 		{ocpp16.ChangeConfigurationRequest{Key: "someKey"}, false},
 		{ocpp16.ChangeConfigurationRequest{Value: "someValue"}, false},
@@ -18,19 +18,19 @@ func (suite *OcppV16TestSuite) TestChangeConfigurationRequestValidation() {
 		{ocpp16.ChangeConfigurationRequest{Key: ">50................................................", Value: "someValue"}, false},
 		{ocpp16.ChangeConfigurationRequest{Key: "someKey", Value: ">500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}, false},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestChangeConfigurationConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.ChangeConfigurationConfirmation{Status: ocpp16.ConfigurationStatusAccepted}, true},
 		{ocpp16.ChangeConfigurationConfirmation{Status: ocpp16.ConfigurationStatusRejected}, true},
 		{ocpp16.ChangeConfigurationConfirmation{Status: ocpp16.ConfigurationStatusRebootRequired}, true},
 		{ocpp16.ChangeConfigurationConfirmation{Status: ocpp16.ConfigurationStatusNotSupported}, true},
 		{ocpp16.ChangeConfigurationConfirmation{Status: "invalidConfigurationStatus"}, false},
 	}
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestChangeConfigurationE2EMocked() {

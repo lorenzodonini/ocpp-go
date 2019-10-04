@@ -12,7 +12,7 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionRequestValidation() {
 	t := suite.T()
 	chargingSchedule := ocpp16.NewChargingSchedule(ocpp16.ChargingRateUnitWatts, ocpp16.NewChargingSchedulePeriod(0, 10.0))
 	chargingProfile := ocpp16.NewChargingProfile(1, 1, ocpp16.ChargingProfilePurposeChargePointMaxProfile, ocpp16.ChargingProfileKindAbsolute, chargingSchedule)
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.RemoteStartTransactionRequest{IdTag: "12345", ConnectorId: 1, ChargingProfile: chargingProfile}, true},
 		{ocpp16.RemoteStartTransactionRequest{IdTag: "12345", ConnectorId: 1}, true},
 		{ocpp16.RemoteStartTransactionRequest{IdTag: "12345"}, true},
@@ -20,18 +20,18 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionRequestValidation() {
 		{ocpp16.RemoteStartTransactionRequest{}, false},
 		{ocpp16.RemoteStartTransactionRequest{IdTag: ">20..................", ConnectorId: 1}, false},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStartTransactionConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.RemoteStartTransactionConfirmation{Status: ocpp16.RemoteStartStopStatusAccepted}, true},
 		{ocpp16.RemoteStartTransactionConfirmation{Status: ocpp16.RemoteStartStopStatusRejected}, true},
 		{ocpp16.RemoteStartTransactionConfirmation{Status: "invalidRemoteStartTransactionStatus"}, false},
 		{ocpp16.RemoteStartTransactionConfirmation{}, false},
 	}
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStartTransactionE2EMocked() {

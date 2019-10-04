@@ -18,6 +18,9 @@ const (
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
 
+	// Time allowed to wait for a ping on the server, before closing a connection due to inactivity.
+	pingWait = pongWait
+
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
 
@@ -42,6 +45,7 @@ type WebSocket struct {
 	id          string
 	outQueue    chan []byte
 	closeSignal chan bool
+	pingMessage chan []byte
 }
 
 func (websocket *WebSocket) GetId() string {
@@ -54,7 +58,7 @@ type WsServer interface {
 	Stop()
 	SetMessageHandler(handler func(ws Channel, data []byte) error)
 	SetNewClientHandler(handler func(ws Channel))
-	SetDisconnectedHandler(handler func(ws Channel))
+	SetDisconnectedClientHandler(handler func(ws Channel))
 	Write(webSocketId string, data []byte) error
 }
 
@@ -78,7 +82,7 @@ func (server *Server) SetNewClientHandler(handler func(ws Channel)) {
 	server.newClientHandler = handler
 }
 
-func (server *Server) SetDisconnectedHandler(handler func(ws Channel)) {
+func (server *Server) SetDisconnectedClientHandler(handler func(ws Channel)) {
 	server.disconnectedHandler = handler
 }
 
@@ -105,7 +109,7 @@ func (server *Server) Stop() {
 func (server *Server) Write(webSocketId string, data []byte) error {
 	ws, ok := server.connections[webSocketId]
 	if !ok {
-		return errors.New(fmt.Sprintf("Couldn't write to websocket. No socket with id %v is open", webSocketId))
+		return errors.New(fmt.Sprintf("couldn't write to websocket. No socket with id %v is open", webSocketId))
 	}
 	ws.outQueue <- data
 	return nil
@@ -118,8 +122,8 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	url := r.URL
-	log.Printf("New client on URL %v", url.String())
-	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte), closeSignal: make(chan bool, 1)}
+	log.Printf("new client on URL %v", url.String())
+	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte), closeSignal: make(chan bool, 1), pingMessage: make(chan []byte, 1)}
 	server.connections[url.Path] = &ws
 	// Read and write routines are started in separate goroutines and function will return immediately
 	go server.writePump(&ws)
@@ -137,12 +141,13 @@ func (server *Server) readPump(ws *WebSocket) {
 		ws.closeSignal <- true
 	}()
 
-	_ = conn.SetReadDeadline(time.Now().Add(pongWait))
-	conn.SetPongHandler(func(string) error {
-		log.Printf("Ping received")
-		_ = conn.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
+	conn.SetPingHandler(func(appData string) error {
+		log.Printf("ping received")
+		ws.pingMessage <- []byte(appData)
+		err := conn.SetReadDeadline(time.Now().Add(pingWait))
+		return err
 	})
+	_ = conn.SetReadDeadline(time.Now().Add(pingWait))
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -155,15 +160,16 @@ func (server *Server) readPump(ws *WebSocket) {
 			}
 			break
 		}
-		log.Printf("Received message from client %v", ws.GetId())
+		log.Printf("received message from client %v", ws.GetId())
 		if server.messageHandler != nil {
 			var channel Channel = ws
 			err = server.messageHandler(channel, message)
 			if err != nil {
-				log.Printf("Error while handling message: %v", err)
+				log.Printf("error while handling message: %v", err)
 				continue
 			}
 		}
+		_ = conn.SetReadDeadline(time.Now().Add(pingWait))
 	}
 }
 
@@ -181,13 +187,20 @@ func (server *Server) writePump(ws *WebSocket) {
 				// Closing connection
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				if err != nil {
-					log.Printf("Error while closing client -> %v", err)
+					log.Printf("error while closing client -> %v", err)
 				}
 				return
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				log.Printf("Error writing to websocket %v", err)
+				log.Printf("error writing to websocket %v", err)
+				return
+			}
+		case ping := <-ws.pingMessage:
+			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
+			err := conn.WriteMessage(websocket.PongMessage, ping)
+			if err != nil {
+				log.Printf("error writing to websocket %v", err)
 				return
 			}
 		case closed, ok := <-ws.closeSignal:
@@ -235,20 +248,20 @@ func (client *Client) writePump() {
 				// Closing connection normally
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				if err != nil {
-					log.Printf("Error while closing client -> %v", err)
+					log.Printf("error while closing client -> %v", err)
 				}
 				return
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				log.Printf("Error writing to websocket %v", err)
+				log.Printf("error writing to websocket %v", err)
 				return
 			}
 		case <-ticker.C:
-			log.Println("Ping triggered")
+			log.Println("ping triggered")
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				log.Printf("Couldn't send ping message -> %v", err)
+			if err := conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				log.Printf("couldn't send ping message -> %v", err)
 				return
 			}
 		case closed, ok := <-client.webSocket.closeSignal:
@@ -267,6 +280,7 @@ func (client *Client) readPump() {
 	}()
 	_ = conn.SetReadDeadline(time.Now().Add(pongWait))
 	conn.SetPongHandler(func(string) error {
+		log.Println("pong received")
 		return conn.SetReadDeadline(time.Now().Add(pongWait))
 	})
 	for {
@@ -277,11 +291,11 @@ func (client *Client) readPump() {
 			}
 			return
 		}
-		log.Printf("Received message from server")
+		log.Printf("received message from server")
 		if client.messageHandler != nil {
 			err = client.messageHandler(message)
 			if err != nil {
-				log.Printf("Error while handling message: %v", err)
+				log.Printf("error while handling message: %v", err)
 				continue
 			}
 		}
@@ -311,7 +325,7 @@ func (client *Client) Start(url string, dialOptions ...func(websocket.Dialer)) e
 	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte), closeSignal: make(chan bool, 1)}
 	//Start reader and write routine
 	go client.writePump()
-	client.readPump()
+	go client.readPump()
 	return nil
 }
 

@@ -10,21 +10,21 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestClearCacheRequestValidation() {
 	t := suite.T()
-	var requestTable = []RequestTestEntry{
+	var requestTable = []GenericTestEntry{
 		{ocpp16.ClearCacheRequest{}, true},
 	}
-	ExecuteRequestTestTable(t, requestTable)
+	ExecuteGenericTestTable(t, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestClearCacheConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []ConfirmationTestEntry{
+	var confirmationTable = []GenericTestEntry{
 		{ocpp16.ClearCacheConfirmation{Status: ocpp16.ClearCacheStatusAccepted}, true},
 		{ocpp16.ClearCacheConfirmation{Status: ocpp16.ClearCacheStatusRejected}, true},
 		{ocpp16.ClearCacheConfirmation{Status: "invalidClearCacheStatus"}, false},
 		{ocpp16.ClearCacheConfirmation{}, false},
 	}
-	ExecuteConfirmationTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(t, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestClearCacheE2EMocked() {

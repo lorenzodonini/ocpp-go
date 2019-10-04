@@ -7,6 +7,7 @@ import (
 
 // -------------------- Unlock Connector (CS -> CP) --------------------
 
+// Status in response to UnlockConnectorRequest.
 type UnlockStatus string
 
 const (
@@ -25,14 +26,19 @@ func isValidUnlockStatus(fl validator.FieldLevel) bool {
 	}
 }
 
+// The field definition of the UnlockConnector request payload sent by the Central System to the Charge Point.
 type UnlockConnectorRequest struct {
 	ConnectorId int `json:"connectorId" validate:"gt=0"`
 }
 
+// This field definition of the UnlockConnector confirmation payload, sent by the Charge Point to the Central System in response to an UnlockConnectorRequest.
+// In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type UnlockConnectorConfirmation struct {
 	Status UnlockStatus `json:"status" validate:"required,unlockStatus"`
 }
 
+// Central System can request a Charge Point to unlock a connector. To do so, the Central System SHALL send an UnlockConnectorRequest.
+// The purpose of this message: Help EV drivers that have problems unplugging their cable from the Charge Point in case of malfunction of the Connector cable retention.
 type UnlockConnectorFeature struct{}
 
 func (f UnlockConnectorFeature) GetFeatureName() string {
@@ -55,10 +61,12 @@ func (c UnlockConnectorConfirmation) GetFeatureName() string {
 	return UnlockConnectorFeatureName
 }
 
+// Creates a new UnlockConnectorRequest, containing all required fields. There are no optional fields for this message.
 func NewUnlockConnectorRequest(connectorId int) *UnlockConnectorRequest {
 	return &UnlockConnectorRequest{ConnectorId: connectorId}
 }
 
+// Creates a new UnlockConnectorConfirmation, containing all required fields. There are no optional fields for this message.
 func NewUnlockConnectorConfirmation(status UnlockStatus) *UnlockConnectorConfirmation {
 	return &UnlockConnectorConfirmation{Status: status}
 }

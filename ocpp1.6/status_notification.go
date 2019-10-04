@@ -3,11 +3,16 @@ package ocpp16
 import (
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
-	"time"
 )
 
 // -------------------- Status Notification (CP -> CS) --------------------
+
+// Charge Point status reported in StatusNotificationRequest.
 type ChargePointErrorCode string
+
+// Status reported in StatusNotificationRequest.
+// A status can be reported for the Charge Point main controller (connectorId = 0) or for a specific connector.
+// Status for the Charge Point main controller is a subset of the enumeration: Available, Unavailable or Faulted.
 type ChargePointStatus string
 
 const (
@@ -58,6 +63,7 @@ func isValidChargePointErrorCode(fl validator.FieldLevel) bool {
 	}
 }
 
+// The field definition of the StatusNotification request payload sent by the Charge Point to the Central System.
 type StatusNotificationRequest struct {
 	ConnectorId     int                  `json:"connectorId" validate:"gte=0"`
 	ErrorCode       ChargePointErrorCode `json:"errorCode" validate:"required,chargePointErrorCode"`
@@ -68,9 +74,12 @@ type StatusNotificationRequest struct {
 	VendorErrorCode string               `json:"vendorErrorCode,omitempty" validate:"max=50"`
 }
 
+// This field definition of the StatusNotification confirmation payload, sent by the Charge Point to the Central System in response to a StatusNotificationRequest.
+// In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type StatusNotificationConfirmation struct {
 }
 
+// A Charge Point sends a notification to the Central System to inform the Central System about a status change or an error within the Charge Point.
 type StatusNotificationFeature struct{}
 
 func (f StatusNotificationFeature) GetFeatureName() string {
@@ -93,23 +102,18 @@ func (c StatusNotificationConfirmation) GetFeatureName() string {
 	return StatusNotificationFeatureName
 }
 
+// Creates a new StatusNotificationRequest, containing all required fields.
+// Optional fields may be set directly on the created request.
 func NewStatusNotificationRequest(connectorId int, errorCode ChargePointErrorCode, status ChargePointStatus) *StatusNotificationRequest {
 	return &StatusNotificationRequest{ConnectorId: connectorId, ErrorCode: errorCode, Status: status}
 }
 
+// Creates a new StatusNotificationConfirmation, which doesn't contain any required or optional fields.
 func NewStatusNotificationConfirmation() *StatusNotificationConfirmation {
 	return &StatusNotificationConfirmation{}
 }
 
-func validateStatusNotificationRequest(sl validator.StructLevel) {
-	request := sl.Current().Interface().(StatusNotificationRequest)
-	if !dateTimeIsNull(request.Timestamp) && !validateDateTimeLt(request.Timestamp, time.Now()) {
-		sl.ReportError(request.Timestamp, "Timestamp", "timestamp", "lt", "")
-	}
-}
-
 func init() {
-	//Validate.RegisterStructValidation(validateStatusNotificationRequest, StatusNotificationRequest{})
 	_ = Validate.RegisterValidation("chargePointErrorCode", isValidChargePointErrorCode)
 	_ = Validate.RegisterValidation("chargePointStatus", isValidChargePointStatus)
 }

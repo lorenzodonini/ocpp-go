@@ -6,13 +6,18 @@ import (
 )
 
 // -------------------- Heartbeat (CP -> CS) --------------------
+
+// The field definition of the Heartbeat request payload sent by the Charge Point to the Central System.
 type HeartbeatRequest struct {
 }
 
+// This field definition of the Heartbeat confirmation payload, sent by the Central System to the Charge Point in response to a HeartbeatRequest.
+// In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type HeartbeatConfirmation struct {
-	CurrentTime DateTime `json:"currentTime" validate:"required"`
+	CurrentTime *DateTime `json:"currentTime" validate:"required"`
 }
 
+// To let the Central System know that a Charge Point is still connected, a Charge Point sends a heartbeat after a configurable time interval.
 type HeartbeatFeature struct{}
 
 func (f HeartbeatFeature) GetFeatureName() string {
@@ -35,11 +40,13 @@ func (c HeartbeatConfirmation) GetFeatureName() string {
 	return HeartbeatFeatureName
 }
 
+// Creates a new HeartbeatRequest, which doesn't contain any required or optional fields.
 func NewHeartbeatRequest() *HeartbeatRequest {
 	return &HeartbeatRequest{}
 }
 
-func NewHeartbeatConfirmation(currentTime DateTime) *HeartbeatConfirmation {
+// Creates a new HeartbeatConfirmation, containing all required fields.
+func NewHeartbeatConfirmation(currentTime *DateTime) *HeartbeatConfirmation {
 	return &HeartbeatConfirmation{CurrentTime: currentTime}
 }
 
@@ -48,9 +55,6 @@ func validateHeartbeatConfirmation(sl validator.StructLevel) {
 	if dateTimeIsNull(confirmation.CurrentTime) {
 		sl.ReportError(confirmation.CurrentTime, "CurrentTime", "currentTime", "required", "")
 	}
-	//if !validateDateTimeNow(confirmation.CurrentTime) {
-	//	sl.ReportError(confirmation.CurrentTime, "CurrentTime", "currentTime", "eq", "")
-	//}
 }
 
 func init() {

@@ -80,16 +80,13 @@ func isValidAuthorizationStatus(fl validator.FieldLevel) bool {
 }
 
 type IdTagInfo struct {
-	ExpiryDate  DateTime            `json:"expiryDate" validate:"omitempty,gt"`
-	ParentIdTag string              `json:"parentIdTag" validate:"omitempty,max=20"`
+	ExpiryDate  *DateTime           `json:"expiryDate,omitempty" validate:"omitempty"`
+	ParentIdTag string              `json:"parentIdTag,omitempty" validate:"omitempty,max=20"`
 	Status      AuthorizationStatus `json:"status" validate:"required,authorizationStatus"`
 }
 
-func IdTagInfoStructLevelValidation(sl validator.StructLevel) {
-	idTagInfo := sl.Current().Interface().(IdTagInfo)
-	if !dateTimeIsNull(idTagInfo.ExpiryDate) && !validateDateTimeGt(idTagInfo.ExpiryDate, time.Now()) {
-		sl.ReportError(idTagInfo.ExpiryDate, "ExpiryDate", "expiryDate", "gt", "")
-	}
+func NewIdTagInfo(status AuthorizationStatus) *IdTagInfo {
+	return &IdTagInfo{Status: status}
 }
 
 // Charging Profiles
@@ -357,12 +354,12 @@ type MeterValue struct {
 }
 
 // DateTime Validation
-func dateTimeIsNull(dateTime DateTime) bool {
-	return dateTime.IsZero()
+func dateTimeIsNull(dateTime *DateTime) bool {
+	return dateTime != nil && dateTime.IsZero()
 }
 
-func validateDateTimeGt(dateTime DateTime, than time.Time) bool {
-	return dateTime.After(than)
+func validateDateTimeGt(dateTime *DateTime, than time.Time) bool {
+	return dateTime != nil && dateTime.After(than)
 }
 
 func validateDateTimeNow(dateTime DateTime) bool {
@@ -390,5 +387,4 @@ func init() {
 	_ = Validate.RegisterValidation("phase", isValidPhase)
 	_ = Validate.RegisterValidation("location", isValidLocation)
 	_ = Validate.RegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
-	Validate.RegisterStructValidation(IdTagInfoStructLevelValidation, IdTagInfo{})
 }

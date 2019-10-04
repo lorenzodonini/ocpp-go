@@ -16,7 +16,7 @@ type ChargePoint interface {
 	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
 	Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
 	MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error)
-	StartTransaction(connectorId int, idTag string, meterStart int, timestamp DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
+	StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
 	StopTransaction(meterStop int, timestamp *DateTime, transactionId int, props ...func(request *StopTransactionRequest)) (*StopTransactionConfirmation, error)
 	StatusNotification(connectorId int, errorCode ChargePointErrorCode, status ChargePointStatus, props ...func(request *StatusNotificationRequest)) (*StatusNotificationConfirmation, error)
 	//TODO: add missing profile methods
@@ -26,6 +26,7 @@ type ChargePoint interface {
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
+	Stop()
 }
 
 type chargePoint struct {
@@ -100,7 +101,7 @@ func (cp *chargePoint) MeterValues(connectorId int, meterValues []MeterValue, pr
 	}
 }
 
-func (cp *chargePoint) StartTransaction(connectorId int, idTag string, meterStart int, timestamp DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error) {
+func (cp *chargePoint) StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error) {
 	request := NewStartTransactionRequest(connectorId, idTag, meterStart, timestamp)
 	for _, fn := range props {
 		fn(request)
@@ -199,6 +200,10 @@ func (cp *chargePoint) Start(centralSystemUrl string) error {
 	return cp.chargePoint.Start(centralSystemUrl)
 }
 
+func (cp *chargePoint) Stop() {
+	cp.chargePoint.Stop()
+}
+
 func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
 	if cp.coreListener == nil {
 		log.Printf("Cannot handle call %v from central system. Sending CallError instead", requestId)
@@ -273,6 +278,7 @@ type CentralSystem interface {
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
+	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
 	Start(listenPort int, listenPath string)
 }
@@ -424,6 +430,10 @@ func (cs *centralSystem) SetCentralSystemCoreListener(listener CentralSystemCore
 
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
 	cs.centralSystem.SetNewChargePointHandler(handler)
+}
+
+func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePointId string)) {
+	cs.centralSystem.SetDisconnectedChargePointHandler(handler)
 }
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {

@@ -7,6 +7,7 @@ import (
 
 // -------------------- Change Availability (CS -> CP) --------------------
 
+// Requested availability change in ChangeAvailabilityRequest.
 type AvailabilityType string
 
 const (
@@ -24,6 +25,7 @@ func isValidAvailabilityType(fl validator.FieldLevel) bool {
 	}
 }
 
+// Status returned in response to ChangeAvailabilityRequest
 type AvailabilityStatus string
 
 const (
@@ -42,15 +44,23 @@ func isValidAvailabilityStatus(fl validator.FieldLevel) bool {
 	}
 }
 
+// The field definition of the ChangeAvailability request payload sent by the Central System to the Charge Point.
 type ChangeAvailabilityRequest struct {
 	ConnectorId int              `json:"connectorId" validate:"gte=0"`
 	Type        AvailabilityType `json:"type" validate:"required,availabilityType"`
 }
 
+// This field definition of the ChangeAvailability confirmation payload, sent by the Charge Point to the Central System in response to a ChangeAvailabilityRequest.
+// In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ChangeAvailabilityConfirmation struct {
 	Status AvailabilityStatus `json:"status" validate:"required,availabilityStatus"`
 }
 
+// Central System can request a Charge Point to change its availability.
+// A Charge Point is considered available (“operative”) when it is charging or ready for charging.
+// A Charge Point is considered unavailable when it does not allow any charging.
+// The Central System SHALL send a ChangeAvailabilityRequest for requesting a Charge Point to change its availability.
+// The Central System can change the availability to available or unavailable.
 type ChangeAvailabilityFeature struct{}
 
 func (f ChangeAvailabilityFeature) GetFeatureName() string {
@@ -73,10 +83,12 @@ func (c ChangeAvailabilityConfirmation) GetFeatureName() string {
 	return ChangeAvailabilityFeatureName
 }
 
+// Creates a new ChangeAvailabilityRequest, containing all required fields. There are no optional fields for this message.
 func NewChangeAvailabilityRequest(connectorId int, availabilityType AvailabilityType) *ChangeAvailabilityRequest {
 	return &ChangeAvailabilityRequest{ConnectorId: connectorId, Type: availabilityType}
 }
 
+// Creates a new ChangeAvailabilityConfirmation, containing all required fields. There are no optional fields for this message.
 func NewChangeAvailabilityConfirmation(status AvailabilityStatus) *ChangeAvailabilityConfirmation {
 	return &ChangeAvailabilityConfirmation{Status: status}
 }

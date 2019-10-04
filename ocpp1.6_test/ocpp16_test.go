@@ -31,8 +31,9 @@ func NewMockWebSocket(id string) MockWebSocket {
 type MockWebsocketServer struct {
 	mock.Mock
 	ws.WsServer
-	MessageHandler   func(ws ws.Channel, data []byte) error
-	NewClientHandler func(ws ws.Channel)
+	MessageHandler            func(ws ws.Channel, data []byte) error
+	NewClientHandler          func(ws ws.Channel)
+	DisconnectedClientHandler func(ws ws.Channel)
 }
 
 func (websocketServer *MockWebsocketServer) Start(port int, listenPath string) {
@@ -54,6 +55,10 @@ func (websocketServer *MockWebsocketServer) SetMessageHandler(handler func(ws ws
 
 func (websocketServer *MockWebsocketServer) SetNewClientHandler(handler func(ws ws.Channel)) {
 	websocketServer.NewClientHandler = handler
+}
+
+func (websocketServer *MockWebsocketServer) SetDisconnectedClientHandler(handler func(ws ws.Channel)) {
+	websocketServer.DisconnectedClientHandler = handler
 }
 
 func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client interface{}) {
@@ -442,24 +447,15 @@ type ConfirmationTestEntry struct {
 	ExpectedValid bool
 }
 
+// TODO: pass expected error value for improved validation and error message
 func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
 	for _, testCase := range testTable {
 		err := ocpp16.Validate.Struct(testCase.Element)
-		assert.Equal(t, testCase.ExpectedValid, err == nil)
-	}
-}
-
-func ExecuteRequestTestTable(t *testing.T, testTable []RequestTestEntry) {
-	for _, testCase := range testTable {
-		err := ocpp16.Validate.Struct(testCase.Request)
-		assert.Equal(t, testCase.ExpectedValid, err == nil)
-	}
-}
-
-func ExecuteConfirmationTestTable(t *testing.T, testTable []ConfirmationTestEntry) {
-	for _, testCase := range testTable {
-		err := ocpp16.Validate.Struct(testCase.Confirmation)
-		assert.Equal(t, testCase.ExpectedValid, err == nil)
+		if err != nil {
+			assert.Equal(t, testCase.ExpectedValid, false, err.Error())
+		} else {
+			assert.Equal(t, testCase.ExpectedValid, true, "%v is valid", testCase.Element)
+		}
 	}
 }
 

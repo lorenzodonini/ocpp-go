@@ -6,6 +6,8 @@ import (
 )
 
 // -------------------- Stop Transaction (CP -> CS) --------------------
+
+// Reason for stopping a transaction in StopTransactionRequest.
 type Reason string
 
 const (
@@ -32,6 +34,7 @@ func isValidReason(fl validator.FieldLevel) bool {
 	}
 }
 
+// The field definition of the StopTransaction request payload sent by the Charge Point to the Central System.
 type StopTransactionRequest struct {
 	IdTag           string       `json:"idTag,omitempty" validate:"max=20"`
 	MeterStop       int          `json:"meterStop" validate:"gte=0"`
@@ -41,10 +44,13 @@ type StopTransactionRequest struct {
 	TransactionData []MeterValue `json:"transactionData,omitempty" validate:"omitempty,dive"`
 }
 
+// This field definition of the StopTransaction confirmation payload, sent by the Central System to the Charge Point in response to a StopTransactionRequest.
+// In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type StopTransactionConfirmation struct {
 	IdTagInfo     *IdTagInfo `json:"idTagInfo,omitempty" validate:"omitempty"`
 }
 
+// When a transaction is stopped, the Charge Point SHALL send a StopTransactionRequest, notifying to the Central System that the transaction has stopped.
 type StopTransactionFeature struct{}
 
 func (f StopTransactionFeature) GetFeatureName() string {
@@ -67,14 +73,18 @@ func (c StopTransactionConfirmation) GetFeatureName() string {
 	return StopTransactionFeatureName
 }
 
+// Creates a new StopTransactionRequest, containing all required fields.
+// Optional fields may be set directly on the created request.
 func NewStopTransactionRequest(meterStop int, timestamp *DateTime, transactionId int) *StopTransactionRequest {
 	return &StopTransactionRequest{MeterStop: meterStop, Timestamp: timestamp, TransactionId: transactionId}
 }
 
+// Creates a new StopTransactionConfirmation. Optional fields may be set afterwards.
 func NewStopTransactionConfirmation() *StopTransactionConfirmation {
 	return &StopTransactionConfirmation{}
 }
 
+//TODO: advanced validation
 func init() {
 	_ = Validate.RegisterValidation("reason", isValidReason)
 }
