@@ -112,7 +112,7 @@ func (handler *CentralSystemHandler) OnStartTransaction(chargePointId string, re
 	}
 	connector := info.getConnector(request.ConnectorId)
 	if connector.currentTransaction >= 0 {
-		return nil, fmt.Errorf("connector %v is currently busy with another transaction")
+		return nil, fmt.Errorf("connector %v is currently busy with another transaction", request.ConnectorId)
 	}
 	transaction := &TransactionInfo{}
 	transaction.idTag = request.IdTag
