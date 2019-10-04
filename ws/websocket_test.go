@@ -58,6 +58,7 @@ func TestWebsocketEcho(t *testing.T) {
 		return data, nil
 	})
 	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
 
 	// Test message
 	wsClient := NewWebsocketClient(t, func(data []byte) ([]byte, error) {
@@ -101,6 +102,7 @@ func TestWebsocketClientConnectionBreak(t *testing.T) {
 		disconnected <- true
 	})
 	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
 
 	// Test
 	wsClient := NewWebsocketClient(t, nil)
@@ -139,6 +141,7 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 		disconnected <- true
 	})
 	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
 
 	// Test
 	wsClient := NewWebsocketClient(t, nil)
