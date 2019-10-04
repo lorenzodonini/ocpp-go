@@ -97,7 +97,7 @@ func TestWebsocketClientConnectionBreak(t *testing.T) {
 	wsServer.SetNewClientHandler(func(ws Channel) {
 		newClient <- true
 	})
-	wsServer.SetDisconnectedHandler(func(ws Channel) {
+	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
 		disconnected <- true
 	})
 	go wsServer.Start(serverPort, serverPath)
@@ -135,7 +135,7 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 		err := conn.connection.Close()
 		assert.Nil(t, err)
 	})
-	wsServer.SetDisconnectedHandler(func(ws Channel) {
+	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
 		disconnected <- true
 	})
 	go wsServer.Start(serverPort, serverPath)

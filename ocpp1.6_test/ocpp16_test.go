@@ -31,8 +31,9 @@ func NewMockWebSocket(id string) MockWebSocket {
 type MockWebsocketServer struct {
 	mock.Mock
 	ws.WsServer
-	MessageHandler   func(ws ws.Channel, data []byte) error
-	NewClientHandler func(ws ws.Channel)
+	MessageHandler            func(ws ws.Channel, data []byte) error
+	NewClientHandler          func(ws ws.Channel)
+	DisconnectedClientHandler func(ws ws.Channel)
 }
 
 func (websocketServer *MockWebsocketServer) Start(port int, listenPath string) {
@@ -54,6 +55,10 @@ func (websocketServer *MockWebsocketServer) SetMessageHandler(handler func(ws ws
 
 func (websocketServer *MockWebsocketServer) SetNewClientHandler(handler func(ws ws.Channel)) {
 	websocketServer.NewClientHandler = handler
+}
+
+func (websocketServer *MockWebsocketServer) SetDisconnectedClientHandler(handler func(ws ws.Channel)) {
+	websocketServer.DisconnectedClientHandler = handler
 }
 
 func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client interface{}) {

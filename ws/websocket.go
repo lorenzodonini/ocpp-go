@@ -58,7 +58,7 @@ type WsServer interface {
 	Stop()
 	SetMessageHandler(handler func(ws Channel, data []byte) error)
 	SetNewClientHandler(handler func(ws Channel))
-	SetDisconnectedHandler(handler func(ws Channel))
+	SetDisconnectedClientHandler(handler func(ws Channel))
 	Write(webSocketId string, data []byte) error
 }
 
@@ -82,7 +82,7 @@ func (server *Server) SetNewClientHandler(handler func(ws Channel)) {
 	server.newClientHandler = handler
 }
 
-func (server *Server) SetDisconnectedHandler(handler func(ws Channel)) {
+func (server *Server) SetDisconnectedClientHandler(handler func(ws Channel)) {
 	server.disconnectedHandler = handler
 }
 

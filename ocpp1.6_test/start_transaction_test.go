@@ -14,12 +14,12 @@ func (suite *OcppV16TestSuite) TestStartTransactionRequestValidation() {
 	var requestTable = []GenericTestEntry{
 		{ocpp16.StartTransactionRequest{ConnectorId: 1, IdTag: "12345", MeterStart: 100, ReservationId: 42, Timestamp: ocpp16.NewDateTime(time.Now())}, true},
 		{ocpp16.StartTransactionRequest{ConnectorId: 1, IdTag: "12345", MeterStart: 100, Timestamp: ocpp16.NewDateTime(time.Now())}, true},
+		{ocpp16.StartTransactionRequest{ConnectorId: 1, IdTag: "12345", Timestamp: ocpp16.NewDateTime(time.Now())}, true},
 		{ocpp16.StartTransactionRequest{ConnectorId: 0, IdTag: "12345", MeterStart: 100, Timestamp: ocpp16.NewDateTime(time.Now())}, false},
 		{ocpp16.StartTransactionRequest{ConnectorId: -1, IdTag: "12345", MeterStart: 100, Timestamp: ocpp16.NewDateTime(time.Now())}, false},
 		{ocpp16.StartTransactionRequest{ConnectorId: 1, IdTag: ">20..................", MeterStart: 100, Timestamp: ocpp16.NewDateTime(time.Now())}, false},
 		{ocpp16.StartTransactionRequest{IdTag: "12345", MeterStart: 100, Timestamp: ocpp16.NewDateTime(time.Now())}, false},
 		{ocpp16.StartTransactionRequest{ConnectorId: 1, MeterStart: 100, Timestamp: ocpp16.NewDateTime(time.Now())}, false},
-		{ocpp16.StartTransactionRequest{ConnectorId: 1, IdTag: "12345", Timestamp: ocpp16.NewDateTime(time.Now())}, false},
 		{ocpp16.StartTransactionRequest{ConnectorId: 1, IdTag: "12345", MeterStart: 100}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
@@ -29,9 +29,9 @@ func (suite *OcppV16TestSuite) TestStartTransactionConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}, TransactionId: 10}, true},
+		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
 		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: "invalidAuthorizationStatus"}, TransactionId: 10}, false},
 		{ocpp16.StartTransactionConfirmation{TransactionId: 10}, false},
-		{ocpp16.StartTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }

@@ -57,7 +57,7 @@ func (centralSystem *CentralSystem) Start(listenPort int, listenPath string) {
 			centralSystem.newChargePointHandler(ws.GetId())
 		}
 	})
-	centralSystem.server.SetDisconnectedHandler(func(ws ws.Channel) {
+	centralSystem.server.SetDisconnectedClientHandler(func(ws ws.Channel) {
 		if centralSystem.disconnectedChargePointHandler != nil {
 			centralSystem.disconnectedChargePointHandler(ws.GetId())
 		}

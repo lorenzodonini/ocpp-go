@@ -107,6 +107,13 @@ func checkError(err error) {
 	}
 }
 
+func getExpiryDate(info *ocpp16.IdTagInfo) string {
+	if info.ExpiryDate != nil {
+		return fmt.Sprintf("authorized until %v", info.ExpiryDate.String())
+	}
+	return ""
+}
+
 func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHandler) {
 	dummyClientIdTag := "12345"
 	chargingConnector := 1
@@ -122,13 +129,13 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 	// Simulate charging for connector 1
 	authConf, err := chargePoint.Authorize(dummyClientIdTag)
 	checkError(err)
-	log.Printf("[Authorize confirmation] status: %v, authorized until %v", authConf.IdTagInfo.Status, authConf.IdTagInfo.ExpiryDate.String())
+	log.Printf("[Authorize confirmation] status: %v %v", authConf.IdTagInfo.Status, getExpiryDate(authConf.IdTagInfo))
 	stateHandler.connectors[chargingConnector].status = ocpp16.ChargePointStatusPreparing
 	_, err = chargePoint.StatusNotification(chargingConnector, ocpp16.NoError, stateHandler.connectors[chargingConnector].status)
 	checkError(err)
 	startConf, err := chargePoint.StartTransaction(chargingConnector, dummyClientIdTag, stateHandler.meterValue, ocpp16.NewDateTime(time.Now()))
 	checkError(err)
-	log.Printf("[Start transaction confirmation] status: %v, transaction %v authorized until %v", startConf.IdTagInfo.Status, startConf.TransactionId, startConf.IdTagInfo.ExpiryDate.String())
+	log.Printf("[Start transaction confirmation] status: %v, transaction %v %v", startConf.IdTagInfo.Status, startConf.TransactionId, getExpiryDate(startConf.IdTagInfo))
 	stateHandler.connectors[chargingConnector].currentTransaction = startConf.TransactionId
 	stateHandler.connectors[chargingConnector].status = ocpp16.ChargePointStatusCharging
 	_, err = chargePoint.StatusNotification(chargingConnector, ocpp16.NoError, stateHandler.connectors[chargingConnector].status)
@@ -148,14 +155,14 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 	stateHandler.connectors[chargingConnector].status = ocpp16.ChargePointStatusFinishing
 	_, err = chargePoint.StatusNotification(chargingConnector, ocpp16.NoError, stateHandler.connectors[chargingConnector].status)
 	checkError(err)
-	stopConf, err := chargePoint.StopTransaction(stateHandler.meterValue, ocpp16.NewDateTime(time.Now()), startConf.TransactionId, func(request *ocpp16.StopTransactionRequest) {
+	_, err = chargePoint.StopTransaction(stateHandler.meterValue, ocpp16.NewDateTime(time.Now()), startConf.TransactionId, func(request *ocpp16.StopTransactionRequest) {
 		sampledValue := ocpp16.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit:ocpp16.UnitOfMeasureWh, Format: ocpp16.ValueFormatRaw, Measurand:ocpp16.MeasurandEnergyActiveExportRegister, Context: ocpp16.ReadingContextSamplePeriodic, Location: ocpp16.LocationOutlet }
 		meterValue := ocpp16.MeterValue{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{sampledValue}}
 		request.TransactionData = []ocpp16.MeterValue{meterValue}
 		request.Reason = ocpp16.ReasonEVDisconnected
 	})
 	checkError(err)
-	log.Printf("[Stop transaction confirmation] status: %v, transaction %v stopped", stopConf.IdTagInfo.Status, startConf.TransactionId)
+	log.Printf("[Stop transaction confirmation] transaction %v stopped", startConf.TransactionId)
 	stateHandler.connectors[chargingConnector].status = ocpp16.ChargePointStatusFinishing
 	_, err = chargePoint.StatusNotification(chargingConnector, ocpp16.NoError, stateHandler.connectors[chargingConnector].status)
 	checkError(err)
@@ -184,7 +191,7 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	} else {
-		log.Printf("connected successfully to central system at %v", csUrl)
+		log.Printf("connected to central system at %v", csUrl)
 		exampleRoutine(chargePoint, handler)
 		// Disconnect
 		chargePoint.Stop()

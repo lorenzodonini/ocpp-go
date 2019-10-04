@@ -10,7 +10,7 @@ import (
 type StartTransactionRequest struct {
 	ConnectorId   int       `json:"connectorId" validate:"gt=0"`
 	IdTag         string    `json:"idTag" validate:"required,max=20"`
-	MeterStart    int       `json:"meterStart" validate:"required"`
+	MeterStart    int       `json:"meterStart" validate:"gte=0"`
 	ReservationId int       `json:"reservationId,omitempty"`
 	Timestamp     *DateTime `json:"timestamp" validate:"required"`
 }
@@ -18,7 +18,7 @@ type StartTransactionRequest struct {
 // This field definition of the StartTransactionConfirmation payload sent by the Central System to the Charge Point in response to a StartTransactionRequest.
 type StartTransactionConfirmation struct {
 	IdTagInfo     *IdTagInfo `json:"idTagInfo" validate:"required"`
-	TransactionId int        `json:"transactionId" validate:"required"`
+	TransactionId int        `json:"transactionId" validate:"gte=0"`
 }
 
 // The Charge Point SHALL send a StartTransactionRequest to the Central System to inform about a transaction that has been started.
