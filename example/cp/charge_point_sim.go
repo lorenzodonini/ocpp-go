@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
+	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"log"
 	"os"
 	"time"

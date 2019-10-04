@@ -6,5 +6,5 @@ git:
 before_script:
   - go get -d -v
 script:
-  - go build .
-  - go test .
+  - go test -v ./...
+  - go build ./...
