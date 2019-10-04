@@ -3,8 +3,6 @@ go:
   - 1.12.x
 git:
   depth: 1
-before_script:
-  - go get -d -v
 script:
   - go test -v ./...
   - go build ./...
