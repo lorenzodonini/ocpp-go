@@ -3,6 +3,9 @@ go:
   - 1.12.x
 git:
   depth: 1
+notifications:
+  email:
+    on_success: never
 script:
-  - go test -v ./...
+  - go test ./...
   - go build ./...
