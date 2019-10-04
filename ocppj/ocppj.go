@@ -3,7 +3,7 @@ package ocppj
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp"
 	errors2 "github.com/pkg/errors"
 	"gopkg.in/go-playground/validator.v9"
 	"log"

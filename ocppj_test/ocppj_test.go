@@ -3,9 +3,9 @@ package ocppj_test
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/ocppj"
-	"github.com/lorenzodonini/go-ocpp/ws"
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -246,10 +246,6 @@ type OcppJTestSuite struct {
 	centralSystem *ocppj.CentralSystem
 	mockServer    *MockWebsocketServer
 	mockClient    *MockWebsocketClient
-}
-
-func TestOcppJ(t *testing.T) {
-	suite.Run(t, new(OcppJTestSuite))
 }
 
 func (suite *OcppJTestSuite) SetupTest() {
@@ -600,3 +596,7 @@ func (suite *OcppJTestSuite) TestParseCall() {
 }
 
 //TODO: implement further ocpp-j protocol tests
+
+func TestOcppJ(t *testing.T) {
+	suite.Run(t, new(OcppJTestSuite))
+}

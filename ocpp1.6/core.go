@@ -1,7 +1,7 @@
 package ocpp16
 
 import (
-	"github.com/lorenzodonini/go-ocpp/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp"
 )
 
 const (

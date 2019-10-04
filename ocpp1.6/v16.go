@@ -2,9 +2,9 @@ package ocpp16
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/ocppj"
-	"github.com/lorenzodonini/go-ocpp/ws"
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/lorenzodonini/ocpp-go/ws"
 	"log"
 )
 

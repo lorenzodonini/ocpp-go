@@ -1,7 +1,7 @@
 package ocpp16_test
 
 import (
-	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
+	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"time"
 )
 
