@@ -273,6 +273,7 @@ type CentralSystem interface {
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
+	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
 	Start(listenPort int, listenPath string)
 }
@@ -424,6 +425,10 @@ func (cs *centralSystem) SetCentralSystemCoreListener(listener CentralSystemCore
 
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
 	cs.centralSystem.SetNewChargePointHandler(handler)
+}
+
+func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePointId string)) {
+	cs.centralSystem.SetDisconnectedChargePointHandler(handler)
 }
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
