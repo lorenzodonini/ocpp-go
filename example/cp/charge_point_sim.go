@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
 	"log"
 	"os"
+	"time"
 )
 
 type ConnectorInfo struct {
@@ -17,6 +19,7 @@ type ChargePointHandler struct {
 	connectors map[int]*ConnectorInfo
 	errorCode ocpp16.ChargePointErrorCode
 	configuration map[string]ocpp16.ConfigurationKey
+	meterValue int
 }
 
 func (handler * ChargePointHandler) OnChangeAvailability(request *ocpp16.ChangeAvailabilityRequest) (confirmation *ocpp16.ChangeAvailabilityConfirmation, err error) {
@@ -98,8 +101,64 @@ func (handler * ChargePointHandler) OnUnlockConnector(request *ocpp16.UnlockConn
 	return ocpp16.NewUnlockConnectorConfirmation(ocpp16.UnlockStatusUnlocked), nil
 }
 
-func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHandler) {
+func checkError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
+func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHandler) {
+	dummyClientIdTag := "12345"
+	chargingConnector := 1
+	// Boot
+	bootConf, err := chargePoint.BootNotification("model1", "vendor1")
+	checkError(err)
+	log.Printf("[Boot confirmation] status: %v, interval: %v, current time: %v", bootConf.Status, bootConf.Interval, bootConf.CurrentTime.String())
+	// Notify connector status
+	_, err = chargePoint.StatusNotification(0, ocpp16.NoError, ocpp16.ChargePointStatusAvailable)
+	checkError(err)
+	// Wait for some time ...
+	time.Sleep(5 * time.Second)
+	// Simulate charging for connector 1
+	authConf, err := chargePoint.Authorize(dummyClientIdTag)
+	checkError(err)
+	log.Printf("[Authorize confirmation] status: %v, authorized until %v", authConf.IdTagInfo.Status, authConf.IdTagInfo.ExpiryDate.String())
+	stateHandler.connectors[chargingConnector].status = ocpp16.ChargePointStatusPreparing
+	_, err = chargePoint.StatusNotification(chargingConnector, ocpp16.NoError, stateHandler.connectors[chargingConnector].status)
+	checkError(err)
+	startConf, err := chargePoint.StartTransaction(chargingConnector, dummyClientIdTag, stateHandler.meterValue, ocpp16.NewDateTime(time.Now()))
+	checkError(err)
+	log.Printf("[Start transaction confirmation] status: %v, transaction %v authorized until %v", startConf.IdTagInfo.Status, startConf.TransactionId, startConf.IdTagInfo.ExpiryDate.String())
+	stateHandler.connectors[chargingConnector].currentTransaction = startConf.TransactionId
+	stateHandler.connectors[chargingConnector].status = ocpp16.ChargePointStatusCharging
+	_, err = chargePoint.StatusNotification(chargingConnector, ocpp16.NoError, stateHandler.connectors[chargingConnector].status)
+	checkError(err)
+	// Periodically send meter values
+	for i := 0; i<5; i++ {
+		time.Sleep(5 * time.Second)
+		stateHandler.meterValue += 10
+		sampledValue := ocpp16.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit:ocpp16.UnitOfMeasureWh, Format: ocpp16.ValueFormatRaw, Measurand: ocpp16.MeasurandEnergyActiveExportRegister, Context: ocpp16.ReadingContextSamplePeriodic, Location: ocpp16.LocationOutlet }
+		meterValue := ocpp16.MeterValue{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{sampledValue}}
+		_, err := chargePoint.MeterValues(chargingConnector, []ocpp16.MeterValue{meterValue})
+		log.Printf("[Meter values confirmation] sent updated %v", sampledValue.Measurand)
+		checkError(err)
+	}
+	stateHandler.meterValue += 2
+	// Stop charging for connector 1
+	stateHandler.connectors[chargingConnector].status = ocpp16.ChargePointStatusFinishing
+	_, err = chargePoint.StatusNotification(chargingConnector, ocpp16.NoError, stateHandler.connectors[chargingConnector].status)
+	checkError(err)
+	stopConf, err := chargePoint.StopTransaction(stateHandler.meterValue, ocpp16.NewDateTime(time.Now()), startConf.TransactionId, func(request *ocpp16.StopTransactionRequest) {
+		sampledValue := ocpp16.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit:ocpp16.UnitOfMeasureWh, Format: ocpp16.ValueFormatRaw, Measurand:ocpp16.MeasurandEnergyActiveExportRegister, Context: ocpp16.ReadingContextSamplePeriodic, Location: ocpp16.LocationOutlet }
+		meterValue := ocpp16.MeterValue{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{sampledValue}}
+		request.TransactionData = []ocpp16.MeterValue{meterValue}
+		request.Reason = ocpp16.ReasonEVDisconnected
+	})
+	checkError(err)
+	log.Printf("[Stop transaction confirmation] status: %v, transaction %v stopped", stopConf.IdTagInfo.Status, startConf.TransactionId)
+	stateHandler.connectors[chargingConnector].status = ocpp16.ChargePointStatusFinishing
+	_, err = chargePoint.StatusNotification(chargingConnector, ocpp16.NoError, stateHandler.connectors[chargingConnector].status)
+	checkError(err)
 }
 
 // Start function
@@ -115,13 +174,20 @@ func main() {
 	// Create a default OCPP 1.6 charge point
 	chargePoint := ocpp16.NewChargePoint(id, nil, nil)
 	// Set a handler for all callback functions
-	handler := &ChargePointHandler{}
+	connectors := map[int]*ConnectorInfo{
+		1: {status: ocpp16.ChargePointStatusAvailable, availability: ocpp16.AvailabilityTypeOperative, currentTransaction: 0},
+	}
+	handler := &ChargePointHandler{status: ocpp16.ChargePointStatusAvailable, connectors: connectors, configuration: map[string]ocpp16.ConfigurationKey{}, errorCode: ocpp16.NoError}
 	chargePoint.SetChargePointCoreListener(handler)
 	// Connects to central system
 	err := chargePoint.Start(csUrl)
 	if err != nil {
 		log.Println(err)
 	} else {
+		log.Printf("connected successfully to central system at %v", csUrl)
 		exampleRoutine(chargePoint, handler)
+		// Disconnect
+		chargePoint.Stop()
+		log.Printf("disconnected from central system")
 	}
 }

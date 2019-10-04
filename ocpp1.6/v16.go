@@ -26,6 +26,7 @@ type ChargePoint interface {
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
+	Stop()
 }
 
 type chargePoint struct {
@@ -197,6 +198,10 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Confirmation, err error, r
 func (cp *chargePoint) Start(centralSystemUrl string) error {
 	// TODO: implement auto-reconnect logic
 	return cp.chargePoint.Start(centralSystemUrl)
+}
+
+func (cp *chargePoint) Stop() {
+	cp.chargePoint.Stop()
 }
 
 func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
