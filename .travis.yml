@@ -6,6 +6,17 @@ git:
 notifications:
   email:
     on_success: never
-script:
-  - go test ./...
-  - go build ./...
+stages:
+  - test
+  - build
+  - publish
+jobs:
+  include:
+    - stage: test
+      script: go test ./...
+    - stage: build
+      script: go build ./...
+    - stage: publish
+      script:
+        - docker build -t ocpp-go-1.6/central-system -f example/cs/Dockerfile .
+        - docker build -t ocpp-go-1.6/charge-point -f example/cp/Dockerfile .

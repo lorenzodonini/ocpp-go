@@ -1,5 +1,7 @@
 # ocpp-go
 
+[![Build Status](https://travis-ci.org/lorenzodonini/ocpp-go.svg?branch=master)](https://travis-ci.org/lorenzodonini/ocpp-go)
+
 Open Charge Point Protocol implementation in Go.
 
 The library targets modern charge points and central systems, running OCPP version 1.6+.
@@ -13,7 +15,6 @@ There are currently no plans of supporting OCPP-S.
 
 Planned milestones and features:
 
-- [ ] OCPP-J
 - [ ] OCPP 1.6
     - [ ] Core Profile
     - [ ] Firmware Profile
@@ -27,6 +28,8 @@ Planned milestones and features:
 
 ## Usage
 
+Go version 1.11+ is required.
+
 ```sh
 go get github.com/lorenzodonini/ocpp-go
 ```
@@ -34,7 +37,7 @@ go get github.com/lorenzodonini/ocpp-go
 You will also need to fetch some dependencies:
 ```sh
 cd <path-to-ocpp-go>
-go get -d -v
+go mod tidy
 ```
 
 Your application may either act as a Central System (server) or as a Charge Point (client).
@@ -44,7 +47,7 @@ Your application may either act as a Central System (server) or as a Charge Poin
 If you want to integrate the library into your custom Central System, you must implement the callbacks defined in the profile interfaces, e.g.:
 ```go
 type CentralSystemHandler struct {
-	// ... your own some state variables
+	// ... your own state variables
 }
 
 func (handler * CentralSystemHandler) OnAuthorize(chargePointId string, request *ocpp16.AuthorizeRequest) (confirmation *ocpp16.AuthorizeConfirmation, err error) {
@@ -124,12 +127,16 @@ To run it, simply execute:
 go run ./example/cs/central_system_sim.go
 ```
 
+#### Container
+
+There is a containerized version 
+
 ### Charge Point
 
 If you want to integrate the library into your custom Charge Point, you must implement the callbacks defined in the profile interfaces, e.g.:
 ```go
 type ChargePointHandler struct {
-	// ... your own some state variables
+	// ... your own state variables
 }
 
 func (handler * ChargePointHandler) OnChangeAvailability(request *ocpp16.ChangeAvailabilityRequest) (confirmation *ocpp16.ChangeAvailabilityConfirmation, err error) {
