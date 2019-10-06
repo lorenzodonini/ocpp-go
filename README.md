@@ -87,6 +87,8 @@ centralSystem.Start(listenPort, "/{ws}") // This call starts server in daemon mo
 log.Println("stopped central system")
 ```
 
+#### Sending requests
+
 To send requests to the charge point, you may either use the simplified API:
 ```go
 err := centralSystem.ChangeAvailability("1234", someCallbackFunction, 1, ocpp16.AvailabilityTypeInoperative)
@@ -127,9 +129,18 @@ To run it, simply execute:
 go run ./example/cs/central_system_sim.go
 ```
 
-#### Container
+#### Docker
 
-There is a containerized version 
+A containerized version of the central system example is available:
+```bash
+docker pull ldonini/ocpp1.6-central-system:latest
+docker run -it -p 8887:8887 --rm --name central-system ldonini/ocpp1.6-central-system:latest
+```
+
+You can also build the docker image from source, using:
+```sh
+docker-compose up central_system
+```
 
 ### Charge Point
 
@@ -179,6 +190,8 @@ if err != nil {
 chargePoint.Stop()
 log.Printf("disconnected from central system")
 ```
+
+#### Sending requests
 
 To send requests to the central station, you have two options. You may either use the simplified synchronous blocking API (recommended):
 ```go
@@ -233,7 +246,22 @@ When creating a message manually, you always need to perform type assertion your
 You can take a look at the full example inside `charge_point_sim.go`.
 To run it, simply execute:
 ```bash
-go run ./example/cp/charge_point_sim.go
+CLIENT_ID=chargePointSim CENTRAL_SYSTEM_URL=ws://<host>:8887 go run ./example/cp/charge_point_sim.go
 ```
 
+You need to specify the hostname/IP of a running central station server, so the charge point can reach it.
 
+#### Docker
+
+A containerized version of the charge point example is available:
+```bash
+docker pull ldonini/ocpp1.6-charge-point:latest
+docker run -e CLIENT_ID=chargePointSim -e CENTRAL_SYSTEM_URL=ws://<host>:8887 -it --rm --name charge-point ldonini/ocpp1.6-charge-point:latest
+```
+
+You need to specify the host, on which the central system is running, in order for the charge point to connect to it.
+
+You can also build the docker image from source, using:
+```sh
+docker-compose up charge_point
+```
