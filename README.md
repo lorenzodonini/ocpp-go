@@ -1,5 +1,7 @@
 # ocpp-go
 
+[![Build Status](https://travis-ci.org/lorenzodonini/ocpp-go.svg?branch=master)](https://travis-ci.org/lorenzodonini/ocpp-go)
+
 Open Charge Point Protocol implementation in Go.
 
 The library targets modern charge points and central systems, running OCPP version 1.6+.
@@ -13,7 +15,6 @@ There are currently no plans of supporting OCPP-S.
 
 Planned milestones and features:
 
-- [ ] OCPP-J
 - [ ] OCPP 1.6
     - [ ] Core Profile
     - [ ] Firmware Profile
@@ -27,6 +28,8 @@ Planned milestones and features:
 
 ## Usage
 
+Go version 1.11+ is required.
+
 ```sh
 go get github.com/lorenzodonini/ocpp-go
 ```
@@ -34,7 +37,7 @@ go get github.com/lorenzodonini/ocpp-go
 You will also need to fetch some dependencies:
 ```sh
 cd <path-to-ocpp-go>
-go get -d -v
+go mod tidy
 ```
 
 Your application may either act as a Central System (server) or as a Charge Point (client).
@@ -44,7 +47,7 @@ Your application may either act as a Central System (server) or as a Charge Poin
 If you want to integrate the library into your custom Central System, you must implement the callbacks defined in the profile interfaces, e.g.:
 ```go
 type CentralSystemHandler struct {
-	// ... your own some state variables
+	// ... your own state variables
 }
 
 func (handler * CentralSystemHandler) OnAuthorize(chargePointId string, request *ocpp16.AuthorizeRequest) (confirmation *ocpp16.AuthorizeConfirmation, err error) {
@@ -83,6 +86,8 @@ log.Printf("starting central system")
 centralSystem.Start(listenPort, "/{ws}") // This call starts server in daemon mode and is blocking
 log.Println("stopped central system")
 ```
+
+#### Sending requests
 
 To send requests to the charge point, you may either use the simplified API:
 ```go
@@ -124,12 +129,25 @@ To run it, simply execute:
 go run ./example/cs/central_system_sim.go
 ```
 
+#### Docker
+
+A containerized version of the central system example is available:
+```bash
+docker pull ldonini/ocpp1.6-central-system:latest
+docker run -it -p 8887:8887 --rm --name central-system ldonini/ocpp1.6-central-system:latest
+```
+
+You can also build the docker image from source, using:
+```sh
+docker-compose up central_system
+```
+
 ### Charge Point
 
 If you want to integrate the library into your custom Charge Point, you must implement the callbacks defined in the profile interfaces, e.g.:
 ```go
 type ChargePointHandler struct {
-	// ... your own some state variables
+	// ... your own state variables
 }
 
 func (handler * ChargePointHandler) OnChangeAvailability(request *ocpp16.ChangeAvailabilityRequest) (confirmation *ocpp16.ChangeAvailabilityConfirmation, err error) {
@@ -172,6 +190,8 @@ if err != nil {
 chargePoint.Stop()
 log.Printf("disconnected from central system")
 ```
+
+#### Sending requests
 
 To send requests to the central station, you have two options. You may either use the simplified synchronous blocking API (recommended):
 ```go
@@ -226,7 +246,22 @@ When creating a message manually, you always need to perform type assertion your
 You can take a look at the full example inside `charge_point_sim.go`.
 To run it, simply execute:
 ```bash
-go run ./example/cp/charge_point_sim.go
+CLIENT_ID=chargePointSim CENTRAL_SYSTEM_URL=ws://<host>:8887 go run ./example/cp/charge_point_sim.go
 ```
 
+You need to specify the hostname/IP of a running central station server, so the charge point can reach it.
 
+#### Docker
+
+A containerized version of the charge point example is available:
+```bash
+docker pull ldonini/ocpp1.6-charge-point:latest
+docker run -e CLIENT_ID=chargePointSim -e CENTRAL_SYSTEM_URL=ws://<host>:8887 -it --rm --name charge-point ldonini/ocpp1.6-charge-point:latest
+```
+
+You need to specify the host, on which the central system is running, in order for the charge point to connect to it.
+
+You can also build the docker image from source, using:
+```sh
+docker-compose up charge_point
+```

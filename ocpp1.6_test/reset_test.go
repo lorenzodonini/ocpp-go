@@ -2,7 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/go-ocpp/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

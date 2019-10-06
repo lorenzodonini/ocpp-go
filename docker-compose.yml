@@ -1,0 +1,27 @@
+version: '3'
+services:
+  central_system:
+    build:
+      context: .
+      dockerfile: ./example/cs/Dockerfile
+    image: ldonini/ocpp1.6-central-system:latest
+    container_name: central-system
+    ports:
+      - "8887:8887"
+    networks:
+      - sim
+  charge_point:
+    environment:
+      - CLIENT_ID=chargePointSim
+      - CENTRAL_SYSTEM_URL=ws://central_system:8887
+    build:
+      context: .
+      dockerfile: ./example/cp/Dockerfile
+    image: ldonini/ocpp1.6-charge-point:latest
+    container_name: charge-point
+    networks:
+      - sim
+
+networks:
+  sim:
+    driver: bridge

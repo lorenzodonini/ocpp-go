@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
+	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"log"
 	"os"
 	"time"
@@ -170,14 +170,17 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 
 // Start function
 func main() {
-	// Parse arguments from cmd line
-	args := os.Args[1:]
-	if len(args) != 2 {
+	// Parse arguments from env variables
+	id, ok := os.LookupEnv("CLIENT_ID")
+	if !ok {
 		log.Print("Usage:\n\tocppClientId\n\tocppServerUrl")
 		return
 	}
-	id := args[0]
-	csUrl := args[1]
+	csUrl, ok := os.LookupEnv("CENTRAL_SYSTEM_URL")
+	if !ok {
+		log.Print("Usage:\n\tocppClientId\n\tocppServerUrl")
+		return
+	}
 	// Create a default OCPP 1.6 charge point
 	chargePoint := ocpp16.NewChargePoint(id, nil, nil)
 	// Set a handler for all callback functions

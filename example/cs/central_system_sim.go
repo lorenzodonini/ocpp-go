@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	ocpp16 "github.com/lorenzodonini/go-ocpp/ocpp1.6"
+	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"log"
 	"os"
 	"strconv"
@@ -112,7 +112,7 @@ func (handler *CentralSystemHandler) OnStartTransaction(chargePointId string, re
 	}
 	connector := info.getConnector(request.ConnectorId)
 	if connector.currentTransaction >= 0 {
-		return nil, fmt.Errorf("connector %v is currently busy with another transaction")
+		return nil, fmt.Errorf("connector %v is currently busy with another transaction", request.ConnectorId)
 	}
 	transaction := &TransactionInfo{}
 	transaction.idTag = request.IdTag

@@ -3,8 +3,8 @@ package ocppj_test
 import (
 	"errors"
 	"fmt"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/ocppj"
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

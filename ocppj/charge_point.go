@@ -2,8 +2,8 @@ package ocppj
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/go-ocpp/ocpp"
-	"github.com/lorenzodonini/go-ocpp/ws"
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/pkg/errors"
 	"log"
 )

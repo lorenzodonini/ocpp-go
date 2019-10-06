@@ -2,7 +2,7 @@ package ocpp16
 
 import (
 	"encoding/json"
-	"github.com/lorenzodonini/go-ocpp/ocppj"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"gopkg.in/go-playground/validator.v9"
 	"strings"
 	"time"
