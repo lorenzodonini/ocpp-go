@@ -8,15 +8,27 @@ notifications:
     on_success: never
 stages:
   - test
-  - build
   - publish
+  - release
 jobs:
   include:
     - stage: test
-      script: go test ./...
-    - stage: build
-      script: go build ./...
+      script:
+        - go test ./...
+        - go build ./...
     - stage: publish
       script:
-        - docker build -t ocpp-go-1.6/central-system -f example/cs/Dockerfile .
-        - docker build -t ocpp-go-1.6/charge-point -f example/cp/Dockerfile .
+        - docker build -t "$DOCKER_IMAGE_CS:latest" -f example/cs/Dockerfile .
+        - docker build -t "$DOCKER_IMAGE_CP:latest" -f example/cp/Dockerfile .
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - docker push "$DOCKER_IMAGE_CS:latest"
+        - docker push "$DOCKER_IMAGE_CP:latest"
+      if: branch == master
+    - stage: release
+      script:
+        - docker build -t "$DOCKER_IMAGE_CS:$TRAVIS_TAG" -f example/cs/Dockerfile .
+        - docker build -t "$DOCKER_IMAGE_CP:$TRAVIS_TAG" -f example/cp/Dockerfile .
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - docker push ocpp-go-1.6-central-system
+        - docker push ocpp-go-1.6-charge-point
+      if: tag IS present
