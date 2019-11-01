@@ -210,6 +210,10 @@ func main() {
 	}
 }
 
+func init() {
+	log.SetLevel(log.InfoLevel)
+}
+
 // Utility functions
 func logDefault(feature string) *log.Entry {
 	return log.WithField("message", feature)

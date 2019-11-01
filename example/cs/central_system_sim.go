@@ -182,3 +182,7 @@ func main() {
 func logDefault(chargePointId string, feature string) *log.Entry {
 	return log.WithFields(log.Fields{"client": chargePointId, "message": feature})
 }
+
+func init() {
+	log.SetLevel(log.InfoLevel)
+}
