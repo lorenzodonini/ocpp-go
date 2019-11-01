@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 	"time"
@@ -66,15 +66,17 @@ type CentralSystemHandler struct {
 
 // Core profile callbacks
 func (handler *CentralSystemHandler) OnAuthorize(chargePointId string, request *ocpp16.AuthorizeRequest) (confirmation *ocpp16.AuthorizeConfirmation, err error) {
+	logDefault(chargePointId, request.GetFeatureName()).Infof("client authorized")
 	return ocpp16.NewAuthorizationConfirmation(ocpp16.NewIdTagInfo(ocpp16.AuthorizationStatusAccepted)), nil
 }
 
 func (handler *CentralSystemHandler) OnBootNotification(chargePointId string, request *ocpp16.BootNotificationRequest) (confirmation *ocpp16.BootNotificationConfirmation, err error) {
+	logDefault(chargePointId, request.GetFeatureName()).Infof("boot confirmed")
 	return ocpp16.NewBootNotificationConfirmation(ocpp16.NewDateTime(time.Now()), defaultHeartbeatInterval, ocpp16.RegistrationStatusAccepted), nil
 }
 
 func (handler *CentralSystemHandler) OnDataTransfer(chargePointId string, request *ocpp16.DataTransferRequest) (confirmation *ocpp16.DataTransferConfirmation, err error) {
-	log.Printf("[%v] Received data %d", chargePointId, request.Data)
+	logDefault(chargePointId, request.GetFeatureName()).Infof("received data %d", request.Data)
 	return ocpp16.NewDataTransferConfirmation(ocpp16.DataTransferStatusAccepted), nil
 }
 
@@ -83,9 +85,9 @@ func (handler *CentralSystemHandler) OnHeartbeat(chargePointId string, request *
 }
 
 func (handler *CentralSystemHandler) OnMeterValues(chargePointId string, request *ocpp16.MeterValuesRequest) (confirmation *ocpp16.MeterValuesConfirmation, err error) {
-	log.Printf("[%v] Received meter values for connector %v, transaction %v. Meter values:\n", chargePointId, request.ConnectorId, request.TransactionId)
+	logDefault(chargePointId, request.GetFeatureName()).Infof("received meter values for connector %v, transaction %v. Meter values:\n", request.ConnectorId, request.TransactionId)
 	for _, mv := range request.MeterValue {
-		log.Printf("\t %v", mv)
+		logDefault(chargePointId, request.GetFeatureName()).Printf("\t %v", mv)
 	}
 	return ocpp16.NewMeterValuesConfirmation(), nil
 }
@@ -99,8 +101,10 @@ func (handler *CentralSystemHandler) OnStatusNotification(chargePointId string, 
 	if request.ConnectorId > 0 {
 		connectorInfo := info.getConnector(request.ConnectorId)
 		connectorInfo.status = request.Status
+		logDefault(chargePointId, request.GetFeatureName()).Infof("connector %v updated status to %v", request.ConnectorId, request.Status)
 	} else {
 		info.status = request.Status
+		logDefault(chargePointId, request.GetFeatureName()).Infof("all connectors updated status to %v", request.Status)
 	}
 	return ocpp16.NewStatusNotificationConfirmation(), nil
 }
@@ -124,7 +128,7 @@ func (handler *CentralSystemHandler) OnStartTransaction(chargePointId string, re
 	connector.currentTransaction = transaction.id
 	info.transactions[transaction.id] = transaction
 	//TODO: check billable clients
-	log.Printf("[%v] started transaction %v for connector %v", chargePointId, transaction.id, transaction.connectorId)
+	logDefault(chargePointId, request.GetFeatureName()).Infof("started transaction %v for connector %v", transaction.id, transaction.connectorId)
 	return ocpp16.NewStartTransactionConfirmation(ocpp16.NewIdTagInfo(ocpp16.AuthorizationStatusAccepted), transaction.id), nil
 }
 
@@ -141,9 +145,9 @@ func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, req
 		transaction.endMeter = request.MeterStop
 		//TODO: meter data
 	}
-	log.Printf("[%v] stopped transaction %v - %v. Meter values:", chargePointId, request.TransactionId, request.Reason)
+	logDefault(chargePointId, request.GetFeatureName()).Infof("stopped transaction %v - %v. Meter values:", request.TransactionId, request.Reason)
 	for _, mv := range request.TransactionData {
-		log.Printf("\t %v", mv)
+		logDefault(chargePointId, request.GetFeatureName()).Printf("\t %v", mv)
 	}
 	return ocpp16.NewStopTransactionConfirmation(), nil
 }
@@ -155,10 +159,10 @@ func main() {
 	handler := &CentralSystemHandler{chargePoints: map[string]*ChargePointState{}}
 	centralSystem.SetNewChargePointHandler(func(chargePointId string) {
 		handler.chargePoints[chargePointId] = &ChargePointState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
-		log.Printf("new charge point %v connected", chargePointId)
+		log.WithField("client", chargePointId).Info("new charge point connected")
 	})
 	centralSystem.SetChargePointDisconnectedHandler(func(chargePointId string) {
-		log.Printf("charge point %v disconnected", chargePointId)
+		log.WithField("client", chargePointId).Info("charge point disconnected")
 		delete(handler.chargePoints, chargePointId)
 	})
 	centralSystem.SetCentralSystemCoreListener(handler)
@@ -169,7 +173,16 @@ func main() {
 			listenPort = port
 		}
 	}
-	log.Printf("starting central system on port %v", listenPort)
+	log.Infof("starting central system on port %v", listenPort)
 	centralSystem.Start(listenPort, "/{ws}")
-	log.Println("stopped central system")
+	log.Info("stopped central system")
+}
+
+// Utility functions
+func logDefault(chargePointId string, feature string) *log.Entry {
+	return log.WithFields(log.Fields{"client": chargePointId, "message": feature})
+}
+
+func init() {
+	log.SetLevel(log.InfoLevel)
 }

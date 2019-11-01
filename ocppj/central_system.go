@@ -4,7 +4,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/pkg/errors"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 type CentralSystem struct {
@@ -140,7 +140,7 @@ func (centralSystem *CentralSystem) ocppMessageHandler(wsChannel ws.Channel, dat
 				return err2
 			}
 		}
-		log.Print(err)
+		log.Error(err)
 		return err
 	}
 	switch message.GetMessageTypeId() {

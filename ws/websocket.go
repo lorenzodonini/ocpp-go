@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -95,14 +95,14 @@ func (server *Server) Start(port int, listenPath string) {
 	addr := fmt.Sprintf(":%v", port)
 	server.httpServer = &http.Server{Addr: addr, Handler: router}
 	if err := server.httpServer.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("Listen and server error: %v", err)
+		log.Errorf("websocket server error: %v", err)
 	}
 }
 
 func (server *Server) Stop() {
 	err := server.httpServer.Shutdown(context.TODO())
 	if err != nil {
-		log.Printf("Error while shutting down server %v", err)
+		log.Errorf("error while shutting down server: %v", err)
 	}
 }
 
@@ -142,7 +142,7 @@ func (server *Server) readPump(ws *WebSocket) {
 	}()
 
 	conn.SetPingHandler(func(appData string) error {
-		log.Printf("ping received")
+		log.WithField("client", ws.GetId()).Debug("ping received")
 		ws.pingMessage <- []byte(appData)
 		err := conn.SetReadDeadline(time.Now().Add(pingWait))
 		return err
@@ -153,19 +153,19 @@ func (server *Server) readPump(ws *WebSocket) {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
-				log.Printf("error while reading from ws: %v", err)
+				log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error while reading from ws: %v", err)
 			}
 			if server.disconnectedHandler != nil {
 				server.disconnectedHandler(ws)
 			}
 			break
 		}
-		log.Printf("received message from client %v", ws.GetId())
+		log.WithFields(log.Fields{"client": ws.GetId()}).Debug("received message")
 		if server.messageHandler != nil {
 			var channel Channel = ws
 			err = server.messageHandler(channel, message)
 			if err != nil {
-				log.Printf("error while handling message: %v", err)
+				log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error while handling message: %v", err)
 				continue
 			}
 		}
@@ -187,20 +187,20 @@ func (server *Server) writePump(ws *WebSocket) {
 				// Closing connection
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				if err != nil {
-					log.Printf("error while closing client -> %v", err)
+					log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error while closing: %v", err)
 				}
 				return
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				log.Printf("error writing to websocket %v", err)
+				log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error writing to websocket: %v", err)
 				return
 			}
 		case ping := <-ws.pingMessage:
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
 			err := conn.WriteMessage(websocket.PongMessage, ping)
 			if err != nil {
-				log.Printf("error writing to websocket %v", err)
+				log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error writing to websocket: %v", err)
 				return
 			}
 		case closed, ok := <-ws.closeSignal:
@@ -248,20 +248,20 @@ func (client *Client) writePump() {
 				// Closing connection normally
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				if err != nil {
-					log.Printf("error while closing client -> %v", err)
+					log.Errorf("error while closing: %v", err)
 				}
 				return
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				log.Printf("error writing to websocket %v", err)
+				log.Errorf("error writing to websocket: %v", err)
 				return
 			}
 		case <-ticker.C:
-			log.Println("ping triggered")
+			log.Debug("will send ping to server")
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-				log.Printf("couldn't send ping message -> %v", err)
+				log.Errorf("couldn't send ping message: %v", err)
 				return
 			}
 		case closed, ok := <-client.webSocket.closeSignal:
@@ -280,22 +280,22 @@ func (client *Client) readPump() {
 	}()
 	_ = conn.SetReadDeadline(time.Now().Add(pongWait))
 	conn.SetPongHandler(func(string) error {
-		log.Println("pong received")
+		log.Debug("pong received")
 		return conn.SetReadDeadline(time.Now().Add(pongWait))
 	})
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
-				log.Printf("error while reading from ws: %v", err)
+				log.Errorf("error while reading from websocket: %v", err)
 			}
 			return
 		}
-		log.Printf("received message from server")
+		log.Debugf("received message from server: %v", string(message))
 		if client.messageHandler != nil {
 			err = client.messageHandler(message)
 			if err != nil {
-				log.Printf("error while handling message: %v", err)
+				log.Errorf("error while handling message: %v", err)
 				continue
 			}
 		}
@@ -319,7 +319,7 @@ func (client *Client) Start(url string, dialOptions ...func(websocket.Dialer)) e
 	}
 	ws, _, err := dialer.Dial(url, nil)
 	if err != nil {
-		log.Printf("Error %v", err)
+		log.Errorf("couldn't connect to server: %v", err)
 		return err
 	}
 	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte), closeSignal: make(chan bool, 1)}

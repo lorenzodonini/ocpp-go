@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	errors2 "github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/go-playground/validator.v9"
-	"log"
 	"math/rand"
 	"reflect"
 )
