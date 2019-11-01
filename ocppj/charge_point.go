@@ -5,7 +5,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/pkg/errors"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 type ChargePoint struct {

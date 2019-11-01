@@ -5,7 +5,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 // -------------------- v1.6 Charge Point --------------------
@@ -162,6 +162,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
 	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StopTransactionFeatureName, StatusNotificationFeatureName:
+		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
 	}
@@ -184,13 +185,13 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Confirmation, err error, r
 	if confirmation != nil {
 		err := cp.chargePoint.SendConfirmation(requestId, confirmation)
 		if err != nil {
-			log.Printf("Unknown error %v while replying to message %v with CallError", err, requestId)
+			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 			//TODO: handle error somehow
 		}
 	} else {
 		err = cp.chargePoint.SendError(requestId, ocppj.ProtocolError, err.Error(), nil)
 		if err != nil {
-			log.Printf("Unknown error %v while replying to message %v with CallError", err, requestId)
+			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 		}
 	}
 }
@@ -206,10 +207,10 @@ func (cp *chargePoint) Stop() {
 
 func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
 	if cp.coreListener == nil {
-		log.Printf("Cannot handle call %v from central system. Sending CallError instead", requestId)
-		err := cp.chargePoint.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("No handler for action %v implemented", action), nil)
+		log.WithField("request", requestId).Errorf("cannot handle call from central system. Sending CallError instead")
+		err := cp.chargePoint.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 		if err != nil {
-			log.Printf("Unknown error %v while replying to message %v with CallError", err, requestId)
+			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 		}
 		return
 	}
@@ -237,7 +238,7 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	default:
 		err := cp.chargePoint.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
 		if err != nil {
-			log.Printf("Unknown error %v while replying to message %v with CallError", err, requestId)
+			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 		}
 		return
 	}
@@ -465,7 +466,10 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Co
 	} else {
 		err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
 		if err != nil {
-			log.Printf("Unknown error %v while replying to message %v with CallError", err, requestId)
+			log.WithFields(log.Fields{
+				"client": chargePointId,
+				"request": requestId,
+			}).Errorf("unknown error %v while replying to message with CallError", err)
 		}
 	}
 }
@@ -475,7 +479,7 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 		log.Printf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
 		err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("No handler for action %v implemented", action), nil)
 		if err != nil {
-			log.Printf("Unknown error %v while replying to message %v with CallError", err, requestId)
+			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 		}
 	}
 	var confirmation ocpp.Confirmation = nil
@@ -502,7 +506,10 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 		default:
 			err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
 			if err != nil {
-				log.Printf("Unknown error %v while replying to message %v with CallError", err, requestId)
+				log.WithFields(log.Fields{
+					"client": chargePointId,
+					"request": requestId,
+				}).Errorf("unknown error %v while replying to message with CallError", err)
 			}
 			return
 		}
@@ -515,7 +522,10 @@ func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confir
 		delete(cs.callbacks, chargePointId)
 		callback(confirmation, nil)
 	} else {
-		log.Printf("No handler for Call Result %v from charge point %v", requestId, chargePointId)
+		log.WithFields(log.Fields{
+			"client": chargePointId,
+			"request": requestId,
+		}).Errorf("no handler available for Call Result of type %v", confirmation.GetFeatureName())
 	}
 }
 
@@ -524,7 +534,10 @@ func (cs *centralSystem) handleIncomingError(chargePointId string, err *ocpp.Err
 		delete(cs.callbacks, chargePointId)
 		callback(nil, err)
 	} else {
-		log.Printf("No handler for Call Result %v from charge point %v", err.MessageId, chargePointId)
+		log.WithFields(log.Fields{
+			"client": chargePointId,
+			"request": err.MessageId,
+		}).Errorf("no handler available for Call Error %v", err.Code)
 	}
 }
 
@@ -542,4 +555,10 @@ func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) Centr
 	cs.centralSystem.SetConfirmationHandler(cs.handleIncomingConfirmation)
 	cs.centralSystem.SetErrorHandler(cs.handleIncomingError)
 	return &cs
+}
+
+func init() {
+	log.New()
+	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
+	log.SetLevel(log.InfoLevel)
 }
