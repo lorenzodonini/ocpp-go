@@ -46,20 +46,20 @@ type ChargePointCoreListener interface {
 	//onGetCompositeSchedule()
 	OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	//onGetDiagnostics()
-	//onGetLocalListVersion()
 	OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
 	OnRemoteStopTransaction(request *RemoteStopTransactionRequest) (confirmation *RemoteStopTransactionConfirmation, err error)
 	//onReserveNow()
 	OnReset(request *ResetRequest) (confirmation *ResetConfirmation, err error)
-	//onSendLocalList()
 	//onSetChargingProfile()
 	//onTriggerMessage()
 	OnUnlockConnector(request *UnlockConnectorRequest) (confirmation *UnlockConnectorConfirmation, err error)
 	//onUpdateFirmware()
 }
 
+var CoreProfileName = "core"
+
 var CoreProfile = ocpp.NewProfile(
-	"core",
+	CoreProfileName,
 	BootNotificationFeature{},
 	AuthorizeFeature{},
 	ChangeAvailabilityFeature{},

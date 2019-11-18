@@ -7,6 +7,7 @@ import (
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -250,6 +251,22 @@ func (coreListener MockChargePointCoreListener) OnRemoteStopTransaction(request 
 	return conf, args.Error(1)
 }
 
+// ---------------------- MOCK CS LOCAL AUTH LIST LISTENER ----------------------
+type MockCentralSystemLocalAuthListListener struct {
+	mock.Mock
+}
+
+// ---------------------- MOCK CP LOCAL AUTH LIST LISTENER ----------------------
+type MockChargePointLocalAuthListListener struct {
+	mock.Mock
+}
+
+func (localAuthListListener MockChargePointLocalAuthListListener) OnGetLocalListVersion(request *ocpp16.GetLocalListVersionRequest) (confirmation *ocpp16.GetLocalListVersionConfirmation, err error) {
+	args := localAuthListListener.MethodCalled("OnGetLocalListVersion", request)
+	conf := args.Get(0).(*ocpp16.GetLocalListVersionConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
@@ -483,12 +500,13 @@ var defaultMessageId = "1234"
 
 func (suite *OcppV16TestSuite) SetupTest() {
 	coreProfile := ocpp16.CoreProfile
+	localAuthListProfile := ocpp16.LocalAuthListProfile
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
-	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile)
-	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile)
+	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile, localAuthListProfile)
+	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile, localAuthListProfile)
 	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
@@ -500,5 +518,6 @@ func (suite *OcppV16TestSuite) SetupTest() {
 //TODO: implement generic protocol tests
 
 func TestOcpp16Protocol(t *testing.T) {
+	logrus.SetLevel(logrus.PanicLevel)
 	suite.Run(t, new(OcppV16TestSuite))
 }
