@@ -267,6 +267,12 @@ func (localAuthListListener MockChargePointLocalAuthListListener) OnGetLocalList
 	return conf, args.Error(1)
 }
 
+func (localAuthListListener MockChargePointLocalAuthListListener) OnSendLocalList(request *ocpp16.SendLocalListRequest) (confirmation *ocpp16.SendLocalListConfirmation, err error) {
+	args := localAuthListListener.MethodCalled("OnSendLocalList", request)
+	conf := args.Get(0).(*ocpp16.SendLocalListConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
