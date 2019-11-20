@@ -23,6 +23,7 @@ type ChargePoint interface {
 
 	// Logic
 	SetChargePointCoreListener(listener ChargePointCoreListener)
+	SetLocalAuthListListener(listener ChargePointLocalAuthListListener)
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
@@ -30,10 +31,11 @@ type ChargePoint interface {
 }
 
 type chargePoint struct {
-	chargePoint          *ocppj.ChargePoint
-	coreListener         ChargePointCoreListener
-	confirmationListener chan ocpp.Confirmation
-	errorListener        chan error
+	chargePoint           *ocppj.ChargePoint
+	coreListener          ChargePointCoreListener
+	localAuthListListener ChargePointLocalAuthListListener
+	confirmationListener  chan ocpp.Confirmation
+	errorListener         chan error
 }
 
 func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, error) {
@@ -144,6 +146,10 @@ func (cp *chargePoint) SetChargePointCoreListener(listener ChargePointCoreListen
 	cp.coreListener = listener
 }
 
+func (cp *chargePoint) SetLocalAuthListListener(listener ChargePointLocalAuthListListener) {
+	cp.localAuthListListener = listener
+}
+
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
 	// TODO: check for supported feature
 	err := cp.chargePoint.SendRequest(request)
@@ -205,16 +211,45 @@ func (cp *chargePoint) Stop() {
 	cp.chargePoint.Stop()
 }
 
-func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
-	if cp.coreListener == nil {
-		log.WithField("request", requestId).Errorf("cannot handle call from central system. Sending CallError instead")
-		err := cp.chargePoint.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
-		if err != nil {
-			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
-		}
-		return
+func (cp *chargePoint) notImplementedError(requestId string, action string) {
+	log.WithField("request", requestId).Errorf("cannot handle call from central system. Sending CallError instead")
+	err := cp.chargePoint.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
+	if err != nil {
+		log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 	}
+}
+
+func (cp *chargePoint) notSupportedError(requestId string, action string) {
+	log.WithField("request", requestId).Errorf("cannot handle call from central system. Sending CallError instead")
+	err := cp.chargePoint.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
+	if err != nil {
+		log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
+	}
+}
+
+func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
+	profile, found := cp.chargePoint.GetProfileForFeature(action)
+	// Check whether action is supported and a listener for it exists
+	if !found {
+		cp.notImplementedError(requestId, action)
+		return
+	} else {
+		switch profile.Name {
+		case CoreProfileName:
+			if cp.coreListener == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
+		case LocalAuthListProfileName:
+			if cp.localAuthListListener == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
+		}
+	}
+	// Process request
 	var confirmation ocpp.Confirmation = nil
+	cp.chargePoint.GetProfileForFeature(action)
 	var err error = nil
 	switch action {
 	case ChangeAvailabilityFeatureName:
@@ -235,11 +270,12 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.coreListener.OnReset(request.(*ResetRequest))
 	case UnlockConnectorFeatureName:
 		confirmation, err = cp.coreListener.OnUnlockConnector(request.(*UnlockConnectorRequest))
+	case GetLocalListVersionFeatureName:
+		confirmation, err = cp.localAuthListListener.OnGetLocalListVersion(request.(*GetLocalListVersionRequest))
+	case SendLocalListFeatureName:
+		confirmation, err = cp.localAuthListListener.OnSendLocalList(request.(*SendLocalListRequest))
 	default:
-		err := cp.chargePoint.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
-		if err != nil {
-			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
-		}
+		cp.notSupportedError(requestId, action)
 		return
 	}
 	cp.sendResponse(confirmation, err, requestId)
@@ -250,7 +286,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 		client = ws.NewClient()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile)
+		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile)
 	}
 	cp := chargePoint{chargePoint: dispatcher, confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan error)}
 	cp.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
@@ -276,8 +312,11 @@ type CentralSystem interface {
 	RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error
 	Reset(clientId string, callback func(*ResetConfirmation, error), resetType ResetType, props ...func(*ResetRequest)) error
 	UnlockConnector(clientId string, callback func(*UnlockConnectorConfirmation, error), connectorId int, props ...func(*UnlockConnectorRequest)) error
+	GetLocalListVersion(clientId string, callback func(*GetLocalListVersionConfirmation, error), props ...func(request *GetLocalListVersionRequest)) error
+	SendLocalList(clientId string, callback func(*SendLocalListConfirmation, error), version int, updateType UpdateType, props ...func(request *SendLocalListRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
+	SetLocalAuthListListener(listener CentralSystemLocalAuthListListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
 	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
@@ -285,9 +324,10 @@ type CentralSystem interface {
 }
 
 type centralSystem struct {
-	centralSystem *ocppj.CentralSystem
-	coreListener  CentralSystemCoreListener
-	callbacks     map[string]func(confirmation ocpp.Confirmation, err error)
+	centralSystem         *ocppj.CentralSystem
+	coreListener          CentralSystemCoreListener
+	localAuthListListener CentralSystemLocalAuthListListener
+	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
 func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error {
@@ -425,8 +465,42 @@ func (cs *centralSystem) UnlockConnector(clientId string, callback func(*UnlockC
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *centralSystem) GetLocalListVersion(clientId string, callback func(*GetLocalListVersionConfirmation, error), props ...func(request *GetLocalListVersionRequest)) error {
+	request := NewGetLocalListVersionRequest()
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*GetLocalListVersionConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) SendLocalList(clientId string, callback func(*SendLocalListConfirmation, error), version int, updateType UpdateType, props ...func(request *SendLocalListRequest)) error {
+	request := NewSendLocalListRequest(version, updateType)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*SendLocalListConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *centralSystem) SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
 	cs.coreListener = listener
+}
+
+func (cs *centralSystem) SetLocalAuthListListener(listener CentralSystemLocalAuthListListener) {
+	cs.localAuthListListener = listener
 }
 
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
@@ -439,7 +513,7 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName:
+	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName, GetLocalListVersionFeatureName, SendLocalListFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
@@ -467,19 +541,53 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Co
 		err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"client": chargePointId,
+				"client":  chargePointId,
 				"request": requestId,
 			}).Errorf("unknown error %v while replying to message with CallError", err)
 		}
 	}
 }
 
+func (cs *centralSystem) notImplementedError(chargePointId string, requestId string, action string) {
+	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
+	err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"client":  chargePointId,
+			"request": requestId,
+		}).Errorf("unknown error %v while replying to message with CallError", err)
+	}
+}
+
+func (cs *centralSystem) notSupportedError(chargePointId string, requestId string, action string) {
+	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
+	err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"client":  chargePointId,
+			"request": requestId,
+		}).Errorf("unknown error %v while replying to message with CallError", err)
+	}
+}
+
 func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocpp.Request, requestId string, action string) {
-	if cs.coreListener == nil {
-		log.Printf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
-		err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("No handler for action %v implemented", action), nil)
-		if err != nil {
-			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
+	profile, found := cs.centralSystem.GetProfileForFeature(action)
+	// Check whether action is supported and a listener for it exists
+	if !found {
+		cs.notImplementedError(chargePointId, requestId, action)
+		return
+	} else {
+		switch profile.Name {
+		case CoreProfileName:
+			if cs.coreListener == nil {
+				cs.notSupportedError(chargePointId, requestId, action)
+				return
+			}
+		case LocalAuthListProfileName:
+			if cs.localAuthListListener == nil {
+				cs.notSupportedError(chargePointId, requestId, action)
+				return
+			}
 		}
 	}
 	var confirmation ocpp.Confirmation = nil
@@ -504,13 +612,7 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 		case StatusNotificationFeatureName:
 			confirmation, err = cs.coreListener.OnStatusNotification(chargePointId, request.(*StatusNotificationRequest))
 		default:
-			err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"client": chargePointId,
-					"request": requestId,
-				}).Errorf("unknown error %v while replying to message with CallError", err)
-			}
+			cs.notSupportedError(chargePointId, requestId, action)
 			return
 		}
 		cs.sendResponse(chargePointId, confirmation, err, requestId)
@@ -523,7 +625,7 @@ func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confir
 		callback(confirmation, nil)
 	} else {
 		log.WithFields(log.Fields{
-			"client": chargePointId,
+			"client":  chargePointId,
 			"request": requestId,
 		}).Errorf("no handler available for Call Result of type %v", confirmation.GetFeatureName())
 	}
@@ -535,7 +637,7 @@ func (cs *centralSystem) handleIncomingError(chargePointId string, err *ocpp.Err
 		callback(nil, err)
 	} else {
 		log.WithFields(log.Fields{
-			"client": chargePointId,
+			"client":  chargePointId,
 			"request": err.MessageId,
 		}).Errorf("no handler available for Call Error %v", err.Code)
 	}
@@ -546,7 +648,7 @@ func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) Centr
 		server = ws.NewServer()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewCentralSystem(server, CoreProfile)
+		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile)
 	}
 	cs := centralSystem{
 		centralSystem: dispatcher,
