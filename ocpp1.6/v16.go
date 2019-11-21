@@ -24,6 +24,7 @@ type ChargePoint interface {
 	// Logic
 	SetChargePointCoreListener(listener ChargePointCoreListener)
 	SetLocalAuthListListener(listener ChargePointLocalAuthListListener)
+	SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener)
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
@@ -34,6 +35,7 @@ type chargePoint struct {
 	chargePoint           *ocppj.ChargePoint
 	coreListener          ChargePointCoreListener
 	localAuthListListener ChargePointLocalAuthListListener
+	firmwareListener	ChargePointFirmwareManagementListener
 	confirmationListener  chan ocpp.Confirmation
 	errorListener         chan error
 }
@@ -150,6 +152,10 @@ func (cp *chargePoint) SetLocalAuthListListener(listener ChargePointLocalAuthLis
 	cp.localAuthListListener = listener
 }
 
+func (cp *chargePoint) SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener) {
+	cp.firmwareListener = listener
+}
+
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
 	// TODO: check for supported feature
 	err := cp.chargePoint.SendRequest(request)
@@ -245,6 +251,11 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 				cp.notSupportedError(requestId, action)
 				return
 			}
+		case FirmwareManagementProfileName:
+			if cp.firmwareListener == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
 		}
 	}
 	// Process request
@@ -286,7 +297,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 		client = ws.NewClient()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile)
+		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile)
 	}
 	cp := chargePoint{chargePoint: dispatcher, confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan error)}
 	cp.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
@@ -317,6 +328,7 @@ type CentralSystem interface {
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetLocalAuthListListener(listener CentralSystemLocalAuthListListener)
+	SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
 	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
@@ -327,6 +339,7 @@ type centralSystem struct {
 	centralSystem         *ocppj.CentralSystem
 	coreListener          CentralSystemCoreListener
 	localAuthListListener CentralSystemLocalAuthListListener
+	firmwareListener	CentralSystemFirmwareManagementListener
 	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
@@ -503,6 +516,10 @@ func (cs *centralSystem) SetLocalAuthListListener(listener CentralSystemLocalAut
 	cs.localAuthListListener = listener
 }
 
+func (cs *centralSystem) SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener) {
+	cs.firmwareListener = listener
+}
+
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
 	cs.centralSystem.SetNewChargePointHandler(handler)
 }
@@ -588,6 +605,11 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
+		case FirmwareManagementProfileName:
+			if cs.firmwareListener == nil {
+				cs.notSupportedError(chargePointId, requestId, action)
+				return
+			}
 		}
 	}
 	var confirmation ocpp.Confirmation = nil
@@ -648,7 +670,7 @@ func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) Centr
 		server = ws.NewServer()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile)
+		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile)
 	}
 	cs := centralSystem{
 		centralSystem: dispatcher,
