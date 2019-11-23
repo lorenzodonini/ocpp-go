@@ -40,7 +40,7 @@ func isValidUpdateStatus(fl validator.FieldLevel) bool {
 
 type AuthorizationData struct {
 	IdTag     string     `json:"idTag" validate:"required,max=20"`
-	IdTagInfo *IdTagInfo `json:"idTagInfo"` //TODO: validate required if update type is Full
+	IdTagInfo *IdTagInfo `json:"idTagInfo,omitempty"` //TODO: validate required if update type is Full
 }
 
 // The field definition of the SendLocalList request payload sent by the Central System to the Charge Point.

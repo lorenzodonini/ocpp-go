@@ -273,6 +273,22 @@ func (localAuthListListener MockChargePointLocalAuthListListener) OnSendLocalLis
 	return conf, args.Error(1)
 }
 
+// ---------------------- MOCK CS FIRMWARE MANAGEMENT LISTENER ----------------------
+type MockCentralSystemFirmwareManagementListener struct {
+	mock.Mock
+}
+
+// ---------------------- MOCK CP FIRMWARE MANAGEMENT LISTENER ----------------------
+type MockChargePointFirmwareManagementListener struct {
+	mock.Mock
+}
+
+func (firmwareListener MockChargePointFirmwareManagementListener) OnGetDiagnostics(request *ocpp16.GetDiagnosticsRequest) (confirmation *ocpp16.GetDiagnosticsConfirmation, err error) {
+	args := firmwareListener.MethodCalled("OnGetDiagnostics", request)
+	conf := args.Get(0).(*ocpp16.GetDiagnosticsConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
@@ -507,12 +523,13 @@ var defaultMessageId = "1234"
 func (suite *OcppV16TestSuite) SetupTest() {
 	coreProfile := ocpp16.CoreProfile
 	localAuthListProfile := ocpp16.LocalAuthListProfile
+	firmwareProfile := ocpp16.FirmwareManagementProfile
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
-	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile, localAuthListProfile)
-	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile, localAuthListProfile)
+	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile, localAuthListProfile, firmwareProfile)
+	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile, localAuthListProfile, firmwareProfile)
 	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
