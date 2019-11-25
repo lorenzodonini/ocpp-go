@@ -19,11 +19,14 @@ type ChargePoint interface {
 	StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
 	StopTransaction(meterStop int, timestamp *DateTime, transactionId int, props ...func(request *StopTransactionRequest)) (*StopTransactionConfirmation, error)
 	StatusNotification(connectorId int, errorCode ChargePointErrorCode, status ChargePointStatus, props ...func(request *StatusNotificationRequest)) (*StatusNotificationConfirmation, error)
+	DiagnosticsStatusNotification(status DiagnosticsStatus, props ...func(request *DiagnosticsStatusNotificationRequest)) (*DiagnosticsStatusNotificationConfirmation, error)
+	FirmwareStatusNotification(status FirmwareStatus, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationConfirmation, error)
 	//TODO: add missing profile methods
 
 	// Logic
 	SetChargePointCoreListener(listener ChargePointCoreListener)
 	SetLocalAuthListListener(listener ChargePointLocalAuthListListener)
+	SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener)
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
@@ -34,6 +37,7 @@ type chargePoint struct {
 	chargePoint           *ocppj.ChargePoint
 	coreListener          ChargePointCoreListener
 	localAuthListListener ChargePointLocalAuthListListener
+	firmwareListener      ChargePointFirmwareManagementListener
 	confirmationListener  chan ocpp.Confirmation
 	errorListener         chan error
 }
@@ -142,12 +146,42 @@ func (cp *chargePoint) StatusNotification(connectorId int, errorCode ChargePoint
 	}
 }
 
+func (cp *chargePoint) DiagnosticsStatusNotification(status DiagnosticsStatus, props ...func(request *DiagnosticsStatusNotificationRequest)) (*DiagnosticsStatusNotificationConfirmation, error) {
+	request := NewDiagnosticsStatusNotificationRequest(status)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*DiagnosticsStatusNotificationConfirmation), err
+	}
+}
+
+func (cp *chargePoint) FirmwareStatusNotification(status FirmwareStatus, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationConfirmation, error) {
+	request := NewFirmwareStatusNotificationRequest(status)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*FirmwareStatusNotificationConfirmation), err
+	}
+}
+
 func (cp *chargePoint) SetChargePointCoreListener(listener ChargePointCoreListener) {
 	cp.coreListener = listener
 }
 
 func (cp *chargePoint) SetLocalAuthListListener(listener ChargePointLocalAuthListListener) {
 	cp.localAuthListListener = listener
+}
+
+func (cp *chargePoint) SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener) {
+	cp.firmwareListener = listener
 }
 
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
@@ -167,7 +201,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StopTransactionFeatureName, StatusNotificationFeatureName:
+	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StopTransactionFeatureName, StatusNotificationFeatureName, DiagnosticsStatusNotificationFeatureName, FirmwareStatusNotificationFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -245,6 +279,11 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 				cp.notSupportedError(requestId, action)
 				return
 			}
+		case FirmwareManagementProfileName:
+			if cp.firmwareListener == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
 		}
 	}
 	// Process request
@@ -274,6 +313,10 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.localAuthListListener.OnGetLocalListVersion(request.(*GetLocalListVersionRequest))
 	case SendLocalListFeatureName:
 		confirmation, err = cp.localAuthListListener.OnSendLocalList(request.(*SendLocalListRequest))
+	case GetDiagnosticsFeatureName:
+		confirmation, err = cp.firmwareListener.OnGetDiagnostics(request.(*GetDiagnosticsRequest))
+	case UpdateFirmwareFeatureName:
+		confirmation, err = cp.firmwareListener.OnUpdateFirmware(request.(*UpdateFirmwareRequest))
 	default:
 		cp.notSupportedError(requestId, action)
 		return
@@ -286,7 +329,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 		client = ws.NewClient()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile)
+		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile)
 	}
 	cp := chargePoint{chargePoint: dispatcher, confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan error)}
 	cp.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
@@ -314,9 +357,12 @@ type CentralSystem interface {
 	UnlockConnector(clientId string, callback func(*UnlockConnectorConfirmation, error), connectorId int, props ...func(*UnlockConnectorRequest)) error
 	GetLocalListVersion(clientId string, callback func(*GetLocalListVersionConfirmation, error), props ...func(request *GetLocalListVersionRequest)) error
 	SendLocalList(clientId string, callback func(*SendLocalListConfirmation, error), version int, updateType UpdateType, props ...func(request *SendLocalListRequest)) error
+	GetDiagnostics(clientId string, callback func(*GetDiagnosticsConfirmation, error), location string, props ...func(request *GetDiagnosticsRequest)) error
+	UpdateFirmware(clientId string, callback func(*UpdateFirmwareConfirmation, error), location string, retrieveDate *DateTime, props ...func(request *UpdateFirmwareRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetLocalAuthListListener(listener CentralSystemLocalAuthListListener)
+	SetFirmwareManagementListener(listener CentralSystemFirmwareManagementListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
 	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
@@ -327,6 +373,7 @@ type centralSystem struct {
 	centralSystem         *ocppj.CentralSystem
 	coreListener          CentralSystemCoreListener
 	localAuthListListener CentralSystemLocalAuthListListener
+	firmwareListener      CentralSystemFirmwareManagementListener
 	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
@@ -495,12 +542,46 @@ func (cs *centralSystem) SendLocalList(clientId string, callback func(*SendLocal
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *centralSystem) GetDiagnostics(clientId string, callback func(*GetDiagnosticsConfirmation, error), location string, props ...func(request *GetDiagnosticsRequest)) error {
+	request := NewGetDiagnosticsRequest(location)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*GetDiagnosticsConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) UpdateFirmware(clientId string, callback func(*UpdateFirmwareConfirmation, error), location string, retrieveDate *DateTime, props ...func(request *UpdateFirmwareRequest)) error {
+	request := NewUpdateFirmwareRequest(location, retrieveDate)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*UpdateFirmwareConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *centralSystem) SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
 	cs.coreListener = listener
 }
 
 func (cs *centralSystem) SetLocalAuthListListener(listener CentralSystemLocalAuthListListener) {
 	cs.localAuthListListener = listener
+}
+
+func (cs *centralSystem) SetFirmwareManagementListener(listener CentralSystemFirmwareManagementListener) {
+	cs.firmwareListener = listener
 }
 
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
@@ -513,7 +594,7 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName, GetLocalListVersionFeatureName, SendLocalListFeatureName:
+	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName, GetLocalListVersionFeatureName, SendLocalListFeatureName, GetDiagnosticsFeatureName, UpdateFirmwareFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
@@ -588,6 +669,11 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
+		case FirmwareManagementProfileName:
+			if cs.firmwareListener == nil {
+				cs.notSupportedError(chargePointId, requestId, action)
+				return
+			}
 		}
 	}
 	var confirmation ocpp.Confirmation = nil
@@ -611,6 +697,10 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 			confirmation, err = cs.coreListener.OnStopTransaction(chargePointId, request.(*StopTransactionRequest))
 		case StatusNotificationFeatureName:
 			confirmation, err = cs.coreListener.OnStatusNotification(chargePointId, request.(*StatusNotificationRequest))
+		case DiagnosticsStatusNotificationFeatureName:
+			confirmation, err = cs.firmwareListener.OnDiagnosticsStatusNotification(chargePointId, request.(*DiagnosticsStatusNotificationRequest))
+		case FirmwareStatusNotificationFeatureName:
+			confirmation, err = cs.firmwareListener.OnFirmwareStatusNotification(chargePointId, request.(*FirmwareStatusNotificationRequest))
 		default:
 			cs.notSupportedError(chargePointId, requestId, action)
 			return
@@ -648,7 +738,7 @@ func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) Centr
 		server = ws.NewServer()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile)
+		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile)
 	}
 	cs := centralSystem{
 		centralSystem: dispatcher,
