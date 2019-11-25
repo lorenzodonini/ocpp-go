@@ -284,6 +284,12 @@ func (firmwareListener MockCentralSystemFirmwareManagementListener) OnDiagnostic
 	return conf, args.Error(1)
 }
 
+func (firmwareListener MockCentralSystemFirmwareManagementListener) OnFirmwareStatusNotification(chargePointId string, request *ocpp16.FirmwareStatusNotificationRequest) (confirmation *ocpp16.FirmwareStatusNotificationConfirmation, err error) {
+	args := firmwareListener.MethodCalled("OnFirmwareStatusNotification", chargePointId, request)
+	conf := args.Get(0).(*ocpp16.FirmwareStatusNotificationConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CP FIRMWARE MANAGEMENT LISTENER ----------------------
 type MockChargePointFirmwareManagementListener struct {
 	mock.Mock

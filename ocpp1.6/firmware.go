@@ -11,7 +11,7 @@ const (
 
 type CentralSystemFirmwareManagementListener interface {
 	OnDiagnosticsStatusNotification(chargePointId string, request *DiagnosticsStatusNotificationRequest) (confirmation *DiagnosticsStatusNotificationConfirmation, err error)
-	//onFirmwareStatusNotification()
+	OnFirmwareStatusNotification(chargePointId string, request *FirmwareStatusNotificationRequest) (confirmation *FirmwareStatusNotificationConfirmation, err error)
 }
 
 type ChargePointFirmwareManagementListener interface {
@@ -24,4 +24,5 @@ const FirmwareManagementProfileName = "firmwareManagement"
 var FirmwareManagementProfile = ocpp.NewProfile(
 	FirmwareManagementProfileName,
 	GetDiagnosticsFeature{},
-	DiagnosticsStatusNotificationFeature{})
+	DiagnosticsStatusNotificationFeature{},
+	FirmwareStatusNotificationFeature{})
