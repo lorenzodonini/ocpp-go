@@ -4,7 +4,7 @@ import "github.com/lorenzodonini/ocpp-go/ocpp"
 
 const (
 	GetLocalListVersionFeatureName = "GetLocalListVersion"
-	SendLocalListFeatureName = "SendLocalList"
+	SendLocalListFeatureName       = "SendLocalList"
 )
 
 type CentralSystemLocalAuthListListener interface {

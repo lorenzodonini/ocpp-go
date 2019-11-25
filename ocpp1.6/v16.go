@@ -40,7 +40,7 @@ type chargePoint struct {
 	coreListener          ChargePointCoreListener
 	localAuthListListener ChargePointLocalAuthListListener
 	firmwareListener      ChargePointFirmwareManagementListener
-	reservationListener	  ChargePointReservationListener
+	reservationListener   ChargePointReservationListener
 	remoteTriggerListener ChargePointRemoteTriggerListener
 	confirmationListener  chan ocpp.Confirmation
 	errorListener         chan error
