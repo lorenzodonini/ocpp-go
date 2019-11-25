@@ -10,10 +10,11 @@ type CentralSystemRemoteTriggerListener interface {
 }
 
 type ChargePointRemoteTriggerListener interface {
-	//OnTriggerMessage(request *TriggerMessageRequest) (confirmation *TriggerMessageConfirmation, err error)
+	OnTriggerMessage(request *TriggerMessageRequest) (confirmation *TriggerMessageConfirmation, err error)
 }
 
 const RemoteTriggerProfileName = "RemoteTrigger"
 
 var RemoteTriggerProfile = ocpp.NewProfile(
-	RemoteTriggerProfileName)
+	RemoteTriggerProfileName,
+	TriggerMessageFeature{})

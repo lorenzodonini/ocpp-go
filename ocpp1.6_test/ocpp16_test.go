@@ -339,6 +339,12 @@ type MockChargePointRemoteTriggerListener struct {
 	mock.Mock
 }
 
+func (remoteTriggerListener MockChargePointRemoteTriggerListener) OnTriggerMessage(request *ocpp16.TriggerMessageRequest) (confirmation *ocpp16.TriggerMessageConfirmation, err error) {
+	args := remoteTriggerListener.MethodCalled("OnTriggerMessage", request)
+	conf := args.Get(0).(*ocpp16.TriggerMessageConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
