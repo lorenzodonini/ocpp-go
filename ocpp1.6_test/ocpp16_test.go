@@ -307,6 +307,16 @@ func (firmwareListener MockChargePointFirmwareManagementListener) OnUpdateFirmwa
 	return conf, args.Error(1)
 }
 
+// ---------------------- MOCK CS RESERVATION LISTENER ----------------------
+type MockCentralSystemReservationListener struct {
+	mock.Mock
+}
+
+// ---------------------- MOCK CP RESERVATION LISTENER ----------------------
+type MockChargePointReservationListener struct {
+	mock.Mock
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}

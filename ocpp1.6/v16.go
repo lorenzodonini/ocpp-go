@@ -27,6 +27,7 @@ type ChargePoint interface {
 	SetChargePointCoreListener(listener ChargePointCoreListener)
 	SetLocalAuthListListener(listener ChargePointLocalAuthListListener)
 	SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener)
+	SetReservationListener(listener ChargePointReservationListener)
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
@@ -38,6 +39,7 @@ type chargePoint struct {
 	coreListener          ChargePointCoreListener
 	localAuthListListener ChargePointLocalAuthListListener
 	firmwareListener      ChargePointFirmwareManagementListener
+	reservationListener	  ChargePointReservationListener
 	confirmationListener  chan ocpp.Confirmation
 	errorListener         chan error
 }
@@ -184,6 +186,10 @@ func (cp *chargePoint) SetFirmwareManagementListener(listener ChargePointFirmwar
 	cp.firmwareListener = listener
 }
 
+func (cp *chargePoint) SetReservationListener(listener ChargePointReservationListener) {
+	cp.reservationListener = listener
+}
+
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
 	// TODO: check for supported feature
 	err := cp.chargePoint.SendRequest(request)
@@ -284,6 +290,11 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 				cp.notSupportedError(requestId, action)
 				return
 			}
+		case ReservationProfileName:
+			if cp.reservationListener == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
 		}
 	}
 	// Process request
@@ -363,6 +374,7 @@ type CentralSystem interface {
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetLocalAuthListListener(listener CentralSystemLocalAuthListListener)
 	SetFirmwareManagementListener(listener CentralSystemFirmwareManagementListener)
+	SetReservationListener(listener CentralSystemReservationListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
 	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
@@ -374,6 +386,7 @@ type centralSystem struct {
 	coreListener          CentralSystemCoreListener
 	localAuthListListener CentralSystemLocalAuthListListener
 	firmwareListener      CentralSystemFirmwareManagementListener
+	reservationListener   CentralSystemReservationListener
 	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
@@ -584,6 +597,10 @@ func (cs *centralSystem) SetFirmwareManagementListener(listener CentralSystemFir
 	cs.firmwareListener = listener
 }
 
+func (cs *centralSystem) SetReservationListener(listener CentralSystemReservationListener) {
+	cs.reservationListener = listener
+}
+
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
 	cs.centralSystem.SetNewChargePointHandler(handler)
 }
@@ -671,6 +688,11 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 			}
 		case FirmwareManagementProfileName:
 			if cs.firmwareListener == nil {
+				cs.notSupportedError(chargePointId, requestId, action)
+				return
+			}
+		case ReservationProfileName:
+			if cs.reservationListener == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
