@@ -317,6 +317,12 @@ type MockChargePointReservationListener struct {
 	mock.Mock
 }
 
+func (reservationListener MockChargePointReservationListener) OnReserveNow(request *ocpp16.ReserveNowRequest) (confirmation *ocpp16.ReserveNowConfirmation, err error) {
+	args := reservationListener.MethodCalled("OnReserveNow", request)
+	conf := args.Get(0).(*ocpp16.ReserveNowConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
@@ -552,12 +558,13 @@ func (suite *OcppV16TestSuite) SetupTest() {
 	coreProfile := ocpp16.CoreProfile
 	localAuthListProfile := ocpp16.LocalAuthListProfile
 	firmwareProfile := ocpp16.FirmwareManagementProfile
+	reservationProfile := ocpp16.ReservationProfile
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
-	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile, localAuthListProfile, firmwareProfile)
-	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile, localAuthListProfile, firmwareProfile)
+	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile)
+	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile)
 	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
