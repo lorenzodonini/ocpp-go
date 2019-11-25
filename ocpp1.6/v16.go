@@ -28,6 +28,7 @@ type ChargePoint interface {
 	SetLocalAuthListListener(listener ChargePointLocalAuthListListener)
 	SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener)
 	SetReservationListener(listener ChargePointReservationListener)
+	SetRemoteTriggerListener(listener ChargePointRemoteTriggerListener)
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
@@ -40,6 +41,7 @@ type chargePoint struct {
 	localAuthListListener ChargePointLocalAuthListListener
 	firmwareListener      ChargePointFirmwareManagementListener
 	reservationListener	  ChargePointReservationListener
+	remoteTriggerListener ChargePointRemoteTriggerListener
 	confirmationListener  chan ocpp.Confirmation
 	errorListener         chan error
 }
@@ -190,6 +192,10 @@ func (cp *chargePoint) SetReservationListener(listener ChargePointReservationLis
 	cp.reservationListener = listener
 }
 
+func (cp *chargePoint) SetRemoteTriggerListener(listener ChargePointRemoteTriggerListener) {
+	cp.remoteTriggerListener = listener
+}
+
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
 	// TODO: check for supported feature
 	err := cp.chargePoint.SendRequest(request)
@@ -295,6 +301,11 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 				cp.notSupportedError(requestId, action)
 				return
 			}
+		case RemoteTriggerProfileName:
+			if cp.remoteTriggerListener == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
 		}
 	}
 	// Process request
@@ -344,7 +355,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 		client = ws.NewClient()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile)
+		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile, RemoteTriggerProfile)
 	}
 	cp := chargePoint{chargePoint: dispatcher, confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan error)}
 	cp.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
@@ -381,6 +392,7 @@ type CentralSystem interface {
 	SetLocalAuthListListener(listener CentralSystemLocalAuthListListener)
 	SetFirmwareManagementListener(listener CentralSystemFirmwareManagementListener)
 	SetReservationListener(listener CentralSystemReservationListener)
+	SetRemoteTriggerListener(listener CentralSystemRemoteTriggerListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
 	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
@@ -393,6 +405,7 @@ type centralSystem struct {
 	localAuthListListener CentralSystemLocalAuthListListener
 	firmwareListener      CentralSystemFirmwareManagementListener
 	reservationListener   CentralSystemReservationListener
+	remoteTriggerListener CentralSystemRemoteTriggerListener
 	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
@@ -637,6 +650,10 @@ func (cs *centralSystem) SetReservationListener(listener CentralSystemReservatio
 	cs.reservationListener = listener
 }
 
+func (cs *centralSystem) SetRemoteTriggerListener(listener CentralSystemRemoteTriggerListener) {
+	cs.remoteTriggerListener = listener
+}
+
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
 	cs.centralSystem.SetNewChargePointHandler(handler)
 }
@@ -732,6 +749,11 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
+		case RemoteTriggerProfileName:
+			if cs.remoteTriggerListener == nil {
+				cs.notSupportedError(chargePointId, requestId, action)
+				return
+			}
 		}
 	}
 	var confirmation ocpp.Confirmation = nil
@@ -796,7 +818,7 @@ func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) Centr
 		server = ws.NewServer()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile)
+		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile, RemoteTriggerProfile)
 	}
 	cs := centralSystem{
 		centralSystem: dispatcher,
