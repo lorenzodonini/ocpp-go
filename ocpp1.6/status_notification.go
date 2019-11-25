@@ -74,7 +74,7 @@ type StatusNotificationRequest struct {
 	VendorErrorCode string               `json:"vendorErrorCode,omitempty" validate:"max=50"`
 }
 
-// This field definition of the StatusNotification confirmation payload, sent by the Charge Point to the Central System in response to a StatusNotificationRequest.
+// This field definition of the StatusNotification confirmation payload, sent by the Central System to the Charge Point in response to a StatusNotificationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type StatusNotificationConfirmation struct {
 }

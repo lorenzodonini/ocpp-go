@@ -19,6 +19,7 @@ type ChargePoint interface {
 	StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
 	StopTransaction(meterStop int, timestamp *DateTime, transactionId int, props ...func(request *StopTransactionRequest)) (*StopTransactionConfirmation, error)
 	StatusNotification(connectorId int, errorCode ChargePointErrorCode, status ChargePointStatus, props ...func(request *StatusNotificationRequest)) (*StatusNotificationConfirmation, error)
+	DiagnosticsStatusNotification(status DiagnosticsStatus, props ...func(request *DiagnosticsStatusNotificationRequest)) (*DiagnosticsStatusNotificationConfirmation, error)
 	//TODO: add missing profile methods
 
 	// Logic
@@ -35,7 +36,7 @@ type chargePoint struct {
 	chargePoint           *ocppj.ChargePoint
 	coreListener          ChargePointCoreListener
 	localAuthListListener ChargePointLocalAuthListListener
-	firmwareListener	ChargePointFirmwareManagementListener
+	firmwareListener      ChargePointFirmwareManagementListener
 	confirmationListener  chan ocpp.Confirmation
 	errorListener         chan error
 }
@@ -144,6 +145,19 @@ func (cp *chargePoint) StatusNotification(connectorId int, errorCode ChargePoint
 	}
 }
 
+func (cp *chargePoint) DiagnosticsStatusNotification(status DiagnosticsStatus, props ...func(request *DiagnosticsStatusNotificationRequest)) (*DiagnosticsStatusNotificationConfirmation, error) {
+	request := NewDiagnosticsStatusNotificationRequest(status)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*DiagnosticsStatusNotificationConfirmation), err
+	}
+}
+
 func (cp *chargePoint) SetChargePointCoreListener(listener ChargePointCoreListener) {
 	cp.coreListener = listener
 }
@@ -173,7 +187,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StopTransactionFeatureName, StatusNotificationFeatureName:
+	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StopTransactionFeatureName, StatusNotificationFeatureName, DiagnosticsStatusNotificationFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -331,7 +345,7 @@ type CentralSystem interface {
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetLocalAuthListListener(listener CentralSystemLocalAuthListListener)
-	SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener)
+	SetFirmwareManagementListener(listener CentralSystemFirmwareManagementListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
 	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
@@ -342,7 +356,7 @@ type centralSystem struct {
 	centralSystem         *ocppj.CentralSystem
 	coreListener          CentralSystemCoreListener
 	localAuthListListener CentralSystemLocalAuthListListener
-	firmwareListener	CentralSystemFirmwareManagementListener
+	firmwareListener      CentralSystemFirmwareManagementListener
 	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
@@ -534,7 +548,7 @@ func (cs *centralSystem) SetLocalAuthListListener(listener CentralSystemLocalAut
 	cs.localAuthListListener = listener
 }
 
-func (cs *centralSystem) SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener) {
+func (cs *centralSystem) SetFirmwareManagementListener(listener CentralSystemFirmwareManagementListener) {
 	cs.firmwareListener = listener
 }
 
@@ -651,6 +665,8 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 			confirmation, err = cs.coreListener.OnStopTransaction(chargePointId, request.(*StopTransactionRequest))
 		case StatusNotificationFeatureName:
 			confirmation, err = cs.coreListener.OnStatusNotification(chargePointId, request.(*StatusNotificationRequest))
+		case DiagnosticsStatusNotificationFeatureName:
+			confirmation, err = cs.firmwareListener.OnDiagnosticsStatusNotification(chargePointId, request.(*DiagnosticsStatusNotificationRequest))
 		default:
 			cs.notSupportedError(chargePointId, requestId, action)
 			return
