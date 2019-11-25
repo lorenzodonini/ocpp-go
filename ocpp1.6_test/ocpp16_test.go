@@ -323,6 +323,12 @@ func (reservationListener MockChargePointReservationListener) OnReserveNow(reque
 	return conf, args.Error(1)
 }
 
+func (reservationListener MockChargePointReservationListener) OnCancelReservation(request *ocpp16.CancelReservationRequest) (confirmation *ocpp16.CancelReservationConfirmation, err error) {
+	args := reservationListener.MethodCalled("OnCancelReservation", request)
+	conf := args.Get(0).(*ocpp16.CancelReservationConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
