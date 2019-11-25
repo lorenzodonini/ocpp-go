@@ -27,6 +27,7 @@ type ChargePoint interface {
 	SetChargePointCoreListener(listener ChargePointCoreListener)
 	SetLocalAuthListListener(listener ChargePointLocalAuthListListener)
 	SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener)
+	SetReservationListener(listener ChargePointReservationListener)
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
@@ -38,6 +39,7 @@ type chargePoint struct {
 	coreListener          ChargePointCoreListener
 	localAuthListListener ChargePointLocalAuthListListener
 	firmwareListener      ChargePointFirmwareManagementListener
+	reservationListener	  ChargePointReservationListener
 	confirmationListener  chan ocpp.Confirmation
 	errorListener         chan error
 }
@@ -184,6 +186,10 @@ func (cp *chargePoint) SetFirmwareManagementListener(listener ChargePointFirmwar
 	cp.firmwareListener = listener
 }
 
+func (cp *chargePoint) SetReservationListener(listener ChargePointReservationListener) {
+	cp.reservationListener = listener
+}
+
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
 	// TODO: check for supported feature
 	err := cp.chargePoint.SendRequest(request)
@@ -284,6 +290,11 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 				cp.notSupportedError(requestId, action)
 				return
 			}
+		case ReservationProfileName:
+			if cp.reservationListener == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
 		}
 	}
 	// Process request
@@ -317,6 +328,10 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.firmwareListener.OnGetDiagnostics(request.(*GetDiagnosticsRequest))
 	case UpdateFirmwareFeatureName:
 		confirmation, err = cp.firmwareListener.OnUpdateFirmware(request.(*UpdateFirmwareRequest))
+	case ReserveNowFeatureName:
+		confirmation, err = cp.reservationListener.OnReserveNow(request.(*ReserveNowRequest))
+	case CancelReservationFeatureName:
+		confirmation, err = cp.reservationListener.OnCancelReservation(request.(*CancelReservationRequest))
 	default:
 		cp.notSupportedError(requestId, action)
 		return
@@ -329,7 +344,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 		client = ws.NewClient()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile)
+		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile)
 	}
 	cp := chargePoint{chargePoint: dispatcher, confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan error)}
 	cp.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
@@ -359,10 +374,13 @@ type CentralSystem interface {
 	SendLocalList(clientId string, callback func(*SendLocalListConfirmation, error), version int, updateType UpdateType, props ...func(request *SendLocalListRequest)) error
 	GetDiagnostics(clientId string, callback func(*GetDiagnosticsConfirmation, error), location string, props ...func(request *GetDiagnosticsRequest)) error
 	UpdateFirmware(clientId string, callback func(*UpdateFirmwareConfirmation, error), location string, retrieveDate *DateTime, props ...func(request *UpdateFirmwareRequest)) error
+	ReserveNow(clientId string, callback func(*ReserveNowConfirmation, error), connectorId int, expiryDate *DateTime, idTag string, reservationId int, props ...func(request *ReserveNowRequest)) error
+	CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(request *CancelReservationRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetLocalAuthListListener(listener CentralSystemLocalAuthListListener)
 	SetFirmwareManagementListener(listener CentralSystemFirmwareManagementListener)
+	SetReservationListener(listener CentralSystemReservationListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
 	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
@@ -374,6 +392,7 @@ type centralSystem struct {
 	coreListener          CentralSystemCoreListener
 	localAuthListListener CentralSystemLocalAuthListListener
 	firmwareListener      CentralSystemFirmwareManagementListener
+	reservationListener   CentralSystemReservationListener
 	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
@@ -572,6 +591,36 @@ func (cs *centralSystem) UpdateFirmware(clientId string, callback func(*UpdateFi
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *centralSystem) ReserveNow(clientId string, callback func(*ReserveNowConfirmation, error), connectorId int, expiryDate *DateTime, idTag string, reservationId int, props ...func(request *ReserveNowRequest)) error {
+	request := NewReserveNowRequest(connectorId, expiryDate, idTag, reservationId)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*ReserveNowConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(request *CancelReservationRequest)) error {
+	request := NewCancelReservationRequest(reservationId)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*CancelReservationConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *centralSystem) SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
 	cs.coreListener = listener
 }
@@ -584,6 +633,10 @@ func (cs *centralSystem) SetFirmwareManagementListener(listener CentralSystemFir
 	cs.firmwareListener = listener
 }
 
+func (cs *centralSystem) SetReservationListener(listener CentralSystemReservationListener) {
+	cs.reservationListener = listener
+}
+
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
 	cs.centralSystem.SetNewChargePointHandler(handler)
 }
@@ -594,7 +647,7 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName, GetLocalListVersionFeatureName, SendLocalListFeatureName, GetDiagnosticsFeatureName, UpdateFirmwareFeatureName:
+	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName, GetLocalListVersionFeatureName, SendLocalListFeatureName, GetDiagnosticsFeatureName, UpdateFirmwareFeatureName, ReserveNowFeatureName, CancelReservationFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
@@ -674,6 +727,11 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
+		case ReservationProfileName:
+			if cs.reservationListener == nil {
+				cs.notSupportedError(chargePointId, requestId, action)
+				return
+			}
 		}
 	}
 	var confirmation ocpp.Confirmation = nil
@@ -738,7 +796,7 @@ func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) Centr
 		server = ws.NewServer()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile)
+		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile)
 	}
 	cs := centralSystem{
 		centralSystem: dispatcher,
