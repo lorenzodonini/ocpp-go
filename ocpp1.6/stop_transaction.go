@@ -47,7 +47,7 @@ type StopTransactionRequest struct {
 // This field definition of the StopTransaction confirmation payload, sent by the Central System to the Charge Point in response to a StopTransactionRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type StopTransactionConfirmation struct {
-	IdTagInfo     *IdTagInfo `json:"idTagInfo,omitempty" validate:"omitempty"`
+	IdTagInfo *IdTagInfo `json:"idTagInfo,omitempty" validate:"omitempty"`
 }
 
 // When a transaction is stopped, the Charge Point SHALL send a StopTransactionRequest, notifying to the Central System that the transaction has stopped.

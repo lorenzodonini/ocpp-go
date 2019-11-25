@@ -28,6 +28,7 @@ type ChargePoint interface {
 	SetLocalAuthListListener(listener ChargePointLocalAuthListListener)
 	SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener)
 	SetReservationListener(listener ChargePointReservationListener)
+	SetRemoteTriggerListener(listener ChargePointRemoteTriggerListener)
 	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
 	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
 	Start(centralSystemUrl string) error
@@ -39,7 +40,8 @@ type chargePoint struct {
 	coreListener          ChargePointCoreListener
 	localAuthListListener ChargePointLocalAuthListListener
 	firmwareListener      ChargePointFirmwareManagementListener
-	reservationListener	  ChargePointReservationListener
+	reservationListener   ChargePointReservationListener
+	remoteTriggerListener ChargePointRemoteTriggerListener
 	confirmationListener  chan ocpp.Confirmation
 	errorListener         chan error
 }
@@ -190,6 +192,10 @@ func (cp *chargePoint) SetReservationListener(listener ChargePointReservationLis
 	cp.reservationListener = listener
 }
 
+func (cp *chargePoint) SetRemoteTriggerListener(listener ChargePointRemoteTriggerListener) {
+	cp.remoteTriggerListener = listener
+}
+
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
 	// TODO: check for supported feature
 	err := cp.chargePoint.SendRequest(request)
@@ -295,6 +301,11 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 				cp.notSupportedError(requestId, action)
 				return
 			}
+		case RemoteTriggerProfileName:
+			if cp.remoteTriggerListener == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
 		}
 	}
 	// Process request
@@ -332,6 +343,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.reservationListener.OnReserveNow(request.(*ReserveNowRequest))
 	case CancelReservationFeatureName:
 		confirmation, err = cp.reservationListener.OnCancelReservation(request.(*CancelReservationRequest))
+	case TriggerMessageFeatureName:
+		confirmation, err = cp.remoteTriggerListener.OnTriggerMessage(request.(*TriggerMessageRequest))
 	default:
 		cp.notSupportedError(requestId, action)
 		return
@@ -344,7 +357,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 		client = ws.NewClient()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile)
+		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile, RemoteTriggerProfile)
 	}
 	cp := chargePoint{chargePoint: dispatcher, confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan error)}
 	cp.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
@@ -376,11 +389,13 @@ type CentralSystem interface {
 	UpdateFirmware(clientId string, callback func(*UpdateFirmwareConfirmation, error), location string, retrieveDate *DateTime, props ...func(request *UpdateFirmwareRequest)) error
 	ReserveNow(clientId string, callback func(*ReserveNowConfirmation, error), connectorId int, expiryDate *DateTime, idTag string, reservationId int, props ...func(request *ReserveNowRequest)) error
 	CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(request *CancelReservationRequest)) error
+	TriggerMessage(clientId string, callback func(*TriggerMessageConfirmation, error), requestedMessage MessageTrigger, props ...func(request *TriggerMessageRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetLocalAuthListListener(listener CentralSystemLocalAuthListListener)
 	SetFirmwareManagementListener(listener CentralSystemFirmwareManagementListener)
 	SetReservationListener(listener CentralSystemReservationListener)
+	SetRemoteTriggerListener(listener CentralSystemRemoteTriggerListener)
 	SetNewChargePointHandler(handler func(chargePointId string))
 	SetChargePointDisconnectedHandler(handler func(chargePointId string))
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
@@ -393,6 +408,7 @@ type centralSystem struct {
 	localAuthListListener CentralSystemLocalAuthListListener
 	firmwareListener      CentralSystemFirmwareManagementListener
 	reservationListener   CentralSystemReservationListener
+	remoteTriggerListener CentralSystemRemoteTriggerListener
 	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
@@ -621,6 +637,21 @@ func (cs *centralSystem) CancelReservation(clientId string, callback func(*Cance
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *centralSystem) TriggerMessage(clientId string, callback func(*TriggerMessageConfirmation, error), requestedMessage MessageTrigger, props ...func(request *TriggerMessageRequest)) error {
+	request := NewTriggerMessageRequest(requestedMessage)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*TriggerMessageConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *centralSystem) SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
 	cs.coreListener = listener
 }
@@ -637,6 +668,10 @@ func (cs *centralSystem) SetReservationListener(listener CentralSystemReservatio
 	cs.reservationListener = listener
 }
 
+func (cs *centralSystem) SetRemoteTriggerListener(listener CentralSystemRemoteTriggerListener) {
+	cs.remoteTriggerListener = listener
+}
+
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
 	cs.centralSystem.SetNewChargePointHandler(handler)
 }
@@ -647,7 +682,7 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName, GetLocalListVersionFeatureName, SendLocalListFeatureName, GetDiagnosticsFeatureName, UpdateFirmwareFeatureName, ReserveNowFeatureName, CancelReservationFeatureName:
+	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName, GetLocalListVersionFeatureName, SendLocalListFeatureName, GetDiagnosticsFeatureName, UpdateFirmwareFeatureName, ReserveNowFeatureName, CancelReservationFeatureName, TriggerMessageFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
@@ -732,6 +767,11 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
+		case RemoteTriggerProfileName:
+			if cs.remoteTriggerListener == nil {
+				cs.notSupportedError(chargePointId, requestId, action)
+				return
+			}
 		}
 	}
 	var confirmation ocpp.Confirmation = nil
@@ -796,7 +836,7 @@ func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) Centr
 		server = ws.NewServer()
 	}
 	if dispatcher == nil {
-		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile)
+		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile, RemoteTriggerProfile)
 	}
 	cs := centralSystem{
 		centralSystem: dispatcher,

@@ -3,10 +3,10 @@ package ocpp16
 import "github.com/lorenzodonini/ocpp-go/ocpp"
 
 const (
-	GetDiagnosticsFeatureName = "GetDiagnostics"
+	GetDiagnosticsFeatureName                = "GetDiagnostics"
 	DiagnosticsStatusNotificationFeatureName = "DiagnosticsStatusNotification"
-	FirmwareStatusNotificationFeatureName = "FirmwareStatusNotification"
-	UpdateFirmwareFeatureName = "UpdateFirmware"
+	FirmwareStatusNotificationFeatureName    = "FirmwareStatusNotification"
+	UpdateFirmwareFeatureName                = "UpdateFirmware"
 )
 
 type CentralSystemFirmwareManagementListener interface {

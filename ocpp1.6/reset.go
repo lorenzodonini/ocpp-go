@@ -9,6 +9,7 @@ import (
 
 // Type of reset requested by ResetRequest.
 type ResetType string
+
 // Result of ResetRequest.
 type ResetStatus string
 

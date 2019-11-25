@@ -20,7 +20,7 @@ func (suite *OcppV16TestSuite) TestReserveNowRequestValidation() {
 		{ocpp16.ReserveNowRequest{ConnectorId: 1, IdTag: "12345"}, false},
 		{ocpp16.ReserveNowRequest{ConnectorId: -1, ExpiryDate: ocpp16.NewDateTime(time.Now()), IdTag: "12345", ReservationId: 42}, false},
 		{ocpp16.ReserveNowRequest{ConnectorId: 1, ExpiryDate: ocpp16.NewDateTime(time.Now()), IdTag: "12345", ReservationId: -1}, false},
-		{ocpp16.ReserveNowRequest{ConnectorId: 1, ExpiryDate: ocpp16.NewDateTime(time.Now()), IdTag: ">20..................", }, false},
+		{ocpp16.ReserveNowRequest{ConnectorId: 1, ExpiryDate: ocpp16.NewDateTime(time.Now()), IdTag: ">20.................."}, false},
 		{ocpp16.ReserveNowRequest{ConnectorId: 1, ExpiryDate: ocpp16.NewDateTime(time.Now()), IdTag: "12345", ReservationId: 42, ParentIdTag: ">20.................."}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
