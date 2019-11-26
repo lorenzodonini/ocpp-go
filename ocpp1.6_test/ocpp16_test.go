@@ -355,6 +355,12 @@ type MockChargePointSmartChargingListener struct {
 	mock.Mock
 }
 
+func (smartChargingListener MockChargePointSmartChargingListener) OnSetChargingProfile(request *ocpp16.SetChargingProfileRequest) (confirmation *ocpp16.SetChargingProfileConfirmation, err error) {
+	args := smartChargingListener.MethodCalled("OnSetChargingProfile", request)
+	conf := args.Get(0).(*ocpp16.SetChargingProfileConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
