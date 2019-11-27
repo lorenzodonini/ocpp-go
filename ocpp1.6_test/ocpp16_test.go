@@ -361,6 +361,12 @@ func (smartChargingListener MockChargePointSmartChargingListener) OnSetChargingP
 	return conf, args.Error(1)
 }
 
+func (smartChargingListener MockChargePointSmartChargingListener) OnClearChargingProfile(request *ocpp16.ClearChargingProfileRequest) (confirmation *ocpp16.ClearChargingProfileConfirmation, err error) {
+	args := smartChargingListener.MethodCalled("OnClearChargingProfile", request)
+	conf := args.Get(0).(*ocpp16.ClearChargingProfileConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
