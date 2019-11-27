@@ -219,7 +219,8 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StopTransactionFeatureName, StatusNotificationFeatureName, DiagnosticsStatusNotificationFeatureName, FirmwareStatusNotificationFeatureName:
+	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StopTransactionFeatureName, StatusNotificationFeatureName,
+	DiagnosticsStatusNotificationFeatureName, FirmwareStatusNotificationFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -360,6 +361,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.smartChargingListener.OnSetChargingProfile(request.(*SetChargingProfileRequest))
 	case ClearChargingProfileFeatureName:
 		confirmation, err = cp.smartChargingListener.OnClearChargingProfile(request.(*ClearChargingProfileRequest))
+	case GetCompositeScheduleFeatureName:
+		confirmation, err = cp.smartChargingListener.OnGetCompositeSchedule(request.(*GetCompositeScheduleRequest))
 	default:
 		cp.notSupportedError(requestId, action)
 		return
@@ -407,6 +410,7 @@ type CentralSystem interface {
 	TriggerMessage(clientId string, callback func(*TriggerMessageConfirmation, error), requestedMessage MessageTrigger, props ...func(request *TriggerMessageRequest)) error
 	SetChargingProfile(clientId string, callback func(*SetChargingProfileConfirmation, error), connectorId int, chargingProfile *ChargingProfile, props ...func(request *SetChargingProfileRequest)) error
 	ClearChargingProfile(clientId string, callback func(*ClearChargingProfileConfirmation, error), props ...func(request *ClearChargingProfileRequest)) error
+	GetCompositeSchedule(clientId string, callback func(*GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *GetCompositeScheduleRequest)) error
 	// Logic
 	SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 	SetLocalAuthListListener(listener CentralSystemLocalAuthListListener)
@@ -701,6 +705,21 @@ func (cs *centralSystem) ClearChargingProfile(clientId string, callback func(*Cl
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *GetCompositeScheduleRequest)) error {
+	request := NewGetCompositeScheduleRequest(connectorId, duration)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*GetCompositeScheduleConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *centralSystem) SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
 	cs.coreListener = listener
 }
@@ -735,7 +754,12 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName, GetLocalListVersionFeatureName, SendLocalListFeatureName, GetDiagnosticsFeatureName, UpdateFirmwareFeatureName, ReserveNowFeatureName, CancelReservationFeatureName, TriggerMessageFeatureName, SetChargingProfileFeatureName, ClearChargingProfileFeatureName:
+	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
+	GetLocalListVersionFeatureName, SendLocalListFeatureName,
+	GetDiagnosticsFeatureName, UpdateFirmwareFeatureName,
+	ReserveNowFeatureName, CancelReservationFeatureName,
+	TriggerMessageFeatureName,
+	SetChargingProfileFeatureName, ClearChargingProfileFeatureName, GetCompositeScheduleFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}

@@ -367,6 +367,12 @@ func (smartChargingListener MockChargePointSmartChargingListener) OnClearChargin
 	return conf, args.Error(1)
 }
 
+func (smartChargingListener MockChargePointSmartChargingListener) OnGetCompositeSchedule(request *ocpp16.GetCompositeScheduleRequest) (confirmation *ocpp16.GetCompositeScheduleConfirmation, err error) {
+	args := smartChargingListener.MethodCalled("OnGetCompositeSchedule", request)
+	conf := args.Get(0).(*ocpp16.GetCompositeScheduleConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
