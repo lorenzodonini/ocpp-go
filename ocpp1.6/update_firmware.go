@@ -25,6 +25,8 @@ type UpdateFirmwareConfirmation struct {
 // The Charge Point SHALL respond with a UpdateFirmwareConfirmation. The Charge Point SHOULD start retrieving the firmware as soon as possible after retrieve-date.
 // During downloading and installation of the firmware, the Charge Point MUST send FirmwareStatusNotificationRequest payloads to keep the Central System updated with the status of the update process.
 // The Charge Point SHALL, if the new firmware image is "valid", install the new firmware as soon as it is able to.
+// If it is not possible to continue charging during installation of firmware, it is RECOMMENDED to wait until Charging Session has ended (Charge Point idle) before commencing installation.
+// It is RECOMMENDED to set connectors that are not in use to UNAVAILABLE while the Charge Point waits for the Session to end.
 type UpdateFirmwareFeature struct{}
 
 func (f UpdateFirmwareFeature) GetFeatureName() string {

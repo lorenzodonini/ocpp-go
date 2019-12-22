@@ -28,6 +28,11 @@ type GetConfigurationConfirmation struct {
 }
 
 // To retrieve the value of configuration settings, the Central System SHALL send a GetConfigurationRequest to the Charge Point.
+// If the list of keys in the request is empty or missing (it is optional), the Charge Point SHALL return a list of all configuration settings in GetConfigurationConfirmation.
+// Otherwise Charge Point SHALL return a list of recognized keys and their corresponding values and read-only state.
+// Unrecognized keys SHALL be placed in the response payload as part of the optional unknown key list element of GetConfigurationConfirmation.
+// The number of configuration keys requested in a single payload MAY be limited by the Charge Point.
+// This maximum can be retrieved by reading the configuration key GetConfigurationMaxKeys.
 type GetConfigurationFeature struct{}
 
 func (f GetConfigurationFeature) GetFeatureName() string {

@@ -51,6 +51,25 @@ type StopTransactionConfirmation struct {
 }
 
 // When a transaction is stopped, the Charge Point SHALL send a StopTransactionRequest, notifying to the Central System that the transaction has stopped.
+// A StopTransactionRequest MAY contain an optional TransactionData element to provide more details about transaction usage.
+// The optional TransactionData element is a container for any number of MeterValues, using the same data structure as the meterValue elements of the MeterValuesRequest payload.
+// Upon receipt of a StopTransactionRequest, the Central System SHALL respond with a StopTransactionConfirmation.
+// The idTag in the request payload MAY be omitted when the Charge Point itself needs to stop the transaction. For instance, when the Charge Point is requested to reset.
+// If a transaction is ended in a normal way (e.g. EV-driver presented his identification to stop the transaction), the Reason element MAY be omitted and the Reason SHOULD be assumed 'Local'.
+// If the transaction is not ended normally, the Reason SHOULD be set to a correct value. As part of the normal transaction termination, the Charge Point SHALL unlock the cable (if not permanently attached).
+// The Charge Point MAY unlock the cable (if not permanently attached) when the cable is disconnected at the EV.
+// If supported, this functionality is reported and controlled by the configuration key UnlockConnectorOnEVSideDisconnect.
+// The Charge Point MAY stop a running transaction when the cable is disconnected at the EV. If supported, this functionality is reported and controlled by the configuration key StopTransactionOnEVSideDisconnect.
+// If StopTransactionOnEVSideDisconnect is set to false, the transaction SHALL not be stopped when the cable is disconnected from the EV.
+// If the EV is reconnected, energy transfer is allowed again. In this case there is no mechanism to prevent other EVs from charging and disconnecting during that same ongoing transaction.
+// With UnlockConnectorOnEVSideDisconnect set to false, the Connector SHALL remain locked at the Charge Point until the user presents the identifier.
+// By setting StopTransactionOnEVSideDisconnect to true, the transaction SHALL be stopped when the cable is disconnected from the EV.
+// If the EV is reconnected, energy transfer is not allowed until the transaction is stopped and a new transaction is started.
+// If UnlockConnectorOnEVSideDisconnect is set to true, also the Connector on the Charge Point will be unlocked.
+// It is likely that The Central System applies sanity checks to the data contained in a StopTransactionRequest it received.
+// The outcome of such sanity checks SHOULD NOT ever cause the Central System to not respond with a StopTransactionConfirmation.
+// Failing to respond with a StopTransactionConfirmation will only cause the Charge Point to try the same message again as specified in Error responses to transaction-related messages.
+// If Charge Point has implemented an Authorization Cache, then upon receipt of a StopTransactionConfirmation the Charge Point SHALL update the cache entry, if the idTag is not in the Local Authorization List, with the IdTagInfo value from the response as described under Authorization Cache.
 type StopTransactionFeature struct{}
 
 func (f StopTransactionFeature) GetFeatureName() string {

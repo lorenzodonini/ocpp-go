@@ -39,9 +39,16 @@ type ChangeConfigurationConfirmation struct {
 	Status ConfigurationStatus `json:"status" validate:"required,configurationStatus"`
 }
 
-// Central System can request a Charge Point to change configuration parameters.
-// To achieve this, Central System SHALL send a ChangeConfigurationRequest.
+// Central System can request a Charge Point to change configuration parameters, by sending a ChangeConfigurationRequest.
 // This request contains a key-value pair, where "key" is the name of the configuration setting to change and "value" contains the new setting for the configuration setting.
+// A Charge Point SHALL reply with a ChangeConfigurationConfirmation indicating whether it was able to apply the change to its configuration.
+// The Charge Point SHALL set the status field in the ChangeConfiguration.conf according to the following rules:
+// - If the change was applied successfully, and the change if effective immediately, the Charge Point SHALL respond with a status 'Accepted'.
+// - If the change was applied successfully, but a reboot is needed to make it effective, the Charge Point SHALL respond with status 'RebootRequired'.
+// - If "key" does not correspond to a configuration setting supported by Charge Point, it SHALL respond with a status 'NotSupported'.
+// - If the Charge Point did not set the configuration, and none of the previous statuses applies, the Charge Point SHALL respond with status 'Rejected'.
+//
+// If a key value is defined as a CSL, it MAY be accompanied with a [KeyName]MaxLength key, indicating the max length of the CSL in items. If this key is not set, a safe value of 1 (one) item SHOULD be assumed.
 type ChangeConfigurationFeature struct{}
 
 func (f ChangeConfigurationFeature) GetFeatureName() string {

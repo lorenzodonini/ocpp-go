@@ -35,20 +35,14 @@ type CentralSystemCoreListener interface {
 }
 
 type ChargePointCoreListener interface {
-	//onCancelReservation()
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	OnChangeConfiguration(request *ChangeConfigurationRequest) (confirmation *ChangeConfigurationConfirmation, err error)
 	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
-	//onClearChargingProfile()
 	OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
-	//onGetCompositeSchedule()
 	OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
 	OnRemoteStopTransaction(request *RemoteStopTransactionRequest) (confirmation *RemoteStopTransactionConfirmation, err error)
-	//onReserveNow()
 	OnReset(request *ResetRequest) (confirmation *ResetConfirmation, err error)
-	//onSetChargingProfile()
-	//onTriggerMessage()
 	OnUnlockConnector(request *UnlockConnectorRequest) (confirmation *UnlockConnectorConfirmation, err error)
 }
 

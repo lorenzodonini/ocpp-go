@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Set Charging Profile Transaction (CS -> CP) --------------------
+// -------------------- Clear Charging Profile (CS -> CP) --------------------
 
 // Status reported in ClearChargingProfileConfirmation.
 type ClearChargingProfileStatus string

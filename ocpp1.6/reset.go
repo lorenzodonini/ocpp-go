@@ -55,6 +55,12 @@ type ResetConfirmation struct {
 // The Central System can request a hard or a soft reset. Upon receipt of a ResetRequest, the Charge Point SHALL respond with a ResetConfirmation message.
 // The response SHALL include whether the Charge Point will attempt to reset itself.
 // After receipt of a ResetRequest, The Charge Point SHALL send a StopTransactionRequest for any ongoing transaction before performing the reset.
+// If the Charge Point fails to receive a StopTransactionConfirmation form the Central System, it shall queue the StopTransactionRequest.
+// At receipt of a soft reset, the Charge Point SHALL stop ongoing transactions gracefully and send StopTransactionRequest for every ongoing transaction.
+// It should then restart the application software (if possible, otherwise restart the processor/controller).
+// At receipt of a hard reset the Charge Point SHALL restart (all) the hardware, it is not required to gracefully stop ongoing transaction.
+//If possible the Charge Point sends a StopTransactionRequest for previously ongoing transactions after having restarted and having been accepted by the Central System via a BootNotificationConfirmation.
+//This is a last resort solution for a not correctly functioning Charge Points, by sending a "hard" reset, (queued) information might get lost.
 type ResetFeature struct{}
 
 func (f ResetFeature) GetFeatureName() string {

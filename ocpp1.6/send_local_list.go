@@ -63,6 +63,8 @@ type SendLocalListConfirmation struct {
 // The list MAY be either a full list to replace the current list in the Charge Point or it MAY be a differential list
 // with updates to be applied to the current list in the Charge Point.
 // Upon receipt of a SendLocalListRequest the Charge Point SHALL respond with a SendLocalListConfirmation.
+// The Central System SHALL send a SendLocalListRequest to send the list to a Charge Point.
+// The request payload SHALL contain the type of update (full or differential) and the version number that the Charge Point MUST associate with the local authorization list after it has been updated.
 // The response payload SHALL indicate whether the Charge Point has accepted the update of the local authorization list.
 // If the status is Failed or VersionMismatch and the updateType was Differential, then Central System SHOULD retry sending the full local authorization list with updateType Full.
 type SendLocalListFeature struct{}
