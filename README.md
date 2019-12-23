@@ -15,13 +15,7 @@ There are currently no plans of supporting OCPP-S.
 
 Planned milestones and features:
 
-- [ ] OCPP 1.6
-    - [ ] Core Profile
-    - [ ] Firmware Profile
-    - [ ] Local Auth List Profile
-    - [ ] Reservation Profile
-    - [ ] Remote Trigger Profile
-    - [ ] Smart Charging Profile
+- [x] OCPP 1.6
 - [ ] OCPP 2.0
 
 **Note: The library is still a WIP, therefore expect some APIs to change.** 
@@ -73,14 +67,20 @@ Depending on which OCPP profiles you want to support in your application, you wi
 To start a central system instance, simply run the following:
 ```go
 centralSystem := ocpp16.NewCentralSystem(nil, nil)
-handler := &CentralSystemHandler{}
+
+// Set callback handlers for connect/disconnect
 centralSystem.SetNewChargePointHandler(func(chargePointId string) {
 	log.Printf("new charge point %v connected", chargePointId)
 })
 centralSystem.SetChargePointDisconnectedHandler(func(chargePointId string) {
 	log.Printf("charge point %v disconnected", chargePointId)
 })
+
+// Set handler for profile callbacks
+handler := &CentralSystemHandler{}
 centralSystem.SetCentralSystemCoreListener(handler)
+
+// Start central system
 listenPort := 8887
 log.Printf("starting central system")
 centralSystem.Start(listenPort, "/{ws}") // This call starts server in daemon mode and is blocking
@@ -91,7 +91,7 @@ log.Println("stopped central system")
 
 To send requests to the charge point, you may either use the simplified API:
 ```go
-err := centralSystem.ChangeAvailability("1234", someCallbackFunction, 1, ocpp16.AvailabilityTypeInoperative)
+err := centralSystem.ChangeAvailability("1234", myCallback, 1, ocpp16.AvailabilityTypeInoperative)
 if err != nil {
 	log.Printf("error sending message: %v", err)
 }
@@ -109,7 +109,7 @@ if err != nil {
 In both cases, the request is sent asynchronously and the function returns right away. 
 You need to write the callback function to check for errors and handle the confirmation on your own:
 ```go
-callback := func(confirmation *ocpp16.ChangeAvailabilityConfirmation, e error) {
+myCallback := func(confirmation *ocpp16.ChangeAvailabilityConfirmation, e error) {
 	if e != nil {
 		log.Printf("operation failed: %v", e)
 	} else {
@@ -119,7 +119,7 @@ callback := func(confirmation *ocpp16.ChangeAvailabilityConfirmation, e error) {
 }
 ```
 
-Since the initial `centralSystem.Start` call is blocking, you may want to wrap it in a goroutine (that is, if you need to send requests to charge points form the main thread).
+Since the initial `centralSystem.Start` call blocks forever, you may want to wrap it in a goroutine (that is, if you need to send requests to charge points form the main thread).
 
 #### Example
 
@@ -175,17 +175,20 @@ To start a charge point instance, simply run the following:
 chargePointId := "cp0001"
 csUrl = "ws://localhost:8887"
 chargePoint := ocpp16.NewChargePoint(chargePointId, nil, nil)
+
 // Set a handler for all callback functions
 handler := &ChargePointHandler{}
 chargePoint.SetChargePointCoreListener(handler)
+
 // Connects to central system
 err := chargePoint.Start(csUrl)
 if err != nil {
 	log.Println(err)
 } else {
 	log.Printf("connected to central system at %v", csUrl) 
-	mainRoutine() // ... your logic goes here
+	mainRoutine() // ... your program logic goes here
 }
+
 // Disconnect
 chargePoint.Stop()
 log.Printf("disconnected from central system")
