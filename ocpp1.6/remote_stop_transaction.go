@@ -21,6 +21,9 @@ type RemoteStopTransactionConfirmation struct {
 // Charge Point SHALL reply with RemoteStopTransactionConfirmation and a status indicating whether it has accepted the request and a transaction with the given transactionId is ongoing and will be stopped.
 // This remote request to stop a transaction is equal to a local action to stop a transaction.
 // Therefore, the transaction SHALL be stopped, The Charge Point SHALL send a StopTransactionRequest and, if applicable, unlock the connector.
+// The following two main use cases are the reason for Remote Stop Transaction:
+// • Enable a CPO operator to help an EV driver that has problems stopping a transaction.
+// • Enable mobile apps to control charging transactions via the Central System.
 type RemoteStopTransactionFeature struct{}
 
 func (f RemoteStopTransactionFeature) GetFeatureName() string {

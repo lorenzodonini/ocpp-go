@@ -21,6 +21,7 @@ type ChargePointFirmwareManagementListener interface {
 
 const FirmwareManagementProfileName = "firmwareManagement"
 
+// Provides support for firmware update management and diagnostic log file download.
 var FirmwareManagementProfile = ocpp.NewProfile(
 	FirmwareManagementProfileName,
 	GetDiagnosticsFeature{},

@@ -80,6 +80,21 @@ type StatusNotificationConfirmation struct {
 }
 
 // A Charge Point sends a notification to the Central System to inform the Central System about a status change or an error within the Charge Point.
+// Refer to the official OCPP specification for a full list of status changes that may trigger such a message.
+// To limit the number of transitions, the Charge Point MAY omit sending a StatusNotificationRequest if it was active for less time than defined in the optional configuration key MinimumStatusDuration.
+// This way, a Charge Point MAY choose not to send certain StatusNotificationRequest payloads.
+// The Charge Point MAY send a StatusNotificationRequest to inform the Central System of fault conditions.
+// When the 'status' field is not Faulted, the condition should be considered a warning since charging operations are still possible.
+// When a Charge Point is configured with StopTransactionOnEVSideDisconnect set to false, a transaction is running and the EV becomes disconnected on EV side, then a StatusNotificationRequest with the state: SuspendedEV SHOULD be send to the Central System, with the 'errorCode' field set to: 'NoError'.
+// The Charge Point SHOULD add additional information in the 'info' field, Notifying the Central System with the reason of suspension: 'EV side disconnected'. The current transaction is not stopped.
+// When a Charge Point is configured with StopTransactionOnEVSideDisconnect set to true, a transaction is running and the EV becomes disconnected on EV side, then a StatusNotificationRequest with the state: 'Finishing' SHOULD be send to the Central System, with the 'errorCode' field set to: 'NoError'.
+// The Charge Point SHOULD add additional information in the 'info' field, Notifying the Central System with the reason of stopping: 'EV side disconnected'. The current transaction is stopped.
+// When a Charge Point connects to a Central System after having been offline, it updates the Central System about its status according to the following rules:
+// 1. The Charge Point SHOULD send a StatusNotificationRequest with its current status if the status changed while the Charge Point was offline.
+// 2. The Charge Point MAY send a StatusNotificationRequest to report an error that occurred while the Charge Point was offline.
+// 3. The Charge Point SHOULD NOT send StatusNotificationRequest payloads for historical status change events that happened while the Charge Point was offline and that do not inform the Central System of Charge Point errors or the Charge Point’s current status.
+// 4. The StatusNotificationRequest messages MUST be sent in the order in which the events that they describe occurred.
+// Upon receipt of a StatusNotificationRequest, the Central System SHALL respond with a StatusNotificationConfirmation.
 type StatusNotificationFeature struct{}
 
 func (f StatusNotificationFeature) GetFeatureName() string {

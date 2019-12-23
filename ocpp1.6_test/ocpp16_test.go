@@ -345,6 +345,34 @@ func (remoteTriggerListener MockChargePointRemoteTriggerListener) OnTriggerMessa
 	return conf, args.Error(1)
 }
 
+// ---------------------- MOCK CS SMART CHARGING LISTENER ----------------------
+type MockCentralSystemSmartChargingListener struct {
+	mock.Mock
+}
+
+// ---------------------- MOCK CP SMART CHARGING LISTENER ----------------------
+type MockChargePointSmartChargingListener struct {
+	mock.Mock
+}
+
+func (smartChargingListener MockChargePointSmartChargingListener) OnSetChargingProfile(request *ocpp16.SetChargingProfileRequest) (confirmation *ocpp16.SetChargingProfileConfirmation, err error) {
+	args := smartChargingListener.MethodCalled("OnSetChargingProfile", request)
+	conf := args.Get(0).(*ocpp16.SetChargingProfileConfirmation)
+	return conf, args.Error(1)
+}
+
+func (smartChargingListener MockChargePointSmartChargingListener) OnClearChargingProfile(request *ocpp16.ClearChargingProfileRequest) (confirmation *ocpp16.ClearChargingProfileConfirmation, err error) {
+	args := smartChargingListener.MethodCalled("OnClearChargingProfile", request)
+	conf := args.Get(0).(*ocpp16.ClearChargingProfileConfirmation)
+	return conf, args.Error(1)
+}
+
+func (smartChargingListener MockChargePointSmartChargingListener) OnGetCompositeSchedule(request *ocpp16.GetCompositeScheduleRequest) (confirmation *ocpp16.GetCompositeScheduleConfirmation, err error) {
+	args := smartChargingListener.MethodCalled("OnGetCompositeSchedule", request)
+	conf := args.Get(0).(*ocpp16.GetCompositeScheduleConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
@@ -582,12 +610,13 @@ func (suite *OcppV16TestSuite) SetupTest() {
 	firmwareProfile := ocpp16.FirmwareManagementProfile
 	reservationProfile := ocpp16.ReservationProfile
 	remoteTriggerProfile := ocpp16.RemoteTriggerProfile
+	smartChargingProfile := ocpp16.SmartChargingProfile
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
-	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile)
-	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile)
+	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
+	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
 	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {

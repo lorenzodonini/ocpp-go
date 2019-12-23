@@ -23,9 +23,13 @@ type StartTransactionConfirmation struct {
 
 // The Charge Point SHALL send a StartTransactionRequest to the Central System to inform about a transaction that has been started.
 // If this transaction ends a reservation (see ReserveNow operation), then the StartTransaction MUST contain the reservationId.
-// Upon receipt of a StartTransaction.req PDU, the Central System SHOULD respond with a StartTransactionConfirmation.
-// This response MUST include a transaction id and an authorization status value.
+// Upon receipt of a StartTransactionRequest, the Central System SHOULD respond with a StartTransactionConfirmation.
+// This response payload MUST include a transaction id and an authorization status value.
 // The Central System MUST verify validity of the identifier in the StartTransactionRequest, because the identifier might have been authorized locally by the Charge Point using outdated information.
+// If Charge Point has implemented an Authorization Cache, then upon receipt of a StartTransactionConfirmation the Charge Point SHALL update the cache entry, if the idTag is not in the Local Authorization List, with the IdTagInfo value from the response as described under Authorization Cache.
+// It is likely that The Central System applies sanity checks to the data contained in a StartTransactionRequest it received.
+// The outcome of such sanity checks SHOULD NOT ever cause the Central System to not respond with a StartTransactionConfirmation.
+// Failing to respond with a StartTransactionConfirmation will only cause the Charge Point to try the same message again as specified in Error responses to transaction-related messages.
 type StartTransactionFeature struct{}
 
 func (f StartTransactionFeature) GetFeatureName() string {
@@ -48,8 +52,7 @@ func (c StartTransactionConfirmation) GetFeatureName() string {
 	return StartTransactionFeatureName
 }
 
-// Creates a new StartTransaction request. All signature parameters are required fields.
-// Optional fields may be set directly on the created request.
+// Creates a new StartTransaction request. All signature parameters are required fields. Optional fields may be set directly on the created request.
 func NewStartTransactionRequest(connectorId int, idTag string, meterStart int, timestamp *DateTime) *StartTransactionRequest {
 	return &StartTransactionRequest{ConnectorId: connectorId, IdTag: idTag, MeterStart: meterStart, Timestamp: timestamp}
 }

@@ -49,6 +49,12 @@ type BootNotificationConfirmation struct {
 
 // After each (re)boot, a Charge Point SHALL send a request to the Central System with information about its configuration (e.g. version, vendor, etc.).
 // The Central System SHALL respond to indicate whether it will accept the Charge Point.
+// Between the physical power-on/reboot and the successful completion of a BootNotification, where Central System returns Accepted or Pending, the Charge Point SHALL NOT send any other request to the Central System.
+// When the Central System responds with a BootNotification.conf with a status Accepted, the Charge Point will adjust the heartbeat
+// interval in accordance with the interval from the response PDU and it is RECOMMENDED to synchronize its internal clock with the supplied Central System’s current time.
+// If that interval value is zero, the Charge Point chooses a waiting interval on its own, in a way that avoids flooding the Central System with requests.
+// If the Central System returns the Pending status, the communication channel SHOULD NOT be closed by either the Charge Point or the Central System.
+// The Central System MAY send request messages to retrieve information from the Charge Point or change its configuration.
 type BootNotificationFeature struct{}
 
 func (f BootNotificationFeature) GetFeatureName() string {
@@ -76,7 +82,7 @@ func NewBootNotificationRequest(chargePointModel string, chargePointVendor strin
 	return &BootNotificationRequest{ChargePointModel: chargePointModel, ChargePointVendor: chargePointVendor}
 }
 
-// Creates a new BootNotificationConfirmation. Optional fields may be set afterwards.
+// Creates a new BootNotificationConfirmation. There are no optional fields for this message.
 func NewBootNotificationConfirmation(currentTime *DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
 	return &BootNotificationConfirmation{CurrentTime: currentTime, Interval: interval, Status: status}
 }

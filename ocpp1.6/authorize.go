@@ -18,6 +18,10 @@ type AuthorizeConfirmation struct {
 }
 
 // Before the owner of an electric vehicle can start or stop charging, the Charge Point has to authorize the operation.
+// Upon receipt of an AuthorizeRequest, the Central System SHALL respond with an AuthorizeConfirmation.
+// This response payload SHALL indicate whether or not the idTag is accepted by the Central System.
+// If the Central System accepts the idTag then the response payload MAY include a parentIdTag and MUST include an authorization status value indicating acceptance or a reason for rejection.
+// A Charge Point MAY authorize identifier locally without involving the Central System, as described in Local Authorization List.
 // The Charge Point SHALL only supply energy after authorization.
 type AuthorizeFeature struct{}
 
