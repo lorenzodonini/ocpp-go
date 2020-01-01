@@ -12,16 +12,20 @@ type ConnectorInfo struct {
 	status             ocpp16.ChargePointStatus
 	availability       ocpp16.AvailabilityType
 	currentTransaction int
+	currentReservation int
 }
 
 type ChargePointHandler struct {
-	status        ocpp16.ChargePointStatus
-	connectors    map[int]*ConnectorInfo
-	errorCode     ocpp16.ChargePointErrorCode
-	configuration map[string]ocpp16.ConfigurationKey
-	meterValue    int
+	status               ocpp16.ChargePointStatus
+	connectors           map[int]*ConnectorInfo
+	errorCode            ocpp16.ChargePointErrorCode
+	configuration        map[string]ocpp16.ConfigurationKey
+	meterValue           int
+	localAuthList        []ocpp16.AuthorizationData
+	localAuthListVersion int
 }
 
+// Core profile callbacks
 func (handler *ChargePointHandler) OnChangeAvailability(request *ocpp16.ChangeAvailabilityRequest) (confirmation *ocpp16.ChangeAvailabilityConfirmation, err error) {
 	handler.connectors[request.ConnectorId].availability = request.Type
 	return ocpp16.NewChangeAvailabilityConfirmation(ocpp16.AvailabilityStatusAccepted), nil
@@ -68,7 +72,7 @@ func (handler *ChargePointHandler) OnRemoteStartTransaction(request *ocpp16.Remo
 	connector, ok := handler.connectors[request.ConnectorId]
 	if !ok {
 		return ocpp16.NewRemoteStartTransactionConfirmation(ocpp16.RemoteStartStopStatusRejected), nil
-	} else if connector.availability != ocpp16.AvailabilityTypeOperative || connector.currentTransaction > 0 {
+	} else if connector.availability != ocpp16.AvailabilityTypeOperative || connector.status != ocpp16.ChargePointStatusAvailable || connector.currentTransaction > 0 {
 		return ocpp16.NewRemoteStartTransactionConfirmation(ocpp16.RemoteStartStopStatusRejected), nil
 	}
 	logDefault(request.GetFeatureName()).Infof("started transaction %v on connector %v", connector.currentTransaction, request.ConnectorId)
@@ -81,6 +85,7 @@ func (handler *ChargePointHandler) OnRemoteStopTransaction(request *ocpp16.Remot
 		if val.currentTransaction == request.TransactionId {
 			logDefault(request.GetFeatureName()).Infof("stopped transaction %v on connector %v", val.currentTransaction, key)
 			val.currentTransaction = 0
+			val.currentReservation = 0
 			val.status = ocpp16.ChargePointStatusAvailable
 			return ocpp16.NewRemoteStopTransactionConfirmation(ocpp16.RemoteStartStopStatusAccepted), nil
 		}
@@ -99,6 +104,108 @@ func (handler *ChargePointHandler) OnUnlockConnector(request *ocpp16.UnlockConne
 		return ocpp16.NewUnlockConnectorConfirmation(ocpp16.UnlockStatusNotSupported), nil
 	}
 	return ocpp16.NewUnlockConnectorConfirmation(ocpp16.UnlockStatusUnlocked), nil
+}
+
+// Local authorization list profile callbacks
+func (handler *ChargePointHandler) OnGetLocalListVersion(request *ocpp16.GetLocalListVersionRequest) (confirmation *ocpp16.GetLocalListVersionConfirmation, err error) {
+	return ocpp16.NewGetLocalListVersionConfirmation(handler.localAuthListVersion), nil
+}
+
+func (handler *ChargePointHandler) OnSendLocalList(request *ocpp16.SendLocalListRequest) (confirmation *ocpp16.SendLocalListConfirmation, err error) {
+	if request.ListVersion <= handler.localAuthListVersion {
+		return ocpp16.NewSendLocalListConfirmation(ocpp16.UpdateStatusVersionMismatch), nil
+	}
+	if request.UpdateType == ocpp16.UpdateTypeFull {
+		handler.localAuthList = request.LocalAuthorizationList
+		handler.localAuthListVersion = request.ListVersion
+	} else if request.UpdateType == ocpp16.UpdateTypeDifferential {
+		handler.localAuthList = append(handler.localAuthList, request.LocalAuthorizationList...)
+		handler.localAuthListVersion = request.ListVersion
+	}
+	return ocpp16.NewSendLocalListConfirmation(ocpp16.UpdateStatusAccepted), nil
+}
+
+// Firmware management profile callbacks
+func (handler *ChargePointHandler) OnGetDiagnostics(request *ocpp16.GetDiagnosticsRequest) (confirmation *ocpp16.GetDiagnosticsConfirmation, err error) {
+	return ocpp16.NewGetDiagnosticsConfirmation(), nil
+	//TODO: perform diagnostics upload out-of-band
+}
+
+func (handler *ChargePointHandler) OnUpdateFirmware(request *ocpp16.UpdateFirmwareRequest) (confirmation *ocpp16.UpdateFirmwareConfirmation, err error) {
+	return ocpp16.NewUpdateFirmwareConfirmation(), nil
+	//TODO: download new firmware out-of-band
+}
+
+// Remote trigger profile callbacks
+func (handler *ChargePointHandler) OnTriggerMessage(request *ocpp16.TriggerMessageRequest) (confirmation *ocpp16.TriggerMessageConfirmation, err error) {
+	switch request.RequestedMessage {
+	case ocpp16.BootNotificationFeatureName:
+		//TODO: schedule boot notification message
+		break
+	case ocpp16.DiagnosticsStatusNotificationFeatureName:
+		//TODO: schedule diagnostics status notification message
+		break
+	case ocpp16.FirmwareStatusNotificationFeatureName:
+		//TODO: schedule firmware status notification message
+		break
+	case ocpp16.HeartbeatFeatureName:
+		//TODO: schedule heartbeat message
+		break
+	case ocpp16.MeterValuesFeatureName:
+		//TODO: schedule meter values message
+		break
+		//TODO: schedule status notification message
+	case ocpp16.StatusNotificationFeatureName:
+		break
+	default:
+		return ocpp16.NewTriggerMessageConfirmation(ocpp16.TriggerMessageStatusNotImplemented), nil
+	}
+	return ocpp16.NewTriggerMessageConfirmation(ocpp16.TriggerMessageStatusAccepted), nil
+}
+
+// Reservation profile callbacks
+func (handler *ChargePointHandler) OnReserveNow(request *ocpp16.ReserveNowRequest) (confirmation *ocpp16.ReserveNowConfirmation, err error) {
+	connector := handler.connectors[request.ConnectorId]
+	if connector == nil {
+		return ocpp16.NewReserveNowConfirmation(ocpp16.ReservationStatusUnavailable), nil
+	} else if connector.status != ocpp16.ChargePointStatusAvailable {
+		return ocpp16.NewReserveNowConfirmation(ocpp16.ReservationStatusOccupied), nil
+	}
+	connector.status = ocpp16.ChargePointStatusReserved
+	connector.currentReservation = request.ReservationId
+	// TODO: notify status change
+	// TODO: automatically remove reservation after expiryDate
+	return ocpp16.NewReserveNowConfirmation(ocpp16.ReservationStatusAccepted), nil
+}
+
+func (handler *ChargePointHandler) OnCancelReservation(request *ocpp16.CancelReservationRequest) (confirmation *ocpp16.CancelReservationConfirmation, err error) {
+	for _,v := range handler.connectors {
+		if v.currentReservation == request.ReservationId {
+			v.currentReservation = 0
+			if v.status == ocpp16.ChargePointStatusReserved {
+				// TODO: notify status change
+				v.status = ocpp16.ChargePointStatusAvailable
+			}
+			return ocpp16.NewCancelReservationConfirmation(ocpp16.CancelReservationStatusAccepted), nil
+		}
+	}
+	return ocpp16.NewCancelReservationConfirmation(ocpp16.CancelReservationStatusRejected), nil
+}
+
+// Smart charging profile callbacks
+func (handler *ChargePointHandler) OnSetChargingProfile(request *ocpp16.SetChargingProfileRequest) (confirmation *ocpp16.SetChargingProfileConfirmation, err error) {
+	//TODO: handle logic
+	return ocpp16.NewSetChargingProfileConfirmation(ocpp16.ChargingProfileStatusNotImplemented), nil
+}
+
+func (handler *ChargePointHandler) OnClearChargingProfile(request *ocpp16.ClearChargingProfileRequest) (confirmation *ocpp16.ClearChargingProfileConfirmation, err error) {
+	//TODO: handle logic
+	return ocpp16.NewClearChargingProfileConfirmation(ocpp16.ClearChargingProfileStatusUnknown), nil
+}
+
+func (handler *ChargePointHandler) OnGetCompositeSchedule(request *ocpp16.GetCompositeScheduleRequest) (confirmation *ocpp16.GetCompositeScheduleConfirmation, err error) {
+	//TODO: handle logic
+	return ocpp16.NewGetCompositeScheduleConfirmation(ocpp16.GetCompositeScheduleStatusRejected), nil
 }
 
 func checkError(err error) {
@@ -195,7 +302,13 @@ func main() {
 	connectors := map[int]*ConnectorInfo{
 		1: {status: ocpp16.ChargePointStatusAvailable, availability: ocpp16.AvailabilityTypeOperative, currentTransaction: 0},
 	}
-	handler := &ChargePointHandler{status: ocpp16.ChargePointStatusAvailable, connectors: connectors, configuration: map[string]ocpp16.ConfigurationKey{}, errorCode: ocpp16.NoError}
+	handler := &ChargePointHandler{
+		status:               ocpp16.ChargePointStatusAvailable,
+		connectors:           connectors,
+		configuration:        map[string]ocpp16.ConfigurationKey{},
+		errorCode:            ocpp16.NoError,
+		localAuthList:        []ocpp16.AuthorizationData{},
+		localAuthListVersion: 0}
 	chargePoint.SetChargePointCoreListener(handler)
 	// Connects to central system
 	err := chargePoint.Start(csUrl)
