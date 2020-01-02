@@ -193,7 +193,7 @@ func main() {
 	centralSystem.SetCentralSystemCoreListener(handler)
 	var listenPort = defaultListenPort
 	if len(args) > 0 {
-		port, err := strconv.Atoi(args[1])
+		port, err := strconv.Atoi(args[0])
 		if err != nil {
 			listenPort = port
 		}
