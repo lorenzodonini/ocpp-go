@@ -174,7 +174,7 @@ func (handler *ChargePointHandler) OnReserveNow(request *ocpp16.ReserveNowReques
 		return ocpp16.NewReserveNowConfirmation(ocpp16.ReservationStatusOccupied), nil
 	}
 	connector.currentReservation = request.ReservationId
-	go updateStatus(handler, k, ocpp16.ChargePointStatusReserved)
+	go updateStatus(handler, request.ConnectorId, ocpp16.ChargePointStatusReserved)
 	// TODO: automatically remove reservation after expiryDate
 	return ocpp16.NewReserveNowConfirmation(ocpp16.ReservationStatusAccepted), nil
 }
