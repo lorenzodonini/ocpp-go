@@ -59,6 +59,7 @@ func (handler * CentralSystemHandler) OnBootNotification(chargePointId string, r
 
 Every time a request from the charge point comes in, the respective callback function is called.
 For every callback you must return either a confirmation or an error. The result will be sent back automatically to the charge point.
+The callback is invoked inside a dedicated goroutine, so you don't have to worry about synchronization.
 
 You need to implement at least all other callbacks defined in the `ocpp16.CentralSystemCoreListener` interface.
 

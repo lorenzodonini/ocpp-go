@@ -45,10 +45,12 @@ func (ci *ConnectorInfo) hasTransactionInProgress() bool {
 }
 
 type ChargePointState struct {
-	status       ocpp16.ChargePointStatus
-	connectors   map[int]*ConnectorInfo // No assumptions about the # of connectors
-	transactions map[int]*TransactionInfo
-	errorCode    ocpp16.ChargePointErrorCode
+	status            ocpp16.ChargePointStatus
+	diagnosticsStatus ocpp16.DiagnosticsStatus
+	firmwareStatus    ocpp16.FirmwareStatus
+	connectors        map[int]*ConnectorInfo // No assumptions about the # of connectors
+	transactions      map[int]*TransactionInfo
+	errorCode         ocpp16.ChargePointErrorCode
 }
 
 func (cps *ChargePointState) getConnector(id int) *ConnectorInfo {
@@ -152,6 +154,29 @@ func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, req
 	return ocpp16.NewStopTransactionConfirmation(), nil
 }
 
+// Firmware management callbacks
+func (handler *CentralSystemHandler) OnDiagnosticsStatusNotification(chargePointId string, request *ocpp16.DiagnosticsStatusNotificationRequest) (confirmation *ocpp16.DiagnosticsStatusNotificationConfirmation, err error) {
+	info, ok := handler.chargePoints[chargePointId]
+	if !ok {
+		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
+	}
+	info.diagnosticsStatus = request.Status
+	logDefault(chargePointId, request.GetFeatureName()).Infof("updated diagnostics status to %v", request.Status)
+	return ocpp16.NewDiagnosticsStatusNotificationConfirmation(), nil
+}
+
+func (handler *CentralSystemHandler) OnFirmwareStatusNotification(chargePointId string, request *ocpp16.FirmwareStatusNotificationRequest) (confirmation *ocpp16.FirmwareStatusNotificationConfirmation, err error) {
+	info, ok := handler.chargePoints[chargePointId]
+	if !ok {
+		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
+	}
+	info.firmwareStatus = request.Status
+	logDefault(chargePointId, request.GetFeatureName()).Infof("updated firmware status to %v", request.Status)
+	return &ocpp16.FirmwareStatusNotificationConfirmation{}, nil
+}
+
+// No callbacks for Local Auth management, Reservation, Remote trigger or Smart Charging profile on central system
+
 // Start function
 func main() {
 	args := os.Args[1:]
@@ -168,7 +193,7 @@ func main() {
 	centralSystem.SetCentralSystemCoreListener(handler)
 	var listenPort = defaultListenPort
 	if len(args) > 0 {
-		port, err := strconv.Atoi(args[1])
+		port, err := strconv.Atoi(args[0])
 		if err != nil {
 			listenPort = port
 		}
