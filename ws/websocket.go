@@ -68,10 +68,16 @@ type Server struct {
 	messageHandler      func(ws Channel, data []byte) error
 	newClientHandler    func(ws Channel)
 	disconnectedHandler func(ws Channel)
+	tlsCertificatePath  string
+	tlsCertificateKey   string
 }
 
 func NewServer() *Server {
 	return &Server{}
+}
+
+func NewTLSServer(certificatePath string, certificateKey string) *Server {
+	return &Server{tlsCertificatePath: certificatePath, tlsCertificateKey: certificateKey}
 }
 
 func (server *Server) SetMessageHandler(handler func(ws Channel, data []byte) error) {
@@ -94,8 +100,14 @@ func (server *Server) Start(port int, listenPath string) {
 	server.connections = make(map[string]*WebSocket)
 	addr := fmt.Sprintf(":%v", port)
 	server.httpServer = &http.Server{Addr: addr, Handler: router}
-	if err := server.httpServer.ListenAndServe(); err != http.ErrServerClosed {
-		log.Errorf("websocket server error: %v", err)
+	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
+		if err := server.httpServer.ListenAndServeTLS(server.tlsCertificatePath, server.tlsCertificateKey); err != http.ErrServerClosed {
+			log.Errorf("websocket server error: %v", err)
+		}
+	} else {
+		if err := server.httpServer.ListenAndServe(); err != http.ErrServerClosed {
+			log.Errorf("websocket server error: %v", err)
+		}
 	}
 }
 
@@ -307,7 +319,7 @@ func (client *Client) Write(data []byte) error {
 	return nil
 }
 
-func (client *Client) Start(url string, dialOptions ...func(websocket.Dialer)) error {
+func (client *Client) Start(url string, dialOptions ...func(*websocket.Dialer)) error {
 	dialer := websocket.Dialer{
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
@@ -315,7 +327,7 @@ func (client *Client) Start(url string, dialOptions ...func(websocket.Dialer)) e
 		Subprotocols:     []string{defaultSubProtocol},
 	}
 	for _, option := range dialOptions {
-		option(dialer)
+		option(&dialer)
 	}
 	ws, _, err := dialer.Dial(url, nil)
 	if err != nil {
