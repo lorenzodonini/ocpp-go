@@ -225,7 +225,7 @@ func (server *Server) writePump(ws *WebSocket) {
 
 // ---------------------- CLIENT ----------------------
 type WsClient interface {
-	Start(url string, dialOptions ...func(websocket.Dialer)) error
+	Start(url string) error
 	Stop()
 	SetMessageHandler(handler func(data []byte) error)
 	Write(data []byte) error
@@ -234,10 +234,17 @@ type WsClient interface {
 type Client struct {
 	webSocket      WebSocket
 	messageHandler func(data []byte) error
+	dialOptions    []func(*websocket.Dialer)
 }
 
 func NewClient() *Client {
-	return &Client{}
+	return &Client{dialOptions: []func(*websocket.Dialer){}}
+}
+
+func NewTLSClient(options ...func(*websocket.Dialer)) *Client {
+	cli := &Client{dialOptions: []func(*websocket.Dialer){}}
+	cli.dialOptions = append(cli.dialOptions, options...)
+	return cli
 }
 
 func (client *Client) SetMessageHandler(handler func(data []byte) error) {
@@ -319,14 +326,14 @@ func (client *Client) Write(data []byte) error {
 	return nil
 }
 
-func (client *Client) Start(url string, dialOptions ...func(*websocket.Dialer)) error {
+func (client *Client) Start(url string) error {
 	dialer := websocket.Dialer{
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
 		HandshakeTimeout: handshakeTimeout,
 		Subprotocols:     []string{defaultSubProtocol},
 	}
-	for _, option := range dialOptions {
+	for _, option := range client.dialOptions {
 		option(&dialer)
 	}
 	ws, _, err := dialer.Dial(url, nil)

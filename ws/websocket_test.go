@@ -103,6 +103,7 @@ func TestWebsocketEcho(t *testing.T) {
 func TestTLSWebsocketEcho(t *testing.T) {
 	message := []byte("Hello Secure WebSocket!")
 	var wsServer *Server
+	// Use NewTLSServer() when in different package
 	wsServer = NewWebsocketServer(t, func(data []byte) ([]byte, error) {
 		assert.True(t, bytes.Equal(message, data))
 		return data, nil
@@ -121,11 +122,22 @@ func TestTLSWebsocketEcho(t *testing.T) {
 	go wsServer.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
-	// Test message
+	// Create TLS client
 	wsClient := NewWebsocketClient(t, func(data []byte) ([]byte, error) {
 		assert.True(t, bytes.Equal(message, data))
 		return nil, nil
 	})
+	wsClient.dialOptions = append(wsClient.dialOptions, func(dialer *websocket.Dialer) {
+		certPool := x509.NewCertPool()
+		data, err := ioutil.ReadFile(certFilename)
+		assert.Nil(t, err)
+		ok := certPool.AppendCertsFromPEM(data)
+		assert.True(t, ok)
+		dialer.TLSClientConfig = &tls.Config{
+			RootCAs: certPool,
+		}
+	})
+	// Test message
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
 	// Wait for connection to be established, then send a message to server
@@ -143,16 +155,7 @@ func TestTLSWebsocketEcho(t *testing.T) {
 		wsClient.Stop()
 		done <- true
 	}()
-	err = wsClient.Start(u.String(), func(dialer *websocket.Dialer) {
-		certPool := x509.NewCertPool()
-		data, err := ioutil.ReadFile(certFilename)
-		assert.Nil(t, err)
-		ok := certPool.AppendCertsFromPEM(data)
-		assert.True(t, ok)
-		dialer.TLSClientConfig = &tls.Config{
-			RootCAs: certPool,
-		}
-	})
+	err = wsClient.Start(u.String())
 	assert.Nil(t, err)
 	result := <-done
 	assert.True(t, result)
@@ -216,7 +219,7 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 	// Test
 	wsClient := NewWebsocketClient(t, nil)
 	host := fmt.Sprintf("localhost:%v", serverPort)
-	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 	err := wsClient.Start(u.String())
 	assert.Nil(t, err)
 	result := <-disconnected
