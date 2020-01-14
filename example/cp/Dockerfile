@@ -1,13 +1,13 @@
 ############################
 # STEP 1 build executable binary
 ############################
-FROM golang:stretch AS builder
+FROM golang:alpine AS builder
 
 ENV GO111MODULE on
 WORKDIR $GOPATH/src/github.com/lorenzodonini/ocpp-go
 COPY . .
 # Fetch dependencies.
-RUN go mod tidy
+RUN go mod download
 # Build the binary.
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/charge_point example/cp/charge_point_sim.go
 
