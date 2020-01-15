@@ -115,6 +115,7 @@ func TestTLSWebsocketEcho(t *testing.T) {
 	keyFilename := "/tmp/key.pem"
 	err := createTLSCertificate(certFilename, keyFilename)
 	assert.Nil(t, err)
+	fmt.Println(err)
 	defer os.Remove(certFilename)
 	defer os.Remove(keyFilename)
 
@@ -122,9 +123,8 @@ func TestTLSWebsocketEcho(t *testing.T) {
 	wsServer.tlsCertificatePath = certFilename
 	wsServer.tlsCertificateKey = keyFilename
 	data, err := ioutil.ReadFile(certFilename)
-	assert.Nil(t, err)
-	assert.NotNil(t, data)
-	fmt.Printf("%v", data)
+	fmt.Println(err)
+	fmt.Println(data)
 	go wsServer.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
@@ -271,8 +271,10 @@ func createTLSCertificate(certificateFilename string, keyFilename string) error 
 	if err != nil {
 		return err
 	}
+	fmt.Println("created file ", certOut.Name())
 	defer certOut.Close()
 	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	fmt.Println("written to file, bytes:", len(derBytes))
 	if err != nil {
 		return err
 	}
