@@ -111,8 +111,8 @@ func TestTLSWebsocketEcho(t *testing.T) {
 		return data, nil
 	})
 	// Create self-signed TLS certificate
-	certFilename := "cert.pem"
-	keyFilename := "key.pem"
+	certFilename := "/tmp/cert.pem"
+	keyFilename := "/tmp/key.pem"
 	err := createTLSCertificate(certFilename, keyFilename)
 	assert.Nil(t, err)
 	defer os.Remove(certFilename)
