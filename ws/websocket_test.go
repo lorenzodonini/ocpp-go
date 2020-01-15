@@ -121,6 +121,10 @@ func TestTLSWebsocketEcho(t *testing.T) {
 	// Set self-signed TLS certificate
 	wsServer.tlsCertificatePath = certFilename
 	wsServer.tlsCertificateKey = keyFilename
+	data, err := ioutil.ReadFile(certFilename)
+	assert.Nil(t, err)
+	assert.NotNil(t, data)
+	fmt.Printf("%v", data)
 	go wsServer.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
