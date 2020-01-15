@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -103,9 +102,6 @@ func (server *Server) Start(port int, listenPath string) {
 	addr := fmt.Sprintf(":%v", port)
 	server.httpServer = &http.Server{Addr: addr, Handler: router}
 	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
-		f, e := os.Open(server.tlsCertificatePath)
-		fmt.Println("opened ", f.Name(), "err ", e)
-		f.Close()
 		if err := server.httpServer.ListenAndServeTLS(server.tlsCertificatePath, server.tlsCertificateKey); err != http.ErrServerClosed {
 			log.Errorf("websocket server error: %v", err)
 		}

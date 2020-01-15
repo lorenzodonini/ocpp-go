@@ -2,6 +2,8 @@ package ws
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
@@ -14,8 +16,6 @@ import (
 	"os"
 	"testing"
 	"time"
-
-	"golang.org/x/crypto/ed25519"
 
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
@@ -115,16 +115,12 @@ func TestTLSWebsocketEcho(t *testing.T) {
 	keyFilename := "/tmp/key.pem"
 	err := createTLSCertificate(certFilename, keyFilename)
 	assert.Nil(t, err)
-	fmt.Println(err)
 	defer os.Remove(certFilename)
 	defer os.Remove(keyFilename)
 
 	// Set self-signed TLS certificate
 	wsServer.tlsCertificatePath = certFilename
 	wsServer.tlsCertificateKey = keyFilename
-	data, err := ioutil.ReadFile(certFilename)
-	fmt.Println(err)
-	fmt.Println(data)
 	go wsServer.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
@@ -237,7 +233,7 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 // Utility function
 func createTLSCertificate(certificateFilename string, keyFilename string) error {
 	// Generate ed25519 key-pair
-	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		return err
 	}
@@ -262,7 +258,7 @@ func createTLSCertificate(certificateFilename string, keyFilename string) error 
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 	}
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey, privateKey)
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return err
 	}
@@ -271,10 +267,8 @@ func createTLSCertificate(certificateFilename string, keyFilename string) error 
 	if err != nil {
 		return err
 	}
-	fmt.Println("created file ", certOut.Name())
 	defer certOut.Close()
 	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	fmt.Println("written to file, bytes:", len(derBytes))
 	if err != nil {
 		return err
 	}
