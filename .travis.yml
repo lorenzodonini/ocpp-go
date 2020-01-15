@@ -14,7 +14,6 @@ jobs:
   include:
     - stage: test
       script:
-        - export GO111MODULE=on
         - go test ./...
         - go build ./...
     - stage: publish_latest

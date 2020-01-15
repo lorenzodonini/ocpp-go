@@ -2,21 +2,23 @@ package ws
 
 import (
 	"bytes"
-	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"math/big"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"golang.org/x/crypto/ed25519"
+
+	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -247,7 +249,7 @@ func createTLSCertificate(certificateFilename string, keyFilename string) error 
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{"ocpp-go"},
-			CommonName: "localhost",
+			CommonName:   "localhost",
 		},
 		NotBefore: notBefore,
 		NotAfter:  notAfter,
