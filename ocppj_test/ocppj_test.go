@@ -2,7 +2,6 @@ package ocppj_test
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -19,7 +18,7 @@ type MockWebSocket struct {
 	id string
 }
 
-func (websocket MockWebSocket) GetId() string {
+func (websocket MockWebSocket) GetID() string {
 	return websocket.id
 }
 
@@ -72,7 +71,7 @@ type MockWebsocketClient struct {
 	MessageHandler func(data []byte) error
 }
 
-func (websocketClient *MockWebsocketClient) Start(url string, dialOptions ...func(websocket.Dialer)) error {
+func (websocketClient *MockWebsocketClient) Start(url string) error {
 	args := websocketClient.MethodCalled("Start", url)
 	return args.Error(0)
 }
@@ -148,7 +147,7 @@ func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 			response, err := onMessage(data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = wsServer.Write(ws.GetId(), data)
+				err = wsServer.Write(ws.GetID(), data)
 				assert.Nil(t, err)
 			}
 		}

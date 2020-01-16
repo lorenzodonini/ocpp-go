@@ -6,8 +6,6 @@ Open Charge Point Protocol implementation in Go.
 
 The library targets modern charge points and central systems, running OCPP version 1.6+.
 
-**The implementation for OCPP version 2.0 is currently in WIP.**
-
 Given that SOAP will no longer be supported in future versions of OCPP, only OCPP-J is supported in this library.
 There are currently no plans of supporting OCPP-S.
 
@@ -31,7 +29,7 @@ go get github.com/lorenzodonini/ocpp-go
 You will also need to fetch some dependencies:
 ```sh
 cd <path-to-ocpp-go>
-go mod tidy
+go mod download
 ```
 
 Your application may either act as a Central System (server) or as a Charge Point (client).

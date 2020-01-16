@@ -54,12 +54,12 @@ func (centralSystem *CentralSystem) Start(listenPort int, listenPath string) {
 	// Set internal message handler
 	centralSystem.server.SetNewClientHandler(func(ws ws.Channel) {
 		if centralSystem.newChargePointHandler != nil {
-			centralSystem.newChargePointHandler(ws.GetId())
+			centralSystem.newChargePointHandler(ws.GetID())
 		}
 	})
 	centralSystem.server.SetDisconnectedClientHandler(func(ws ws.Channel) {
 		if centralSystem.disconnectedChargePointHandler != nil {
-			centralSystem.disconnectedChargePointHandler(ws.GetId())
+			centralSystem.disconnectedChargePointHandler(ws.GetID())
 		}
 	})
 	centralSystem.server.SetMessageHandler(centralSystem.ocppMessageHandler)
@@ -135,7 +135,7 @@ func (centralSystem *CentralSystem) ocppMessageHandler(wsChannel ws.Channel, dat
 	message, err := centralSystem.ParseMessage(parsedJson)
 	if err != nil {
 		if err.MessageId != "" {
-			err2 := centralSystem.SendError(wsChannel.GetId(), err.MessageId, err.Code, err.Description, nil)
+			err2 := centralSystem.SendError(wsChannel.GetID(), err.MessageId, err.Code, err.Description, nil)
 			if err2 != nil {
 				return err2
 			}
@@ -146,15 +146,15 @@ func (centralSystem *CentralSystem) ocppMessageHandler(wsChannel ws.Channel, dat
 	switch message.GetMessageTypeId() {
 	case CALL:
 		call := message.(*Call)
-		centralSystem.requestHandler(wsChannel.GetId(), call.Payload, call.UniqueId, call.Action)
+		centralSystem.requestHandler(wsChannel.GetID(), call.Payload, call.UniqueId, call.Action)
 	case CALL_RESULT:
 		callResult := message.(*CallResult)
-		delete(centralSystem.clientPendingMessages, wsChannel.GetId())
-		centralSystem.confirmationHandler(wsChannel.GetId(), callResult.Payload, callResult.UniqueId)
+		delete(centralSystem.clientPendingMessages, wsChannel.GetID())
+		centralSystem.confirmationHandler(wsChannel.GetID(), callResult.Payload, callResult.UniqueId)
 	case CALL_ERROR:
 		callError := message.(*CallError)
-		delete(centralSystem.clientPendingMessages, wsChannel.GetId())
-		centralSystem.errorHandler(wsChannel.GetId(), ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+		delete(centralSystem.clientPendingMessages, wsChannel.GetID())
+		centralSystem.errorHandler(wsChannel.GetID(), ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
 	}
 	return nil
 }

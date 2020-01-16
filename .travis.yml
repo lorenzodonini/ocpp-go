@@ -14,8 +14,8 @@ jobs:
   include:
     - stage: test
       script:
-        - go test ./...
         - go build ./...
+        - go test ./...
     - stage: publish_latest
       script:
         - docker build -t ldonini/ocpp1.6-central-system:latest -f example/cs/Dockerfile .

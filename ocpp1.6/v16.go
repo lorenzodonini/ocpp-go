@@ -2,6 +2,7 @@ package ocpp16
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -243,7 +244,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
 	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StopTransactionFeatureName, StatusNotificationFeatureName,
-	DiagnosticsStatusNotificationFeatureName, FirmwareStatusNotificationFeatureName:
+		DiagnosticsStatusNotificationFeatureName, FirmwareStatusNotificationFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -281,6 +282,9 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Confirmation, err error, r
 // Connects to the central system and starts the charge point routine.
 // The function doesn't block and returns right away, after having attempted to open a connection to the central system.
 // If the connection couldn't be opened, an error is returned.
+//
+// Optional client options must be set before calling this function. Refer to NewChargePoint.
+//
 // No auto-reconnect logic is implemented as of now, but is planned for the future.
 func (cp *chargePoint) Start(centralSystemUrl string) error {
 	// TODO: implement auto-reconnect logic
@@ -405,7 +409,25 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 // The dispatcher and client parameters may be omitted, in order to use a default configuration:
 //   chargePoint := NewChargePoint("someUniqueId", nil, nil)
 //
-// It is recommended to use the default configuration, unless a custom networking / ocppj layer is required.
+// Additional networking parameters (e.g. TLS or proxy configuration) may be passed, by creating a custom client.
+// Here is an example for a client using TLS configuration with a self-signed certificate:
+//	cp := NewChargePoint("someUniqueId", nil, ws.NewTLSClient(func (dialer *websocket.Dialer) {
+//		certPool := x509.NewCertPool()
+//		data, err := ioutil.ReadFile("serverSelfSignedCertFilename")
+//		if err != nil {
+//			log.Fatal(err)
+//		}
+//		ok = certPool.AppendCertsFromPEM(data)
+//		if !ok {
+//			log.Fatal("couldn't parse PEM certificate")
+//		}
+//		dialer.TLSClientConfig = &tls.Config{
+//			RootCAs: certPool,
+//		}
+//	}))
+//
+// For more advanced options, or if a customer networking/occpj layer is required,
+// please refer to ocppj.ChargePoint and ws.WsClient.
 func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient) ChargePoint {
 	if client == nil {
 		client = ws.NewClient()
@@ -824,11 +846,11 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
 	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
-	GetLocalListVersionFeatureName, SendLocalListFeatureName,
-	GetDiagnosticsFeatureName, UpdateFirmwareFeatureName,
-	ReserveNowFeatureName, CancelReservationFeatureName,
-	TriggerMessageFeatureName,
-	SetChargingProfileFeatureName, ClearChargingProfileFeatureName, GetCompositeScheduleFeatureName:
+		GetLocalListVersionFeatureName, SendLocalListFeatureName,
+		GetDiagnosticsFeatureName, UpdateFirmwareFeatureName,
+		ReserveNowFeatureName, CancelReservationFeatureName,
+		TriggerMessageFeatureName,
+		SetChargingProfileFeatureName, ClearChargingProfileFeatureName, GetCompositeScheduleFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
@@ -993,6 +1015,9 @@ func (cs *centralSystem) handleIncomingError(chargePointId string, err *ocpp.Err
 //
 // It is recommended to use the default configuration, unless a custom networking / ocppj layer is required.
 // The default dispatcher supports all OCPP 1.6 profiles out-of-the-box.
+//
+// If you need a TLS server, you may use the following:
+//	cs := NewCentralSystem(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
 func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) CentralSystem {
 	if server == nil {
 		server = ws.NewServer()
