@@ -18,7 +18,7 @@ type MockWebSocket struct {
 	id string
 }
 
-func (websocket MockWebSocket) GetId() string {
+func (websocket MockWebSocket) GetID() string {
 	return websocket.id
 }
 
@@ -147,7 +147,7 @@ func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 			response, err := onMessage(data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = wsServer.Write(ws.GetId(), data)
+				err = wsServer.Write(ws.GetID(), data)
 				assert.Nil(t, err)
 			}
 		}

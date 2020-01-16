@@ -36,7 +36,7 @@ func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 			response, err := onMessage(data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = wsServer.Write(ws.GetId(), data)
+				err = wsServer.Write(ws.GetID(), data)
 				assert.Nil(t, err)
 			}
 		}
@@ -206,7 +206,7 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 	wsServer = NewWebsocketServer(t, nil)
 	wsServer.SetNewClientHandler(func(ws Channel) {
 		assert.NotNil(t, ws)
-		conn := wsServer.connections[ws.GetId()]
+		conn := wsServer.connections[ws.GetID()]
 		assert.NotNil(t, conn)
 		// Simulate connection closed as soon client is connected
 		err := conn.connection.Close()

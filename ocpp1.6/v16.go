@@ -2,6 +2,7 @@ package ocpp16
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -243,7 +244,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
 	case AuthorizeFeatureName, BootNotificationFeatureName, DataTransferFeatureName, HeartbeatFeatureName, MeterValuesFeatureName, StartTransactionFeatureName, StopTransactionFeatureName, StatusNotificationFeatureName,
-	DiagnosticsStatusNotificationFeatureName, FirmwareStatusNotificationFeatureName:
+		DiagnosticsStatusNotificationFeatureName, FirmwareStatusNotificationFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -845,11 +846,11 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
 	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
-	GetLocalListVersionFeatureName, SendLocalListFeatureName,
-	GetDiagnosticsFeatureName, UpdateFirmwareFeatureName,
-	ReserveNowFeatureName, CancelReservationFeatureName,
-	TriggerMessageFeatureName,
-	SetChargingProfileFeatureName, ClearChargingProfileFeatureName, GetCompositeScheduleFeatureName:
+		GetLocalListVersionFeatureName, SendLocalListFeatureName,
+		GetDiagnosticsFeatureName, UpdateFirmwareFeatureName,
+		ReserveNowFeatureName, CancelReservationFeatureName,
+		TriggerMessageFeatureName,
+		SetChargingProfileFeatureName, ClearChargingProfileFeatureName, GetCompositeScheduleFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
