@@ -29,6 +29,6 @@ jobs:
         - docker build -t "ldonini/ocpp1.6-central-system:$TRAVIS_TAG" -f example/cs/Dockerfile .
         - docker build -t "ldonini/ocpp1.6-charge-point:$TRAVIS_TAG" -f example/cp/Dockerfile .
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - docker push "ldonini/ocpp-go-1.6-central-system:$TRAVIS_TAG"
-        - docker push "ldonini/ocpp-go-1.6-charge-point:$TRAVIS_TAG"
+        - docker push "ldonini/ocpp1.6-central-system:$TRAVIS_TAG"
+        - docker push "ldonini/ocpp1.6-charge-point:$TRAVIS_TAG"
       if: tag IS present
