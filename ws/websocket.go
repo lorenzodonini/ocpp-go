@@ -37,10 +37,14 @@ const (
 
 var upgrader = websocket.Upgrader{}
 
+// Channel represents a bi-directional communication channel, which provides at least a unique ID.
 type Channel interface {
-	GetId() string
+	GetID() string
 }
 
+// WebSocket is a wrapper for a single websocket channel.
+// The connection itself is provided by the gorilla websocket package.
+// Don't use a websocket directly, but refer to WsServer and WsClient.
 type WebSocket struct {
 	connection  *websocket.Conn
 	id          string
@@ -49,11 +53,15 @@ type WebSocket struct {
 	pingMessage chan []byte
 }
 
-func (websocket *WebSocket) GetId() string {
+// Retrieves the unique Identifier of the websocket (typically, the URL suffix).
+func (websocket *WebSocket) GetID() string {
 	return websocket.id
 }
 
 // ---------------------- SERVER ----------------------
+
+// A Websocket server, which passively listens for incoming connections on ws or wss protocol.
+// The offered API are of asynchronous nature, and each incoming connection/message is handled using callbacks.
 type WsServer interface {
 	Start(port int, listenPath string)
 	Stop()
@@ -63,6 +71,13 @@ type WsServer interface {
 	Write(webSocketId string, data []byte) error
 }
 
+// Default implementation of a Websocket server.
+//
+// To create a new ws server, use:
+//	server := NewServer()
+//
+// If you need a TLS ws server instead, use:
+//	server := NewTLSServer("cert.pem", "privateKey.pem")
 type Server struct {
 	connections         map[string]*WebSocket
 	httpServer          *http.Server
@@ -73,26 +88,44 @@ type Server struct {
 	tlsCertificateKey   string
 }
 
+// Creates a new simple websocket server (the websockets are not secured).
 func NewServer() *Server {
 	return &Server{}
 }
 
+// Creates a new secure websocket server. All created websocket channels will use TLS.
 func NewTLSServer(certificatePath string, certificateKey string) *Server {
 	return &Server{tlsCertificatePath: certificatePath, tlsCertificateKey: certificateKey}
 }
 
+// Sets a callback function for all incoming messages.
+// The callbacks accepts a Channel and the received data.
+// It is up to the callback receiver, to check the identifier of the channel, to determine the source of the message.
 func (server *Server) SetMessageHandler(handler func(ws Channel, data []byte) error) {
 	server.messageHandler = handler
 }
 
+// Sets a callback function for all new incoming client connections.
+// It is recommended to store a reference to the Channel in the received entity, so that the Channel may be recognized later on.
 func (server *Server) SetNewClientHandler(handler func(ws Channel)) {
 	server.newClientHandler = handler
 }
 
+// Sets a callback function for all client disconnection events.
+// Once a client is disconnected, it is not possible to read/write on the respective Channel any longer.
 func (server *Server) SetDisconnectedClientHandler(handler func(ws Channel)) {
 	server.disconnectedHandler = handler
 }
 
+// Starts and runs the websocket server on a specific port and URL.
+// After start, incoming connections and messages are handled automatically, so no explicit read operation is required.
+//
+// The functions blocks forever, hence it is suggested to invoke it in a goroutine, if the caller thread needs to perform other work, e.g.:
+//	go server.Start(8887, "/ws/{id}")
+//	doStuffOnMainThread()
+//	...
+//
+// To stop a running server, call the Stop function.
 func (server *Server) Start(port int, listenPath string) {
 	router := mux.NewRouter()
 	router.HandleFunc(listenPath, func(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +145,8 @@ func (server *Server) Start(port int, listenPath string) {
 	}
 }
 
+// Shuts down a running websocket server.
+// All open channels will be forcefully closed, and the previously called Start function will return.
 func (server *Server) Stop() {
 	err := server.httpServer.Shutdown(context.TODO())
 	if err != nil {
@@ -119,6 +154,10 @@ func (server *Server) Stop() {
 	}
 }
 
+// Sends a message on a specific Channel, identifier by the webSocketId parameter.
+// If the passed ID is invalid, an error is returned.
+//
+// The data is queued and will be sent asynchronously in the background.
 func (server *Server) Write(webSocketId string, data []byte) error {
 	ws, ok := server.connections[webSocketId]
 	if !ok {
@@ -155,7 +194,7 @@ func (server *Server) readPump(ws *WebSocket) {
 	}()
 
 	conn.SetPingHandler(func(appData string) error {
-		log.WithField("client", ws.GetId()).Debug("ping received")
+		log.WithField("client", ws.GetID()).Debug("ping received")
 		ws.pingMessage <- []byte(appData)
 		err := conn.SetReadDeadline(time.Now().Add(pingWait))
 		return err
@@ -166,19 +205,19 @@ func (server *Server) readPump(ws *WebSocket) {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
-				log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error while reading from ws: %v", err)
+				log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error while reading from ws: %v", err)
 			}
 			if server.disconnectedHandler != nil {
 				server.disconnectedHandler(ws)
 			}
 			break
 		}
-		log.WithFields(log.Fields{"client": ws.GetId()}).Debug("received message")
+		log.WithFields(log.Fields{"client": ws.GetID()}).Debug("received message")
 		if server.messageHandler != nil {
 			var channel Channel = ws
 			err = server.messageHandler(channel, message)
 			if err != nil {
-				log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error while handling message: %v", err)
+				log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error while handling message: %v", err)
 				continue
 			}
 		}
@@ -200,20 +239,20 @@ func (server *Server) writePump(ws *WebSocket) {
 				// Closing connection
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				if err != nil {
-					log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error while closing: %v", err)
+					log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error while closing: %v", err)
 				}
 				return
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error writing to websocket: %v", err)
+				log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error writing to websocket: %v", err)
 				return
 			}
 		case ping := <-ws.pingMessage:
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
 			err := conn.WriteMessage(websocket.PongMessage, ping)
 			if err != nil {
-				log.WithFields(log.Fields{"client": ws.GetId()}).Errorf("error writing to websocket: %v", err)
+				log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error writing to websocket: %v", err)
 				return
 			}
 		case closed, ok := <-ws.closeSignal:
@@ -225,6 +264,9 @@ func (server *Server) writePump(ws *WebSocket) {
 }
 
 // ---------------------- CLIENT ----------------------
+
+// A Websocket client, needed to connect to a websocket server.
+// The offered API are of asynchronous nature, and each incoming message is handled using callbacks.
 type WsClient interface {
 	Start(url string) error
 	Stop()
@@ -232,22 +274,41 @@ type WsClient interface {
 	Write(data []byte) error
 }
 
+// Default implementation of a Websocket client.
+//
+// To create a new ws client, use:
+//	client := NewClient()
+//
+// If you need a TLS ws client instead, use:
+//	client := NewTLSClient(func (dialer *websocket.Dialer) {
+//		certPool, err := x509.SystemCertPool()
+//		if err != nil {
+//			log.Fatal(err)
+//		}
+//		// You may add more trusted certificates to the pool before creating the TLSClientConfig
+//		dialer.TLSClientConfig = &tls.Config{
+//			RootCAs: certPool,
+//		}
+//	})
 type Client struct {
 	webSocket      WebSocket
 	messageHandler func(data []byte) error
 	dialOptions    []func(*websocket.Dialer)
 }
 
+// Creates a new simple websocket client (the channel is not secured).
 func NewClient() *Client {
 	return &Client{dialOptions: []func(*websocket.Dialer){}}
 }
 
+// Creates a new secure websocket client. If supported by the server, the websocket channel will use TLS.
 func NewTLSClient(options ...func(*websocket.Dialer)) *Client {
 	cli := &Client{dialOptions: []func(*websocket.Dialer){}}
 	cli.dialOptions = append(cli.dialOptions, options...)
 	return cli
 }
 
+// Sets a callback function for all incoming messages.
 func (client *Client) SetMessageHandler(handler func(data []byte) error) {
 	client.messageHandler = handler
 }
@@ -322,11 +383,24 @@ func (client *Client) readPump() {
 	}
 }
 
+// Sends a message to the server over the websocket.
+//
+// The data is queued and will be sent asynchronously in the background.
 func (client *Client) Write(data []byte) error {
 	client.webSocket.outQueue <- data
 	return nil
 }
 
+// Starts the client and attempts to connect to the server on a sepcified URL.
+// If the connection fails, an error is returned.
+//
+// For example:
+//	err := client.Start("ws://localhost:8887/ws/1234")
+//
+// The function returns immediately, after the connection has been established.
+// Incoming messages are passed automatically to the callback function, so no explicit read operation is required.
+//
+// To stop a running client, call the Stop function.
 func (client *Client) Start(url string) error {
 	dialer := websocket.Dialer{
 		ReadBufferSize:   1024,
@@ -349,6 +423,7 @@ func (client *Client) Start(url string) error {
 	return nil
 }
 
+// Closes the output of the websocket Channel, effectively closing the connection to the server with a normal closure.
 func (client *Client) Stop() {
 	close(client.webSocket.outQueue)
 }
