@@ -60,6 +60,9 @@ func (websocketServer *MockWebsocketServer) SetDisconnectedClientHandler(handler
 	websocketServer.DisconnectedClientHandler = handler
 }
 
+func (websocketServer *MockWebsocketServer) AddSupportedSubprotocol(subProto string) {
+}
+
 func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client interface{}) {
 	websocketServer.MethodCalled("NewClient", websocketId, client)
 }
@@ -84,10 +87,12 @@ func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(data 
 	websocketClient.MessageHandler = handler
 }
 
-//TODO: Write should return error, same as for server
 func (websocketClient *MockWebsocketClient) Write(data []byte) error {
 	args := websocketClient.MethodCalled("Write", data)
 	return args.Error(0)
+}
+
+func (websocketClient *MockWebsocketClient) AddOption(option interface{}) {
 }
 
 // ---------------------- MOCK FEATURE ----------------------

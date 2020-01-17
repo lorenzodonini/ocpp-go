@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	ISO8601 = "2006-01-02T15:04:05Z"
+	ISO8601        = "2006-01-02T15:04:05Z"
+	V16Subprotocol = "ocpp1.6"
 )
 
 type DateTime struct {
