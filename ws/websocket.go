@@ -2,6 +2,7 @@ package ws
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -35,7 +36,7 @@ const (
 	defaultSubProtocol = "ocpp1.6"
 )
 
-var upgrader = websocket.Upgrader{}
+var upgrader = websocket.Upgrader{Subprotocols: []string{}}
 
 // Channel represents a bi-directional communication channel, which provides at least a unique ID.
 type Channel interface {
@@ -69,6 +70,7 @@ type WsServer interface {
 	SetNewClientHandler(handler func(ws Channel))
 	SetDisconnectedClientHandler(handler func(ws Channel))
 	Write(webSocketId string, data []byte) error
+	AddSupportedSubprotocol(subProto string)
 }
 
 // Default implementation of a Websocket server.
@@ -115,6 +117,20 @@ func (server *Server) SetNewClientHandler(handler func(ws Channel)) {
 // Once a client is disconnected, it is not possible to read/write on the respective Channel any longer.
 func (server *Server) SetDisconnectedClientHandler(handler func(ws Channel)) {
 	server.disconnectedHandler = handler
+}
+
+// Adds support for a specified subprotocol.
+// This is recommended in order to communicate the capabilities to the client during the handshake.
+// If left empty, any subprotocol will be accepted.
+// Duplicates will be removed automatically.
+func (server *Server) AddSupportedSubprotocol(subProto string) {
+	for _, sub := range upgrader.Subprotocols {
+		if sub == subProto {
+			// Don't add duplicates
+			return
+		}
+	}
+	upgrader.Subprotocols = append(upgrader.Subprotocols, subProto)
 }
 
 // Starts and runs the websocket server on a specific port and URL.
@@ -168,12 +184,33 @@ func (server *Server) Write(webSocketId string, data []byte) error {
 }
 
 func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
+	url := r.URL
+	// Check if requested subprotocol is supported
+	clientSubprotocols := websocket.Subprotocols(r)
+	supported := false
+	if len(upgrader.Subprotocols) == 0 {
+		// All subProtocols are accepted
+		supported = true
+	}
+	for _, supportedProto := range upgrader.Subprotocols {
+		for _, requestedProto := range clientSubprotocols {
+			if requestedProto == supportedProto {
+				supported = true
+				break
+			}
+		}
+	}
+	if !supported {
+		log.Warnf("client on %v requested unsupported subprotocols %v, closing socket", url.String(), clientSubprotocols)
+		http.Error(w, "unsupported subprotocol", http.StatusBadRequest)
+		return
+	}
+	// Upgrade websocket
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	url := r.URL
 	log.Printf("new client on URL %v", url.String())
 	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte), closeSignal: make(chan bool, 1), pingMessage: make(chan []byte, 1)}
 	server.connections[url.Path] = &ws
@@ -272,6 +309,7 @@ type WsClient interface {
 	Stop()
 	SetMessageHandler(handler func(data []byte) error)
 	Write(data []byte) error
+	AddOption(option interface{})
 }
 
 // Default implementation of a Websocket client.
@@ -280,15 +318,13 @@ type WsClient interface {
 //	client := NewClient()
 //
 // If you need a TLS ws client instead, use:
-//	client := NewTLSClient(func (dialer *websocket.Dialer) {
-//		certPool, err := x509.SystemCertPool()
-//		if err != nil {
-//			log.Fatal(err)
-//		}
-//		// You may add more trusted certificates to the pool before creating the TLSClientConfig
-//		dialer.TLSClientConfig = &tls.Config{
-//			RootCAs: certPool,
-//		}
+//	certPool, err := x509.SystemCertPool()
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	// You may add more trusted certificates to the pool before creating the TLSClientConfig
+//	client := NewTLSClient(&tls.Config{
+//		RootCAs: certPool,
 //	})
 type Client struct {
 	webSocket      WebSocket
@@ -297,20 +333,32 @@ type Client struct {
 }
 
 // Creates a new simple websocket client (the channel is not secured).
+// Additional options may be added using the AddOption function.
 func NewClient() *Client {
 	return &Client{dialOptions: []func(*websocket.Dialer){}}
 }
 
 // Creates a new secure websocket client. If supported by the server, the websocket channel will use TLS.
-func NewTLSClient(options ...func(*websocket.Dialer)) *Client {
+// Additional options may be passed.
+func NewTLSClient(tlsConfig *tls.Config) *Client {
 	cli := &Client{dialOptions: []func(*websocket.Dialer){}}
-	cli.dialOptions = append(cli.dialOptions, options...)
+	cli.dialOptions = append(cli.dialOptions, func(dialer *websocket.Dialer) {
+		dialer.TLSClientConfig = tlsConfig
+	})
 	return cli
 }
 
 // Sets a callback function for all incoming messages.
 func (client *Client) SetMessageHandler(handler func(data []byte) error) {
 	client.messageHandler = handler
+}
+
+// Adds a websocket option to the
+func (client *Client) AddOption(option interface{}) {
+	dialOption, ok := option.(func(*websocket.Dialer))
+	if ok {
+		client.dialOptions = append(client.dialOptions, dialOption)
+	}
 }
 
 func (client *Client) writePump() {
@@ -406,7 +454,7 @@ func (client *Client) Start(url string) error {
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
 		HandshakeTimeout: handshakeTimeout,
-		Subprotocols:     []string{defaultSubProtocol},
+		Subprotocols:     []string{},
 	}
 	for _, option := range client.dialOptions {
 		option(&dialer)

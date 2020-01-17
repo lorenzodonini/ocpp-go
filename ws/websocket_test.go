@@ -230,6 +230,35 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 	wsServer.Stop()
 }
 
+func TestUnsupportedSubprotocol(t *testing.T) {
+	var wsServer *Server
+	disconnected := make(chan bool)
+	wsServer = NewWebsocketServer(t, nil)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		assert.Fail(t, "invalid subprotocol expected, but hit client handler instead")
+		t.Fail()
+	})
+	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
+		disconnected <- true
+	})
+	wsServer.AddSupportedSubprotocol(defaultSubProtocol)
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
+
+	wsClient := NewWebsocketClient(t, nil)
+	// Set invalid subprotocol
+	wsClient.dialOptions = append(wsClient.dialOptions, func(dialer *websocket.Dialer) {
+		dialer.Subprotocols = []string{"unsupportedSubProto"}
+	})
+	// Test
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	err := wsClient.Start(u.String())
+	assert.NotNil(t, err)
+	// Cleanup
+	wsServer.Stop()
+}
+
 // Utility function
 func createTLSCertificate(certificateFilename string, keyFilename string) error {
 	// Generate ed25519 key-pair

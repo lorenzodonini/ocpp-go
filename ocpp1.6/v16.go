@@ -2,7 +2,7 @@ package ocpp16
 
 import (
 	"fmt"
-
+	"github.com/gorilla/websocket"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -411,20 +411,18 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 //
 // Additional networking parameters (e.g. TLS or proxy configuration) may be passed, by creating a custom client.
 // Here is an example for a client using TLS configuration with a self-signed certificate:
-//	cp := NewChargePoint("someUniqueId", nil, ws.NewTLSClient(func (dialer *websocket.Dialer) {
-//		certPool := x509.NewCertPool()
-//		data, err := ioutil.ReadFile("serverSelfSignedCertFilename")
-//		if err != nil {
-//			log.Fatal(err)
-//		}
-//		ok = certPool.AppendCertsFromPEM(data)
-//		if !ok {
-//			log.Fatal("couldn't parse PEM certificate")
-//		}
-//		dialer.TLSClientConfig = &tls.Config{
-//			RootCAs: certPool,
-//		}
-//	}))
+//	certPool := x509.NewCertPool()
+//	data, err := ioutil.ReadFile("serverSelfSignedCertFilename")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	ok = certPool.AppendCertsFromPEM(data)
+//	if !ok {
+//		log.Fatal("couldn't parse PEM certificate")
+//	}
+//	cp := NewChargePoint("someUniqueId", nil, ws.NewTLSClient(&tls.Config{
+//		RootCAs: certPool,
+//	})
 //
 // For more advanced options, or if a customer networking/occpj layer is required,
 // please refer to ocppj.ChargePoint and ws.WsClient.
@@ -432,6 +430,19 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 	if client == nil {
 		client = ws.NewClient()
 	}
+	client.AddOption(func (dialer *websocket.Dialer) {
+		// Look for v1.6 subprotocol and add it, if not found
+		alreadyExists := false
+		for _, proto := range dialer.Subprotocols {
+			if proto == V16Subprotocol {
+				alreadyExists = true
+				break
+			}
+		}
+		if !alreadyExists {
+			dialer.Subprotocols = append(dialer.Subprotocols, V16Subprotocol)
+		}
+	})
 	if dispatcher == nil {
 		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile, RemoteTriggerProfile, SmartChargingProfile)
 	}
@@ -1022,6 +1033,7 @@ func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) Centr
 	if server == nil {
 		server = ws.NewServer()
 	}
+	server.AddSupportedSubprotocol(V16Subprotocol)
 	if dispatcher == nil {
 		dispatcher = ocppj.NewCentralSystem(server, CoreProfile, LocalAuthListProfile, FirmwareManagementProfile, ReservationProfile, RemoteTriggerProfile, SmartChargingProfile)
 	}
