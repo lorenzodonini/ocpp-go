@@ -66,31 +66,156 @@ func (e *PropertyViolation) Error() string {
 type AuthorizationStatus string
 
 const (
-	AuthorizationStatusAccepted     AuthorizationStatus = "Accepted"
-	AuthorizationStatusBlocked      AuthorizationStatus = "Blocked"
-	AuthorizationStatusExpired      AuthorizationStatus = "Expired"
-	AuthorizationStatusInvalid      AuthorizationStatus = "Invalid"
-	AuthorizationStatusConcurrentTx AuthorizationStatus = "ConcurrentTx"
+	AuthorizationStatusAccepted           AuthorizationStatus = "Accepted"
+	AuthorizationStatusBlocked            AuthorizationStatus = "Blocked"
+	AuthorizationStatusExpired            AuthorizationStatus = "Expired"
+	AuthorizationStatusInvalid            AuthorizationStatus = "Invalid"
+	AuthorizationStatusConcurrentTx       AuthorizationStatus = "ConcurrentTx"
+	AuthorizationStatusNoCredit           AuthorizationStatus = "NoCredit"
+	AuthorizationStatusNotAllowedTypeEVSE AuthorizationStatus = "NotAllowedTypeEVS"
+	AuthorizationStatusNotAtThisLocation  AuthorizationStatus = "NotAtThisLocation"
+	AuthorizationStatusNotAtThisTime      AuthorizationStatus = "NotAtThisTime"
+	AuthorizationStatusUnknown            AuthorizationStatus = "Unknown"
 )
 
 func isValidAuthorizationStatus(fl validator.FieldLevel) bool {
 	status := AuthorizationStatus(fl.Field().String())
 	switch status {
-	case AuthorizationStatusAccepted, AuthorizationStatusBlocked, AuthorizationStatusExpired, AuthorizationStatusInvalid, AuthorizationStatusConcurrentTx:
+	case AuthorizationStatusAccepted, AuthorizationStatusBlocked, AuthorizationStatusExpired, AuthorizationStatusInvalid, AuthorizationStatusConcurrentTx, AuthorizationStatusNoCredit, AuthorizationStatusNotAllowedTypeEVSE, AuthorizationStatusNotAtThisLocation, AuthorizationStatusNotAtThisTime, AuthorizationStatusUnknown:
 		return true
 	default:
 		return false
 	}
 }
 
-type IdTagInfo struct {
-	ExpiryDate  *DateTime           `json:"expiryDate,omitempty" validate:"omitempty"`
-	ParentIdTag string              `json:"parentIdTag,omitempty" validate:"omitempty,max=20"`
-	Status      AuthorizationStatus `json:"status" validate:"required,authorizationStatus"`
+// ID Token
+type IdTokenType string
+
+const (
+	IdTokenTypeCentral         IdTokenType = "Central"
+	IdTokenTypeEMAID           IdTokenType = "eMAID"
+	IdTokenTypeISO14443        IdTokenType = "ISO14443"
+	IdTokenTypeKeyCode         IdTokenType = "KeyCode"
+	IdTokenTypeLocal           IdTokenType = "Local"
+	IdTokenTypeNoAuthorization IdTokenType = "NoAuthorization"
+	IdTokenTypeISO15693        IdTokenType = "ISO15693"
+)
+
+func isValidIdTokenType(fl validator.FieldLevel) bool {
+	tokenType := IdTokenType(fl.Field().String())
+	switch tokenType {
+	case IdTokenTypeCentral, IdTokenTypeEMAID, IdTokenTypeISO14443, IdTokenTypeKeyCode, IdTokenTypeLocal, IdTokenTypeNoAuthorization, IdTokenTypeISO15693:
+		return true
+	default:
+		return false
+	}
 }
 
-func NewIdTagInfo(status AuthorizationStatus) *IdTagInfo {
-	return &IdTagInfo{Status: status}
+type AdditionalInfo struct {
+	AdditionalIdToken string `json:"additionalIdToken" validate:"required,max=36"`
+	Type              string `json:"type" validate:"required,max=50"`
+}
+
+type IdToken struct {
+	IdToken        string           `json:"idToken" validate:"required,max=36"`
+	Type           IdTokenType      `json:"type" validate:"required,idTokenType"`
+	AdditionalInfo []AdditionalInfo `json:"additionalInfo,omitempty"`
+}
+
+// Hash Algorithms
+type HashAlgorithmType string
+
+const (
+	SHA256 HashAlgorithmType = "SHA256"
+	SHA384 HashAlgorithmType = "SHA384"
+	SHA512 HashAlgorithmType = "SHA512"
+)
+
+func isValidHashAlgorithmType(fl validator.FieldLevel) bool {
+	algorithm := HashAlgorithmType(fl.Field().String())
+	switch algorithm {
+	case SHA256, SHA384, SHA512:
+		return true
+	default:
+		return false
+	}
+}
+
+// OCSPRequestDataType
+type OCSPRequestDataType struct {
+	HashAlgorithm  HashAlgorithmType `json:"hashAlgorithm" validate:"required,hashAlgorithm"`
+	IssuerNameHash string            `json:"issuerNameHash" validate:"required,max=128"`
+	IssuerKeyHash  string            `json:"issuerKeyHash" validate:"required,max=128"`
+	SerialNumber   string            `json:"serialNumber" validate:"required,max=20"`
+	ResponderURL   string            `json:"responderURL,omitempty" validate:"max=512"`
+}
+
+// CertificateStatus
+type CertificateStatus string
+
+const (
+	CertificateStatusAccepted               CertificateStatus = "Accepted"
+	CertificateStatusSignatureError         CertificateStatus = "SignatureError"
+	CertificateStatusCertificateExpired     CertificateStatus = "CertificateExpired"
+	CertificateStatusCertificateRevoked     CertificateStatus = "CertificateRevoked"
+	CertificateStatusNoCertificateAvailable CertificateStatus = "NoCertificateAvailable"
+	CertificateStatusCertChainError         CertificateStatus = "CertChainError"
+	CertificateStatusContractCancelled      CertificateStatus = "ContractCancelled"
+)
+
+func isValidCertificateStatus(fl validator.FieldLevel) bool {
+	status := CertificateStatus(fl.Field().String())
+	switch status {
+	case CertificateStatusAccepted, CertificateStatusCertChainError, CertificateStatusCertificateExpired, CertificateStatusSignatureError, CertificateStatusNoCertificateAvailable, CertificateStatusCertificateRevoked, CertificateStatusContractCancelled:
+		return true
+	default:
+		return false
+	}
+}
+
+// ID Token Info
+type MessageFormatType string
+
+const (
+	MessageFormatASCII MessageFormatType = "ASCII"
+	MessageFormatHTML  MessageFormatType = "HTML"
+	MessageFormatURI   MessageFormatType = "URI"
+	MessageFormatUTF8  MessageFormatType = "UTF8"
+)
+
+func isValidMessageFormatType(fl validator.FieldLevel) bool {
+	algorithm := MessageFormatType(fl.Field().String())
+	switch algorithm {
+	case MessageFormatASCII, MessageFormatHTML, MessageFormatURI, MessageFormatUTF8:
+		return true
+	default:
+		return false
+	}
+}
+
+type MessageContent struct {
+	Format   MessageFormatType `json:"format" validate:"required,messageFormat"`
+	Language string            `json:"language,omitempty" validate:"max=8"`
+	Content  string            `json:"content" validate:"required,max=512"`
+}
+
+type GroupIdToken struct {
+	IdToken string      `json:"idToken" validate:"required,max=36"`
+	Type    IdTokenType `json:"type" validate:"required,idTokenType"`
+}
+
+type IdTokenInfo struct {
+	Status              AuthorizationStatus `json:"status" validate:"required,authorizationStatus"`
+	CacheExpiryDateTime *DateTime           `json:"cacheExpiryDateTime,omitempty" validate:"omitempty"`
+	ChargingPriority    int                 `json:"chargingPriority,omitempty" validate:"min=-9,max=9"`
+	Language1           string              `json:"language1,omitempty" validate:"max=8"`
+	Language2           string              `json:"language2,omitempty" validate:"max=8"`
+	GroupIdToken        *GroupIdToken       `json:"groupIdToken,omitempty"`
+	PersonalMessage     *MessageContent     `json:"personalMessage,omitempty"`
+}
+
+func NewIdTokenInfo(status AuthorizationStatus) *IdTokenInfo {
+	return &IdTokenInfo{Status: status}
 }
 
 // Charging Profiles
@@ -379,6 +504,10 @@ func validateDateTimeLt(dateTime DateTime, than time.Time) bool {
 var Validate = ocppj.Validate
 
 func init() {
+	_ = Validate.RegisterValidation("idTokenType", isValidIdTokenType)
+	_ = Validate.RegisterValidation("hashAlgorithm", isValidHashAlgorithmType)
+	_ = Validate.RegisterValidation("certificateStatus", isValidCertificateStatus)
+	_ = Validate.RegisterValidation("messageFormat", isValidMessageFormatType)
 	_ = Validate.RegisterValidation("authorizationStatus", isValidAuthorizationStatus)
 	_ = Validate.RegisterValidation("chargingProfilePurpose", isValidChargingProfilePurpose)
 	_ = Validate.RegisterValidation("chargingProfileKind", isValidChargingProfileKind)

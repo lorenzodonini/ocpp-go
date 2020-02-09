@@ -6,7 +6,7 @@ import (
 
 const (
 	BootNotificationFeatureName = "BootNotification"
-	// AuthorizeFeatureName              = "Authorize"
+	AuthorizeFeatureName              = "Authorize"
 	// ChangeAvailabilityFeatureName     = "ChangeAvailability"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
 	// DataTransferFeatureName           = "DataTransfer"
@@ -51,7 +51,7 @@ var CoreProfileName = "core"
 var CoreProfile = ocpp.NewProfile(
 	CoreProfileName,
 	BootNotificationFeature{},
-	//AuthorizeFeature{},
+	AuthorizeFeature{},
 	//ChangeAvailabilityFeature{},
 	//ChangeConfigurationFeature{},
 	//ClearCacheFeature{},

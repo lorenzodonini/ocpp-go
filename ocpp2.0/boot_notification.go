@@ -81,7 +81,7 @@ type BootNotificationConfirmation struct {
 // The CSMS SHALL respond to indicate whether it will accept the Charge Point.
 // Between the physical power-on/reboot and the successful completion of a BootNotification, where CSMS returns Accepted or Pending, the Charge Point SHALL NOT send any other request to the CSMS.
 //
-// When the CSMS responds with a BootNotification.conf with a status Accepted, the Charge Point will adjust the heartbeat
+// When the CSMS responds with a BootNotificationConfirmation with a status Accepted, the Charge Point will adjust the heartbeat
 // interval in accordance with the interval from the response PDU and it is RECOMMENDED to synchronize its internal clock with the supplied CSMS’s current time.
 //
 // If that interval value is zero, the Charge Point chooses a waiting interval on its own, in a way that avoids flooding the CSMS with requests.
