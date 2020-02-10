@@ -6,18 +6,30 @@ import (
 )
 
 // Test
-func (suite *OcppV16TestSuite) TestIdTagInfoValidation() {
+func (suite *OcppV16TestSuite) TestIdTokenInfoValidation() {
 	var testTable = []GenericTestEntry{
-		{ocpp2.IdTagInfo{ExpiryDate: ocpp2.NewDateTime(time.Now()), ParentIdTag: "00000", Status: ocpp2.AuthorizationStatusAccepted}, true},
-		{ocpp2.IdTagInfo{ExpiryDate: ocpp2.NewDateTime(time.Now()), Status: ocpp2.AuthorizationStatusAccepted}, true},
-		{ocpp2.IdTagInfo{Status: ocpp2.AuthorizationStatusAccepted}, true},
-		{ocpp2.IdTagInfo{Status: ocpp2.AuthorizationStatusBlocked}, true},
-		{ocpp2.IdTagInfo{Status: ocpp2.AuthorizationStatusExpired}, true},
-		{ocpp2.IdTagInfo{Status: ocpp2.AuthorizationStatusInvalid}, true},
-		{ocpp2.IdTagInfo{Status: ocpp2.AuthorizationStatusConcurrentTx}, true},
-		{ocpp2.IdTagInfo{Status: "invalidAuthorizationStatus"}, false},
-		{ocpp2.IdTagInfo{}, false},
-		{ocpp2.IdTagInfo{ExpiryDate: ocpp2.NewDateTime(time.Now()), ParentIdTag: ">20..................", Status: ocpp2.AuthorizationStatusAccepted}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Language: "en", Content: "random"}}, true},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Content: "random"}}, true},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}}, true},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2"}, true},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1"}, true},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1}, true},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now())}, true},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted}, true},
+		{ocpp2.IdTokenInfo{}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: "invalidFormat", Language: "en", Content: "random"}}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Language: "en", Content: ">512............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Language: "en"}}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{}}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: "invalidTokenType"}}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{Type: ocpp2.IdTokenTypeCentral}}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234"}}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{}}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: ">8......."}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: ">8.......", Language2: "l2"}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: -10}, false},
+		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 10}, false},
+		{ocpp2.IdTokenInfo{Status: "invalidAuthStatus"}, false},
 	}
 	ExecuteGenericTestTable(suite.T(), testTable)
 }
