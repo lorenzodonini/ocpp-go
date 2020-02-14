@@ -433,7 +433,7 @@ type expectedChargePointOptions struct {
 	forwardWrittenMessage bool
 }
 
-func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener ocpp2.CentralSystemCoreListener, options expectedCentralSystemOptions) {
+func setupDefaultCentralSystemHandlers(suite *OcppV2TestSuite, coreListener ocpp2.CentralSystemCoreListener, options expectedCentralSystemOptions) {
 	t := suite.T()
 	suite.csms.SetNewChargePointHandler(func(chargePointId string) {
 		assert.Equal(t, options.clientId, chargePointId)
@@ -457,7 +457,7 @@ func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener ocp
 	})
 }
 
-func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener ocpp2.ChargePointCoreListener, options expectedChargePointOptions) {
+func setupDefaultChargePointHandlers(suite *OcppV2TestSuite, coreListener ocpp2.ChargePointCoreListener, options expectedChargePointOptions) {
 	t := suite.T()
 	suite.chargePoint.SetChargePointCoreListener(coreListener)
 	suite.mockWsClient.On("Start", mock.AnythingOfType("string")).Return(options.startReturnArgument).Run(func(args mock.Arguments) {
@@ -487,7 +487,7 @@ func assertDateTimeEquality(t *testing.T, expected ocpp2.DateTime, actual ocpp2.
 	assert.Equal(t, ocpp2.FormatTimestamp(expected.Time), ocpp2.FormatTimestamp(actual.Time))
 }
 
-func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp.Request, requestJson string, messageId string) {
+func testUnsupportedRequestFromChargePoint(suite *OcppV2TestSuite, request ocpp.Request, requestJson string, messageId string) {
 	t := suite.T()
 	wsId := "test_id"
 	wsUrl := "someUrl"
@@ -525,7 +525,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	assert.True(t, result)
 }
 
-func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request ocpp.Request, requestJson string, messageId string) {
+func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocpp.Request, requestJson string, messageId string) {
 	t := suite.T()
 	wsId := "test_id"
 	wsUrl := "someUrl"
@@ -588,7 +588,7 @@ func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
 }
 
 // ---------------------- TESTS ----------------------
-type OcppV16TestSuite struct {
+type OcppV2TestSuite struct {
 	suite.Suite
 	ocppjChargePoint   *ocppj.ChargePoint
 	ocppjCentralSystem *ocppj.CentralSystem
@@ -609,7 +609,7 @@ func (testGenerator *TestRandomIdGenerator) generateId() string {
 
 var defaultMessageId = "1234"
 
-func (suite *OcppV16TestSuite) SetupTest() {
+func (suite *OcppV2TestSuite) SetupTest() {
 	coreProfile := ocpp2.CoreProfile
 	//localAuthListProfile := ocpp2.LocalAuthListProfile
 	//firmwareProfile := ocpp2.FirmwareManagementProfile
@@ -634,5 +634,5 @@ func (suite *OcppV16TestSuite) SetupTest() {
 
 func TestOcpp2Protocol(t *testing.T) {
 	logrus.SetLevel(logrus.PanicLevel)
-	suite.Run(t, new(OcppV16TestSuite))
+	suite.Run(t, new(OcppV2TestSuite))
 }

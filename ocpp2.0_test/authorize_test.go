@@ -9,7 +9,7 @@ import (
 )
 
 // Test
-func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {
+func (suite *OcppV2TestSuite) TestAuthorizeRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{ocpp2.AuthorizeRequest{EvseID: []int{4,2}, IdToken: ocpp2.IdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []ocpp2.OCSPRequestDataType{{SerialNumber: "serial0", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1", ResponderURL: "www.someurl.com"}}}, true},
@@ -25,7 +25,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {
 	ExecuteGenericTestTable(t, requestTable)
 }
 
-func (suite *OcppV16TestSuite) TestAuthorizeConfirmationValidation() {
+func (suite *OcppV2TestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{ocpp2.AuthorizeConfirmation{CertificateStatus: ocpp2.CertificateStatusAccepted, EvseID: []int{4,2}, IdTokenInfo: ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted}}, true},
@@ -38,7 +38,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeConfirmationValidation() {
 	ExecuteGenericTestTable(t, confirmationTable)
 }
 
-func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
+func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
@@ -98,7 +98,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	assert.Equal(t, status, confirmation.IdTokenInfo.Status)
 }
 
-func (suite *OcppV16TestSuite) TestAuthorizeInvalidEndpoint() {
+func (suite *OcppV2TestSuite) TestAuthorizeInvalidEndpoint() {
 	messageId := defaultMessageId
 	evseIds := []int{4,2}
 	additionalInfo := ocpp2.AdditionalInfo{AdditionalIdToken: "at1", Type: "some"}

@@ -9,7 +9,7 @@ import (
 )
 
 // Tests
-func (suite *OcppV16TestSuite) TestBootNotificationRequestValidation() {
+func (suite *OcppV2TestSuite) TestBootNotificationRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{ocpp2.BootNotificationRequest{Reason: ocpp2.BootReasonPowerUp, ChargingStation: ocpp2.ChargingStationType{SerialNumber: "number", Model: "test", VendorName: "test", FirmwareVersion: "version", Modem: &ocpp2.ModemType{Iccid: "test", Imsi: "test"}}}, true},
@@ -33,7 +33,7 @@ func (suite *OcppV16TestSuite) TestBootNotificationRequestValidation() {
 	ExecuteGenericTestTable(t, requestTable)
 }
 
-func (suite *OcppV16TestSuite) TestBootNotificationConfirmationValidation() {
+func (suite *OcppV2TestSuite) TestBootNotificationConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{ocpp2.BootNotificationConfirmation{CurrentTime: ocpp2.NewDateTime(time.Now()), Interval: 60, Status: ocpp2.RegistrationStatusAccepted}, true},
@@ -46,7 +46,7 @@ func (suite *OcppV16TestSuite) TestBootNotificationConfirmationValidation() {
 	ExecuteGenericTestTable(t, confirmationTable)
 }
 
-func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
+func (suite *OcppV2TestSuite) TestBootNotificationE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := "1234"
@@ -78,7 +78,7 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 	assertDateTimeEquality(t, *currentTime, *confirmation.CurrentTime)
 }
 
-func (suite *OcppV16TestSuite) TestBootNotificationInvalidEndpoint() {
+func (suite *OcppV2TestSuite) TestBootNotificationInvalidEndpoint() {
 	messageId := defaultMessageId
 	chargePointModel := "model1"
 	chargePointVendor := "ABL"

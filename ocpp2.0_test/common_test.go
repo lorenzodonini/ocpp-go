@@ -6,7 +6,7 @@ import (
 )
 
 // Test
-func (suite *OcppV16TestSuite) TestIdTokenInfoValidation() {
+func (suite *OcppV2TestSuite) TestIdTokenInfoValidation() {
 	var testTable = []GenericTestEntry{
 		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Language: "en", Content: "random"}}, true},
 		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Content: "random"}}, true},
@@ -34,7 +34,7 @@ func (suite *OcppV16TestSuite) TestIdTokenInfoValidation() {
 	ExecuteGenericTestTable(suite.T(), testTable)
 }
 
-func (suite *OcppV16TestSuite) TestChargingSchedulePeriodValidation() {
+func (suite *OcppV2TestSuite) TestChargingSchedulePeriodValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: 3}, true},
@@ -48,7 +48,7 @@ func (suite *OcppV16TestSuite) TestChargingSchedulePeriodValidation() {
 	ExecuteGenericTestTable(t, testTable)
 }
 
-func (suite *OcppV16TestSuite) TestChargingScheduleValidation() {
+func (suite *OcppV2TestSuite) TestChargingScheduleValidation() {
 	t := suite.T()
 	chargingSchedulePeriods := make([]ocpp2.ChargingSchedulePeriod, 2)
 	chargingSchedulePeriods[0] = ocpp2.NewChargingSchedulePeriod(0, 10.0)
@@ -67,7 +67,7 @@ func (suite *OcppV16TestSuite) TestChargingScheduleValidation() {
 	ExecuteGenericTestTable(t, testTable)
 }
 
-func (suite *OcppV16TestSuite) TestChargingProfileValidation() {
+func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
 	t := suite.T()
 	chargingSchedule := ocpp2.NewChargingSchedule(ocpp2.ChargingRateUnitWatts, ocpp2.NewChargingSchedulePeriod(0, 10.0), ocpp2.NewChargingSchedulePeriod(100, 8.0))
 	var testTable = []GenericTestEntry{
@@ -87,7 +87,7 @@ func (suite *OcppV16TestSuite) TestChargingProfileValidation() {
 	ExecuteGenericTestTable(t, testTable)
 }
 
-func (suite *OcppV16TestSuite) TestSampledValueValidation() {
+func (suite *OcppV2TestSuite) TestSampledValueValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{ocpp2.SampledValue{Value: "value", Context: ocpp2.ReadingContextTransactionEnd, Format: ocpp2.ValueFormatRaw, Measurand: ocpp2.MeasurandPowerActiveExport, Phase: ocpp2.PhaseL2, Location: ocpp2.LocationBody, Unit: ocpp2.UnitOfMeasureKW}, true},
@@ -107,7 +107,7 @@ func (suite *OcppV16TestSuite) TestSampledValueValidation() {
 	ExecuteGenericTestTable(t, testTable)
 }
 
-func (suite *OcppV16TestSuite) TestMeterValueValidation() {
+func (suite *OcppV2TestSuite) TestMeterValueValidation() {
 	var testTable = []GenericTestEntry{
 		{ocpp2.MeterValue{Timestamp: ocpp2.NewDateTime(time.Now()), SampledValue: []ocpp2.SampledValue{{Value: "value"}, {Value: "value2", Unit: ocpp2.UnitOfMeasureKW}}}, true},
 		{ocpp2.MeterValue{Timestamp: ocpp2.NewDateTime(time.Now()), SampledValue: []ocpp2.SampledValue{{Value: "value"}}}, true},
