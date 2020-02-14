@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"reflect"
 	"testing"
@@ -148,11 +149,11 @@ type MockCentralSystemCoreListener struct {
 	mock.Mock
 }
 
-//func (coreListener MockCentralSystemCoreListener) OnAuthorize(chargePointId string, request *ocpp2.AuthorizeRequest) (confirmation *ocpp2.AuthorizeConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnAuthorize", chargePointId, request)
-//	conf := args.Get(0).(*ocpp2.AuthorizeConfirmation)
-//	return conf, args.Error(1)
-//}
+func (coreListener MockCentralSystemCoreListener) OnAuthorize(chargePointId string, request *ocpp2.AuthorizeRequest) (confirmation *ocpp2.AuthorizeConfirmation, err error) {
+	args := coreListener.MethodCalled("OnAuthorize", chargePointId, request)
+	conf := args.Get(0).(*ocpp2.AuthorizeConfirmation)
+	return conf, args.Error(1)
+}
 
 func (coreListener MockCentralSystemCoreListener) OnBootNotification(chargePointId string, request *ocpp2.BootNotificationRequest) (confirmation *ocpp2.BootNotificationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnBootNotification", chargePointId, request)
@@ -509,17 +510,17 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	// Start
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	// Run request test
 	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocpp.Confirmation, err error) {
 		t.Fail()
 	})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, expectedError, err.Error())
 	// Run response test
 	suite.ocppjChargePoint.AddPendingRequest(messageId, request)
 	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
 }
@@ -546,12 +547,12 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	// Start
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	// Run request test
 	err = suite.csms.SendRequestAsync(wsId, request, func(confirmation ocpp.Confirmation, err error) {
 		t.Fail()
 	})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, expectedError, err.Error())
 	// Run response test
 	suite.ocppjCentralSystem.AddPendingRequest(messageId, request)

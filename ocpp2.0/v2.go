@@ -13,7 +13,7 @@ import (
 type ChargePoint interface {
 	// Messages
 	BootNotification(reason BootReason, chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, error)
-	//Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
+	Authorize(idToken string, tokenType IdTokenType, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
 	//DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
 	//Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
 	//MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error)
@@ -62,19 +62,19 @@ func (cp *chargePoint) BootNotification(reason BootReason, chargePointModel stri
 	}
 }
 
-//// Requests explicit authorization to the central system, provided a valid IdTag (typically the client's). The central system may either authorize or reject the client.
-//func (cp *chargePoint) Authorize(idTag string, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error) {
-//	request := NewAuthorizationRequest(idTag)
-//	for _, fn := range props {
-//		fn(request)
-//	}
-//	confirmation, err := cp.SendRequest(request)
-//	if err != nil {
-//		return nil, err
-//	} else {
-//		return confirmation.(*AuthorizeConfirmation), err
-//	}
-//}
+// Requests explicit authorization to the central system, provided a valid IdTag (typically the client's). The central system may either authorize or reject the client.
+func (cp *chargePoint) Authorize(idToken string, tokenType IdTokenType, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error) {
+	request := NewAuthorizationRequest(idToken, tokenType)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*AuthorizeConfirmation), err
+	}
+}
 //
 //// Starts a custom data transfer request. Every vendor may implement their own proprietary logic for this message.
 //func (cp *chargePoint) DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error) {
@@ -243,7 +243,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case BootNotificationFeatureName:
+	case BootNotificationFeatureName, AuthorizeFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -968,8 +968,8 @@ func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request
 		switch action {
 		case BootNotificationFeatureName:
 			confirmation, err = cs.coreListener.OnBootNotification(chargePointId, request.(*BootNotificationRequest))
-		//case AuthorizeFeatureName:
-		//	confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*AuthorizeRequest))
+		case AuthorizeFeatureName:
+			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*AuthorizeRequest))
 		//case DataTransferFeatureName:
 		//	confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*DataTransferRequest))
 		//case HeartbeatFeatureName:
