@@ -219,13 +219,13 @@ func (coreListener MockChargePointCoreListener) OnChangeAvailability(request *oc
 //	conf := args.Get(0).(*ocpp2.ChangeConfigurationConfirmation)
 //	return conf, args.Error(1)
 //}
-//
-//func (coreListener MockChargePointCoreListener) OnClearCache(request *ocpp2.ClearCacheRequest) (confirmation *ocpp2.ClearCacheConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnClearCache", request)
-//	conf := args.Get(0).(*ocpp2.ClearCacheConfirmation)
-//	return conf, args.Error(1)
-//}
-//
+
+func (coreListener MockChargePointCoreListener) OnClearCache(request *ocpp2.ClearCacheRequest) (confirmation *ocpp2.ClearCacheConfirmation, err error) {
+	args := coreListener.MethodCalled("OnClearCache", request)
+	conf := args.Get(0).(*ocpp2.ClearCacheConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)
