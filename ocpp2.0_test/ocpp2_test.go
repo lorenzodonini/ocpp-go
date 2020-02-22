@@ -202,11 +202,11 @@ type MockChargePointCoreListener struct {
 	mock.Mock
 }
 
-//func (coreListener MockChargePointCoreListener) OnChangeAvailability(request *ocpp2.ChangeAvailabilityRequest) (confirmation *ocpp2.ChangeAvailabilityConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnChangeAvailability", request)
-//	conf := args.Get(0).(*ocpp2.ChangeAvailabilityConfirmation)
-//	return conf, args.Error(1)
-//}
+func (coreListener MockChargePointCoreListener) OnChangeAvailability(request *ocpp2.ChangeAvailabilityRequest) (confirmation *ocpp2.ChangeAvailabilityConfirmation, err error) {
+	args := coreListener.MethodCalled("OnChangeAvailability", request)
+	conf := args.Get(0).(*ocpp2.ChangeAvailabilityConfirmation)
+	return conf, args.Error(1)
+}
 //
 //func (coreListener MockChargePointCoreListener) OnDataTransfer(request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnDataTransfer", request)

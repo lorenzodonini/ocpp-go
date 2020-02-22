@@ -7,7 +7,7 @@ import (
 const (
 	BootNotificationFeatureName = "BootNotification"
 	AuthorizeFeatureName              = "Authorize"
-	// ChangeAvailabilityFeatureName     = "ChangeAvailability"
+	ChangeAvailabilityFeatureName     = "ChangeAvailability"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
 	// DataTransferFeatureName           = "DataTransfer"
 	// GetConfigurationFeatureName       = "GetConfiguration"
@@ -35,7 +35,7 @@ type CentralSystemCoreListener interface {
 }
 
 type ChargePointCoreListener interface {
-	// OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
+	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	// OnChangeConfiguration(request *ChangeConfigurationRequest) (confirmation *ChangeConfigurationConfirmation, err error)
 	// OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
 	// OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
@@ -52,7 +52,7 @@ var CoreProfile = ocpp.NewProfile(
 	CoreProfileName,
 	BootNotificationFeature{},
 	AuthorizeFeature{},
-	//ChangeAvailabilityFeature{},
+	ChangeAvailabilityFeature{},
 	//ChangeConfigurationFeature{},
 	//ClearCacheFeature{},
 	//DataTransferFeature{},

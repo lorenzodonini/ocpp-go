@@ -357,8 +357,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	cp.chargePoint.GetProfileForFeature(action)
 	var err error = nil
 	switch action {
-	//case ChangeAvailabilityFeatureName:
-	//	confirmation, err = cp.coreListener.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
+	case ChangeAvailabilityFeatureName:
+		confirmation, err = cp.coreListener.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
 	//case ChangeConfigurationFeatureName:
 	//	confirmation, err = cp.coreListener.OnChangeConfiguration(request.(*ChangeConfigurationRequest))
 	//case ClearCacheFeatureName:
@@ -459,7 +459,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 // -------------------- v1.6 Central System --------------------
 type CSMS interface {
 	// Messages
-	//ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, error), connectorId int, availabilityType AvailabilityType, props ...func(*ChangeAvailabilityRequest)) error
+	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, error), evseID int, operationalStatus OperationalStatus, props ...func(*ChangeAvailabilityRequest)) error
 	//ChangeConfiguration(clientId string, callback func(*ChangeConfigurationConfirmation, error), key string, value string, props ...func(*ChangeConfigurationRequest)) error
 	//ClearCache(clientId string, callback func(*ClearCacheConfirmation, error), props ...func(*ClearCacheRequest)) error
 	//DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
@@ -504,20 +504,20 @@ type csms struct {
 }
 
 //// Instructs a charge point to change its availability. The target availability can be set for a single connector of for the whole charge point.
-//func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error {
-//	request := NewChangeAvailabilityRequest(connectorId, availabilityType)
-//	for _, fn := range props {
-//		fn(request)
-//	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
-//		if confirmation != nil {
-//			callback(confirmation.(*ChangeAvailabilityConfirmation), protoError)
-//		} else {
-//			callback(nil, protoError)
-//		}
-//	}
-//	return cs.SendRequestAsync(clientId, request, genericCallback)
-//}
+func (cs *csms) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, err error), evseID int, operationalStatus OperationalStatus, props ...func(request *ChangeAvailabilityRequest)) error {
+	request := NewChangeAvailabilityRequest(evseID, operationalStatus)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*ChangeAvailabilityConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
 //
 //// Changes the configuration of a charge point, by setting a specific key-value pair.
 //// The configuration key must be supported by the target charge point, in order for the configuration to be accepted.
@@ -855,7 +855,9 @@ func (cs *csms) SetChargePointDisconnectedHandler(handler func(chargePointId str
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	//case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
+	case ChangeAvailabilityFeatureName:
+		break
+	//case ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
 	//	GetDiagnosticsFeatureName, UpdateFirmwareFeatureName,
 	//	ReserveNowFeatureName, CancelReservationFeatureName,
