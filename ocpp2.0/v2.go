@@ -361,8 +361,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.coreListener.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
 	//case ChangeConfigurationFeatureName:
 	//	confirmation, err = cp.coreListener.OnChangeConfiguration(request.(*ChangeConfigurationRequest))
-	//case ClearCacheFeatureName:
-	//	confirmation, err = cp.coreListener.OnClearCache(request.(*ClearCacheRequest))
+	case ClearCacheFeatureName:
+		confirmation, err = cp.coreListener.OnClearCache(request.(*ClearCacheRequest))
 	//case DataTransferFeatureName:
 	//	confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
 	//case GetConfigurationFeatureName:
@@ -461,7 +461,7 @@ type CSMS interface {
 	// Messages
 	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, error), evseID int, operationalStatus OperationalStatus, props ...func(*ChangeAvailabilityRequest)) error
 	//ChangeConfiguration(clientId string, callback func(*ChangeConfigurationConfirmation, error), key string, value string, props ...func(*ChangeConfigurationRequest)) error
-	//ClearCache(clientId string, callback func(*ClearCacheConfirmation, error), props ...func(*ClearCacheRequest)) error
+	ClearCache(clientId string, callback func(*ClearCacheConfirmation, error), props ...func(*ClearCacheRequest)) error
 	//DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
@@ -503,7 +503,7 @@ type csms struct {
 	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
 }
 
-//// Instructs a charge point to change its availability. The target availability can be set for a single connector of for the whole charge point.
+// Instructs a charge point to change its availability. The target availability can be set for a single connector of for the whole charge point.
 func (cs *csms) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, err error), evseID int, operationalStatus OperationalStatus, props ...func(request *ChangeAvailabilityRequest)) error {
 	request := NewChangeAvailabilityRequest(evseID, operationalStatus)
 	for _, fn := range props {
@@ -535,23 +535,23 @@ func (cs *csms) ChangeAvailability(clientId string, callback func(confirmation *
 //	}
 //	return cs.SendRequestAsync(clientId, request, genericCallback)
 //}
-//
-//// Instructs the charge point to clear its current authorization cache. All authorization saved locally will be invalidated.
-//func (cs *centralSystem) ClearCache(clientId string, callback func(confirmation *ClearCacheConfirmation, err error), props ...func(*ClearCacheRequest)) error {
-//	request := NewClearCacheRequest()
-//	for _, fn := range props {
-//		fn(request)
-//	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
-//		if confirmation != nil {
-//			callback(confirmation.(*ClearCacheConfirmation), protoError)
-//		} else {
-//			callback(nil, protoError)
-//		}
-//	}
-//	return cs.SendRequestAsync(clientId, request, genericCallback)
-//}
-//
+
+// Instructs the charge point to clear its current authorization cache. All authorization saved locally will be invalidated.
+func (cs *csms) ClearCache(clientId string, callback func(confirmation *ClearCacheConfirmation, err error), props ...func(*ClearCacheRequest)) error {
+	request := NewClearCacheRequest()
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*ClearCacheConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 //// Starts a custom data transfer request. Every vendor may implement their own proprietary logic for this message.
 //func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, err error), vendorId string, props ...func(request *DataTransferRequest)) error {
 //	request := NewDataTransferRequest(vendorId)
@@ -855,9 +855,9 @@ func (cs *csms) SetChargePointDisconnectedHandler(handler func(chargePointId str
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName:
+	case ChangeAvailabilityFeatureName, ClearCacheFeatureName:
 		break
-	//case ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
+	//case ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
 	//	GetDiagnosticsFeatureName, UpdateFirmwareFeatureName,
 	//	ReserveNowFeatureName, CancelReservationFeatureName,

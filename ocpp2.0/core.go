@@ -8,10 +8,10 @@ const (
 	BootNotificationFeatureName = "BootNotification"
 	AuthorizeFeatureName              = "Authorize"
 	ChangeAvailabilityFeatureName     = "ChangeAvailability"
+	ClearCacheFeatureName             = "ClearCache"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
 	// DataTransferFeatureName           = "DataTransfer"
 	// GetConfigurationFeatureName       = "GetConfiguration"
-	// ClearCacheFeatureName             = "ClearCache"
 	// HeartbeatFeatureName              = "Heartbeat"
 	// MeterValuesFeatureName            = "MeterValues"
 	// RemoteStartTransactionFeatureName = "RemoteStartTransaction"
@@ -37,7 +37,7 @@ type CentralSystemCoreListener interface {
 type ChargePointCoreListener interface {
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	// OnChangeConfiguration(request *ChangeConfigurationRequest) (confirmation *ChangeConfigurationConfirmation, err error)
-	// OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
+	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
 	// OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
@@ -54,7 +54,7 @@ var CoreProfile = ocpp.NewProfile(
 	AuthorizeFeature{},
 	ChangeAvailabilityFeature{},
 	//ChangeConfigurationFeature{},
-	//ClearCacheFeature{},
+	ClearCacheFeature{},
 	//DataTransferFeature{},
 	//GetConfigurationFeature{},
 	//HeartbeatFeature{},
