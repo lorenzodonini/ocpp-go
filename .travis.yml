@@ -6,6 +6,8 @@ git:
 notifications:
   email:
     on_success: never
+env:
+  GO111MODULE=on
 stages:
   - test
   - publish_latest
