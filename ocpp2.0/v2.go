@@ -357,6 +357,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	cp.chargePoint.GetProfileForFeature(action)
 	var err error = nil
 	switch action {
+	case CancelReservationFeatureName:
+		confirmation, err = cp.coreListener.OnCancelReservation(request.(*CancelReservationRequest))
 	case ChangeAvailabilityFeatureName:
 		confirmation, err = cp.coreListener.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
 	//case ChangeConfigurationFeatureName:
@@ -459,6 +461,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 // -------------------- v1.6 Central System --------------------
 type CSMS interface {
 	// Messages
+	CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(*CancelReservationRequest)) error
 	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, error), evseID int, operationalStatus OperationalStatus, props ...func(*ChangeAvailabilityRequest)) error
 	//ChangeConfiguration(clientId string, callback func(*ChangeConfigurationConfirmation, error), key string, value string, props ...func(*ChangeConfigurationRequest)) error
 	ClearCache(clientId string, callback func(*ClearCacheConfirmation, error), props ...func(*ClearCacheRequest)) error
@@ -501,6 +504,22 @@ type csms struct {
 	//remoteTriggerListener CentralSystemRemoteTriggerListener
 	//smartChargingListener CentralSystemSmartChargingListener
 	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
+}
+
+// Cancels a previously reserved charge point or connector, given the reservation Id.
+func (cs *csms) CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(request *CancelReservationRequest)) error {
+	request := NewCancelReservationRequest(reservationId)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*CancelReservationConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
 // Instructs a charge point to change its availability. The target availability can be set for a single connector of for the whole charge point.
@@ -729,22 +748,6 @@ func (cs *csms) ClearCache(clientId string, callback func(confirmation *ClearCac
 //	return cs.SendRequestAsync(clientId, request, genericCallback)
 //}
 //
-//// Cancels a previously reserved charge point or connector, given the reservation Id.
-//func (cs *centralSystem) CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(request *CancelReservationRequest)) error {
-//	request := NewCancelReservationRequest(reservationId)
-//	for _, fn := range props {
-//		fn(request)
-//	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
-//		if confirmation != nil {
-//			callback(confirmation.(*CancelReservationConfirmation), protoError)
-//		} else {
-//			callback(nil, protoError)
-//		}
-//	}
-//	return cs.SendRequestAsync(clientId, request, genericCallback)
-//}
-//
 //// Instructs a charge point to send a specific message to the central system. This is used for forcefully triggering status updates, when the last known state is either too old or not clear to the central system.
 //func (cs *centralSystem) TriggerMessage(clientId string, callback func(*TriggerMessageConfirmation, error), requestedMessage MessageTrigger, props ...func(request *TriggerMessageRequest)) error {
 //	request := NewTriggerMessageRequest(requestedMessage)
@@ -855,12 +858,12 @@ func (cs *csms) SetChargePointDisconnectedHandler(handler func(chargePointId str
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, ClearCacheFeatureName:
+	case CancelReservationFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName:
 		break
 	//case ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
 	//	GetDiagnosticsFeatureName, UpdateFirmwareFeatureName,
-	//	ReserveNowFeatureName, CancelReservationFeatureName,
+	//	ReserveNowFeatureName,
 	//	TriggerMessageFeatureName,
 	//	SetChargingProfileFeatureName, ClearChargingProfileFeatureName, GetCompositeScheduleFeatureName:
 	default:

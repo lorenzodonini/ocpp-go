@@ -5,10 +5,11 @@ import (
 )
 
 const (
-	BootNotificationFeatureName = "BootNotification"
-	AuthorizeFeatureName              = "Authorize"
-	ChangeAvailabilityFeatureName     = "ChangeAvailability"
-	ClearCacheFeatureName             = "ClearCache"
+	BootNotificationFeatureName   = "BootNotification"
+	AuthorizeFeatureName          = "Authorize"
+	CancelReservationFeatureName  = "CancelReservation"
+	ChangeAvailabilityFeatureName = "ChangeAvailability"
+	ClearCacheFeatureName         = "ClearCache"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
 	// DataTransferFeatureName           = "DataTransfer"
 	// GetConfigurationFeatureName       = "GetConfiguration"
@@ -35,6 +36,7 @@ type CentralSystemCoreListener interface {
 }
 
 type ChargePointCoreListener interface {
+	OnCancelReservation(request *CancelReservationRequest) (confirmation *CancelReservationConfirmation, err error)
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	// OnChangeConfiguration(request *ChangeConfigurationRequest) (confirmation *ChangeConfigurationConfirmation, err error)
 	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
@@ -52,18 +54,20 @@ var CoreProfile = ocpp.NewProfile(
 	CoreProfileName,
 	BootNotificationFeature{},
 	AuthorizeFeature{},
+	CancelReservationFeature{},
 	ChangeAvailabilityFeature{},
 	//ChangeConfigurationFeature{},
 	ClearCacheFeature{},
-	//DataTransferFeature{},
-	//GetConfigurationFeature{},
-	//HeartbeatFeature{},
-	//MeterValuesFeature{},
-	//RemoteStartTransactionFeature{},
-	//RemoteStopTransactionFeature{},
-	//StartTransactionFeature{},
-	//StopTransactionFeature{},
-	//StatusNotificationFeature{},
-	//ResetFeature{},
-	//UnlockConnectorFeature{}
-	)
+
+//DataTransferFeature{},
+//GetConfigurationFeature{},
+//HeartbeatFeature{},
+//MeterValuesFeature{},
+//RemoteStartTransactionFeature{},
+//RemoteStopTransactionFeature{},
+//StartTransactionFeature{},
+//StopTransactionFeature{},
+//StatusNotificationFeature{},
+//ResetFeature{},
+//UnlockConnectorFeature{}
+)
