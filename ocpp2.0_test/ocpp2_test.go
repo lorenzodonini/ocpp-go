@@ -202,6 +202,12 @@ type MockChargePointCoreListener struct {
 	mock.Mock
 }
 
+func (coreListener MockChargePointCoreListener) OnCancelReservation(request *ocpp2.CancelReservationRequest) (confirmation *ocpp2.CancelReservationConfirmation, err error) {
+	args := coreListener.MethodCalled("OnCancelReservation", request)
+	conf := args.Get(0).(*ocpp2.CancelReservationConfirmation)
+	return conf, args.Error(1)
+}
+
 func (coreListener MockChargePointCoreListener) OnChangeAvailability(request *ocpp2.ChangeAvailabilityRequest) (confirmation *ocpp2.ChangeAvailabilityConfirmation, err error) {
 	args := coreListener.MethodCalled("OnChangeAvailability", request)
 	conf := args.Get(0).(*ocpp2.ChangeAvailabilityConfirmation)
@@ -328,11 +334,6 @@ type MockChargePointReservationListener struct {
 //	return conf, args.Error(1)
 //}
 //
-//func (reservationListener MockChargePointReservationListener) OnCancelReservation(request *ocpp2.CancelReservationRequest) (confirmation *ocpp2.CancelReservationConfirmation, err error) {
-//	args := reservationListener.MethodCalled("OnCancelReservation", request)
-//	conf := args.Get(0).(*ocpp2.CancelReservationConfirmation)
-//	return conf, args.Error(1)
-//}
 
 // ---------------------- MOCK CS REMOTE TRIGGER LISTENER ----------------------
 type MockCentralSystemRemoteTriggerListener struct {
