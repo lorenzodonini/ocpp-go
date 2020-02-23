@@ -29,6 +29,7 @@ go get github.com/lorenzodonini/ocpp-go
 You will also need to fetch some dependencies:
 ```sh
 cd <path-to-ocpp-go>
+export GO111MODULE=on
 go mod download
 ```
 

@@ -48,7 +48,12 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
 	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnChangeAvailability", mock.Anything).Return(changeAvailabilityConfirmation, nil)
+	coreListener.On("OnChangeAvailability", mock.Anything).Return(changeAvailabilityConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(0).(*ocpp2.ChangeAvailabilityRequest)
+		require.True(t, ok)
+		assert.Equal(t, evseID, request.EvseID)
+		assert.Equal(t, operationalStatus, request.OperationalStatus)
+	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
