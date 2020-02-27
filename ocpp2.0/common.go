@@ -173,6 +173,26 @@ func isValidCertificateStatus(fl validator.FieldLevel) bool {
 	}
 }
 
+// Indicates the type of the signed certificate that is returned.
+// When omitted the certificate is used for both the 15118 connection (if implemented) and the Charging Station to CSMS connection.
+// This field is required when a typeOfCertificate was included in the SignCertificateRequest that requested this certificate to be signed AND both the 15118 connection and the Charging Station connection are implemented.
+type CertificateSigningUse string
+
+const (
+	ChargingStationCert CertificateSigningUse = "ChargingStationCertificate"
+	V2GCertificate      CertificateSigningUse = "V2GCertificate"
+)
+
+func isValidCertificateSigningUse(fl validator.FieldLevel) bool {
+	status := CertificateSigningUse(fl.Field().String())
+	switch status {
+	case ChargingStationCert, V2GCertificate:
+		return true
+	default:
+		return false
+	}
+}
+
 // ID Token Info
 type MessageFormatType string
 
@@ -520,4 +540,5 @@ func init() {
 	_ = Validate.RegisterValidation("phase", isValidPhase)
 	_ = Validate.RegisterValidation("location", isValidLocation)
 	_ = Validate.RegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
+	_ = Validate.RegisterValidation("certificateSigningUse", isValidCertificateSigningUse)
 }

@@ -8,6 +8,7 @@ const (
 	BootNotificationFeatureName   = "BootNotification"
 	AuthorizeFeatureName          = "Authorize"
 	CancelReservationFeatureName  = "CancelReservation"
+	CertificateSignedFeatureName  = "CertificateSigned"
 	ChangeAvailabilityFeatureName = "ChangeAvailability"
 	ClearCacheFeatureName         = "ClearCache"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
@@ -37,6 +38,7 @@ type CentralSystemCoreListener interface {
 
 type ChargePointCoreListener interface {
 	OnCancelReservation(request *CancelReservationRequest) (confirmation *CancelReservationConfirmation, err error)
+	OnCertificateSigned(request *CertificateSignedRequest) (confirmation *CertificateSignedConfirmation, err error)
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	// OnChangeConfiguration(request *ChangeConfigurationRequest) (confirmation *ChangeConfigurationConfirmation, err error)
 	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
@@ -55,6 +57,7 @@ var CoreProfile = ocpp.NewProfile(
 	BootNotificationFeature{},
 	AuthorizeFeature{},
 	CancelReservationFeature{},
+	CertificateSignedFeature{},
 	ChangeAvailabilityFeature{},
 	//ChangeConfigurationFeature{},
 	ClearCacheFeature{},

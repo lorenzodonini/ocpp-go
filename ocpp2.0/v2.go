@@ -359,6 +359,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	switch action {
 	case CancelReservationFeatureName:
 		confirmation, err = cp.coreListener.OnCancelReservation(request.(*CancelReservationRequest))
+	case CertificateSignedFeatureName:
+		confirmation, err = cp.coreListener.OnCertificateSigned(request.(*CertificateSignedRequest))
 	case ChangeAvailabilityFeatureName:
 		confirmation, err = cp.coreListener.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
 	//case ChangeConfigurationFeatureName:
@@ -462,6 +464,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 type CSMS interface {
 	// Messages
 	CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(*CancelReservationRequest)) error
+	CertificateSigned(clientId string, callback func(*CertificateSignedConfirmation, error), certificate []string, props ...func(*CertificateSignedRequest)) error
 	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, error), evseID int, operationalStatus OperationalStatus, props ...func(*ChangeAvailabilityRequest)) error
 	//ChangeConfiguration(clientId string, callback func(*ChangeConfigurationConfirmation, error), key string, value string, props ...func(*ChangeConfigurationRequest)) error
 	ClearCache(clientId string, callback func(*ClearCacheConfirmation, error), props ...func(*ClearCacheRequest)) error
@@ -522,7 +525,23 @@ func (cs *csms) CancelReservation(clientId string, callback func(*CancelReservat
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-// Instructs a charge point to change its availability. The target availability can be set for a single connector of for the whole charge point.
+// Sends a new certificate (chain) to the charging station.
+func (cs *csms) CertificateSigned(clientId string, callback func(*CertificateSignedConfirmation, error), certificate []string, props ...func(*CertificateSignedRequest)) error {
+	request := NewCertificateSignedRequest(certificate)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*CertificateSignedConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+// Instructs a charge point to change its availability. The target availability can be set for a single evse of for the whole charging station.
 func (cs *csms) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, err error), evseID int, operationalStatus OperationalStatus, props ...func(request *ChangeAvailabilityRequest)) error {
 	request := NewChangeAvailabilityRequest(evseID, operationalStatus)
 	for _, fn := range props {
@@ -858,7 +877,7 @@ func (cs *csms) SetChargePointDisconnectedHandler(handler func(chargePointId str
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case CancelReservationFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName:
+	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName:
 		break
 	//case ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
