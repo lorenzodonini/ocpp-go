@@ -367,6 +367,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	//	confirmation, err = cp.coreListener.OnChangeConfiguration(request.(*ChangeConfigurationRequest))
 	case ClearCacheFeatureName:
 		confirmation, err = cp.coreListener.OnClearCache(request.(*ClearCacheRequest))
+	case ClearDisplayFeatureName:
+		confirmation, err = cp.coreListener.OnClearDisplay(request.(*ClearDisplayRequest))
 	//case DataTransferFeatureName:
 	//	confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
 	//case GetConfigurationFeatureName:
@@ -468,6 +470,7 @@ type CSMS interface {
 	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, error), evseID int, operationalStatus OperationalStatus, props ...func(*ChangeAvailabilityRequest)) error
 	//ChangeConfiguration(clientId string, callback func(*ChangeConfigurationConfirmation, error), key string, value string, props ...func(*ChangeConfigurationRequest)) error
 	ClearCache(clientId string, callback func(*ClearCacheConfirmation, error), props ...func(*ClearCacheRequest)) error
+	ClearDisplay(clientId string, callback func(*ClearDisplayConfirmation, error), id int, props ...func(*ClearDisplayRequest)) error
 	//DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
@@ -583,6 +586,21 @@ func (cs *csms) ClearCache(clientId string, callback func(confirmation *ClearCac
 	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ClearCacheConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) ClearDisplay(clientId string, callback func(*ClearDisplayConfirmation, error), id int, props ...func(*ClearDisplayRequest)) error {
+	request := NewClearDisplayRequest(id)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*ClearDisplayConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -877,7 +895,7 @@ func (cs *csms) SetChargePointDisconnectedHandler(handler func(chargePointId str
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName:
+	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearDisplayFeatureName:
 		break
 	//case ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
