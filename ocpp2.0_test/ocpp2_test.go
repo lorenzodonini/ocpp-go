@@ -144,7 +144,7 @@ func newMockConfirmation(value string) *MockConfirmation {
 	return &MockConfirmation{MockValue: value}
 }
 
-// ---------------------- MOCK CS CORE LISTENER ----------------------
+// ---------------------- MOCK CSMS CORE LISTENER ----------------------
 type MockCentralSystemCoreListener struct {
 	mock.Mock
 }
@@ -205,6 +205,12 @@ type MockChargePointCoreListener struct {
 func (coreListener MockChargePointCoreListener) OnCancelReservation(request *ocpp2.CancelReservationRequest) (confirmation *ocpp2.CancelReservationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnCancelReservation", request)
 	conf := args.Get(0).(*ocpp2.CancelReservationConfirmation)
+	return conf, args.Error(1)
+}
+
+func (coreListener MockChargePointCoreListener) OnCertificateSigned(request *ocpp2.CertificateSignedRequest) (confirmation *ocpp2.CertificateSignedConfirmation, err error) {
+	args := coreListener.MethodCalled("OnCertificateSigned", request)
+	conf := args.Get(0).(*ocpp2.CertificateSignedConfirmation)
 	return conf, args.Error(1)
 }
 
