@@ -11,6 +11,7 @@ const (
 	CertificateSignedFeatureName  = "CertificateSigned"
 	ChangeAvailabilityFeatureName = "ChangeAvailability"
 	ClearCacheFeatureName         = "ClearCache"
+	ClearDisplayFeatureName       = "ClearDisplay"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
 	// DataTransferFeatureName           = "DataTransfer"
 	// GetConfigurationFeatureName       = "GetConfiguration"
@@ -42,6 +43,7 @@ type ChargePointCoreListener interface {
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	// OnChangeConfiguration(request *ChangeConfigurationRequest) (confirmation *ChangeConfigurationConfirmation, err error)
 	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
+	OnClearDisplay(request *ClearDisplayRequest) (confirmation *ClearDisplayConfirmation, err error)
 	// OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
@@ -61,6 +63,7 @@ var CoreProfile = ocpp.NewProfile(
 	ChangeAvailabilityFeature{},
 	//ChangeConfigurationFeature{},
 	ClearCacheFeature{},
+	ClearDisplayFeature{},
 
 //DataTransferFeature{},
 //GetConfigurationFeature{},

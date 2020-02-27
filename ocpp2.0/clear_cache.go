@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Clear Cache (CS -> CP) --------------------
+// -------------------- Clear Cache (CSMS -> CP) --------------------
 
 // Status returned in response to ClearCacheRequest.
 type ClearCacheStatus string
@@ -36,9 +36,9 @@ type ClearCacheConfirmation struct {
 }
 
 // CSMS can request a Charge Point to clear its Authorization Cache.
-// The CSMS SHALL send a ClearCacheRequest PDU for clearing the Charge Point’s Authorization Cache.
-// Upon receipt of a ClearCacheRequest, the Charge Point SHALL respond with a ClearCacheConfirmation PDU.
-// The response PDU SHALL indicate whether the Charge Point was able to clear its Authorization Cache.
+// The CSMS SHALL send a ClearCacheRequest payload for clearing the Charge Point’s Authorization Cache.
+// Upon receipt of a ClearCacheRequest, the Charge Point SHALL respond with a ClearCacheConfirmation payload.
+// The response payload SHALL indicate whether the Charge Point was able to clear its Authorization Cache.
 type ClearCacheFeature struct{}
 
 func (f ClearCacheFeature) GetFeatureName() string {
