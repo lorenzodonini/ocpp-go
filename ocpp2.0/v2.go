@@ -367,6 +367,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	//	confirmation, err = cp.coreListener.OnChangeConfiguration(request.(*ChangeConfigurationRequest))
 	case ClearCacheFeatureName:
 		confirmation, err = cp.coreListener.OnClearCache(request.(*ClearCacheRequest))
+	case ClearChargingProfileFeatureName:
+		confirmation, err = cp.coreListener.OnClearChargingProfile(request.(*ClearChargingProfileRequest))
 	case ClearDisplayFeatureName:
 		confirmation, err = cp.coreListener.OnClearDisplay(request.(*ClearDisplayRequest))
 	//case DataTransferFeatureName:
@@ -462,7 +464,7 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 	return &cp
 }
 
-// -------------------- v1.6 Central System --------------------
+// -------------------- v2.0 CSMS --------------------
 type CSMS interface {
 	// Messages
 	CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(*CancelReservationRequest)) error
@@ -470,6 +472,7 @@ type CSMS interface {
 	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, error), evseID int, operationalStatus OperationalStatus, props ...func(*ChangeAvailabilityRequest)) error
 	//ChangeConfiguration(clientId string, callback func(*ChangeConfigurationConfirmation, error), key string, value string, props ...func(*ChangeConfigurationRequest)) error
 	ClearCache(clientId string, callback func(*ClearCacheConfirmation, error), props ...func(*ClearCacheRequest)) error
+	ClearChargingProfile(clientId string, callback func(*ClearChargingProfileConfirmation, error), props ...func(request *ClearChargingProfileRequest)) error
 	ClearDisplay(clientId string, callback func(*ClearDisplayConfirmation, error), id int, props ...func(*ClearDisplayRequest)) error
 	//DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
@@ -485,7 +488,6 @@ type CSMS interface {
 	//CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(request *CancelReservationRequest)) error
 	//TriggerMessage(clientId string, callback func(*TriggerMessageConfirmation, error), requestedMessage MessageTrigger, props ...func(request *TriggerMessageRequest)) error
 	//SetChargingProfile(clientId string, callback func(*SetChargingProfileConfirmation, error), connectorId int, chargingProfile *ChargingProfile, props ...func(request *SetChargingProfileRequest)) error
-	//ClearChargingProfile(clientId string, callback func(*ClearChargingProfileConfirmation, error), props ...func(request *ClearChargingProfileRequest)) error
 	//GetCompositeSchedule(clientId string, callback func(*GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *GetCompositeScheduleRequest)) error
 
 	// Logic
@@ -586,6 +588,22 @@ func (cs *csms) ClearCache(clientId string, callback func(confirmation *ClearCac
 	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ClearCacheConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+// Removes one or more charging profiles from a charging station.
+func (cs *csms) ClearChargingProfile(clientId string, callback func(*ClearChargingProfileConfirmation, error), props ...func(request *ClearChargingProfileRequest)) error {
+	request := NewClearChargingProfileRequest()
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*ClearChargingProfileConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -817,22 +835,6 @@ func (cs *csms) ClearDisplay(clientId string, callback func(*ClearDisplayConfirm
 //	return cs.SendRequestAsync(clientId, request, genericCallback)
 //}
 //
-//// Removes one or more charging profiles from a charge point.
-//func (cs *centralSystem) ClearChargingProfile(clientId string, callback func(*ClearChargingProfileConfirmation, error), props ...func(request *ClearChargingProfileRequest)) error {
-//	request := NewClearChargingProfileRequest()
-//	for _, fn := range props {
-//		fn(request)
-//	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
-//		if confirmation != nil {
-//			callback(confirmation.(*ClearChargingProfileConfirmation), protoError)
-//		} else {
-//			callback(nil, protoError)
-//		}
-//	}
-//	return cs.SendRequestAsync(clientId, request, genericCallback)
-//}
-//
 //// Queries a charge point to the composite smart charging schedules and rules for a specified time interval.
 //func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *GetCompositeScheduleRequest)) error {
 //	request := NewGetCompositeScheduleRequest(connectorId, duration)
@@ -895,7 +897,7 @@ func (cs *csms) SetChargePointDisconnectedHandler(handler func(chargePointId str
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearDisplayFeatureName:
+	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearChargingProfileFeatureName, ClearDisplayFeatureName:
 		break
 	//case ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
