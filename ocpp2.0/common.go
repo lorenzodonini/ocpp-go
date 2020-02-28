@@ -245,22 +245,23 @@ type RecurrencyKindType string
 type ChargingRateUnitType string
 
 const (
-	ChargingProfilePurposeChargePointMaxProfile ChargingProfilePurposeType = "ChargePointMaxProfile"
-	ChargingProfilePurposeTxDefaultProfile      ChargingProfilePurposeType = "TxDefaultProfile"
-	ChargingProfilePurposeTxProfile             ChargingProfilePurposeType = "TxProfile"
-	ChargingProfileKindAbsolute                 ChargingProfileKindType    = "Absolute"
-	ChargingProfileKindRecurring                ChargingProfileKindType    = "Recurring"
-	ChargingProfileKindRelative                 ChargingProfileKindType    = "Relative"
-	RecurrencyKindDaily                         RecurrencyKindType         = "Daily"
-	RecurrencyKindWeekly                        RecurrencyKindType         = "Weekly"
-	ChargingRateUnitWatts                       ChargingRateUnitType       = "W"
-	ChargingRateUnitAmperes                     ChargingRateUnitType       = "A"
+	ChargingProfilePurposeChargingStationExternalConstraints ChargingProfilePurposeType = "ChargingStationExternalConstraints"
+	ChargingProfilePurposeChargingStationMaxProfile          ChargingProfilePurposeType = "ChargingStationMaxProfile"
+	ChargingProfilePurposeTxDefaultProfile                   ChargingProfilePurposeType = "TxDefaultProfile"
+	ChargingProfilePurposeTxProfile                          ChargingProfilePurposeType = "TxProfile"
+	ChargingProfileKindAbsolute                              ChargingProfileKindType    = "Absolute"
+	ChargingProfileKindRecurring                             ChargingProfileKindType    = "Recurring"
+	ChargingProfileKindRelative                              ChargingProfileKindType    = "Relative"
+	RecurrencyKindDaily                                      RecurrencyKindType         = "Daily"
+	RecurrencyKindWeekly                                     RecurrencyKindType         = "Weekly"
+	ChargingRateUnitWatts                                    ChargingRateUnitType       = "W"
+	ChargingRateUnitAmperes                                  ChargingRateUnitType       = "A"
 )
 
 func isValidChargingProfilePurpose(fl validator.FieldLevel) bool {
 	purposeType := ChargingProfilePurposeType(fl.Field().String())
 	switch purposeType {
-	case ChargingProfilePurposeChargePointMaxProfile, ChargingProfilePurposeTxDefaultProfile, ChargingProfilePurposeTxProfile:
+	case ChargingProfilePurposeChargingStationExternalConstraints, ChargingProfilePurposeChargingStationMaxProfile, ChargingProfilePurposeTxDefaultProfile, ChargingProfilePurposeTxProfile:
 		return true
 	default:
 		return false

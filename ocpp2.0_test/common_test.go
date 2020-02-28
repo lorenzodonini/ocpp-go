@@ -71,18 +71,18 @@ func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
 	t := suite.T()
 	chargingSchedule := ocpp2.NewChargingSchedule(ocpp2.ChargingRateUnitWatts, ocpp2.NewChargingSchedulePeriod(0, 10.0), ocpp2.NewChargingSchedulePeriod(100, 8.0))
 	var testTable = []GenericTestEntry{
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, TransactionId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, RecurrencyKind: ocpp2.RecurrencyKindDaily, ValidFrom: ocpp2.NewDateTime(time.Now()), ValidTo: ocpp2.NewDateTime(time.Now().Add(8 * time.Hour)), ChargingSchedule: chargingSchedule}, true},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, true},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingSchedule: chargingSchedule}, false},
+		{ocpp2.ChargingProfile{ChargingProfileId: 1, TransactionId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, RecurrencyKind: ocpp2.RecurrencyKindDaily, ValidFrom: ocpp2.NewDateTime(time.Now()), ValidTo: ocpp2.NewDateTime(time.Now().Add(8 * time.Hour)), ChargingSchedule: chargingSchedule}, true},
+		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, true},
+		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute}, false},
+		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingSchedule: chargingSchedule}, false},
 		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, true},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: "invalidChargingProfileKind", ChargingSchedule: chargingSchedule}, false},
+		{ocpp2.ChargingProfile{ChargingProfileId: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
+		{ocpp2.ChargingProfile{StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, true},
+		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: "invalidChargingProfileKind", ChargingSchedule: chargingSchedule}, false},
 		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: "invalidChargingProfilePurpose", ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 0, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, RecurrencyKind: "invalidRecurrencyKind", ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: ocpp2.NewChargingSchedule(ocpp2.ChargingRateUnitWatts)}, false},
+		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 0, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
+		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, RecurrencyKind: "invalidRecurrencyKind", ChargingSchedule: chargingSchedule}, false},
+		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: ocpp2.NewChargingSchedule(ocpp2.ChargingRateUnitWatts)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
