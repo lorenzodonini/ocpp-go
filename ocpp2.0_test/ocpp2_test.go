@@ -161,6 +161,12 @@ func (coreListener MockCentralSystemCoreListener) OnBootNotification(chargePoint
 	return conf, args.Error(1)
 }
 
+func (coreListener MockCentralSystemCoreListener) OnClearedChargingLimit(chargePointId string, request *ocpp2.ClearedChargingLimitRequest) (confirmation *ocpp2.ClearedChargingLimitConfirmation, err error) {
+	args := coreListener.MethodCalled("OnClearedChargingLimit", chargePointId, request)
+	conf := args.Get(0).(*ocpp2.ClearedChargingLimitConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
 //	conf := args.Get(0).(*ocpp2.DataTransferConfirmation)
