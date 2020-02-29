@@ -243,6 +243,7 @@ type ChargingProfilePurposeType string
 type ChargingProfileKindType string
 type RecurrencyKindType string
 type ChargingRateUnitType string
+type ChargingLimitSourceType string
 
 const (
 	ChargingProfilePurposeChargingStationExternalConstraints ChargingProfilePurposeType = "ChargingStationExternalConstraints"
@@ -256,6 +257,10 @@ const (
 	RecurrencyKindWeekly                                     RecurrencyKindType         = "Weekly"
 	ChargingRateUnitWatts                                    ChargingRateUnitType       = "W"
 	ChargingRateUnitAmperes                                  ChargingRateUnitType       = "A"
+	ChargingLimitSourceEMS                                   ChargingLimitSourceType    = "EMS"
+	ChargingLimitSourceOther                                 ChargingLimitSourceType    = "Other"
+	ChargingLimitSourceSO                                    ChargingLimitSourceType    = "SO"
+	ChargingLimitSourceCSO                                   ChargingLimitSourceType    = "CSO"
 )
 
 func isValidChargingProfilePurpose(fl validator.FieldLevel) bool {
@@ -292,6 +297,16 @@ func isValidChargingRateUnit(fl validator.FieldLevel) bool {
 	purposeType := ChargingRateUnitType(fl.Field().String())
 	switch purposeType {
 	case ChargingRateUnitWatts, ChargingRateUnitAmperes:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidChargingLimitSource(fl validator.FieldLevel) bool {
+	chargingLimitSource := ChargingLimitSourceType(fl.Field().String())
+	switch chargingLimitSource {
+	case ChargingLimitSourceEMS, ChargingLimitSourceOther, ChargingLimitSourceSO, ChargingLimitSourceCSO:
 		return true
 	default:
 		return false
@@ -534,6 +549,7 @@ func init() {
 	_ = Validate.RegisterValidation("chargingProfileKind", isValidChargingProfileKind)
 	_ = Validate.RegisterValidation("recurrencyKind", isValidRecurrencyKind)
 	_ = Validate.RegisterValidation("chargingRateUnit", isValidChargingRateUnit)
+	_ = Validate.RegisterValidation("chargingLimitSource", isValidChargingLimitSource)
 	_ = Validate.RegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
 	_ = Validate.RegisterValidation("readingContext", isValidReadingContext)
 	_ = Validate.RegisterValidation("valueFormat", isValidValueFormat)

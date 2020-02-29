@@ -8,10 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newInt(i int) *int{
-	return &i
-}
-
 // Test
 func (suite *OcppV2TestSuite) TestClearChargingProfileRequestValidation() {
 	t := suite.T()

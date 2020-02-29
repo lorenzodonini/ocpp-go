@@ -13,6 +13,7 @@ const (
 	ClearCacheFeatureName           = "ClearCache"
 	ClearDisplayFeatureName         = "ClearDisplay"
 	ClearChargingProfileFeatureName = "ClearChargingProfile"
+	ClearedChargingLimitFeatureName = "ClearedChargingLimit"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
 	// DataTransferFeatureName           = "DataTransfer"
 	// GetConfigurationFeatureName       = "GetConfiguration"
@@ -32,6 +33,7 @@ const (
 type CentralSystemCoreListener interface {
 	OnAuthorize(chargePointId string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
 	OnBootNotification(chargePointId string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
+	OnClearedChargingLimit(chargePointId string, request *ClearedChargingLimitRequest) (confirmation *ClearedChargingLimitConfirmation, err error)
 	// OnDataTransfer(chargePointId string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	// OnHeartbeat(chargePointId string, request *HeartbeatRequest) (confirmation *HeartbeatConfirmation, err error)
 	// OnMeterValues(chargePointId string, request *MeterValuesRequest) (confirmation *MeterValuesConfirmation, err error)
@@ -69,6 +71,7 @@ var CoreProfile = ocpp.NewProfile(
 	ClearCacheFeature{},
 	ClearDisplayFeature{},
 	ClearChargingProfileFeature{},
+	ClearedChargingLimitFeature{},
 //DataTransferFeature{},
 //GetConfigurationFeature{},
 //HeartbeatFeature{},
