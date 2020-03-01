@@ -43,7 +43,12 @@ func (suite *OcppV2TestSuite) TestClearDisplayE2EMocked() {
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnClearDisplay", mock.Anything).Return(ClearDisplayConfirmation, nil)
+	coreListener.On("OnClearDisplay", mock.Anything).Return(ClearDisplayConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(0).(*ocpp2.ClearDisplayRequest)
+		require.True(t, ok)
+		require.NotNil(t, request)
+		assert.Equal(t, displayMessageId, request.ID)
+	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test

@@ -256,6 +256,12 @@ func (coreListener MockChargePointCoreListener) OnClearDisplay(request *ocpp2.Cl
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnClearVariableMonitoring(request *ocpp2.ClearVariableMonitoringRequest) (confirmation *ocpp2.ClearVariableMonitoringConfirmation, err error) {
+	args := coreListener.MethodCalled("OnClearVariableMonitoring", request)
+	conf := args.Get(0).(*ocpp2.ClearVariableMonitoringConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)

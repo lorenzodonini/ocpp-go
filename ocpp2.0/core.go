@@ -5,15 +5,16 @@ import (
 )
 
 const (
-	BootNotificationFeatureName     = "BootNotification"
-	AuthorizeFeatureName            = "Authorize"
-	CancelReservationFeatureName    = "CancelReservation"
-	CertificateSignedFeatureName    = "CertificateSigned"
-	ChangeAvailabilityFeatureName   = "ChangeAvailability"
-	ClearCacheFeatureName           = "ClearCache"
-	ClearDisplayFeatureName         = "ClearDisplay"
-	ClearChargingProfileFeatureName = "ClearChargingProfile"
-	ClearedChargingLimitFeatureName = "ClearedChargingLimit"
+	BootNotificationFeatureName        = "BootNotification"
+	AuthorizeFeatureName               = "Authorize"
+	CancelReservationFeatureName       = "CancelReservation"
+	CertificateSignedFeatureName       = "CertificateSigned"
+	ChangeAvailabilityFeatureName      = "ChangeAvailability"
+	ClearCacheFeatureName              = "ClearCache"
+	ClearDisplayFeatureName            = "ClearDisplay"
+	ClearChargingProfileFeatureName    = "ClearChargingProfile"
+	ClearedChargingLimitFeatureName    = "ClearedChargingLimit"
+	ClearVariableMonitoringFeatureName = "ClearVariableMonitoring"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
 	// DataTransferFeatureName           = "DataTransfer"
 	// GetConfigurationFeatureName       = "GetConfiguration"
@@ -50,6 +51,7 @@ type ChargePointCoreListener interface {
 	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
 	OnClearDisplay(request *ClearDisplayRequest) (confirmation *ClearDisplayConfirmation, err error)
 	OnClearChargingProfile(request *ClearChargingProfileRequest) (confirmation *ClearChargingProfileConfirmation, err error)
+	OnClearVariableMonitoring(request *ClearVariableMonitoringRequest) (confirmation *ClearVariableMonitoringConfirmation, err error)
 	// OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
@@ -72,6 +74,8 @@ var CoreProfile = ocpp.NewProfile(
 	ClearDisplayFeature{},
 	ClearChargingProfileFeature{},
 	ClearedChargingLimitFeature{},
+	ClearVariableMonitoringFeature{},
+
 //DataTransferFeature{},
 //GetConfigurationFeature{},
 //HeartbeatFeature{},
