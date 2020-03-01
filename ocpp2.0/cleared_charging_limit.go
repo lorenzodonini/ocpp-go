@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// -------------------- ClearedChargingLimit (CS -> CSMS) --------------------
+// -------------------- Cleared Charging Limit (CS -> CSMS) --------------------
 
 // The field definition of the ClearedChargingLimit request payload sent by the Charging Station to the CSMS.
 type ClearedChargingLimitRequest struct {

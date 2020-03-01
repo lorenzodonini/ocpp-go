@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Clear Display (CSMS -> CP) --------------------
+// -------------------- Clear Variable Monitoring (CSMS -> CP) --------------------
 
 // Status contained inside a ClearMonitoringResult struct.
 type ClearMonitoringStatus string

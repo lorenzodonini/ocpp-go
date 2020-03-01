@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Clear Display (CSMS -> CS) --------------------
+// -------------------- Cost Updated (CSMS -> CS) --------------------
 
 // The field definition of the CostUpdated request payload sent by the CSMS to the Charging Station.
 type CostUpdatedRequest struct {

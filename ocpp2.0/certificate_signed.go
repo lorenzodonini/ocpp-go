@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Certificate Signed (CS -> CP) --------------------
+// -------------------- Certificate Signed (CSMS -> CS) --------------------
 
 // Status returned in response to CertificateSignedRequest, that indicates whether certificate signing has been accepted or rejected.
 type CertificateSignedStatus string
@@ -25,19 +25,19 @@ func isValidCertificateSignedStatus(fl validator.FieldLevel) bool {
 	}
 }
 
-// The field definition of the CertificateSignedRequest PDU sent by the CSMS to the Charge Point.
+// The field definition of the CertificateSignedRequest PDU sent by the CSMS to the Charging Station.
 type CertificateSignedRequest struct {
 	Cert              []string              `json:"cert" validate:"required,min=1,dive,max=800"`
 	TypeOfCertificate CertificateSigningUse `json:"typeOfCertificate,omitempty" validate:"omitempty,certificateSigningUse"`
 }
 
-// The field definition of the CertificateSignedResponse payload sent by the Charge Point to the CSMS in response to a CertificateSignedRequest.
+// The field definition of the CertificateSignedResponse payload sent by the Charging Station to the CSMS in response to a CertificateSignedRequest.
 type CertificateSignedConfirmation struct {
 	Status CertificateSignedStatus `json:"status" validate:"required,certificateSignedStatus"`
 }
 
-// During the a certificate update procedure, the CSMS sends a new certificate, signed by a CA, to the Charge Point with a CertificateSignedRequest.
-// The Charge Point verifies the signed certificate, installs it locally and responds with a CertificateSignedResponse to the the CSMS with the status Accepted or Rejected.
+// During the a certificate update procedure, the CSMS sends a new certificate, signed by a CA, to the Charging Station with a CertificateSignedRequest.
+// The Charging Station verifies the signed certificate, installs it locally and responds with a CertificateSignedResponse to the the CSMS with the status Accepted or Rejected.
 type CertificateSignedFeature struct{}
 
 func (f CertificateSignedFeature) GetFeatureName() string {

@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Cancel Reservation (CS -> CP) --------------------
+// -------------------- Cancel Reservation (CSMS -> CS) --------------------
 
 // Status reported in CancelReservationConfirmation.
 type CancelReservationStatus string
@@ -25,19 +25,19 @@ func isValidCancelReservationStatus(fl validator.FieldLevel) bool {
 	}
 }
 
-// The field definition of the CancelReservation request payload sent by the CSMS to the Charge Point.
+// The field definition of the CancelReservation request payload sent by the CSMS to the Charging Station.
 type CancelReservationRequest struct {
 	ReservationId int `json:"reservationId" validate:"gte=0"`
 }
 
-// This field definition of the CancelReservation confirmation payload, sent by the Charge Point to the CSMS in response to a CancelReservationRequest.
+// This field definition of the CancelReservation confirmation payload, sent by the Charging Station to the CSMS in response to a CancelReservationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type CancelReservationConfirmation struct {
 	Status CancelReservationStatus `json:"status" validate:"required,cancelReservationStatus"`
 }
 
-// To cancel a reservation the CSMS SHALL send an CancelReservationRequest to the Charge Point.
-// If the Charge Point has a reservation matching the reservationId in the request payload, it SHALL return status ‘Accepted’.
+// To cancel a reservation the CSMS SHALL send an CancelReservationRequest to the Charging Station.
+// If the Charging Station has a reservation matching the reservationId in the request payload, it SHALL return status ‘Accepted’.
 // Otherwise it SHALL return ‘Rejected’.
 type CancelReservationFeature struct{}
 
