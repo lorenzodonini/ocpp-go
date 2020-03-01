@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Change Availability (CS -> CP) --------------------
+// -------------------- Change Availability (CSMS -> CS) --------------------
 
 // Requested availability change in ChangeAvailabilityRequest.
 type OperationalStatus string
@@ -44,22 +44,22 @@ func isValidChangeAvailabilityStatus(fl validator.FieldLevel) bool {
 	}
 }
 
-// The field definition of the ChangeAvailability request payload sent by the CSMS to the Charge Point.
+// The field definition of the ChangeAvailability request payload sent by the CSMS to the Charging Station.
 type ChangeAvailabilityRequest struct {
 	EvseID            int               `json:"evseId" validate:"gte=0"`
 	OperationalStatus OperationalStatus `json:"operationalStatus" validate:"required,operationalStatus"`
 }
 
-// This field definition of the ChangeAvailability confirmation payload, sent by the Charge Point to the CSMS in response to a ChangeAvailabilityRequest.
+// This field definition of the ChangeAvailability confirmation payload, sent by the Charging Station to the CSMS in response to a ChangeAvailabilityRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ChangeAvailabilityConfirmation struct {
 	Status ChangeAvailabilityStatus `json:"status" validate:"required,changeAvailabilityStatus"`
 }
 
-// CSMS can request a Charge Point to change its availability.
-// A Charge Point is considered available (“operative”) when it is charging or ready for charging.
-// A Charge Point is considered unavailable when it does not allow any charging.
-// The CSMS SHALL send a ChangeAvailabilityRequest for requesting a Charge Point to change its availability.
+// CSMS can request a Charging Station to change its availability.
+// A Charging Station is considered available (“operative”) when it is charging or ready for charging.
+// A Charging Station is considered unavailable when it does not allow any charging.
+// The CSMS SHALL send a ChangeAvailabilityRequest for requesting a Charging Station to change its availability.
 // The CSMS can change the availability to available or unavailable.
 type ChangeAvailabilityFeature struct{}
 

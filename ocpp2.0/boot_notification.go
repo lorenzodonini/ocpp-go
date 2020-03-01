@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Boot Notification (CP -> CS) --------------------
+// -------------------- Boot Notification (CS -> CSMS) --------------------
 
 // Result of registration in response to a BootNotification request.
 type RegistrationStatus string
@@ -63,13 +63,13 @@ type ChargingStationType struct {
 	Modem           *ModemType `json:"modem,omitempty"`
 }
 
-// The field definition of the BootNotification request payload sent by the Charge Point to the CSMS.
+// The field definition of the BootNotification request payload sent by the Charging Station to the CSMS.
 type BootNotificationRequest struct {
 	Reason          BootReason          `json:"reason" validate:"required,bootReason"`
 	ChargingStation ChargingStationType `json:"chargingStation" validate:"required,dive"`
 }
 
-// The field definition of the BootNotification confirmation payload, sent by the CSMS to the Charge Point in response to a BootNotificationRequest.
+// The field definition of the BootNotification confirmation payload, sent by the CSMS to the Charging Station in response to a BootNotificationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type BootNotificationConfirmation struct {
 	CurrentTime *DateTime          `json:"currentTime" validate:"required"`
@@ -77,17 +77,17 @@ type BootNotificationConfirmation struct {
 	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
 }
 
-// After each (re)boot, a Charge Point SHALL send a request to the CSMS with information about its configuration (e.g. version, vendor, etc.).
-// The CSMS SHALL respond to indicate whether it will accept the Charge Point.
-// Between the physical power-on/reboot and the successful completion of a BootNotification, where CSMS returns Accepted or Pending, the Charge Point SHALL NOT send any other request to the CSMS.
+// After each (re)boot, a Charging Station SHALL send a request to the CSMS with information about its configuration (e.g. version, vendor, etc.).
+// The CSMS SHALL respond to indicate whether it will accept the Charging Station.
+// Between the physical power-on/reboot and the successful completion of a BootNotification, where CSMS returns Accepted or Pending, the Charging Station SHALL NOT send any other request to the CSMS.
 //
-// When the CSMS responds with a BootNotificationConfirmation with a status Accepted, the Charge Point will adjust the heartbeat
+// When the CSMS responds with a BootNotificationConfirmation with a status Accepted, the Charging Station will adjust the heartbeat
 // interval in accordance with the interval from the response PDU and it is RECOMMENDED to synchronize its internal clock with the supplied CSMS’s current time.
 //
-// If that interval value is zero, the Charge Point chooses a waiting interval on its own, in a way that avoids flooding the CSMS with requests.
-// If the CSMS returns the Pending status, the communication channel SHOULD NOT be closed by either the Charge Point or the CSMS.
+// If that interval value is zero, the Charging Station chooses a waiting interval on its own, in a way that avoids flooding the CSMS with requests.
+// If the CSMS returns the Pending status, the communication channel SHOULD NOT be closed by either the Charging Station or the CSMS.
 //
-// The CSMS MAY send request messages to retrieve information from the Charge Point or change its configuration.
+// The CSMS MAY send request messages to retrieve information from the Charging Station or change its configuration.
 type BootNotificationFeature struct{}
 
 func (f BootNotificationFeature) GetFeatureName() string {

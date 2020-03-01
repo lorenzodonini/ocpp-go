@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Clear Display (CSMS -> CP) --------------------
+// -------------------- Clear Display (CSMS -> CS) --------------------
 
 // Status returned in response to ClearDisplayRequest.
 type ClearMessageStatus string
