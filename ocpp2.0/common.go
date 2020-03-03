@@ -119,7 +119,7 @@ type AdditionalInfo struct {
 type IdToken struct {
 	IdToken        string           `json:"idToken" validate:"required,max=36"`
 	Type           IdTokenType      `json:"type" validate:"required,idTokenType"`
-	AdditionalInfo []AdditionalInfo `json:"additionalInfo,omitempty"`
+	AdditionalInfo []AdditionalInfo `json:"additionalInfo,omitempty" validate:"omitempty,dive"`
 }
 
 // Hash Algorithms
@@ -148,6 +148,14 @@ type OCSPRequestDataType struct {
 	IssuerKeyHash  string            `json:"issuerKeyHash" validate:"required,max=128"`
 	SerialNumber   string            `json:"serialNumber" validate:"required,max=20"`
 	ResponderURL   string            `json:"responderURL,omitempty" validate:"max=512"`
+}
+
+// CertificateHashDataType
+type CertificateHashData struct {
+	HashAlgorithm  HashAlgorithmType `json:"hashAlgorithm" validate:"required,hashAlgorithm"`
+	IssuerNameHash string            `json:"issuerNameHash" validate:"required,max=128"`
+	IssuerKeyHash  string            `json:"issuerKeyHash" validate:"required,max=128"`
+	SerialNumber   string            `json:"serialNumber" validate:"required,max=20"`
 }
 
 // CertificateStatus

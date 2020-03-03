@@ -16,6 +16,7 @@ const (
 	ClearedChargingLimitFeatureName    = "ClearedChargingLimit"
 	ClearVariableMonitoringFeatureName = "ClearVariableMonitoring"
 	CostUpdatedFeatureName             = "CostUpdated"
+	CustomerInformationFeatureName     = "CustomerInformation"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
 	// DataTransferFeatureName           = "DataTransfer"
 	// GetConfigurationFeatureName       = "GetConfiguration"
@@ -54,6 +55,7 @@ type ChargePointCoreListener interface {
 	OnClearChargingProfile(request *ClearChargingProfileRequest) (confirmation *ClearChargingProfileConfirmation, err error)
 	OnClearVariableMonitoring(request *ClearVariableMonitoringRequest) (confirmation *ClearVariableMonitoringConfirmation, err error)
 	OnCostUpdated(request *CostUpdatedRequest) (confirmation *CostUpdatedConfirmation, err error)
+	OnCustomerInformation(request *CustomerInformationRequest) (confirmation *CustomerInformationConfirmation, err error)
 	// OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
@@ -78,6 +80,7 @@ var CoreProfile = ocpp.NewProfile(
 	ClearedChargingLimitFeature{},
 	ClearVariableMonitoringFeature{},
 	CostUpdatedFeature{},
+	CustomerInformationFeature{},
 
 //DataTransferFeature{},
 //GetConfigurationFeature{},
