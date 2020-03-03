@@ -268,6 +268,12 @@ func (coreListener MockChargePointCoreListener) OnCostUpdated(request *ocpp2.Cos
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnCustomerInformation(request *ocpp2.CustomerInformationRequest) (confirmation *ocpp2.CustomerInformationConfirmation, err error) {
+	args := coreListener.MethodCalled("OnCustomerInformation", request)
+	conf := args.Get(0).(*ocpp2.CustomerInformationConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)
