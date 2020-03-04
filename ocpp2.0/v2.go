@@ -393,6 +393,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.coreListener.OnCustomerInformation(request.(*CustomerInformationRequest))
 	case DataTransferFeatureName:
 		confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
+	case DeleteCertificateFeatureName:
+		confirmation, err = cp.coreListener.OnDeleteCertificate(request.(*DeleteCertificateRequest))
 	//case GetConfigurationFeatureName:
 	//	confirmation, err = cp.coreListener.OnGetConfiguration(request.(*GetConfigurationRequest))
 	//case RemoteStartTransactionFeatureName:
@@ -498,6 +500,7 @@ type CSMS interface {
 	CostUpdated(clientId string, callback func(*CostUpdatedConfirmation, error), totalCost float64, transactionId string, props ...func(*CostUpdatedRequest)) error
 	CustomerInformation(clientId string, callback func(*CustomerInformationConfirmation, error), requestId int, report bool, clear bool, props ...func(*CustomerInformationRequest)) error
 	DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
+	DeleteCertificate(clientId string, callback func(*DeleteCertificateConfirmation, error), data CertificateHashData, props ...func(*DeleteCertificateRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
 	//RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error
@@ -709,6 +712,22 @@ func (cs *csms) DataTransfer(clientId string, callback func(confirmation *DataTr
 	}
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
+
+func (cs *csms) DeleteCertificate(clientId string, callback func(*DeleteCertificateConfirmation, error), data CertificateHashData, props ...func(*DeleteCertificateRequest)) error {
+	request := NewDeleteCertificateRequest(data)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*DeleteCertificateConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 //
 //// Retrieves the configuration values for the provided configuration keys.
 //func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirmation *GetConfigurationConfirmation, err error), keys []string, props ...func(request *GetConfigurationRequest)) error {
@@ -965,7 +984,7 @@ func (cs *csms) SetChargePointDisconnectedHandler(handler func(chargePointId str
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearChargingProfileFeatureName, ClearDisplayFeatureName, ClearVariableMonitoringFeatureName, CostUpdatedFeatureName, CustomerInformationFeatureName, DataTransferFeatureName:
+	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearChargingProfileFeatureName, ClearDisplayFeatureName, ClearVariableMonitoringFeatureName, CostUpdatedFeatureName, CustomerInformationFeatureName, DataTransferFeatureName, DeleteCertificateFeatureName:
 		break
 	//case ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
