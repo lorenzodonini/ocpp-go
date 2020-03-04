@@ -17,8 +17,8 @@ const (
 	ClearVariableMonitoringFeatureName = "ClearVariableMonitoring"
 	CostUpdatedFeatureName             = "CostUpdated"
 	CustomerInformationFeatureName     = "CustomerInformation"
-	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
-	DataTransferFeatureName           = "DataTransfer"
+	DataTransferFeatureName            = "DataTransfer"
+	DeleteCertificateFeatureName       = "DeleteCertificate"
 	// GetConfigurationFeatureName       = "GetConfiguration"
 	// HeartbeatFeatureName              = "Heartbeat"
 	// MeterValuesFeatureName            = "MeterValues"
@@ -57,6 +57,7 @@ type ChargePointCoreListener interface {
 	OnCostUpdated(request *CostUpdatedRequest) (confirmation *CostUpdatedConfirmation, err error)
 	OnCustomerInformation(request *CustomerInformationRequest) (confirmation *CustomerInformationConfirmation, err error)
 	OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
+	OnDeleteCertificate(request *DeleteCertificateRequest) (confirmation *DeleteCertificateConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
 	// OnRemoteStopTransaction(request *RemoteStopTransactionRequest) (confirmation *RemoteStopTransactionConfirmation, err error)
@@ -82,6 +83,7 @@ var CoreProfile = ocpp.NewProfile(
 	CostUpdatedFeature{},
 	CustomerInformationFeature{},
 	DataTransferFeature{},
+	DeleteCertificateFeature{},
 
 //GetConfigurationFeature{},
 //HeartbeatFeature{},

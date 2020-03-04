@@ -286,6 +286,12 @@ func (coreListener MockChargePointCoreListener) OnDataTransfer(request *ocpp2.Da
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnDeleteCertificate(request *ocpp2.DeleteCertificateRequest) (confirmation *ocpp2.DeleteCertificateConfirmation, err error) {
+	args := coreListener.MethodCalled("OnDeleteCertificate", request)
+	conf := args.Get(0).(*ocpp2.DeleteCertificateConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)
