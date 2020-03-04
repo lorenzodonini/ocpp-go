@@ -18,7 +18,7 @@ const (
 	CostUpdatedFeatureName             = "CostUpdated"
 	CustomerInformationFeatureName     = "CustomerInformation"
 	// ChangeConfigurationFeatureName    = "ChangeConfiguration"
-	// DataTransferFeatureName           = "DataTransfer"
+	DataTransferFeatureName           = "DataTransfer"
 	// GetConfigurationFeatureName       = "GetConfiguration"
 	// HeartbeatFeatureName              = "Heartbeat"
 	// MeterValuesFeatureName            = "MeterValues"
@@ -37,7 +37,7 @@ type CentralSystemCoreListener interface {
 	OnAuthorize(chargePointId string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
 	OnBootNotification(chargePointId string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
 	OnClearedChargingLimit(chargePointId string, request *ClearedChargingLimitRequest) (confirmation *ClearedChargingLimitConfirmation, err error)
-	// OnDataTransfer(chargePointId string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
+	OnDataTransfer(chargePointId string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	// OnHeartbeat(chargePointId string, request *HeartbeatRequest) (confirmation *HeartbeatConfirmation, err error)
 	// OnMeterValues(chargePointId string, request *MeterValuesRequest) (confirmation *MeterValuesConfirmation, err error)
 	// OnStatusNotification(chargePointId string, request *StatusNotificationRequest) (confirmation *StatusNotificationConfirmation, err error)
@@ -56,7 +56,7 @@ type ChargePointCoreListener interface {
 	OnClearVariableMonitoring(request *ClearVariableMonitoringRequest) (confirmation *ClearVariableMonitoringConfirmation, err error)
 	OnCostUpdated(request *CostUpdatedRequest) (confirmation *CostUpdatedConfirmation, err error)
 	OnCustomerInformation(request *CustomerInformationRequest) (confirmation *CustomerInformationConfirmation, err error)
-	// OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
+	OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
 	// OnRemoteStopTransaction(request *RemoteStopTransactionRequest) (confirmation *RemoteStopTransactionConfirmation, err error)
@@ -81,8 +81,8 @@ var CoreProfile = ocpp.NewProfile(
 	ClearVariableMonitoringFeature{},
 	CostUpdatedFeature{},
 	CustomerInformationFeature{},
+	DataTransferFeature{},
 
-//DataTransferFeature{},
 //GetConfigurationFeature{},
 //HeartbeatFeature{},
 //MeterValuesFeature{},

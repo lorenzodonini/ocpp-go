@@ -167,6 +167,12 @@ func (coreListener MockCentralSystemCoreListener) OnClearedChargingLimit(chargeP
 	return conf, args.Error(1)
 }
 
+func (coreListener MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
+	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
+	conf := args.Get(0).(*ocpp2.DataTransferConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
 //	conf := args.Get(0).(*ocpp2.DataTransferConfirmation)
@@ -271,6 +277,12 @@ func (coreListener MockChargePointCoreListener) OnCostUpdated(request *ocpp2.Cos
 func (coreListener MockChargePointCoreListener) OnCustomerInformation(request *ocpp2.CustomerInformationRequest) (confirmation *ocpp2.CustomerInformationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnCustomerInformation", request)
 	conf := args.Get(0).(*ocpp2.CustomerInformationConfirmation)
+	return conf, args.Error(1)
+}
+
+func (coreListener MockChargePointCoreListener) OnDataTransfer(request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
+	args := coreListener.MethodCalled("OnDataTransfer", request)
+	conf := args.Get(0).(*ocpp2.DataTransferConfirmation)
 	return conf, args.Error(1)
 }
 

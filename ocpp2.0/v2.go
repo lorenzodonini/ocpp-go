@@ -15,7 +15,7 @@ type ChargePoint interface {
 	BootNotification(reason BootReason, chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, error)
 	Authorize(idToken string, tokenType IdTokenType, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
 	ClearChargingLimit(chargingLimitSource ChargingLimitSourceType, props ...func(request *ClearedChargingLimitRequest)) (*ClearedChargingLimitConfirmation, error)
-	//DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
+	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
 	//Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
 	//MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error)
 	//StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
@@ -90,20 +90,19 @@ func (cp *chargePoint) ClearChargingLimit(chargingLimitSource ChargingLimitSourc
 	}
 }
 
-//
-//// Starts a custom data transfer request. Every vendor may implement their own proprietary logic for this message.
-//func (cp *chargePoint) DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error) {
-//	request := NewDataTransferRequest(vendorId)
-//	for _, fn := range props {
-//		fn(request)
-//	}
-//	confirmation, err := cp.SendRequest(request)
-//	if err != nil {
-//		return nil, err
-//	} else {
-//		return confirmation.(*DataTransferConfirmation), err
-//	}
-//}
+// Starts a custom data transfer request. Every vendor may implement their own proprietary logic for this message.
+func (cp *chargePoint) DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error) {
+	request := NewDataTransferRequest(vendorId)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*DataTransferConfirmation), err
+	}
+}
 //
 //// Notifies the central system that the charge point is still online. The central system's response is used for time synchronization purposes. It is recommended to perform this operation once every 24 hours.
 //func (cp *chargePoint) Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error) {
@@ -258,7 +257,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, BootNotificationFeatureName, ClearedChargingLimitFeatureName:
+	case AuthorizeFeatureName, BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -392,8 +391,8 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.coreListener.OnCostUpdated(request.(*CostUpdatedRequest))
 	case CustomerInformationFeatureName:
 		confirmation, err = cp.coreListener.OnCustomerInformation(request.(*CustomerInformationRequest))
-	//case DataTransferFeatureName:
-	//	confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
+	case DataTransferFeatureName:
+		confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
 	//case GetConfigurationFeatureName:
 	//	confirmation, err = cp.coreListener.OnGetConfiguration(request.(*GetConfigurationRequest))
 	//case RemoteStartTransactionFeatureName:
@@ -498,7 +497,7 @@ type CSMS interface {
 	ClearVariableMonitoring(clientId string, callback func(*ClearVariableMonitoringConfirmation, error), id []int, props ...func(*ClearVariableMonitoringRequest)) error
 	CostUpdated(clientId string, callback func(*CostUpdatedConfirmation, error), totalCost float64, transactionId string, props ...func(*CostUpdatedRequest)) error
 	CustomerInformation(clientId string, callback func(*CustomerInformationConfirmation, error), requestId int, report bool, clear bool, props ...func(*CustomerInformationRequest)) error
-	//DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
+	DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
 	//RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error
@@ -695,21 +694,21 @@ func (cs *csms) CustomerInformation(clientId string, callback func(*CustomerInfo
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-//// Starts a custom data transfer request. Every vendor may implement their own proprietary logic for this message.
-//func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, err error), vendorId string, props ...func(request *DataTransferRequest)) error {
-//	request := NewDataTransferRequest(vendorId)
-//	for _, fn := range props {
-//		fn(request)
-//	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
-//		if confirmation != nil {
-//			callback(confirmation.(*DataTransferConfirmation), protoError)
-//		} else {
-//			callback(nil, protoError)
-//		}
-//	}
-//	return cs.SendRequestAsync(clientId, request, genericCallback)
-//}
+// Starts a custom data transfer request. Every vendor may implement their own proprietary logic for this message.
+func (cs *csms) DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, err error), vendorId string, props ...func(request *DataTransferRequest)) error {
+	request := NewDataTransferRequest(vendorId)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*DataTransferConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
 //
 //// Retrieves the configuration values for the provided configuration keys.
 //func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirmation *GetConfigurationConfirmation, err error), keys []string, props ...func(request *GetConfigurationRequest)) error {
@@ -966,7 +965,7 @@ func (cs *csms) SetChargePointDisconnectedHandler(handler func(chargePointId str
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearChargingProfileFeatureName, ClearDisplayFeatureName, ClearVariableMonitoringFeatureName, CostUpdatedFeatureName, CustomerInformationFeatureName:
+	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearChargingProfileFeatureName, ClearDisplayFeatureName, ClearVariableMonitoringFeatureName, CostUpdatedFeatureName, CustomerInformationFeatureName, DataTransferFeatureName:
 		break
 	//case ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
@@ -1085,8 +1084,8 @@ func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request
 			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*AuthorizeRequest))
 		case ClearedChargingLimitFeatureName:
 			confirmation, err = cs.coreListener.OnClearedChargingLimit(chargePointId, request.(*ClearedChargingLimitRequest))
-		//case DataTransferFeatureName:
-		//	confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*DataTransferRequest))
+		case DataTransferFeatureName:
+			confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*DataTransferRequest))
 		//case HeartbeatFeatureName:
 		//	confirmation, err = cs.coreListener.OnHeartbeat(chargePointId, request.(*HeartbeatRequest))
 		//case MeterValuesFeatureName:
