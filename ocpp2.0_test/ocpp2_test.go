@@ -173,6 +173,12 @@ func (coreListener MockCentralSystemCoreListener) OnDataTransfer(chargePointId s
 	return conf, args.Error(1)
 }
 
+func (coreListener MockCentralSystemCoreListener) OnFirmwareStatusNotification(chargePointId string, request *ocpp2.FirmwareStatusNotificationRequest) (confirmation *ocpp2.FirmwareStatusNotificationConfirmation, err error) {
+	args := coreListener.MethodCalled("OnFirmwareStatusNotification", chargePointId, request)
+	conf := args.Get(0).(*ocpp2.FirmwareStatusNotificationConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
 //	conf := args.Get(0).(*ocpp2.DataTransferConfirmation)
