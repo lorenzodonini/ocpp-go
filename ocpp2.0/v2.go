@@ -16,6 +16,7 @@ type ChargePoint interface {
 	Authorize(idToken string, tokenType IdTokenType, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
 	ClearChargingLimit(chargingLimitSource ChargingLimitSourceType, props ...func(request *ClearedChargingLimitRequest)) (*ClearedChargingLimitConfirmation, error)
 	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
+	FirmwareStatusNotification(status FirmwareStatus, requestID int, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationConfirmation, error)
 	//Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
 	//MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error)
 	//StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
@@ -101,6 +102,19 @@ func (cp *chargePoint) DataTransfer(vendorId string, props ...func(request *Data
 		return nil, err
 	} else {
 		return confirmation.(*DataTransferConfirmation), err
+	}
+}
+
+func (cp *chargePoint) FirmwareStatusNotification(status FirmwareStatus, requestID int, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationConfirmation, error) {
+	request := NewFirmwareStatusNotificationRequest(status, requestID)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*FirmwareStatusNotificationConfirmation), err
 	}
 }
 //
@@ -257,7 +271,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName:
+	case AuthorizeFeatureName, BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName, FirmwareStatusNotificationFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -1105,6 +1119,8 @@ func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request
 			confirmation, err = cs.coreListener.OnClearedChargingLimit(chargePointId, request.(*ClearedChargingLimitRequest))
 		case DataTransferFeatureName:
 			confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*DataTransferRequest))
+		case FirmwareStatusNotificationFeatureName:
+			confirmation, err = cs.coreListener.OnFirmwareStatusNotification(chargePointId, request.(*FirmwareStatusNotificationRequest))
 		//case HeartbeatFeatureName:
 		//	confirmation, err = cs.coreListener.OnHeartbeat(chargePointId, request.(*HeartbeatRequest))
 		//case MeterValuesFeatureName:

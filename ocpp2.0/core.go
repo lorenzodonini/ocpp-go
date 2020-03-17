@@ -5,20 +5,21 @@ import (
 )
 
 const (
-	BootNotificationFeatureName        = "BootNotification"
-	AuthorizeFeatureName               = "Authorize"
-	CancelReservationFeatureName       = "CancelReservation"
-	CertificateSignedFeatureName       = "CertificateSigned"
-	ChangeAvailabilityFeatureName      = "ChangeAvailability"
-	ClearCacheFeatureName              = "ClearCache"
-	ClearDisplayFeatureName            = "ClearDisplay"
-	ClearChargingProfileFeatureName    = "ClearChargingProfile"
-	ClearedChargingLimitFeatureName    = "ClearedChargingLimit"
-	ClearVariableMonitoringFeatureName = "ClearVariableMonitoring"
-	CostUpdatedFeatureName             = "CostUpdated"
-	CustomerInformationFeatureName     = "CustomerInformation"
-	DataTransferFeatureName            = "DataTransfer"
-	DeleteCertificateFeatureName       = "DeleteCertificate"
+	BootNotificationFeatureName           = "BootNotification"
+	AuthorizeFeatureName                  = "Authorize"
+	CancelReservationFeatureName          = "CancelReservation"
+	CertificateSignedFeatureName          = "CertificateSigned"
+	ChangeAvailabilityFeatureName         = "ChangeAvailability"
+	ClearCacheFeatureName                 = "ClearCache"
+	ClearDisplayFeatureName               = "ClearDisplay"
+	ClearChargingProfileFeatureName       = "ClearChargingProfile"
+	ClearedChargingLimitFeatureName       = "ClearedChargingLimit"
+	ClearVariableMonitoringFeatureName    = "ClearVariableMonitoring"
+	CostUpdatedFeatureName                = "CostUpdated"
+	CustomerInformationFeatureName        = "CustomerInformation"
+	DataTransferFeatureName               = "DataTransfer"
+	DeleteCertificateFeatureName          = "DeleteCertificate"
+	FirmwareStatusNotificationFeatureName = "FirmwareStatusNotification"
 	// GetConfigurationFeatureName       = "GetConfiguration"
 	// HeartbeatFeatureName              = "Heartbeat"
 	// MeterValuesFeatureName            = "MeterValues"
@@ -38,6 +39,7 @@ type CentralSystemCoreListener interface {
 	OnBootNotification(chargePointId string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
 	OnClearedChargingLimit(chargePointId string, request *ClearedChargingLimitRequest) (confirmation *ClearedChargingLimitConfirmation, err error)
 	OnDataTransfer(chargePointId string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
+	OnFirmwareStatusNotification(chargePointId string, request *FirmwareStatusNotificationRequest) (confirmation *FirmwareStatusNotificationConfirmation, err error)
 	// OnHeartbeat(chargePointId string, request *HeartbeatRequest) (confirmation *HeartbeatConfirmation, err error)
 	// OnMeterValues(chargePointId string, request *MeterValuesRequest) (confirmation *MeterValuesConfirmation, err error)
 	// OnStatusNotification(chargePointId string, request *StatusNotificationRequest) (confirmation *StatusNotificationConfirmation, err error)
@@ -84,6 +86,7 @@ var CoreProfile = ocpp.NewProfile(
 	CustomerInformationFeature{},
 	DataTransferFeature{},
 	DeleteCertificateFeature{},
+	FirmwareStatusNotificationFeature{},
 
 //GetConfigurationFeature{},
 //HeartbeatFeature{},
