@@ -5,6 +5,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // Test
@@ -44,15 +45,16 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	coreListener := MockCentralSystemCoreListener{}
 	coreListener.On("OnFirmwareStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(firmwareStatusNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*ocpp2.FirmwareStatusNotificationRequest)
-		assert.True(t, ok)
+		require.True(t, ok)
 		assert.Equal(t, status, request.Status)
+		assert.Equal(t, requestID, request.RequestID)
 	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	confirmation, err := suite.chargePoint.FirmwareStatusNotification(status, requestID)
 	assert.Nil(t, err)
 	assert.NotNil(t, confirmation)
