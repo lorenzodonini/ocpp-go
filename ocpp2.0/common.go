@@ -181,6 +181,24 @@ func isValidCertificateStatus(fl validator.FieldLevel) bool {
 	}
 }
 
+// Certificate15118EVStatus
+type Certificate15118EVStatus string
+
+const (
+	Certificate15188EVStatusAccepted Certificate15118EVStatus = "Accepted"
+	Certificate15118EVStatusFailed   Certificate15118EVStatus = "Failed"
+)
+
+func isValidCertificate15118EVStatus(fl validator.FieldLevel) bool {
+	status := Certificate15118EVStatus(fl.Field().String())
+	switch status {
+	case Certificate15188EVStatusAccepted, Certificate15118EVStatusFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Indicates the type of the signed certificate that is returned.
 // When omitted the certificate is used for both the 15118 connection (if implemented) and the Charging Station to CSMS connection.
 // This field is required when a typeOfCertificate was included in the SignCertificateRequest that requested this certificate to be signed AND both the 15118 connection and the Charging Station connection are implemented.
@@ -566,4 +584,5 @@ func init() {
 	_ = Validate.RegisterValidation("location", isValidLocation)
 	_ = Validate.RegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
 	_ = Validate.RegisterValidation("certificateSigningUse", isValidCertificateSigningUse)
+	_ = Validate.RegisterValidation("15118EVCertificate", isValidCertificate15118EVStatus)
 }
