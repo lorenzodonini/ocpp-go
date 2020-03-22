@@ -41,11 +41,11 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateHashData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v"}}]`,
 		messageId, ocpp2.DeleteCertificateFeatureName, certificateHashData.HashAlgorithm, certificateHashData.IssuerNameHash, certificateHashData.IssuerKeyHash, certificateHashData.SerialNumber)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	DeleteCertificateConfirmation := ocpp2.NewDeleteCertificateConfirmation(status)
+	deleteCertificateConfirmation := ocpp2.NewDeleteCertificateConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnDeleteCertificate", mock.Anything).Return(DeleteCertificateConfirmation, nil).Run(func(args mock.Arguments) {
+	coreListener.On("OnDeleteCertificate", mock.Anything).Return(deleteCertificateConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*ocpp2.DeleteCertificateRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
@@ -75,8 +75,8 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 func (suite *OcppV2TestSuite) TestDeleteCertificateInvalidEndpoint() {
 	messageId := defaultMessageId
 	certificateHashData := ocpp2.CertificateHashData{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}
-	DeleteCertificateRequest := ocpp2.NewDeleteCertificateRequest(certificateHashData)
+	deleteCertificateRequest := ocpp2.NewDeleteCertificateRequest(certificateHashData)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateHashData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v"}}]`,
 		messageId, ocpp2.DeleteCertificateFeatureName, certificateHashData.HashAlgorithm, certificateHashData.IssuerNameHash, certificateHashData.IssuerKeyHash, certificateHashData.SerialNumber)
-	testUnsupportedRequestFromChargePoint(suite, DeleteCertificateRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargePoint(suite, deleteCertificateRequest, requestJson, messageId)
 }

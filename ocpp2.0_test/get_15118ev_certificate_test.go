@@ -53,11 +53,11 @@ func (suite *OcppV2TestSuite) TestGet15118EVCertificateE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"15118SchemaVersion":"%v","exiRequest":"%v"}]`, messageId, ocpp2.Get15118EVCertificateFeatureName, schemaVersion, exiRequest)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","exiResponse":"%v","contractSignatureCertificateChain":{"certificate":"%v"},"saProvisioningCertificateChain":{"certificate":"%v"}}]`,
 		messageId, status, exiResponse, contractSignatureCertificateChain.Certificate, saProvisioningCertificateChain.Certificate)
-	Get15118EVCertificateConfirmation := ocpp2.NewGet15118EVCertificateConfirmation(status, exiResponse, contractSignatureCertificateChain, saProvisioningCertificateChain)
+	get15118EVCertificateConfirmation := ocpp2.NewGet15118EVCertificateConfirmation(status, exiResponse, contractSignatureCertificateChain, saProvisioningCertificateChain)
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockCentralSystemCoreListener{}
-	coreListener.On("OnGet15118EVCertificate", mock.AnythingOfType("string"), mock.Anything).Return(Get15118EVCertificateConfirmation, nil).Run(func(args mock.Arguments) {
+	coreListener.On("OnGet15118EVCertificate", mock.AnythingOfType("string"), mock.Anything).Return(get15118EVCertificateConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*ocpp2.Get15118EVCertificateRequest)
 		require.True(t, ok)
 		assert.Equal(t, schemaVersion, request.SchemaVersion)
@@ -82,7 +82,7 @@ func (suite *OcppV2TestSuite) TestGet15118EVCertificateInvalidEndpoint() {
 	messageId := defaultMessageId
 	schemaVersion := "1.0"
 	exiRequest := "deadbeef"
-	firmwareStatusRequest := ocpp2.NewGet15118EVCertificateRequest(schemaVersion, exiRequest)
+	get15118EVCertificateRequest := ocpp2.NewGet15118EVCertificateRequest(schemaVersion, exiRequest)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"15118SchemaVersion":"%v","exiRequest":"%v"}]`, messageId, ocpp2.Get15118EVCertificateFeatureName, schemaVersion, exiRequest)
-	testUnsupportedRequestFromCentralSystem(suite, firmwareStatusRequest, requestJson, messageId)
+	testUnsupportedRequestFromCentralSystem(suite, get15118EVCertificateRequest, requestJson, messageId)
 }

@@ -81,7 +81,7 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringE2EMocked() {
 func (suite *OcppV2TestSuite) TestClearVariableMonitoringInvalidEndpoint() {
 	messageId := defaultMessageId
 	ids := []int{1,2}
-	ClearVariableMonitoringRequest := ocpp2.NewClearVariableMonitoringRequest(ids)
+	clearVariableMonitoringRequest := ocpp2.NewClearVariableMonitoringRequest(ids)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":[%v,%v]}]`, messageId, ocpp2.ClearVariableMonitoringFeatureName, ids[0], ids[1])
-	testUnsupportedRequestFromChargePoint(suite, ClearVariableMonitoringRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargePoint(suite, clearVariableMonitoringRequest, requestJson, messageId)
 }

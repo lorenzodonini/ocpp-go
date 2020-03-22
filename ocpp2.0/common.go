@@ -141,6 +141,24 @@ func isValidGenericDeviceModelStatus(fl validator.FieldLevel) bool {
 	}
 }
 
+// Generic Status
+type GenericStatus string
+
+const (
+	GenericStatusAccepted GenericStatus = "Accepted"
+	GenericStatusRejected GenericStatus = "Rejected"
+)
+
+func isValidGenericStatus(fl validator.FieldLevel) bool {
+	status := GenericStatus(fl.Field().String())
+	switch status {
+	case GenericStatusAccepted, GenericStatusRejected:
+		return true
+	default:
+		return false
+	}
+}
+
 // Hash Algorithms
 type HashAlgorithmType string
 
@@ -587,6 +605,7 @@ var Validate = ocppj.Validate
 func init() {
 	_ = Validate.RegisterValidation("idTokenType", isValidIdTokenType)
 	_ = Validate.RegisterValidation("genericDeviceModelStatus", isValidGenericDeviceModelStatus)
+	_ = Validate.RegisterValidation("genericStatus", isValidGenericStatus)
 	_ = Validate.RegisterValidation("hashAlgorithm", isValidHashAlgorithmType)
 	_ = Validate.RegisterValidation("certificateStatus", isValidCertificateStatus)
 	_ = Validate.RegisterValidation("messageFormat", isValidMessageFormatType)
