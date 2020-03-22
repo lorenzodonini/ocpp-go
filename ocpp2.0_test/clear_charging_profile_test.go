@@ -49,11 +49,11 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"chargingProfile":{"id":%v,"chargingProfilePurpose":"%v","stackLevel":%v}}]`,
 		messageId, ocpp2.ClearChargingProfileFeatureName, evseID, chargingProfileId, chargingProfilePurpose, stackLevel)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	ClearChargingProfileConfirmation := ocpp2.NewClearChargingProfileConfirmation(status)
+	clearChargingProfileConfirmation := ocpp2.NewClearChargingProfileConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnClearChargingProfile", mock.Anything).Return(ClearChargingProfileConfirmation, nil).Run(func(args mock.Arguments) {
+	coreListener.On("OnClearChargingProfile", mock.Anything).Return(clearChargingProfileConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*ocpp2.ClearChargingProfileRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)

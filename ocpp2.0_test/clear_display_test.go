@@ -39,11 +39,11 @@ func (suite *OcppV2TestSuite) TestClearDisplayE2EMocked() {
 	status := ocpp2.ClearMessageStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v}]`, messageId, ocpp2.ClearDisplayFeatureName, displayMessageId)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	ClearDisplayConfirmation := ocpp2.NewClearDisplayConfirmation(status)
+	clearDisplayConfirmation := ocpp2.NewClearDisplayConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnClearDisplay", mock.Anything).Return(ClearDisplayConfirmation, nil).Run(func(args mock.Arguments) {
+	coreListener.On("OnClearDisplay", mock.Anything).Return(clearDisplayConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*ocpp2.ClearDisplayRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
@@ -70,7 +70,7 @@ func (suite *OcppV2TestSuite) TestClearDisplayE2EMocked() {
 func (suite *OcppV2TestSuite) TestClearDisplayInvalidEndpoint() {
 	messageId := defaultMessageId
 	displayMessageId := 42
-	ClearDisplayRequest := ocpp2.NewClearDisplayRequest(displayMessageId)
+	clearDisplayRequest := ocpp2.NewClearDisplayRequest(displayMessageId)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v}]`, messageId, ocpp2.ClearDisplayFeatureName, displayMessageId)
-	testUnsupportedRequestFromChargePoint(suite, ClearDisplayRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargePoint(suite, clearDisplayRequest, requestJson, messageId)
 }

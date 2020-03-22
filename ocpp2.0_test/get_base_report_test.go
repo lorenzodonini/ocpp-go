@@ -42,11 +42,11 @@ func (suite *OcppV2TestSuite) TestGetBaseReportE2EMocked() {
 	status := ocpp2.GenericDeviceModelStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"reportBase":"%v"}]`, messageId, ocpp2.GetBaseReportFeatureName, requestID, reportBase)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	GetBaseReportConfirmation := ocpp2.NewGetBaseReportConfirmation(status)
+	getBaseReportConfirmation := ocpp2.NewGetBaseReportConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnGetBaseReport", mock.Anything).Return(GetBaseReportConfirmation, nil).Run(func(args mock.Arguments) {
+	coreListener.On("OnGetBaseReport", mock.Anything).Return(getBaseReportConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*ocpp2.GetBaseReportRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
@@ -75,7 +75,7 @@ func (suite *OcppV2TestSuite) TestGetBaseReportInvalidEndpoint() {
 	messageId := defaultMessageId
 	requestID := 42
 	reportBase := ocpp2.ReportTypeConfigurationInventory
-	GetBaseReportRequest := ocpp2.NewGetBaseReportRequest(requestID, reportBase)
+	getBaseReportRequest := ocpp2.NewGetBaseReportRequest(requestID, reportBase)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"reportBase":"%v"}]`, messageId, ocpp2.GetBaseReportFeatureName, requestID, reportBase)
-	testUnsupportedRequestFromChargePoint(suite, GetBaseReportRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargePoint(suite, getBaseReportRequest, requestJson, messageId)
 }

@@ -18,6 +18,7 @@ type ChargePoint interface {
 	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
 	FirmwareStatusNotification(status FirmwareStatus, requestID int, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationConfirmation, error)
 	Get15118EVCertificate(schemaVersion string, exiRequest string, props ...func(request *Get15118EVCertificateRequest)) (*Get15118EVCertificateConfirmation, error)
+	GetCertificateStatus(ocspRequestData OCSPRequestDataType, props ...func(request *GetCertificateStatusRequest)) (*GetCertificateStatusConfirmation, error)
 	//Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
 	//MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error)
 	//StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
@@ -129,6 +130,19 @@ func (cp *chargePoint) Get15118EVCertificate(schemaVersion string, exiRequest st
 		return nil, err
 	} else {
 		return confirmation.(*Get15118EVCertificateConfirmation), err
+	}
+}
+
+func (cp *chargePoint) GetCertificateStatus(ocspRequestData OCSPRequestDataType, props ...func(request *GetCertificateStatusRequest)) (*GetCertificateStatusConfirmation, error) {
+	request := NewGetCertificateStatusRequest(ocspRequestData)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*GetCertificateStatusConfirmation), err
 	}
 }
 
@@ -286,7 +300,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Confirmation, err
 // In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName, FirmwareStatusNotificationFeatureName, Get15118EVCertificateFeatureName:
+	case AuthorizeFeatureName, BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName, FirmwareStatusNotificationFeatureName, Get15118EVCertificateFeatureName, GetCertificateStatusFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -1156,6 +1170,8 @@ func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request
 			confirmation, err = cs.coreListener.OnFirmwareStatusNotification(chargePointId, request.(*FirmwareStatusNotificationRequest))
 		case Get15118EVCertificateFeatureName:
 			confirmation, err = cs.coreListener.OnGet15118EVCertificate(chargePointId, request.(*Get15118EVCertificateRequest))
+		case GetCertificateStatusFeatureName:
+			confirmation, err = cs.coreListener.OnGetCertificateStatus(chargePointId, request.(*GetCertificateStatusRequest))
 		//case HeartbeatFeatureName:
 		//	confirmation, err = cs.coreListener.OnHeartbeat(chargePointId, request.(*HeartbeatRequest))
 		//case MeterValuesFeatureName:

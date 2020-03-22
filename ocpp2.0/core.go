@@ -22,6 +22,7 @@ const (
 	FirmwareStatusNotificationFeatureName = "FirmwareStatusNotification"
 	Get15118EVCertificateFeatureName      = "Get15118EVCertificate"
 	GetBaseReportFeatureName              = "GetBaseReport"
+	GetCertificateStatusFeatureName       = "GetCertificateStatus"
 	// GetConfigurationFeatureName       = "GetConfiguration"
 	// HeartbeatFeatureName              = "Heartbeat"
 	// MeterValuesFeatureName            = "MeterValues"
@@ -43,6 +44,7 @@ type CentralSystemCoreListener interface {
 	OnDataTransfer(chargePointId string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	OnFirmwareStatusNotification(chargePointId string, request *FirmwareStatusNotificationRequest) (confirmation *FirmwareStatusNotificationConfirmation, err error)
 	OnGet15118EVCertificate(chargePointId string, request *Get15118EVCertificateRequest) (confirmation *Get15118EVCertificateConfirmation, err error)
+	OnGetCertificateStatus(chargePointId string, request *GetCertificateStatusRequest) (confirmation *GetCertificateStatusConfirmation, err error)
 	// OnHeartbeat(chargePointId string, request *HeartbeatRequest) (confirmation *HeartbeatConfirmation, err error)
 	// OnMeterValues(chargePointId string, request *MeterValuesRequest) (confirmation *MeterValuesConfirmation, err error)
 	// OnStatusNotification(chargePointId string, request *StatusNotificationRequest) (confirmation *StatusNotificationConfirmation, err error)
@@ -93,6 +95,7 @@ var CoreProfile = ocpp.NewProfile(
 	FirmwareStatusNotificationFeature{},
 	Get15118EVCertificateFeature{},
 	GetBaseReportFeature{},
+	GetCertificateStatusFeature{},
 
 //GetConfigurationFeature{},
 //HeartbeatFeature{},

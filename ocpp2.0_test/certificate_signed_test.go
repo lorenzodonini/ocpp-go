@@ -43,11 +43,11 @@ func (suite *OcppV2TestSuite) TestCertificateSignedE2EMocked() {
 	status := ocpp2.CertificateSignedStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"cert":["%v"],"typeOfCertificate":"%v"}]`, messageId, ocpp2.CertificateSignedFeatureName, certificate, certificateType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	CertificateSignedConfirmation := ocpp2.NewCertificateSignedConfirmation(status)
+	certificateSignedConfirmation := ocpp2.NewCertificateSignedConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
 	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnCertificateSigned", mock.Anything).Return(CertificateSignedConfirmation, nil).Run(func(args mock.Arguments) {
+	coreListener.On("OnCertificateSigned", mock.Anything).Return(certificateSignedConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*ocpp2.CertificateSignedRequest)
 		require.True(t, ok)
 		require.Len(t, request.Cert, 1)

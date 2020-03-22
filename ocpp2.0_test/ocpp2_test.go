@@ -185,6 +185,12 @@ func (coreListener MockCentralSystemCoreListener) OnGet15118EVCertificate(charge
 	return conf, args.Error(1)
 }
 
+func (coreListener MockCentralSystemCoreListener) OnGetCertificateStatus(chargePointId string, request *ocpp2.GetCertificateStatusRequest) (confirmation *ocpp2.GetCertificateStatusConfirmation, err error) {
+	args := coreListener.MethodCalled("OnGetCertificateStatus", chargePointId, request)
+	conf := args.Get(0).(*ocpp2.GetCertificateStatusConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
 //	conf := args.Get(0).(*ocpp2.DataTransferConfirmation)
