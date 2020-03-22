@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Firmware Status Notification (CS -> CSMS) --------------------
+// -------------------- Get 15118EV Certificate (CS -> CSMS) --------------------
 
 // Contains an X.509 certificate chain, each first DER encoded into binary, and then base64 encoded.
 type CertificateChain struct {
