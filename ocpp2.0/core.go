@@ -21,6 +21,7 @@ const (
 	DeleteCertificateFeatureName          = "DeleteCertificate"
 	FirmwareStatusNotificationFeatureName = "FirmwareStatusNotification"
 	Get15118EVCertificateFeatureName      = "Get15118EVCertificate"
+	GetBaseReportFeatureName              = "GetBaseReport"
 	// GetConfigurationFeatureName       = "GetConfiguration"
 	// HeartbeatFeatureName              = "Heartbeat"
 	// MeterValuesFeatureName            = "MeterValues"
@@ -62,6 +63,7 @@ type ChargePointCoreListener interface {
 	OnCustomerInformation(request *CustomerInformationRequest) (confirmation *CustomerInformationConfirmation, err error)
 	OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	OnDeleteCertificate(request *DeleteCertificateRequest) (confirmation *DeleteCertificateConfirmation, err error)
+	OnGetBaseReport(request *GetBaseReportRequest) (confirmation *GetBaseReportConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
 	// OnRemoteStopTransaction(request *RemoteStopTransactionRequest) (confirmation *RemoteStopTransactionConfirmation, err error)
@@ -90,6 +92,7 @@ var CoreProfile = ocpp.NewProfile(
 	DeleteCertificateFeature{},
 	FirmwareStatusNotificationFeature{},
 	Get15118EVCertificateFeature{},
+	GetBaseReportFeature{},
 
 //GetConfigurationFeature{},
 //HeartbeatFeature{},

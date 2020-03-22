@@ -122,6 +122,25 @@ type IdToken struct {
 	AdditionalInfo []AdditionalInfo `json:"additionalInfo,omitempty" validate:"omitempty,dive"`
 }
 
+// Generic Device Model Status
+type GenericDeviceModelStatus string
+
+const (
+	GenericDeviceModelStatusAccepted     GenericDeviceModelStatus = "Accepted"
+	GenericDeviceModelStatusRejected     GenericDeviceModelStatus = "Rejected"
+	GenericDeviceModelStatusNotSupported GenericDeviceModelStatus = "NotSupported"
+)
+
+func isValidGenericDeviceModelStatus(fl validator.FieldLevel) bool {
+	status := GenericDeviceModelStatus(fl.Field().String())
+	switch status {
+	case GenericDeviceModelStatusAccepted, GenericDeviceModelStatusRejected, GenericDeviceModelStatusNotSupported:
+		return true
+	default:
+		return false
+	}
+}
+
 // Hash Algorithms
 type HashAlgorithmType string
 
@@ -567,6 +586,7 @@ var Validate = ocppj.Validate
 
 func init() {
 	_ = Validate.RegisterValidation("idTokenType", isValidIdTokenType)
+	_ = Validate.RegisterValidation("genericDeviceModelStatus", isValidGenericDeviceModelStatus)
 	_ = Validate.RegisterValidation("hashAlgorithm", isValidHashAlgorithmType)
 	_ = Validate.RegisterValidation("certificateStatus", isValidCertificateStatus)
 	_ = Validate.RegisterValidation("messageFormat", isValidMessageFormatType)
