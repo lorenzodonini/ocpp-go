@@ -316,6 +316,12 @@ func (coreListener MockChargePointCoreListener) OnGetBaseReport(request *ocpp2.G
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnGetChargingProfiles(request *ocpp2.GetChargingProfilesRequest) (confirmation *ocpp2.GetChargingProfilesConfirmation, err error) {
+	args := coreListener.MethodCalled("OnGetChargingProfiles", request)
+	conf := args.Get(0).(*ocpp2.GetChargingProfilesConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)
