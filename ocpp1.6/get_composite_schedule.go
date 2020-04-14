@@ -35,10 +35,10 @@ type GetCompositeScheduleRequest struct {
 // This field definition of the GetCompositeSchedule confirmation payload, sent by the Charge Point to the Central System in response to a GetCompositeScheduleRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetCompositeScheduleConfirmation struct {
-	Status           GetCompositeScheduleStatus `json:"status" validate:"required,chargingProfileStatus"`
+	Status           GetCompositeScheduleStatus `json:"status" validate:"required,compositeScheduleStatus"`
 	ConnectorId      int                        `json:"connectorId,omitempty" validate:"omitempty,gt=0"`
 	ScheduleStart    *DateTime                  `json:"scheduleStart,omitempty"`
-	ChargingSchedule *ChargingSchedule          `json:"chargingSchedule,omitempty" validate:"omitempty,dive"`
+	ChargingSchedule *ChargingSchedule          `json:"chargingSchedule,omitempty" validate:"omitempty"`
 }
 
 // The Central System MAY request the Charge Point to report the Composite Charging Schedule by sending a GetCompositeScheduleRequest.
@@ -79,5 +79,5 @@ func NewGetCompositeScheduleConfirmation(status GetCompositeScheduleStatus) *Get
 }
 
 func init() {
-	_ = Validate.RegisterValidation("chargingProfileStatus", isValidChargingProfileStatus)
+	_ = Validate.RegisterValidation("compositeScheduleStatus", isValidGetCompositeScheduleStatus)
 }
