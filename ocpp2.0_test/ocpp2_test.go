@@ -322,6 +322,12 @@ func (coreListener MockChargePointCoreListener) OnGetChargingProfiles(request *o
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnGetCompositeSchedule(request *ocpp2.GetCompositeScheduleRequest) (confirmation *ocpp2.GetCompositeScheduleConfirmation, err error) {
+	args := coreListener.MethodCalled("OnGetCompositeSchedule", request)
+	conf := args.Get(0).(*ocpp2.GetCompositeScheduleConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)
