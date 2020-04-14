@@ -65,7 +65,7 @@ func NewCertificateSignedRequest(certificate []string) *CertificateSignedRequest
 	return &CertificateSignedRequest{Cert: certificate}
 }
 
-// Creates a new ChangeAvailabilityConfirmation, containing all required fields. There are no optional fields for this message.
+// Creates a new CertificateSignedConfirmation, containing all required fields. There are no optional fields for this message.
 func NewCertificateSignedConfirmation(status CertificateSignedStatus) *CertificateSignedConfirmation {
 	return &CertificateSignedConfirmation{Status: status}
 }

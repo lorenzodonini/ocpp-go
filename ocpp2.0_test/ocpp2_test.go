@@ -334,6 +334,12 @@ func (coreListener MockChargePointCoreListener) OnGetDisplayMessages(request *oc
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnGetInstalledCertificateIds(request *ocpp2.GetInstalledCertificateIdsRequest) (confirmation *ocpp2.GetInstalledCertificateIdsConfirmation, err error) {
+	args := coreListener.MethodCalled("OnGetInstalledCertificateIds", request)
+	conf := args.Get(0).(*ocpp2.GetInstalledCertificateIdsConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)

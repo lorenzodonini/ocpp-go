@@ -256,6 +256,29 @@ func isValidCertificateSigningUse(fl validator.FieldLevel) bool {
 	}
 }
 
+// Indicates the type of the requested certificate.
+// It is used in GetInstalledCertificateIdsRequest and InstallCertificateRequest messages.
+type CertificateUse string
+
+const (
+	V2GRootCertificate          CertificateUse = "V2GRootCertificate"
+	MORootCertificate           CertificateUse = "MORootCertificate"
+	CSOSubCA1                   CertificateUse = "CSOSubCA1"
+	CSOSubCA2                   CertificateUse = "CSOSubCA2"
+	CSMSRootCertificate         CertificateUse = "CSMSRootCertificate"
+	ManufacturerRootCertificate CertificateUse = "ManufacturerRootCertificate"
+)
+
+func isValidCertificateUse(fl validator.FieldLevel) bool {
+	use := CertificateUse(fl.Field().String())
+	switch use {
+	case V2GRootCertificate, MORootCertificate, CSOSubCA1, CSOSubCA2, CSMSRootCertificate, ManufacturerRootCertificate:
+		return true
+	default:
+		return false
+	}
+}
+
 // ID Token Info
 type MessageFormatType string
 
@@ -623,5 +646,6 @@ func init() {
 	_ = Validate.RegisterValidation("location", isValidLocation)
 	_ = Validate.RegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
 	_ = Validate.RegisterValidation("certificateSigningUse", isValidCertificateSigningUse)
+	_ = Validate.RegisterValidation("certificateUse", isValidCertificateUse)
 	_ = Validate.RegisterValidation("15118EVCertificate", isValidCertificate15118EVStatus)
 }
