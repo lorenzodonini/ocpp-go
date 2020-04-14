@@ -10,6 +10,10 @@ func newInt(i int) *int{
 	return &i
 }
 
+func newFloat(f float64) *float64{
+	return &f
+}
+
 // Test
 func (suite *OcppV2TestSuite) TestIdTokenInfoValidation() {
 	var testTable = []GenericTestEntry{
@@ -42,13 +46,13 @@ func (suite *OcppV2TestSuite) TestIdTokenInfoValidation() {
 func (suite *OcppV2TestSuite) TestChargingSchedulePeriodValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: 3}, true},
+		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(3)}, true},
 		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0}, true},
 		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0}, true},
 		{ocpp2.ChargingSchedulePeriod{}, true},
 		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: -1.0}, false},
 		{ocpp2.ChargingSchedulePeriod{StartPeriod: -1, Limit: 10.0}, false},
-		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: -1}, false},
+		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(-1)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -59,15 +63,15 @@ func (suite *OcppV2TestSuite) TestChargingScheduleValidation() {
 	chargingSchedulePeriods[0] = ocpp2.NewChargingSchedulePeriod(0, 10.0)
 	chargingSchedulePeriods[1] = ocpp2.NewChargingSchedulePeriod(100, 8.0)
 	var testTable = []GenericTestEntry{
-		{ocpp2.ChargingSchedule{Duration: 0, StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: 1.0}, true},
-		{ocpp2.ChargingSchedule{Duration: 0, ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: 1.0}, true},
-		{ocpp2.ChargingSchedule{Duration: 0, ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods}, true},
-		{ocpp2.ChargingSchedule{Duration: 0, ChargingRateUnit: ocpp2.ChargingRateUnitWatts}, false},
-		{ocpp2.ChargingSchedule{Duration: 0, ChargingSchedulePeriod: chargingSchedulePeriods}, false},
-		{ocpp2.ChargingSchedule{Duration: -1, StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: 1.0}, false},
-		{ocpp2.ChargingSchedule{Duration: 0, StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: -1.0}, false},
-		{ocpp2.ChargingSchedule{Duration: 0, StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: make([]ocpp2.ChargingSchedulePeriod, 0), MinChargingRate: 1.0}, false},
-		{ocpp2.ChargingSchedule{Duration: -1, StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: "invalidChargeRateUnit", ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: 1.0}, false},
+		{ocpp2.ChargingSchedule{Duration: newInt(0), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
+		{ocpp2.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
+		{ocpp2.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods}, true},
+		{ocpp2.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: ocpp2.ChargingRateUnitWatts}, false},
+		{ocpp2.ChargingSchedule{Duration: newInt(0), ChargingSchedulePeriod: chargingSchedulePeriods}, false},
+		{ocpp2.ChargingSchedule{Duration: newInt(-1), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, false},
+		{ocpp2.ChargingSchedule{Duration: newInt(0), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(-1.0)}, false},
+		{ocpp2.ChargingSchedule{Duration: newInt(0), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: make([]ocpp2.ChargingSchedulePeriod, 0), MinChargingRate: newFloat(1.0)}, false},
+		{ocpp2.ChargingSchedule{Duration: newInt(-1), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: "invalidChargeRateUnit", ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
