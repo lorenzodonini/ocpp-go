@@ -328,6 +328,12 @@ func (coreListener MockChargePointCoreListener) OnGetCompositeSchedule(request *
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnGetDisplayMessages(request *ocpp2.GetDisplayMessagesRequest) (confirmation *ocpp2.GetDisplayMessagesConfirmation, err error) {
+	args := coreListener.MethodCalled("OnGetDisplayMessages", request)
+	conf := args.Get(0).(*ocpp2.GetDisplayMessagesConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)

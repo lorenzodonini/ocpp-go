@@ -41,11 +41,11 @@ type GetCompositeScheduleConfirmation struct {
 	ChargingSchedule *ChargingSchedule          `json:"chargingSchedule,omitempty" validate:"omitempty"`
 }
 
-// The Central System MAY request the Charge Point to report the Composite Charging Schedule by sending a GetCompositeScheduleRequest.
-// The Charge Point SHALL calculate the Composite Charging Schedule intervals, from the moment the request payload is received: Time X, up to X + Duration, and send them in the GetCompositeScheduleConfirmation to the Central System.
-// The reported schedule, in the GetCompositeScheduleConfirmation payload, is the result of the calculation of all active schedules and possible local limits present in the Charge Point.
-// If the ConnectorId in the request is set to '0', the Charge Point SHALL report the total expected power or current the Charge Point expects to consume from the grid during the requested time period.
-// If the Charge Point is not able to report the requested schedule, for instance if the connectorId is unknown, it SHALL respond with a status Rejected.
+// The CSMS requests the Charging Station to report the Composite Charging Schedule by sending a GetCompositeScheduleRequest.
+// The Charging Station calculates the schedule, according to the parameters specified in the request.
+// The composite schedule is the result of the calculation of all active schedules and possible local limits present in the Charging Station.
+// The Charging Station responds with a GetCompositeScheduleResponse with the status and ChargingSchedule.
+// If the Charging Station is not able to report the requested schedule, for instance if the evseID is unknown, it SHALL respond with a status Rejected.
 type GetCompositeScheduleFeature struct{}
 
 func (f GetCompositeScheduleFeature) GetFeatureName() string {
