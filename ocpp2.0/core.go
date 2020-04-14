@@ -25,6 +25,7 @@ const (
 	GetCertificateStatusFeatureName       = "GetCertificateStatus"
 	GetChargingProfilesFeatureName        = "GetChargingProfiles"
 	GetCompositeScheduleFeatureName       = "GetCompositeSchedule"
+	GetDisplayMessagesFeatureName         = "GetDisplayMessages"
 	// GetConfigurationFeatureName       = "GetConfiguration"
 	// HeartbeatFeatureName              = "Heartbeat"
 	// MeterValuesFeatureName            = "MeterValues"
@@ -70,6 +71,7 @@ type ChargePointCoreListener interface {
 	OnGetBaseReport(request *GetBaseReportRequest) (confirmation *GetBaseReportConfirmation, err error)
 	OnGetChargingProfiles(request *GetChargingProfilesRequest) (confirmation *GetChargingProfilesConfirmation, err error)
 	OnGetCompositeSchedule(request *GetCompositeScheduleRequest) (confirmation *GetCompositeScheduleConfirmation, err error)
+	OnGetDisplayMessages(request *GetDisplayMessagesRequest) (confirmation *GetDisplayMessagesConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
 	// OnRemoteStopTransaction(request *RemoteStopTransactionRequest) (confirmation *RemoteStopTransactionConfirmation, err error)
@@ -102,6 +104,7 @@ var CoreProfile = ocpp.NewProfile(
 	GetCertificateStatusFeature{},
 	GetChargingProfilesFeature{},
 	GetCompositeScheduleFeature{},
+	GetDisplayMessagesFeature{},
 
 //GetConfigurationFeature{},
 //HeartbeatFeature{},
