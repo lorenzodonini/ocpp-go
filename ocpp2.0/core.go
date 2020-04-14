@@ -27,6 +27,7 @@ const (
 	GetCompositeScheduleFeatureName       = "GetCompositeSchedule"
 	GetDisplayMessagesFeatureName         = "GetDisplayMessages"
 	GetInstalledCertificateIdsFeatureName = "GetInstalledCertificateIds"
+	GetLocalListVersionFeatureName        = "GetLocalListVersion"
 	// GetConfigurationFeatureName       = "GetConfiguration"
 	// HeartbeatFeatureName              = "Heartbeat"
 	// MeterValuesFeatureName            = "MeterValues"
@@ -74,6 +75,7 @@ type ChargePointCoreListener interface {
 	OnGetCompositeSchedule(request *GetCompositeScheduleRequest) (confirmation *GetCompositeScheduleConfirmation, err error)
 	OnGetDisplayMessages(request *GetDisplayMessagesRequest) (confirmation *GetDisplayMessagesConfirmation, err error)
 	OnGetInstalledCertificateIds(request *GetInstalledCertificateIdsRequest) (confirmation *GetInstalledCertificateIdsConfirmation, err error)
+	OnGetLocalListVersion(request *GetLocalListVersionRequest) (confirmation *GetLocalListVersionConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
 	// OnRemoteStopTransaction(request *RemoteStopTransactionRequest) (confirmation *RemoteStopTransactionConfirmation, err error)
@@ -108,6 +110,7 @@ var CoreProfile = ocpp.NewProfile(
 	GetCompositeScheduleFeature{},
 	GetDisplayMessagesFeature{},
 	GetInstalledCertificateIdsFeature{},
+	GetLocalListVersionFeature{},
 
 //GetConfigurationFeature{},
 //HeartbeatFeature{},

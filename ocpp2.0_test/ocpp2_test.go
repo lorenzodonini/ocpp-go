@@ -340,6 +340,12 @@ func (coreListener MockChargePointCoreListener) OnGetInstalledCertificateIds(req
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnGetLocalListVersion(request *ocpp2.GetLocalListVersionRequest) (confirmation *ocpp2.GetLocalListVersionConfirmation, err error) {
+	args := coreListener.MethodCalled("OnGetLocalListVersion", request)
+	conf := args.Get(0).(*ocpp2.GetLocalListVersionConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)
