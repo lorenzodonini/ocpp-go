@@ -346,6 +346,12 @@ func (coreListener MockChargePointCoreListener) OnGetLocalListVersion(request *o
 	return conf, args.Error(1)
 }
 
+func (coreListener MockChargePointCoreListener) OnGetLog(request *ocpp2.GetLogRequest) (confirmation *ocpp2.GetLogConfirmation, err error) {
+	args := coreListener.MethodCalled("OnGetLog", request)
+	conf := args.Get(0).(*ocpp2.GetLogConfirmation)
+	return conf, args.Error(1)
+}
+
 //func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnGetConfiguration", request)
 //	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)
