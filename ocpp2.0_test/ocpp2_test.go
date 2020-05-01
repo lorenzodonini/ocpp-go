@@ -562,7 +562,7 @@ type expectedChargePointOptions struct {
 
 func setupDefaultCentralSystemHandlers(suite *OcppV2TestSuite, coreListener ocpp2.CentralSystemCoreListener, options expectedCentralSystemOptions) {
 	t := suite.T()
-	suite.csms.SetNewChargePointHandler(func(chargePointId string) {
+	suite.csms.SetNewChargingStationHandler(func(chargePointId string) {
 		assert.Equal(t, options.clientId, chargePointId)
 	})
 	suite.csms.SetCentralSystemCoreListener(coreListener)
@@ -721,7 +721,7 @@ type OcppV2TestSuite struct {
 	ocppjCentralSystem *ocppj.CentralSystem
 	mockWsServer       *MockWebsocketServer
 	mockWsClient       *MockWebsocketClient
-	chargePoint        ocpp2.ChargePoint
+	chargePoint        ocpp2.ChargingStation
 	csms               ocpp2.CSMS
 	messageIdGenerator TestRandomIdGenerator
 }
@@ -749,7 +749,7 @@ func (suite *OcppV2TestSuite) SetupTest() {
 	suite.mockWsServer = &mockServer
 	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile)
 	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile)
-	suite.chargePoint = ocpp2.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
+	suite.chargePoint = ocpp2.NewChargingStation("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.csms = ocpp2.NewCSMS(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
 		return defaultMessageId

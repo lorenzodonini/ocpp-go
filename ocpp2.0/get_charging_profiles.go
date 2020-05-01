@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Get Charging Profile (CSMS -> Charging Station) --------------------
+// -------------------- Get Charging Profiles (CSMS -> Charging Station) --------------------
 
 // Status reported in GetChargingProfilesConfirmation.
 type GetChargingProfileStatus string

@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Change Availability (CSMS -> CS) --------------------
+// -------------------- Get Base Report (CSMS -> CS) --------------------
 
 // Requested availability change in GetBaseReportRequest.
 type ReportBaseType string
