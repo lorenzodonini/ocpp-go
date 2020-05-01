@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Certificate Signed (CSMS -> CS) --------------------
+// -------------------- Get Installed Certificate IDs (CSMS -> CS) --------------------
 
 // Status returned in response to GetInstalledCertificateIdsRequest, that indicates whether certificate signing has been accepted or rejected.
 type GetInstalledCertificateStatus string

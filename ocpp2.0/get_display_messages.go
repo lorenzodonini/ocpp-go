@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Clear Display (CSMS -> CS) --------------------
+// -------------------- Get Display Messages (CSMS -> CS) --------------------
 
 // Priority with which a message should be displayed on a Charging Station.
 // Used within a GetDisplayMessagesRequest.
