@@ -76,6 +76,29 @@ func (suite *OcppV2TestSuite) TestChargingScheduleValidation() {
 	ExecuteGenericTestTable(t, testTable)
 }
 
+func (suite *OcppV2TestSuite) TestComponentVariableValidation() {
+	t := suite.T()
+	var testTable = []GenericTestEntry{
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, true},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2}}, Variable:  ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, true},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", EVSE: &ocpp2.EVSE{ID: 2}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, true},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", EVSE: &ocpp2.EVSE{ID: 2}}, Variable: ocpp2.Variable{ Name: "variable1"}}, true},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", EVSE: &ocpp2.EVSE{}}, Variable: ocpp2.Variable{ Name: "variable1"}}, true},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1"}, Variable: ocpp2.Variable{ Name: "variable1"}}, true},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1"}, Variable: ocpp2.Variable{}}, false},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{}, Variable:  ocpp2.Variable{ Name: "variable1"}}, false},
+		{ocpp2.ComponentVariable{Variable:  ocpp2.Variable{ Name: "variable1"}}, false},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1"}}, false},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: ">50................................................", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, false},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: ">50................................................", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, false},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: ">50................................................", Instance: "instance1"}}, false},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: ">50................................................"}}, false},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(-2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, false},
+		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: -2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, false},
+	}
+	ExecuteGenericTestTable(t, testTable)
+}
+
 func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
 	t := suite.T()
 	chargingSchedule := ocpp2.NewChargingSchedule(ocpp2.ChargingRateUnitWatts, ocpp2.NewChargingSchedulePeriod(0, 10.0), ocpp2.NewChargingSchedulePeriod(100, 8.0))
