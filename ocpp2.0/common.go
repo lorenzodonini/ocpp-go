@@ -320,8 +320,34 @@ type IdTokenInfo struct {
 	PersonalMessage     *MessageContent     `json:"personalMessage,omitempty"`
 }
 
+// NewIdTokenInfo creates an IdTokenInfo. Optional parameters may be set afterwards on the initialized struct.
 func NewIdTokenInfo(status AuthorizationStatus) *IdTokenInfo {
 	return &IdTokenInfo{Status: status}
+}
+
+// EVSE represents the Electric Vehicle Supply Equipment, formerly referred to as connector(s).
+type EVSE struct {
+	ID          int  `json:"id" validate:"gte=0"`                              // The EVSE Identifier. When 0, the ID references the Charging Station as a whole.
+	ConnectorID *int `json:"connectorId,omitempty" validate:"omitempty,gte=0"` // An id to designate a specific connector (on an EVSE) by connector index number.
+}
+
+// Component represents a physical or logical component.
+type Component struct {
+	Name     string `json:"name" validate:"required,max=50"`                // Name of the component. Name should be taken from the list of standardized component names whenever possible. Case Insensitive. strongly advised to use Camel Case.
+	Instance string `json:"instance,omitempty" validate:"omitempty,max=50"` // Name of instance in case the component exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
+	EVSE     *EVSE  `json:"evse,omitempty" validate:"omitempty"`            // Specifies the EVSE when component is located at EVSE level, also specifies the connector when component is located at Connector level.
+}
+
+// Variable is a reference key to a component-variable.
+type Variable struct {
+	Name     string `json:"name" validate:"required,max=50"`                // Name of the variable. Name should be taken from the list of standardized variable names whenever possible. Case Insensitive. strongly advised to use Camel Case.
+	Instance string `json:"instance,omitempty" validate:"omitempty,max=50"` // Name of instance in case the variable exists as multiple instances. Case Insensitive. strongly advised to use Camel Case.
+}
+
+// ComponentVariable is used to report components, variables and variable attributes and characteristics.
+type ComponentVariable struct {
+	Component Component `json:"component" validate:"required"` // Component for which a report of Variable is requested.
+	Variable  Variable  `json:"variable" validate:"required"`  // Variable for which report is requested.
 }
 
 // Charging Profiles
@@ -622,7 +648,8 @@ func validateDateTimeLt(dateTime DateTime, than time.Time) bool {
 	return dateTime.Before(than)
 }
 
-// Initialize validator
+// Validator used for validating all OCPP 2.0 messages.
+// Any additional custom validations must be added to this object for automatic validation.
 var Validate = ocppj.Validate
 
 func init() {
