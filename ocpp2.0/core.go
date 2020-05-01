@@ -29,6 +29,7 @@ const (
 	GetInstalledCertificateIdsFeatureName = "GetInstalledCertificateIds"
 	GetLocalListVersionFeatureName        = "GetLocalListVersion"
 	GetLogFeatureName                     = "GetLog"
+	GetMonitoringReportFeatureName        = "GetMonitoringReport"
 	// GetConfigurationFeatureName       = "GetConfiguration"
 	// HeartbeatFeatureName              = "Heartbeat"
 	// MeterValuesFeatureName            = "MeterValues"
@@ -78,6 +79,7 @@ type ChargePointCoreListener interface {
 	OnGetInstalledCertificateIds(request *GetInstalledCertificateIdsRequest) (confirmation *GetInstalledCertificateIdsConfirmation, err error)
 	OnGetLocalListVersion(request *GetLocalListVersionRequest) (confirmation *GetLocalListVersionConfirmation, err error)
 	OnGetLog(request *GetLogRequest) (confirmation *GetLogConfirmation, err error)
+	OnGetMonitoringReport(request *GetMonitoringReportRequest) (confirmation *GetMonitoringReportConfirmation, err error)
 	// OnGetConfiguration(request *GetConfigurationRequest) (confirmation *GetConfigurationConfirmation, err error)
 	// OnRemoteStartTransaction(request *RemoteStartTransactionRequest) (confirmation *RemoteStartTransactionConfirmation, err error)
 	// OnRemoteStopTransaction(request *RemoteStopTransactionRequest) (confirmation *RemoteStopTransactionConfirmation, err error)
@@ -113,6 +115,7 @@ var CoreProfile = ocpp.NewProfile(
 	GetInstalledCertificateIdsFeature{},
 	GetLocalListVersionFeature{},
 	GetLogFeature{},
+	GetMonitoringReportFeature{},
 
 //GetConfigurationFeature{},
 //HeartbeatFeature{},
