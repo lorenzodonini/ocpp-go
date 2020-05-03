@@ -112,7 +112,7 @@ func (c BootNotificationConfirmation) GetFeatureName() string {
 
 // Creates a new BootNotificationRequest, containing all required fields. Optional fields may be set afterwards.
 func NewBootNotificationRequest(reason BootReason, model string, vendorName string) *BootNotificationRequest {
-	return &BootNotificationRequest{Reason: reason, ChargingStation:ChargingStationType{Model: model, VendorName: vendorName}}
+	return &BootNotificationRequest{Reason: reason, ChargingStation: ChargingStationType{Model: model, VendorName: vendorName}}
 }
 
 // Creates a new BootNotificationConfirmation. There are no optional fields for this message.

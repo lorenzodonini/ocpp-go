@@ -55,7 +55,7 @@ func (suite *OcppV2TestSuite) TestClearedChargingLimitE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.ClearChargingLimit(chargingLimitSource, func(request *ocpp2.ClearedChargingLimitRequest) {
+	confirmation, err := suite.chargePoint.ClearedChargingLimit(chargingLimitSource, func(request *ocpp2.ClearedChargingLimitRequest) {
 		request.EvseID = newInt(evseID)
 	})
 	require.Nil(t, err)

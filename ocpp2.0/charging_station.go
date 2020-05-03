@@ -8,20 +8,14 @@ import (
 )
 
 type chargingStation struct {
-	client       *ocppj.ChargePoint
-	coreListener ChargePointCoreListener
-	//localAuthListListener ChargePointLocalAuthListListener
-	//firmwareListener      ChargePointFirmwareManagementListener
-	//reservationListener   ChargePointReservationListener
-	//remoteTriggerListener ChargePointRemoteTriggerListener
-	//smartChargingListener ChargePointSmartChargingListener
+	client               *ocppj.ChargePoint
+	messageHandler       ChargingStationHandler
 	confirmationListener chan ocpp.Confirmation
 	errorListener        chan error
 }
 
-// Sends a BootNotificationRequest to the central system, along with information about the charge point.
-func (cp *chargingStation) BootNotification(reason BootReason, chargePointModel string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, error) {
-	request := NewBootNotificationRequest(reason, chargePointModel, chargePointVendor)
+func (cp *chargingStation) BootNotification(reason BootReason, model string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, error) {
+	request := NewBootNotificationRequest(reason, model, chargePointVendor)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -33,7 +27,6 @@ func (cp *chargingStation) BootNotification(reason BootReason, chargePointModel 
 	}
 }
 
-// Requests explicit authorization to the central system, provided a valid IdTag (typically the client's). The central system may either authorize or reject the client.
 func (cp *chargingStation) Authorize(idToken string, tokenType IdTokenType, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error) {
 	request := NewAuthorizationRequest(idToken, tokenType)
 	for _, fn := range props {
@@ -47,7 +40,7 @@ func (cp *chargingStation) Authorize(idToken string, tokenType IdTokenType, prop
 	}
 }
 
-func (cp *chargingStation) ClearChargingLimit(chargingLimitSource ChargingLimitSourceType, props ...func(request *ClearedChargingLimitRequest)) (*ClearedChargingLimitConfirmation, error) {
+func (cp *chargingStation) ClearedChargingLimit(chargingLimitSource ChargingLimitSourceType, props ...func(request *ClearedChargingLimitRequest)) (*ClearedChargingLimitConfirmation, error) {
 	request := NewClearedChargingLimitRequest(chargingLimitSource)
 	for _, fn := range props {
 		fn(request)
@@ -212,9 +205,8 @@ func (cp *chargingStation) GetCertificateStatus(ocspRequestData OCSPRequestDataT
 //	}
 //}
 
-// Registers a handler for incoming core profile messages
-func (cp *chargingStation) SetChargePointCoreListener(listener ChargePointCoreListener) {
-	cp.coreListener = listener
+func (cp *chargingStation) SetMessageHandler(handler ChargingStationHandler) {
+	cp.messageHandler = handler
 }
 
 //// Registers a handler for incoming local authorization profile messages
@@ -242,10 +234,6 @@ func (cp *chargingStation) SetChargePointCoreListener(listener ChargePointCoreLi
 //	cp.smartChargingListener = listener
 //}
 
-// Sends a request to the central system.
-// The central system will respond with a confirmation, or with an error if the request was invalid or could not be processed.
-// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
-// The request is synchronous blocking.
 func (cp *chargingStation) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
 	// TODO: check for supported feature
 	err := cp.client.SendRequest(request)
@@ -261,10 +249,6 @@ func (cp *chargingStation) SendRequest(request ocpp.Request) (ocpp.Confirmation,
 	}
 }
 
-// Sends an asynchronous request to the central system.
-// The central system will respond with a confirmation messages, or with an error if the request was invalid or could not be processed.
-// This result is propagated via a callback, called asynchronously.
-// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cp *chargingStation) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
 	case AuthorizeFeatureName, BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName, FirmwareStatusNotificationFeatureName, Get15118EVCertificateFeatureName, GetCertificateStatusFeatureName:
@@ -302,20 +286,11 @@ func (cp *chargingStation) sendResponse(confirmation ocpp.Confirmation, err erro
 	}
 }
 
-// Connects to the central system and starts the charge point routine.
-// The function doesn't block and returns right away, after having attempted to open a connection to the central system.
-// If the connection couldn't be opened, an error is returned.
-//
-// Optional client options must be set before calling this function. Refer to NewChargingStation.
-//
-// No auto-reconnect logic is implemented as of now, but is planned for the future.
-func (cp *chargingStation) Start(centralSystemUrl string) error {
+func (cp *chargingStation) Start(csmsUrl string) error {
 	// TODO: implement auto-reconnect logic
-	return cp.client.Start(centralSystemUrl)
+	return cp.client.Start(csmsUrl)
 }
 
-// Stops the charge point routine, disconnecting it from the central system.
-// Any pending requests are discarded.
 func (cp *chargingStation) Stop() {
 	cp.client.Stop()
 }
@@ -345,7 +320,7 @@ func (cp *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 	} else {
 		switch profile.Name {
 		case CoreProfileName:
-			if cp.coreListener == nil {
+			if cp.messageHandler == nil {
 				cp.notSupportedError(requestId, action)
 				return
 			}
@@ -382,55 +357,55 @@ func (cp *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 	var err error = nil
 	switch action {
 	case CancelReservationFeatureName:
-		confirmation, err = cp.coreListener.OnCancelReservation(request.(*CancelReservationRequest))
+		confirmation, err = cp.messageHandler.OnCancelReservation(request.(*CancelReservationRequest))
 	case CertificateSignedFeatureName:
-		confirmation, err = cp.coreListener.OnCertificateSigned(request.(*CertificateSignedRequest))
+		confirmation, err = cp.messageHandler.OnCertificateSigned(request.(*CertificateSignedRequest))
 	case ChangeAvailabilityFeatureName:
-		confirmation, err = cp.coreListener.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
+		confirmation, err = cp.messageHandler.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
 	//case ChangeConfigurationFeatureName:
-	//	confirmation, err = cp.coreListener.OnChangeConfiguration(request.(*ChangeConfigurationRequest))
+	//	confirmation, err = cp.messageHandler.OnChangeConfiguration(request.(*ChangeConfigurationRequest))
 	case ClearCacheFeatureName:
-		confirmation, err = cp.coreListener.OnClearCache(request.(*ClearCacheRequest))
+		confirmation, err = cp.messageHandler.OnClearCache(request.(*ClearCacheRequest))
 	case ClearChargingProfileFeatureName:
-		confirmation, err = cp.coreListener.OnClearChargingProfile(request.(*ClearChargingProfileRequest))
+		confirmation, err = cp.messageHandler.OnClearChargingProfile(request.(*ClearChargingProfileRequest))
 	case ClearDisplayFeatureName:
-		confirmation, err = cp.coreListener.OnClearDisplay(request.(*ClearDisplayRequest))
+		confirmation, err = cp.messageHandler.OnClearDisplay(request.(*ClearDisplayRequest))
 	case ClearVariableMonitoringFeatureName:
-		confirmation, err = cp.coreListener.OnClearVariableMonitoring(request.(*ClearVariableMonitoringRequest))
+		confirmation, err = cp.messageHandler.OnClearVariableMonitoring(request.(*ClearVariableMonitoringRequest))
 	case CostUpdatedFeatureName:
-		confirmation, err = cp.coreListener.OnCostUpdated(request.(*CostUpdatedRequest))
+		confirmation, err = cp.messageHandler.OnCostUpdated(request.(*CostUpdatedRequest))
 	case CustomerInformationFeatureName:
-		confirmation, err = cp.coreListener.OnCustomerInformation(request.(*CustomerInformationRequest))
+		confirmation, err = cp.messageHandler.OnCustomerInformation(request.(*CustomerInformationRequest))
 	case DataTransferFeatureName:
-		confirmation, err = cp.coreListener.OnDataTransfer(request.(*DataTransferRequest))
+		confirmation, err = cp.messageHandler.OnDataTransfer(request.(*DataTransferRequest))
 	case DeleteCertificateFeatureName:
-		confirmation, err = cp.coreListener.OnDeleteCertificate(request.(*DeleteCertificateRequest))
+		confirmation, err = cp.messageHandler.OnDeleteCertificate(request.(*DeleteCertificateRequest))
 	case GetBaseReportFeatureName:
-		confirmation, err = cp.coreListener.OnGetBaseReport(request.(*GetBaseReportRequest))
+		confirmation, err = cp.messageHandler.OnGetBaseReport(request.(*GetBaseReportRequest))
 	case GetChargingProfilesFeatureName:
-		confirmation, err = cp.coreListener.OnGetChargingProfiles(request.(*GetChargingProfilesRequest))
+		confirmation, err = cp.messageHandler.OnGetChargingProfiles(request.(*GetChargingProfilesRequest))
 	case GetCompositeScheduleFeatureName:
-		confirmation, err = cp.coreListener.OnGetCompositeSchedule(request.(*GetCompositeScheduleRequest))
+		confirmation, err = cp.messageHandler.OnGetCompositeSchedule(request.(*GetCompositeScheduleRequest))
 	case GetDisplayMessagesFeatureName:
-		confirmation, err = cp.coreListener.OnGetDisplayMessages(request.(*GetDisplayMessagesRequest))
+		confirmation, err = cp.messageHandler.OnGetDisplayMessages(request.(*GetDisplayMessagesRequest))
 	case GetInstalledCertificateIdsFeatureName:
-		confirmation, err = cp.coreListener.OnGetInstalledCertificateIds(request.(*GetInstalledCertificateIdsRequest))
+		confirmation, err = cp.messageHandler.OnGetInstalledCertificateIds(request.(*GetInstalledCertificateIdsRequest))
 	case GetLocalListVersionFeatureName:
-		confirmation, err = cp.coreListener.OnGetLocalListVersion(request.(*GetLocalListVersionRequest))
+		confirmation, err = cp.messageHandler.OnGetLocalListVersion(request.(*GetLocalListVersionRequest))
 	case GetLogFeatureName:
-		confirmation, err = cp.coreListener.OnGetLog(request.(*GetLogRequest))
+		confirmation, err = cp.messageHandler.OnGetLog(request.(*GetLogRequest))
 	case GetMonitoringReportFeatureName:
-		confirmation, err = cp.coreListener.OnGetMonitoringReport(request.(*GetMonitoringReportRequest))
+		confirmation, err = cp.messageHandler.OnGetMonitoringReport(request.(*GetMonitoringReportRequest))
 	//case GetConfigurationFeatureName:
-	//	confirmation, err = cp.coreListener.OnGetConfiguration(request.(*GetConfigurationRequest))
+	//	confirmation, err = cp.messageHandler.OnGetConfiguration(request.(*GetConfigurationRequest))
 	//case RemoteStartTransactionFeatureName:
-	//	confirmation, err = cp.coreListener.OnRemoteStartTransaction(request.(*RemoteStartTransactionRequest))
+	//	confirmation, err = cp.messageHandler.OnRemoteStartTransaction(request.(*RemoteStartTransactionRequest))
 	//case RemoteStopTransactionFeatureName:
-	//	confirmation, err = cp.coreListener.OnRemoteStopTransaction(request.(*RemoteStopTransactionRequest))
+	//	confirmation, err = cp.messageHandler.OnRemoteStopTransaction(request.(*RemoteStopTransactionRequest))
 	//case ResetFeatureName:
-	//	confirmation, err = cp.coreListener.OnReset(request.(*ResetRequest))
+	//	confirmation, err = cp.messageHandler.OnReset(request.(*ResetRequest))
 	//case UnlockConnectorFeatureName:
-	//	confirmation, err = cp.coreListener.OnUnlockConnector(request.(*UnlockConnectorRequest))
+	//	confirmation, err = cp.messageHandler.OnUnlockConnector(request.(*UnlockConnectorRequest))
 	//case GetLocalListVersionFeatureName:
 	//	confirmation, err = cp.localAuthListListener.OnGetLocalListVersion(request.(*GetLocalListVersionRequest))
 	//case SendLocalListFeatureName:

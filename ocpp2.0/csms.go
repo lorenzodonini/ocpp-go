@@ -9,7 +9,7 @@ import (
 
 type csms struct {
 	server       *ocppj.CentralSystem
-	coreListener CentralSystemCoreListener
+	coreListener CSMSHandler
 	//localAuthListListener CentralSystemLocalAuthListListener
 	//firmwareListener      CentralSystemFirmwareManagementListener
 	//reservationListener   CentralSystemReservationListener
@@ -84,7 +84,6 @@ func (cs *csms) ChangeAvailability(clientId string, callback func(confirmation *
 //	return cs.SendRequestAsync(clientId, request, genericCallback)
 //}
 
-// Instructs the charge point to clear its current authorization cache. All authorization saved locally will be invalidated.
 func (cs *csms) ClearCache(clientId string, callback func(confirmation *ClearCacheConfirmation, err error), props ...func(*ClearCacheRequest)) error {
 	request := NewClearCacheRequest()
 	for _, fn := range props {
@@ -537,9 +536,8 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	return cs.SendRequestAsync(clientId, request, genericCallback)
 //}
 
-// Registers a handler for incoming core profile messages.
-func (cs *csms) SetCentralSystemCoreListener(listener CentralSystemCoreListener) {
-	cs.coreListener = listener
+func (cs *csms) SetMessageHandler(handler CSMSHandler) {
+	cs.coreListener = handler
 }
 
 // Registers a handler for incoming local authorization profile messages.
@@ -567,20 +565,14 @@ func (cs *csms) SetCentralSystemCoreListener(listener CentralSystemCoreListener)
 //	cs.smartChargingListener = listener
 //}
 
-// Registers a handler for new incoming charge point connections.
 func (cs *csms) SetNewChargingStationHandler(handler func(chargePointId string)) {
 	cs.server.SetNewChargePointHandler(handler)
 }
 
-// Registers a handler for charge point disconnections.
 func (cs *csms) SetChargingStationDisconnectedHandler(handler func(chargePointId string)) {
 	cs.server.SetDisconnectedChargePointHandler(handler)
 }
 
-// Sends an asynchronous request to the charge point.
-// The charge point will respond with a confirmation message, or with an error if the request was invalid or could not be processed.
-// This result is propagated via a callback, called asynchronously.
-// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
 	switch request.GetFeatureName() {
 	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearChargingProfileFeatureName, ClearDisplayFeatureName, ClearVariableMonitoringFeatureName, CostUpdatedFeatureName, CustomerInformationFeatureName, DataTransferFeatureName, DeleteCertificateFeatureName, GetBaseReportFeatureName, GetChargingProfilesFeatureName, GetCompositeScheduleFeatureName, GetDisplayMessagesFeatureName, GetInstalledCertificateIdsFeatureName, GetLocalListVersionFeatureName, GetLogFeatureName, GetMonitoringReportFeatureName:
@@ -603,10 +595,6 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 	return nil
 }
 
-// Starts running the central system on the specified port and URL.
-// The central system runs as a daemon and handles incoming charge point connections and messages.
-
-// The function blocks forever, so it is suggested to wrap it in a goroutine, in case other functionality needs to be executed on the main program thread.
 func (cs *csms) Start(listenPort int, listenPath string) {
 	cs.server.Start(listenPort, listenPath)
 }
@@ -711,15 +699,15 @@ func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request
 		case GetCertificateStatusFeatureName:
 			confirmation, err = cs.coreListener.OnGetCertificateStatus(chargePointId, request.(*GetCertificateStatusRequest))
 		//case HeartbeatFeatureName:
-		//	confirmation, err = cs.coreListener.OnHeartbeat(chargePointId, request.(*HeartbeatRequest))
+		//	confirmation, err = cs.messageHandler.OnHeartbeat(chargePointId, request.(*HeartbeatRequest))
 		//case MeterValuesFeatureName:
-		//	confirmation, err = cs.coreListener.OnMeterValues(chargePointId, request.(*MeterValuesRequest))
+		//	confirmation, err = cs.messageHandler.OnMeterValues(chargePointId, request.(*MeterValuesRequest))
 		//case StartTransactionFeatureName:
-		//	confirmation, err = cs.coreListener.OnStartTransaction(chargePointId, request.(*StartTransactionRequest))
+		//	confirmation, err = cs.messageHandler.OnStartTransaction(chargePointId, request.(*StartTransactionRequest))
 		//case StopTransactionFeatureName:
-		//	confirmation, err = cs.coreListener.OnStopTransaction(chargePointId, request.(*StopTransactionRequest))
+		//	confirmation, err = cs.messageHandler.OnStopTransaction(chargePointId, request.(*StopTransactionRequest))
 		//case StatusNotificationFeatureName:
-		//	confirmation, err = cs.coreListener.OnStatusNotification(chargePointId, request.(*StatusNotificationRequest))
+		//	confirmation, err = cs.messageHandler.OnStatusNotification(chargePointId, request.(*StatusNotificationRequest))
 		//case DiagnosticsStatusNotificationFeatureName:
 		//	confirmation, err = cs.firmwareListener.OnDiagnosticsStatusNotification(chargePointId, request.(*DiagnosticsStatusNotificationRequest))
 		//case FirmwareStatusNotificationFeatureName:
