@@ -33,13 +33,13 @@ type ClearMonitoringResult struct {
 
 // The field definition of the ClearVariableMonitoring request payload sent by the CSMS to the Charging Station.
 type ClearVariableMonitoringRequest struct {
-	ID []int `json:"id" validate:"required,min=1,dive,gte=0"`
+	ID []int `json:"id" validate:"required,min=1,dive,gte=0"` // List of the monitors to be cleared, identified by their Id.
 }
 
 // This field definition of the ClearVariableMonitoring confirmation payload, sent by the Charging Station to the CSMS in response to a ClearVariableMonitoringRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ClearVariableMonitoringConfirmation struct {
-	ClearMonitoringResult []ClearMonitoringResult `json:"clearMonitoringResult" validate:"required,min=1,dive"`
+	ClearMonitoringResult []ClearMonitoringResult `json:"clearMonitoringResult" validate:"required,min=1,dive"` // List of result statuses per monitor.
 }
 
 // The CSMS asks the Charging Station to clear a display message that has been configured in the Charging Station to be cleared/removed.
