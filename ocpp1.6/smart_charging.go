@@ -8,10 +8,10 @@ const (
 	GetCompositeScheduleFeatureName = "GetCompositeSchedule"
 )
 
-type CentralSystemSmartChargingListener interface {
+type CentralSystemSmartChargingHandler interface {
 }
 
-type ChargePointSmartChargingListener interface {
+type ChargePointSmartChargingHandler interface {
 	OnSetChargingProfile(request *SetChargingProfileRequest) (confirmation *SetChargingProfileConfirmation, err error)
 	OnClearChargingProfile(request *ClearChargingProfileRequest) (confirmation *ClearChargingProfileConfirmation, err error)
 	OnGetCompositeSchedule(request *GetCompositeScheduleRequest) (confirmation *GetCompositeScheduleConfirmation, err error)

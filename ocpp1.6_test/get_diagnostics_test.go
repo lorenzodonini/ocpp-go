@@ -57,7 +57,7 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 	firmwareListener := MockChargePointFirmwareManagementListener{}
 	firmwareListener.On("OnGetDiagnostics", mock.Anything).Return(getDiagnosticsConfirmation, nil)
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetFirmwareManagementListener(firmwareListener)
+	suite.chargePoint.SetFirmwareManagementHandler(firmwareListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")

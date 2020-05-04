@@ -7,10 +7,10 @@ const (
 	ReserveNowFeatureName        = "ReserveNow"
 )
 
-type CentralSystemReservationListener interface {
+type CentralSystemReservationHandler interface {
 }
 
-type ChargePointReservationListener interface {
+type ChargePointReservationHandler interface {
 	OnReserveNow(request *ReserveNowRequest) (confirmation *ReserveNowConfirmation, err error)
 	OnCancelReservation(request *CancelReservationRequest) (confirmation *CancelReservationConfirmation, err error)
 }

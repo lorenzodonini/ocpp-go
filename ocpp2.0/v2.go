@@ -132,8 +132,6 @@ func NewChargingStation(id string, dispatcher *ocppj.ChargePoint, client ws.WsCl
 
 // -------------------- v2.0 CSMS --------------------
 
-// A Charging Station represents the physical system where an EV can be charged.
-
 // A Charging Station Management System (CSMS) manages Charging Stations and has the information for authorizing Management Users for using its Charging Stations.
 // You can instantiate a default CSMS struct by calling the NewCSMS function.
 //
@@ -142,10 +140,10 @@ func NewChargingStation(id string, dispatcher *ocppj.ChargePoint, client ws.WsCl
 //	csms.SetMessageHandler(handler)
 // Refer to the CSMSHandler interface for the implementation requirements.
 //
-// A CSMS station can be started by using the Start function.
+// A CSMS can be started by using the Start function.
 // To be notified of incoming (dis)connections from charging stations refer to the SetNewChargingStationHandler and SetChargingStationDisconnectedHandler functions.
 //
-// While running, messages can be sent to a Charging Station by calling the CSMS's, e.g.:
+// While running, messages can be sent to a Charging Station by calling the CSMS's functions, e.g.:
 //	callback := func(conf *ClearDisplayConfirmation, err error) {
 //		// handle the response...
 //	}

@@ -541,27 +541,27 @@ func (cs *csms) SetMessageHandler(handler CSMSHandler) {
 }
 
 // Registers a handler for incoming local authorization profile messages.
-//func (cs *server) SetLocalAuthListListener(listener CentralSystemLocalAuthListListener) {
+//func (cs *server) SetLocalAuthListHandler(listener CentralSystemLocalAuthListListener) {
 //	cs.localAuthListListener = listener
 //}
 //
 //// Registers a handler for incoming firmware management profile messages.
-//func (cs *server) SetFirmwareManagementListener(listener CentralSystemFirmwareManagementListener) {
+//func (cs *server) SetFirmwareManagementHandler(listener CentralSystemFirmwareManagementListener) {
 //	cs.firmwareListener = listener
 //}
 //
 //// Registers a handler for incoming reservation profile messages.
-//func (cs *server) SetReservationListener(listener CentralSystemReservationListener) {
+//func (cs *server) SetReservationHandler(listener CentralSystemReservationListener) {
 //	cs.reservationListener = listener
 //}
 //
 //// Registers a handler for incoming remote trigger profile messages.
-//func (cs *server) SetRemoteTriggerListener(listener CentralSystemRemoteTriggerListener) {
+//func (cs *server) SetRemoteTriggerHandler(listener CentralSystemRemoteTriggerListener) {
 //	cs.remoteTriggerListener = listener
 //}
 //
 //// Registers a handler for incoming smart charging profile messages.
-//func (cs *server) SetSmartChargingListener(listener CentralSystemSmartChargingListener) {
+//func (cs *server) SetSmartChargingHandler(listener CentralSystemSmartChargingListener) {
 //	cs.smartChargingListener = listener
 //}
 

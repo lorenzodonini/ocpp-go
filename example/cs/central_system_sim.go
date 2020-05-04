@@ -190,7 +190,7 @@ func main() {
 		log.WithField("client", chargePointId).Info("charge point disconnected")
 		delete(handler.chargePoints, chargePointId)
 	})
-	centralSystem.SetCentralSystemCoreListener(handler)
+	centralSystem.SetCentralSystemCoreHandler(handler)
 	var listenPort = defaultListenPort
 	if len(args) > 0 {
 		port, err := strconv.Atoi(args[0])

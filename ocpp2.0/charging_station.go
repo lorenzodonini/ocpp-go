@@ -210,27 +210,27 @@ func (cp *chargingStation) SetMessageHandler(handler ChargingStationHandler) {
 }
 
 //// Registers a handler for incoming local authorization profile messages
-//func (cp *chargingStation) SetLocalAuthListListener(listener ChargePointLocalAuthListListener) {
+//func (cp *chargingStation) SetLocalAuthListHandler(listener ChargePointLocalAuthListListener) {
 //	cp.localAuthListListener = listener
 //}
 //
 //// Registers a handler for incoming firmware management profile messages
-//func (cp *chargingStation) SetFirmwareManagementListener(listener ChargePointFirmwareManagementListener) {
+//func (cp *chargingStation) SetFirmwareManagementHandler(listener ChargePointFirmwareManagementListener) {
 //	cp.firmwareListener = listener
 //}
 //
 //// Registers a handler for incoming reservation profile messages
-//func (cp *chargingStation) SetReservationListener(listener ChargePointReservationListener) {
+//func (cp *chargingStation) SetReservationHandler(listener ChargePointReservationListener) {
 //	cp.reservationListener = listener
 //}
 //
 //// Registers a handler for incoming remote trigger profile messages
-//func (cp *chargingStation) SetRemoteTriggerListener(listener ChargePointRemoteTriggerListener) {
+//func (cp *chargingStation) SetRemoteTriggerHandler(listener ChargePointRemoteTriggerListener) {
 //	cp.remoteTriggerListener = listener
 //}
 //
 //// Registers a handler for incoming smart charging profile messages
-//func (cp *chargingStation) SetSmartChargingListener(listener ChargePointSmartChargingListener) {
+//func (cp *chargingStation) SetSmartChargingHandler(listener ChargePointSmartChargingListener) {
 //	cp.smartChargingListener = listener
 //}
 

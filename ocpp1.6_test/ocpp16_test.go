@@ -432,12 +432,12 @@ type expectedChargePointOptions struct {
 	forwardWrittenMessage bool
 }
 
-func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener ocpp16.CentralSystemCoreListener, options expectedCentralSystemOptions) {
+func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener ocpp16.CentralSystemCoreHandler, options expectedCentralSystemOptions) {
 	t := suite.T()
 	suite.centralSystem.SetNewChargePointHandler(func(chargePointId string) {
 		assert.Equal(t, options.clientId, chargePointId)
 	})
-	suite.centralSystem.SetCentralSystemCoreListener(coreListener)
+	suite.centralSystem.SetCentralSystemCoreHandler(coreListener)
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
 	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
 		clientId := args.String(0)
@@ -456,9 +456,9 @@ func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener ocp
 	})
 }
 
-func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener ocpp16.ChargePointCoreListener, options expectedChargePointOptions) {
+func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener ocpp16.ChargePointCoreHandler, options expectedChargePointOptions) {
 	t := suite.T()
-	suite.chargePoint.SetChargePointCoreListener(coreListener)
+	suite.chargePoint.SetChargePointCoreHandler(coreListener)
 	suite.mockWsClient.On("Start", mock.AnythingOfType("string")).Return(options.startReturnArgument).Run(func(args mock.Arguments) {
 		u := args.String(0)
 		assert.Equal(t, fmt.Sprintf("%s/%s", options.serverUrl, options.clientId), u)

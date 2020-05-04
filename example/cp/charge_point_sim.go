@@ -311,7 +311,7 @@ func main() {
 		errorCode:            ocpp16.NoError,
 		localAuthList:        []ocpp16.AuthorizationData{},
 		localAuthListVersion: 0}
-	chargePoint.SetChargePointCoreListener(handler)
+	chargePoint.SetChargePointCoreHandler(handler)
 	// Connects to central system
 	err := chargePoint.Start(csUrl)
 	if err != nil {

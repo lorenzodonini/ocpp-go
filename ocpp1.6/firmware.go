@@ -9,12 +9,12 @@ const (
 	UpdateFirmwareFeatureName                = "UpdateFirmware"
 )
 
-type CentralSystemFirmwareManagementListener interface {
+type CentralSystemFirmwareManagementHandler interface {
 	OnDiagnosticsStatusNotification(chargePointId string, request *DiagnosticsStatusNotificationRequest) (confirmation *DiagnosticsStatusNotificationConfirmation, err error)
 	OnFirmwareStatusNotification(chargePointId string, request *FirmwareStatusNotificationRequest) (confirmation *FirmwareStatusNotificationConfirmation, err error)
 }
 
-type ChargePointFirmwareManagementListener interface {
+type ChargePointFirmwareManagementHandler interface {
 	OnGetDiagnostics(request *GetDiagnosticsRequest) (confirmation *GetDiagnosticsConfirmation, err error)
 	OnUpdateFirmware(request *UpdateFirmwareRequest) (confirmation *UpdateFirmwareConfirmation, err error)
 }

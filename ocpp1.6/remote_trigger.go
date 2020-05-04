@@ -6,10 +6,10 @@ const (
 	TriggerMessageFeatureName = "TriggerMessage"
 )
 
-type CentralSystemRemoteTriggerListener interface {
+type CentralSystemRemoteTriggerHandler interface {
 }
 
-type ChargePointRemoteTriggerListener interface {
+type ChargePointRemoteTriggerHandler interface {
 	OnTriggerMessage(request *TriggerMessageRequest) (confirmation *TriggerMessageConfirmation, err error)
 }
 

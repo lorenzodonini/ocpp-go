@@ -44,7 +44,7 @@ func (suite *OcppV16TestSuite) TestDiagnosticsStatusNotificationE2EMocked() {
 		assert.Equal(t, status, request.Status)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.centralSystem.SetFirmwareManagementListener(firmwareListener)
+	suite.centralSystem.SetFirmwareManagementHandler(firmwareListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")

@@ -23,7 +23,7 @@ const (
 	UnlockConnectorFeatureName        = "UnlockConnector"
 )
 
-type CentralSystemCoreListener interface {
+type CentralSystemCoreHandler interface {
 	OnAuthorize(chargePointId string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
 	OnBootNotification(chargePointId string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
 	OnDataTransfer(chargePointId string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
@@ -34,7 +34,7 @@ type CentralSystemCoreListener interface {
 	OnStopTransaction(chargePointId string, request *StopTransactionRequest) (confirmation *StopTransactionConfirmation, err error)
 }
 
-type ChargePointCoreListener interface {
+type ChargePointCoreHandler interface {
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	OnChangeConfiguration(request *ChangeConfigurationRequest) (confirmation *ChangeConfigurationConfirmation, err error)
 	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)

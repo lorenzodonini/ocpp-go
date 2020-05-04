@@ -42,7 +42,7 @@ func (suite *OcppV16TestSuite) TestGetLocalListVersionE2EMocked() {
 	localAuthListListener := MockChargePointLocalAuthListListener{}
 	localAuthListListener.On("OnGetLocalListVersion", mock.Anything).Return(localListVersionConfirmation, nil)
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetLocalAuthListListener(localAuthListListener)
+	suite.chargePoint.SetLocalAuthListHandler(localAuthListListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")

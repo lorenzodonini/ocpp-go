@@ -7,10 +7,10 @@ const (
 	SendLocalListFeatureName       = "SendLocalList"
 )
 
-type CentralSystemLocalAuthListListener interface {
+type CentralSystemLocalAuthListHandler interface {
 }
 
-type ChargePointLocalAuthListListener interface {
+type ChargePointLocalAuthListHandler interface {
 	OnGetLocalListVersion(request *GetLocalListVersionRequest) (confirmation *GetLocalListVersionConfirmation, err error)
 	OnSendLocalList(request *SendLocalListRequest) (confirmation *SendLocalListConfirmation, err error)
 }
