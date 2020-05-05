@@ -49,7 +49,7 @@ func (f ClearDisplayFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(ClearDisplayRequest{})
 }
 
-func (f ClearDisplayFeature) GetConfirmationType() reflect.Type {
+func (f ClearDisplayFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(ClearDisplayConfirmation{})
 }
 

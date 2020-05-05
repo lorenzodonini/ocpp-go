@@ -60,7 +60,7 @@ func (f GetChargingProfilesFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(GetChargingProfilesRequest{})
 }
 
-func (f GetChargingProfilesFeature) GetConfirmationType() reflect.Type {
+func (f GetChargingProfilesFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(GetChargingProfilesConfirmation{})
 }
 

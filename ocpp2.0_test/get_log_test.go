@@ -29,7 +29,7 @@ func (suite *OcppV2TestSuite) TestGetLogRequestValidation() {
 		{ocpp2.GetLogRequest{LogType: ocpp2.LogTypeDiagnostics, RequestID: -1, Retries: newInt(5), RetryInterval: newInt(120), Log: logParameters}, false},
 		{ocpp2.GetLogRequest{LogType: ocpp2.LogTypeDiagnostics, RequestID: 1, Retries: newInt(-1), RetryInterval: newInt(120), Log: logParameters}, false},
 		{ocpp2.GetLogRequest{LogType: ocpp2.LogTypeDiagnostics, RequestID: 1, Retries: newInt(5), RetryInterval: newInt(-1), Log: logParameters}, false},
-		{ocpp2.GetLogRequest{LogType: ocpp2.LogTypeDiagnostics, RequestID: 1, Retries: newInt(5), RetryInterval: newInt(120), Log: ocpp2.LogParameters{RemoteLocation:  ".invalidUrl.", OldestTimestamp: nil, LatestTimestamp: nil}}, false},
+		{ocpp2.GetLogRequest{LogType: ocpp2.LogTypeDiagnostics, RequestID: 1, Retries: newInt(5), RetryInterval: newInt(120), Log: ocpp2.LogParameters{RemoteLocation: ".invalidUrl.", OldestTimestamp: nil, LatestTimestamp: nil}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }

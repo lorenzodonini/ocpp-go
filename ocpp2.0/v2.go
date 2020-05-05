@@ -56,13 +56,13 @@ type ChargingStation interface {
 	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
 	//
 	// The request is synchronous blocking.
-	SendRequest(request ocpp.Request) (ocpp.Confirmation, error)
+	SendRequest(request ocpp.Request) (ocpp.Response, error)
 	// Sends an asynchronous request to the CSMS.
 	// The CSMS will respond with a confirmation message, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.
 	//
 	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never invoked.
-	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, protoError error)) error
+	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
 	// Connects to the CSMS and starts the charging station routine.
 	// The function doesn't block and returns right away, after having attempted to open a connection to the CSMS.
 	// If the connection couldn't be opened, an error is returned.
@@ -119,8 +119,8 @@ func NewChargingStation(id string, dispatcher *ocppj.ChargePoint, client ws.WsCl
 	if dispatcher == nil {
 		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile)
 	}
-	cp := chargingStation{client: dispatcher, confirmationListener: make(chan ocpp.Confirmation), errorListener: make(chan error)}
-	cp.client.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
+	cp := chargingStation{client: dispatcher, confirmationListener: make(chan ocpp.Response), errorListener: make(chan error)}
+	cp.client.SetConfirmationHandler(func(confirmation ocpp.Response, requestId string) {
 		cp.confirmationListener <- confirmation
 	})
 	cp.client.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
@@ -214,7 +214,7 @@ type CSMS interface {
 	// The charging station will respond with a confirmation message, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.
 	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never invoked.
-	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Confirmation, error)) error
+	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Response, error)) error
 	// Starts running the CSMS on the specified port and URL.
 	// The central system runs as a daemon and handles incoming charge point connections and messages.
 
@@ -242,7 +242,7 @@ func NewCSMS(dispatcher *ocppj.CentralSystem, server ws.WsServer) CSMS {
 	}
 	cs := csms{
 		server:    dispatcher,
-		callbacks: map[string]func(confirmation ocpp.Confirmation, err error){}}
+		callbacks: map[string]func(confirmation ocpp.Response, err error){}}
 	cs.server.SetRequestHandler(cs.handleIncomingRequest)
 	cs.server.SetConfirmationHandler(cs.handleIncomingConfirmation)
 	cs.server.SetErrorHandler(cs.handleIncomingError)

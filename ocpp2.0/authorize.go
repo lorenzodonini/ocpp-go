@@ -18,7 +18,7 @@ type AuthorizeRequest struct {
 type AuthorizeConfirmation struct {
 	CertificateStatus CertificateStatus `json:"certificateStatus,omitempty" validate:"omitempty,certificateStatus"`
 	EvseID            []int             `json:"evseId,omitempty"`
-	IdTokenInfo       IdTokenInfo      `json:"idTokenInfo" validate:"required"`
+	IdTokenInfo       IdTokenInfo       `json:"idTokenInfo" validate:"required"`
 }
 
 // Before the owner of an electric vehicle can start or stop charging, the Charging Station has to authorize the operation.
@@ -39,7 +39,7 @@ func (f AuthorizeFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(AuthorizeRequest{})
 }
 
-func (f AuthorizeFeature) GetConfirmationType() reflect.Type {
+func (f AuthorizeFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(AuthorizeConfirmation{})
 }
 

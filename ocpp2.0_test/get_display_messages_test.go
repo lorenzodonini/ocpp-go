@@ -44,7 +44,7 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	requestId := 42
-	messageIds := []int{2,3}
+	messageIds := []int{2, 3}
 	priority := ocpp2.MessagePriorityInFront
 	state := ocpp2.MessageStateCharging
 	status := ocpp2.MessageStatusAccepted
@@ -91,7 +91,7 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesInvalidEndpoint() {
 	messageId := defaultMessageId
 	requestId := 42
-	messageIds := []int{2,3}
+	messageIds := []int{2, 3}
 	priority := ocpp2.MessagePriorityInFront
 	state := ocpp2.MessageStateCharging
 	getDisplayMessagesRequest := ocpp2.NewGetDisplayMessagesRequest(requestId)

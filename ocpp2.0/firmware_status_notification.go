@@ -54,7 +54,7 @@ func (f FirmwareStatusNotificationFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(FirmwareStatusNotificationRequest{})
 }
 
-func (f FirmwareStatusNotificationFeature) GetConfirmationType() reflect.Type {
+func (f FirmwareStatusNotificationFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(FirmwareStatusNotificationConfirmation{})
 }
 

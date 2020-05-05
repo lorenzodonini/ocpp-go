@@ -13,8 +13,8 @@ func (suite *OcppV2TestSuite) TestGetMonitoringReportRequestValidation() {
 	t := suite.T()
 	componentVariables := []ocpp2.ComponentVariable{
 		{
-			Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}},
-			Variable:  ocpp2.Variable{ Name: "variable1", Instance: "instance1"},
+			Component: ocpp2.Component{Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}},
+			Variable:  ocpp2.Variable{Name: "variable1", Instance: "instance1"},
 		},
 	}
 	var requestTable = []GenericTestEntry{
@@ -27,7 +27,7 @@ func (suite *OcppV2TestSuite) TestGetMonitoringReportRequestValidation() {
 		{ocpp2.GetMonitoringReportRequest{RequestID: newInt(-1)}, false},
 		{ocpp2.GetMonitoringReportRequest{MonitoringCriteria: []ocpp2.MonitoringCriteriaType{ocpp2.MonitoringCriteriaThresholdMonitoring, ocpp2.MonitoringCriteriaDeltaMonitoring, ocpp2.MonitoringCriteriaPeriodicMonitoring, ocpp2.MonitoringCriteriaThresholdMonitoring}}, false},
 		{ocpp2.GetMonitoringReportRequest{MonitoringCriteria: []ocpp2.MonitoringCriteriaType{"invalidMonitoringCriteria"}}, false},
-		{ocpp2.GetMonitoringReportRequest{ComponentVariable: []ocpp2.ComponentVariable{ { Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}}}, false},
+		{ocpp2.GetMonitoringReportRequest{ComponentVariable: []ocpp2.ComponentVariable{{Variable: ocpp2.Variable{Name: "variable1", Instance: "instance1"}}}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -50,8 +50,8 @@ func (suite *OcppV2TestSuite) TestGetMonitoringReportE2EMocked() {
 	requestID := newInt(42)
 	monitoringCriteria := []ocpp2.MonitoringCriteriaType{ocpp2.MonitoringCriteriaThresholdMonitoring, ocpp2.MonitoringCriteriaPeriodicMonitoring}
 	componentVariable := ocpp2.ComponentVariable{
-		Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}},
-		Variable:  ocpp2.Variable{ Name: "variable1", Instance: "instance1"},
+		Component: ocpp2.Component{Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}},
+		Variable:  ocpp2.Variable{Name: "variable1", Instance: "instance1"},
 	}
 	componentVariables := []ocpp2.ComponentVariable{componentVariable}
 	status := ocpp2.GenericDeviceModelStatusAccepted
@@ -106,8 +106,8 @@ func (suite *OcppV2TestSuite) TestGetMonitoringReportInvalidEndpoint() {
 	requestID := newInt(42)
 	monitoringCriteria := []ocpp2.MonitoringCriteriaType{ocpp2.MonitoringCriteriaThresholdMonitoring, ocpp2.MonitoringCriteriaPeriodicMonitoring}
 	componentVariable := ocpp2.ComponentVariable{
-		Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}},
-		Variable:  ocpp2.Variable{ Name: "variable1", Instance: "instance1"},
+		Component: ocpp2.Component{Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}},
+		Variable:  ocpp2.Variable{Name: "variable1", Instance: "instance1"},
 	}
 	GetMonitoringReportRequest := ocpp2.NewGetMonitoringReportRequest()
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"monitoringCriteria":["%v","%v"],"componentVariable":[{"component":{"name":"%v","instance":"%v","evse":{"id":%v,"connectorId":%v}},"variable":{"name":"%v","instance":"%v"}}]}]`,

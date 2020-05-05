@@ -52,7 +52,7 @@ func (f GetBaseReportFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(GetBaseReportRequest{})
 }
 
-func (f GetBaseReportFeature) GetConfirmationType() reflect.Type {
+func (f GetBaseReportFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(GetBaseReportConfirmation{})
 }
 

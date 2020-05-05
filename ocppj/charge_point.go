@@ -13,7 +13,7 @@ type ChargePoint struct {
 	client              ws.WsClient
 	Id                  string
 	requestHandler      func(request ocpp.Request, requestId string, action string)
-	confirmationHandler func(confirmation ocpp.Confirmation, requestId string)
+	confirmationHandler func(confirmation ocpp.Response, requestId string)
 	errorHandler        func(err *ocpp.Error, details interface{})
 	hasPendingRequest   bool
 }
@@ -34,7 +34,7 @@ func (chargePoint *ChargePoint) SetRequestHandler(handler func(request ocpp.Requ
 	chargePoint.requestHandler = handler
 }
 
-func (chargePoint *ChargePoint) SetConfirmationHandler(handler func(confirmation ocpp.Confirmation, requestId string)) {
+func (chargePoint *ChargePoint) SetConfirmationHandler(handler func(confirmation ocpp.Response, requestId string)) {
 	chargePoint.confirmationHandler = handler
 }
 
@@ -90,7 +90,7 @@ func (chargePoint *ChargePoint) SendRequest(request ocpp.Request) error {
 	return err
 }
 
-func (chargePoint *ChargePoint) SendConfirmation(requestId string, confirmation ocpp.Confirmation) error {
+func (chargePoint *ChargePoint) SendConfirmation(requestId string, confirmation ocpp.Response) error {
 	err := Validate.Struct(confirmation)
 	if err != nil {
 		return err

@@ -15,7 +15,7 @@ type csms struct {
 	//reservationListener   CentralSystemReservationListener
 	//remoteTriggerListener CentralSystemRemoteTriggerListener
 	//smartChargingListener CentralSystemSmartChargingListener
-	callbacks map[string]func(confirmation ocpp.Confirmation, err error)
+	callbacks map[string]func(confirmation ocpp.Response, err error)
 }
 
 // Cancels a previously reserved charge point or connector, given the reservation Id.
@@ -24,7 +24,7 @@ func (cs *csms) CancelReservation(clientId string, callback func(*CancelReservat
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*CancelReservationConfirmation), protoError)
 		} else {
@@ -40,7 +40,7 @@ func (cs *csms) CertificateSigned(clientId string, callback func(*CertificateSig
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*CertificateSignedConfirmation), protoError)
 		} else {
@@ -56,7 +56,7 @@ func (cs *csms) ChangeAvailability(clientId string, callback func(confirmation *
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ChangeAvailabilityConfirmation), protoError)
 		} else {
@@ -74,7 +74,7 @@ func (cs *csms) ChangeAvailability(clientId string, callback func(confirmation *
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*ChangeConfigurationConfirmation), protoError)
 //		} else {
@@ -89,7 +89,7 @@ func (cs *csms) ClearCache(clientId string, callback func(confirmation *ClearCac
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ClearCacheConfirmation), protoError)
 		} else {
@@ -105,7 +105,7 @@ func (cs *csms) ClearChargingProfile(clientId string, callback func(*ClearChargi
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ClearChargingProfileConfirmation), protoError)
 		} else {
@@ -120,7 +120,7 @@ func (cs *csms) ClearDisplay(clientId string, callback func(*ClearDisplayConfirm
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ClearDisplayConfirmation), protoError)
 		} else {
@@ -135,7 +135,7 @@ func (cs *csms) ClearVariableMonitoring(clientId string, callback func(*ClearVar
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*ClearVariableMonitoringConfirmation), protoError)
 		} else {
@@ -150,7 +150,7 @@ func (cs *csms) CostUpdated(clientId string, callback func(*CostUpdatedConfirmat
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*CostUpdatedConfirmation), protoError)
 		} else {
@@ -165,7 +165,7 @@ func (cs *csms) CustomerInformation(clientId string, callback func(*CustomerInfo
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*CustomerInformationConfirmation), protoError)
 		} else {
@@ -181,7 +181,7 @@ func (cs *csms) DataTransfer(clientId string, callback func(confirmation *DataTr
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*DataTransferConfirmation), protoError)
 		} else {
@@ -196,7 +196,7 @@ func (cs *csms) DeleteCertificate(clientId string, callback func(*DeleteCertific
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*DeleteCertificateConfirmation), protoError)
 		} else {
@@ -211,7 +211,7 @@ func (cs *csms) GetBaseReport(clientId string, callback func(*GetBaseReportConfi
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*GetBaseReportConfirmation), protoError)
 		} else {
@@ -226,7 +226,7 @@ func (cs *csms) GetChargingProfiles(clientId string, callback func(*GetChargingP
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*GetChargingProfilesConfirmation), protoError)
 		} else {
@@ -241,7 +241,7 @@ func (cs *csms) GetCompositeSchedule(clientId string, callback func(*GetComposit
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*GetCompositeScheduleConfirmation), protoError)
 		} else {
@@ -256,7 +256,7 @@ func (cs *csms) GetDisplayMessages(clientId string, callback func(*GetDisplayMes
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*GetDisplayMessagesConfirmation), protoError)
 		} else {
@@ -271,7 +271,7 @@ func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*GetIn
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*GetInstalledCertificateIdsConfirmation), protoError)
 		} else {
@@ -286,7 +286,7 @@ func (cs *csms) GetLocalListVersion(clientId string, callback func(*GetLocalList
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*GetLocalListVersionConfirmation), protoError)
 		} else {
@@ -301,7 +301,7 @@ func (cs *csms) GetLog(clientId string, callback func(*GetLogConfirmation, error
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*GetLogConfirmation), protoError)
 		} else {
@@ -316,7 +316,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
 			callback(confirmation.(*GetMonitoringReportConfirmation), protoError)
 		} else {
@@ -333,7 +333,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*GetConfigurationConfirmation), protoError)
 //		} else {
@@ -350,7 +350,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*RemoteStartTransactionConfirmation), protoError)
 //		} else {
@@ -366,7 +366,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*RemoteStopTransactionConfirmation), protoError)
 //		} else {
@@ -382,7 +382,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*ResetConfirmation), protoError)
 //		} else {
@@ -398,7 +398,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*UnlockConnectorConfirmation), protoError)
 //		} else {
@@ -414,7 +414,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*GetLocalListVersionConfirmation), protoError)
 //		} else {
@@ -430,7 +430,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*SendLocalListConfirmation), protoError)
 //		} else {
@@ -446,7 +446,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*GetDiagnosticsConfirmation), protoError)
 //		} else {
@@ -462,7 +462,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*UpdateFirmwareConfirmation), protoError)
 //		} else {
@@ -478,7 +478,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*ReserveNowConfirmation), protoError)
 //		} else {
@@ -494,7 +494,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*TriggerMessageConfirmation), protoError)
 //		} else {
@@ -510,7 +510,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*SetChargingProfileConfirmation), protoError)
 //		} else {
@@ -526,7 +526,7 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitorin
 //	for _, fn := range props {
 //		fn(request)
 //	}
-//	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+//	genericCallback := func(confirmation ocpp.Response, protoError error) {
 //		if confirmation != nil {
 //			callback(confirmation.(*GetCompositeScheduleConfirmation), protoError)
 //		} else {
@@ -573,7 +573,7 @@ func (cs *csms) SetChargingStationDisconnectedHandler(handler func(chargePointId
 	cs.server.SetDisconnectedChargePointHandler(handler)
 }
 
-func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
+func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	switch request.GetFeatureName() {
 	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearChargingProfileFeatureName, ClearDisplayFeatureName, ClearVariableMonitoringFeatureName, CostUpdatedFeatureName, CustomerInformationFeatureName, DataTransferFeatureName, DeleteCertificateFeatureName, GetBaseReportFeatureName, GetChargingProfilesFeatureName, GetCompositeScheduleFeatureName, GetDisplayMessagesFeatureName, GetInstalledCertificateIdsFeatureName, GetLocalListVersionFeatureName, GetLogFeatureName, GetMonitoringReportFeatureName:
 		break
@@ -599,7 +599,7 @@ func (cs *csms) Start(listenPort int, listenPath string) {
 	cs.server.Start(listenPort, listenPath)
 }
 
-func (cs *csms) sendResponse(chargePointId string, confirmation ocpp.Confirmation, err error, requestId string) {
+func (cs *csms) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
 	if confirmation != nil {
 		err := cs.server.SendConfirmation(chargePointId, requestId, confirmation)
 		if err != nil {
@@ -679,7 +679,7 @@ func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request
 			//	}
 		}
 	}
-	var confirmation ocpp.Confirmation = nil
+	var confirmation ocpp.Response = nil
 	var err error = nil
 	// Execute in separate goroutine, so the caller goroutine is available
 	go func() {
@@ -720,7 +720,7 @@ func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request
 	}()
 }
 
-func (cs *csms) handleIncomingConfirmation(chargePointId string, confirmation ocpp.Confirmation, requestId string) {
+func (cs *csms) handleIncomingConfirmation(chargePointId string, confirmation ocpp.Response, requestId string) {
 	if callback, ok := cs.callbacks[chargePointId]; ok {
 		delete(cs.callbacks, chargePointId)
 		callback(confirmation, nil)

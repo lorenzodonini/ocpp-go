@@ -49,7 +49,7 @@ func (f DeleteCertificateFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(DeleteCertificateRequest{})
 }
 
-func (f DeleteCertificateFeature) GetConfirmationType() reflect.Type {
+func (f DeleteCertificateFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(DeleteCertificateConfirmation{})
 }
 

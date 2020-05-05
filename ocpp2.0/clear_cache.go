@@ -49,7 +49,7 @@ func (f ClearCacheFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(ClearCacheRequest{})
 }
 
-func (f ClearCacheFeature) GetConfirmationType() reflect.Type {
+func (f ClearCacheFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(ClearCacheConfirmation{})
 }
 

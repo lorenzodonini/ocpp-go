@@ -58,7 +58,7 @@ func (f ClearChargingProfileFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(ClearChargingProfileRequest{})
 }
 
-func (f ClearChargingProfileFeature) GetConfirmationType() reflect.Type {
+func (f ClearChargingProfileFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(ClearChargingProfileConfirmation{})
 }
 

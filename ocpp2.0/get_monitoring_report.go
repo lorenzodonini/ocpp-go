@@ -28,9 +28,9 @@ func isValidMonitoringCriteriaType(fl validator.FieldLevel) bool {
 
 // The field definition of the GetMonitoringReport request payload sent by the CSMS to the Charging Station.
 type GetMonitoringReportRequest struct {
-	RequestID          *int                     `json:"requestId,omitempty" validate:"omitempty,gte=0"`               // The Id of the request.
+	RequestID          *int                     `json:"requestId,omitempty" validate:"omitempty,gte=0"`                                  // The Id of the request.
 	MonitoringCriteria []MonitoringCriteriaType `json:"monitoringCriteria,omitempty" validate:"omitempty,max=3,dive,monitoringCriteria"` // This field contains criteria for components for which a monitoring report is requested.
-	ComponentVariable  []ComponentVariable      `json:"componentVariable,omitempty" validate:"omitempty,dive"`        // This field specifies the components and variables for which a monitoring report is requested.
+	ComponentVariable  []ComponentVariable      `json:"componentVariable,omitempty" validate:"omitempty,dive"`                           // This field specifies the components and variables for which a monitoring report is requested.
 }
 
 // This field definition of the GetMonitoringReport confirmation payload, sent by the Charging Station to the CSMS in response to a GetMonitoringReportRequest.
@@ -54,7 +54,7 @@ func (f GetMonitoringReportFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(GetMonitoringReportRequest{})
 }
 
-func (f GetMonitoringReportFeature) GetConfirmationType() reflect.Type {
+func (f GetMonitoringReportFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(GetMonitoringReportConfirmation{})
 }
 

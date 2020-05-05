@@ -49,7 +49,7 @@ func (f GetInstalledCertificateIdsFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(GetInstalledCertificateIdsRequest{})
 }
 
-func (f GetInstalledCertificateIdsFeature) GetConfirmationType() reflect.Type {
+func (f GetInstalledCertificateIdsFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(GetInstalledCertificateIdsConfirmation{})
 }
 

@@ -30,7 +30,7 @@ func (f CostUpdatedFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(CostUpdatedRequest{})
 }
 
-func (f CostUpdatedFeature) GetConfirmationType() reflect.Type {
+func (f CostUpdatedFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(CostUpdatedConfirmation{})
 }
 

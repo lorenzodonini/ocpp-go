@@ -14,7 +14,7 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesRequestValidation() {
 	validChargingProfileCriterion := ocpp2.ChargingProfileCriterion{
 		ChargingProfilePurpose: ocpp2.ChargingProfilePurposeTxDefaultProfile,
 		StackLevel:             newInt(2),
-		ChargingProfileID:      []int{1,2},
+		ChargingProfileID:      []int{1, 2},
 		ChargingLimitSource:    []ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS},
 	}
 	var requestTable = []GenericTestEntry{
@@ -26,11 +26,11 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesRequestValidation() {
 		{ocpp2.GetChargingProfilesRequest{}, true},
 		{ocpp2.GetChargingProfilesRequest{RequestID: newInt(42), EvseID: newInt(-1), ChargingProfile: validChargingProfileCriterion}, false},
 		{ocpp2.GetChargingProfilesRequest{RequestID: newInt(-1), EvseID: newInt(1), ChargingProfile: validChargingProfileCriterion}, false},
-		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: "invalidChargingProfilePurpose", StackLevel: newInt(2), ChargingProfileID: []int{1,2}, ChargingLimitSource:[]ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS}}}, false},
-		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: ocpp2.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(-1), ChargingProfileID: []int{1,2}, ChargingLimitSource:[]ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS}}}, false},
-		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: ocpp2.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1,2}, ChargingLimitSource:[]ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS, ocpp2.ChargingLimitSourceCSO, ocpp2.ChargingLimitSourceSO, ocpp2.ChargingLimitSourceOther, ocpp2.ChargingLimitSourceEMS}}}, false},
-		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: ocpp2.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1,2}, ChargingLimitSource:[]ocpp2.ChargingLimitSourceType{"invalidChargingLimitSource"}}}, false},
-		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: ocpp2.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{-1}, ChargingLimitSource:[]ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS}}}, false},
+		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: "invalidChargingProfilePurpose", StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS}}}, false},
+		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: ocpp2.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(-1), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS}}}, false},
+		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: ocpp2.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS, ocpp2.ChargingLimitSourceCSO, ocpp2.ChargingLimitSourceSO, ocpp2.ChargingLimitSourceOther, ocpp2.ChargingLimitSourceEMS}}}, false},
+		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: ocpp2.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []ocpp2.ChargingLimitSourceType{"invalidChargingLimitSource"}}}, false},
+		{ocpp2.GetChargingProfilesRequest{ChargingProfile: ocpp2.ChargingProfileCriterion{ChargingProfilePurpose: ocpp2.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{-1}, ChargingLimitSource: []ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS}}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -56,7 +56,7 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 	chargingProfileCriterion := ocpp2.ChargingProfileCriterion{
 		ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile,
 		StackLevel:             newInt(1),
-		ChargingProfileID:      []int{1,2},
+		ChargingProfileID:      []int{1, 2},
 		ChargingLimitSource:    []ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS},
 	}
 	status := ocpp2.GetChargingProfileStatusAccepted
@@ -96,11 +96,11 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
 	},
-	chargingProfileCriterion,
-	func(request *ocpp2.GetChargingProfilesRequest) {
-		request.EvseID = &evseID
-		request.RequestID = &requestID
-	})
+		chargingProfileCriterion,
+		func(request *ocpp2.GetChargingProfilesRequest) {
+			request.EvseID = &evseID
+			request.RequestID = &requestID
+		})
 	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
@@ -113,7 +113,7 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesInvalidEndpoint() {
 	chargingProfileCriterion := ocpp2.ChargingProfileCriterion{
 		ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile,
 		StackLevel:             newInt(1),
-		ChargingProfileID:      []int{1,2},
+		ChargingProfileID:      []int{1, 2},
 		ChargingLimitSource:    []ocpp2.ChargingLimitSourceType{ocpp2.ChargingLimitSourceEMS},
 	}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"evseId":%v,"chargingProfile":{"chargingProfilePurpose":"%v","stackLevel":%v,"chargingProfileId":[%v,%v],"chargingLimitSource":["%v"]}}]`,

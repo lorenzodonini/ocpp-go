@@ -3,29 +3,36 @@ package ocpp16
 import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/auth"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	log "github.com/sirupsen/logrus"
 )
 
 type centralSystem struct {
 	centralSystem         *ocppj.CentralSystem
-	coreListener          CentralSystemCoreHandler
-	localAuthListListener CentralSystemLocalAuthListHandler
-	firmwareListener      CentralSystemFirmwareManagementHandler
-	reservationListener   CentralSystemReservationHandler
-	remoteTriggerListener CentralSystemRemoteTriggerHandler
-	smartChargingListener CentralSystemSmartChargingHandler
-	callbacks             map[string]func(confirmation ocpp.Confirmation, err error)
+	coreListener          core.CentralSystemCoreHandler
+	localAuthListListener auth.CentralSystemLocalAuthListHandler
+	firmwareListener      firmware.CentralSystemFirmwareManagementHandler
+	reservationListener   reservation.CentralSystemReservationHandler
+	remoteTriggerListener remotetrigger.CentralSystemRemoteTriggerHandler
+	smartChargingListener smartcharging.CentralSystemSmartChargingHandler
+	callbacks             map[string]func(confirmation ocpp.Response, err error)
 }
 
-func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType AvailabilityType, props ...func(request *ChangeAvailabilityRequest)) error {
-	request := NewChangeAvailabilityRequest(connectorId, availabilityType)
+func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *core.ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType core.AvailabilityType, props ...func(request *core.ChangeAvailabilityRequest)) error {
+	request := core.NewChangeAvailabilityRequest(connectorId, availabilityType)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*ChangeAvailabilityConfirmation), protoError)
+			callback(confirmation.(*core.ChangeAvailabilityConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -33,14 +40,14 @@ func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confi
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ChangeConfiguration(clientId string, callback func(confirmation *ChangeConfigurationConfirmation, err error), key string, value string, props ...func(request *ChangeConfigurationRequest)) error {
-	request := NewChangeConfigurationRequest(key, value)
+func (cs *centralSystem) ChangeConfiguration(clientId string, callback func(confirmation *core.ChangeConfigurationConfirmation, err error), key string, value string, props ...func(request *core.ChangeConfigurationRequest)) error {
+	request := core.NewChangeConfigurationRequest(key, value)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*ChangeConfigurationConfirmation), protoError)
+			callback(confirmation.(*core.ChangeConfigurationConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -48,14 +55,14 @@ func (cs *centralSystem) ChangeConfiguration(clientId string, callback func(conf
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ClearCache(clientId string, callback func(confirmation *ClearCacheConfirmation, err error), props ...func(*ClearCacheRequest)) error {
-	request := NewClearCacheRequest()
+func (cs *centralSystem) ClearCache(clientId string, callback func(confirmation *core.ClearCacheConfirmation, err error), props ...func(*core.ClearCacheRequest)) error {
+	request := core.NewClearCacheRequest()
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*ClearCacheConfirmation), protoError)
+			callback(confirmation.(*core.ClearCacheConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -63,14 +70,14 @@ func (cs *centralSystem) ClearCache(clientId string, callback func(confirmation 
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmation *DataTransferConfirmation, err error), vendorId string, props ...func(request *DataTransferRequest)) error {
-	request := NewDataTransferRequest(vendorId)
+func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmation *core.DataTransferConfirmation, err error), vendorId string, props ...func(request *core.DataTransferRequest)) error {
+	request := core.NewDataTransferRequest(vendorId)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*DataTransferConfirmation), protoError)
+			callback(confirmation.(*core.DataTransferConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -78,14 +85,14 @@ func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmatio
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirmation *GetConfigurationConfirmation, err error), keys []string, props ...func(request *GetConfigurationRequest)) error {
-	request := NewGetConfigurationRequest(keys)
+func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirmation *core.GetConfigurationConfirmation, err error), keys []string, props ...func(request *core.GetConfigurationRequest)) error {
+	request := core.NewGetConfigurationRequest(keys)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetConfigurationConfirmation), protoError)
+			callback(confirmation.(*core.GetConfigurationConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -93,14 +100,14 @@ func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirm
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error {
-	request := NewRemoteStartTransactionRequest(idTag)
+func (cs *centralSystem) RemoteStartTransaction(clientId string, callback func(*core.RemoteStartTransactionConfirmation, error), idTag string, props ...func(*core.RemoteStartTransactionRequest)) error {
+	request := core.NewRemoteStartTransactionRequest(idTag)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*RemoteStartTransactionConfirmation), protoError)
+			callback(confirmation.(*core.RemoteStartTransactionConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -108,14 +115,14 @@ func (cs *centralSystem) RemoteStartTransaction(clientId string, callback func(*
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error {
-	request := NewRemoteStopTransactionRequest(transactionId)
+func (cs *centralSystem) RemoteStopTransaction(clientId string, callback func(*core.RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *core.RemoteStopTransactionRequest)) error {
+	request := core.NewRemoteStopTransactionRequest(transactionId)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*RemoteStopTransactionConfirmation), protoError)
+			callback(confirmation.(*core.RemoteStopTransactionConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -123,14 +130,14 @@ func (cs *centralSystem) RemoteStopTransaction(clientId string, callback func(*R
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) Reset(clientId string, callback func(*ResetConfirmation, error), resetType ResetType, props ...func(request *ResetRequest)) error {
-	request := NewResetRequest(resetType)
+func (cs *centralSystem) Reset(clientId string, callback func(*core.ResetConfirmation, error), resetType core.ResetType, props ...func(request *core.ResetRequest)) error {
+	request := core.NewResetRequest(resetType)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*ResetConfirmation), protoError)
+			callback(confirmation.(*core.ResetConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -138,14 +145,14 @@ func (cs *centralSystem) Reset(clientId string, callback func(*ResetConfirmation
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) UnlockConnector(clientId string, callback func(*UnlockConnectorConfirmation, error), connectorId int, props ...func(*UnlockConnectorRequest)) error {
-	request := NewUnlockConnectorRequest(connectorId)
+func (cs *centralSystem) UnlockConnector(clientId string, callback func(*core.UnlockConnectorConfirmation, error), connectorId int, props ...func(*core.UnlockConnectorRequest)) error {
+	request := core.NewUnlockConnectorRequest(connectorId)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*UnlockConnectorConfirmation), protoError)
+			callback(confirmation.(*core.UnlockConnectorConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -153,14 +160,14 @@ func (cs *centralSystem) UnlockConnector(clientId string, callback func(*UnlockC
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetLocalListVersion(clientId string, callback func(*GetLocalListVersionConfirmation, error), props ...func(request *GetLocalListVersionRequest)) error {
-	request := NewGetLocalListVersionRequest()
+func (cs *centralSystem) GetLocalListVersion(clientId string, callback func(*auth.GetLocalListVersionConfirmation, error), props ...func(request *auth.GetLocalListVersionRequest)) error {
+	request := auth.NewGetLocalListVersionRequest()
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetLocalListVersionConfirmation), protoError)
+			callback(confirmation.(*auth.GetLocalListVersionConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -168,14 +175,14 @@ func (cs *centralSystem) GetLocalListVersion(clientId string, callback func(*Get
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) SendLocalList(clientId string, callback func(*SendLocalListConfirmation, error), version int, updateType UpdateType, props ...func(request *SendLocalListRequest)) error {
-	request := NewSendLocalListRequest(version, updateType)
+func (cs *centralSystem) SendLocalList(clientId string, callback func(*auth.SendLocalListConfirmation, error), version int, updateType auth.UpdateType, props ...func(request *auth.SendLocalListRequest)) error {
+	request := auth.NewSendLocalListRequest(version, updateType)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*SendLocalListConfirmation), protoError)
+			callback(confirmation.(*auth.SendLocalListConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -183,14 +190,14 @@ func (cs *centralSystem) SendLocalList(clientId string, callback func(*SendLocal
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetDiagnostics(clientId string, callback func(*GetDiagnosticsConfirmation, error), location string, props ...func(request *GetDiagnosticsRequest)) error {
-	request := NewGetDiagnosticsRequest(location)
+func (cs *centralSystem) GetDiagnostics(clientId string, callback func(*firmware.GetDiagnosticsConfirmation, error), location string, props ...func(request *firmware.GetDiagnosticsRequest)) error {
+	request := firmware.NewGetDiagnosticsRequest(location)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetDiagnosticsConfirmation), protoError)
+			callback(confirmation.(*firmware.GetDiagnosticsConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -198,14 +205,14 @@ func (cs *centralSystem) GetDiagnostics(clientId string, callback func(*GetDiagn
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) UpdateFirmware(clientId string, callback func(*UpdateFirmwareConfirmation, error), location string, retrieveDate *DateTime, props ...func(request *UpdateFirmwareRequest)) error {
-	request := NewUpdateFirmwareRequest(location, retrieveDate)
+func (cs *centralSystem) UpdateFirmware(clientId string, callback func(*firmware.UpdateFirmwareConfirmation, error), location string, retrieveDate *types.DateTime, props ...func(request *firmware.UpdateFirmwareRequest)) error {
+	request := firmware.NewUpdateFirmwareRequest(location, retrieveDate)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*UpdateFirmwareConfirmation), protoError)
+			callback(confirmation.(*firmware.UpdateFirmwareConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -213,14 +220,14 @@ func (cs *centralSystem) UpdateFirmware(clientId string, callback func(*UpdateFi
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ReserveNow(clientId string, callback func(*ReserveNowConfirmation, error), connectorId int, expiryDate *DateTime, idTag string, reservationId int, props ...func(request *ReserveNowRequest)) error {
-	request := NewReserveNowRequest(connectorId, expiryDate, idTag, reservationId)
+func (cs *centralSystem) ReserveNow(clientId string, callback func(*reservation.ReserveNowConfirmation, error), connectorId int, expiryDate *types.DateTime, idTag string, reservationId int, props ...func(request *reservation.ReserveNowRequest)) error {
+	request := reservation.NewReserveNowRequest(connectorId, expiryDate, idTag, reservationId)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*ReserveNowConfirmation), protoError)
+			callback(confirmation.(*reservation.ReserveNowConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -228,14 +235,14 @@ func (cs *centralSystem) ReserveNow(clientId string, callback func(*ReserveNowCo
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(request *CancelReservationRequest)) error {
-	request := NewCancelReservationRequest(reservationId)
+func (cs *centralSystem) CancelReservation(clientId string, callback func(*reservation.CancelReservationConfirmation, error), reservationId int, props ...func(request *reservation.CancelReservationRequest)) error {
+	request := reservation.NewCancelReservationRequest(reservationId)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*CancelReservationConfirmation), protoError)
+			callback(confirmation.(*reservation.CancelReservationConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -243,14 +250,14 @@ func (cs *centralSystem) CancelReservation(clientId string, callback func(*Cance
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) TriggerMessage(clientId string, callback func(*TriggerMessageConfirmation, error), requestedMessage MessageTrigger, props ...func(request *TriggerMessageRequest)) error {
-	request := NewTriggerMessageRequest(requestedMessage)
+func (cs *centralSystem) TriggerMessage(clientId string, callback func(*remotetrigger.TriggerMessageConfirmation, error), requestedMessage remotetrigger.MessageTrigger, props ...func(request *remotetrigger.TriggerMessageRequest)) error {
+	request := remotetrigger.NewTriggerMessageRequest(requestedMessage)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*TriggerMessageConfirmation), protoError)
+			callback(confirmation.(*remotetrigger.TriggerMessageConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -258,14 +265,14 @@ func (cs *centralSystem) TriggerMessage(clientId string, callback func(*TriggerM
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) SetChargingProfile(clientId string, callback func(*SetChargingProfileConfirmation, error), connectorId int, chargingProfile *ChargingProfile, props ...func(request *SetChargingProfileRequest)) error {
-	request := NewSetChargingProfileRequest(connectorId, chargingProfile)
+func (cs *centralSystem) SetChargingProfile(clientId string, callback func(*smartcharging.SetChargingProfileConfirmation, error), connectorId int, chargingProfile *types.ChargingProfile, props ...func(request *smartcharging.SetChargingProfileRequest)) error {
+	request := smartcharging.NewSetChargingProfileRequest(connectorId, chargingProfile)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*SetChargingProfileConfirmation), protoError)
+			callback(confirmation.(*smartcharging.SetChargingProfileConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -273,14 +280,14 @@ func (cs *centralSystem) SetChargingProfile(clientId string, callback func(*SetC
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ClearChargingProfile(clientId string, callback func(*ClearChargingProfileConfirmation, error), props ...func(request *ClearChargingProfileRequest)) error {
-	request := NewClearChargingProfileRequest()
+func (cs *centralSystem) ClearChargingProfile(clientId string, callback func(*smartcharging.ClearChargingProfileConfirmation, error), props ...func(request *smartcharging.ClearChargingProfileRequest)) error {
+	request := smartcharging.NewClearChargingProfileRequest()
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*ClearChargingProfileConfirmation), protoError)
+			callback(confirmation.(*smartcharging.ClearChargingProfileConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -288,14 +295,14 @@ func (cs *centralSystem) ClearChargingProfile(clientId string, callback func(*Cl
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *GetCompositeScheduleRequest)) error {
-	request := NewGetCompositeScheduleRequest(connectorId, duration)
+func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*smartcharging.GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *smartcharging.GetCompositeScheduleRequest)) error {
+	request := smartcharging.NewGetCompositeScheduleRequest(connectorId, duration)
 	for _, fn := range props {
 		fn(request)
 	}
-	genericCallback := func(confirmation ocpp.Confirmation, protoError error) {
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetCompositeScheduleConfirmation), protoError)
+			callback(confirmation.(*smartcharging.GetCompositeScheduleConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -303,27 +310,27 @@ func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*Ge
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) SetCentralSystemCoreHandler(listener CentralSystemCoreHandler) {
+func (cs *centralSystem) SetCentralSystemCoreHandler(listener core.CentralSystemCoreHandler) {
 	cs.coreListener = listener
 }
 
-func (cs *centralSystem) SetLocalAuthListHandler(listener CentralSystemLocalAuthListHandler) {
+func (cs *centralSystem) SetLocalAuthListHandler(listener auth.CentralSystemLocalAuthListHandler) {
 	cs.localAuthListListener = listener
 }
 
-func (cs *centralSystem) SetFirmwareManagementHandler(listener CentralSystemFirmwareManagementHandler) {
+func (cs *centralSystem) SetFirmwareManagementHandler(listener firmware.CentralSystemFirmwareManagementHandler) {
 	cs.firmwareListener = listener
 }
 
-func (cs *centralSystem) SetReservationHandler(listener CentralSystemReservationHandler) {
+func (cs *centralSystem) SetReservationHandler(listener reservation.CentralSystemReservationHandler) {
 	cs.reservationListener = listener
 }
 
-func (cs *centralSystem) SetRemoteTriggerHandler(listener CentralSystemRemoteTriggerHandler) {
+func (cs *centralSystem) SetRemoteTriggerHandler(listener remotetrigger.CentralSystemRemoteTriggerHandler) {
 	cs.remoteTriggerListener = listener
 }
 
-func (cs *centralSystem) SetSmartChargingHandler(listener CentralSystemSmartChargingHandler) {
+func (cs *centralSystem) SetSmartChargingHandler(listener smartcharging.CentralSystemSmartChargingHandler) {
 	cs.smartChargingListener = listener
 }
 
@@ -335,14 +342,14 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 	cs.centralSystem.SetDisconnectedChargePointHandler(handler)
 }
 
-func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
+func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	switch request.GetFeatureName() {
-	case ChangeAvailabilityFeatureName, ChangeConfigurationFeatureName, ClearCacheFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
-		GetLocalListVersionFeatureName, SendLocalListFeatureName,
-		GetDiagnosticsFeatureName, UpdateFirmwareFeatureName,
-		ReserveNowFeatureName, CancelReservationFeatureName,
-		TriggerMessageFeatureName,
-		SetChargingProfileFeatureName, ClearChargingProfileFeatureName, GetCompositeScheduleFeatureName:
+	case core.ChangeAvailabilityFeatureName, core.ChangeConfigurationFeatureName, core.ClearCacheFeatureName, core.DataTransferFeatureName, core.GetConfigurationFeatureName, core.RemoteStartTransactionFeatureName, core.RemoteStopTransactionFeatureName, core.ResetFeatureName, core.UnlockConnectorFeatureName,
+		auth.GetLocalListVersionFeatureName, auth.SendLocalListFeatureName,
+		firmware.GetDiagnosticsFeatureName, firmware.UpdateFirmwareFeatureName,
+		reservation.ReserveNowFeatureName, reservation.CancelReservationFeatureName,
+		remotetrigger.TriggerMessageFeatureName,
+		smartcharging.SetChargingProfileFeatureName, smartcharging.ClearChargingProfileFeatureName, smartcharging.GetCompositeScheduleFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
@@ -359,7 +366,7 @@ func (cs *centralSystem) Start(listenPort int, listenPath string) {
 	cs.centralSystem.Start(listenPort, listenPath)
 }
 
-func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Confirmation, err error, requestId string) {
+func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
 	if confirmation != nil {
 		err := cs.centralSystem.SendConfirmation(chargePointId, requestId, confirmation)
 		if err != nil {
@@ -407,63 +414,63 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 		return
 	} else {
 		switch profile.Name {
-		case CoreProfileName:
+		case core.ProfileName:
 			if cs.coreListener == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
-		case LocalAuthListProfileName:
+		case auth.ProfileName:
 			if cs.localAuthListListener == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
-		case FirmwareManagementProfileName:
+		case firmware.ProfileName:
 			if cs.firmwareListener == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
-		case ReservationProfileName:
+		case reservation.ProfileName:
 			if cs.reservationListener == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
-		case RemoteTriggerProfileName:
+		case remotetrigger.ProfileName:
 			if cs.remoteTriggerListener == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
-		case SmartChargingProfileName:
+		case smartcharging.ProfileName:
 			if cs.smartChargingListener == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
 		}
 	}
-	var confirmation ocpp.Confirmation = nil
+	var confirmation ocpp.Response = nil
 	var err error = nil
 	// Execute in separate goroutine, so the caller goroutine is available
 	go func() {
 		switch action {
-		case BootNotificationFeatureName:
-			confirmation, err = cs.coreListener.OnBootNotification(chargePointId, request.(*BootNotificationRequest))
-		case AuthorizeFeatureName:
-			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*AuthorizeRequest))
-		case DataTransferFeatureName:
-			confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*DataTransferRequest))
-		case HeartbeatFeatureName:
-			confirmation, err = cs.coreListener.OnHeartbeat(chargePointId, request.(*HeartbeatRequest))
-		case MeterValuesFeatureName:
-			confirmation, err = cs.coreListener.OnMeterValues(chargePointId, request.(*MeterValuesRequest))
-		case StartTransactionFeatureName:
-			confirmation, err = cs.coreListener.OnStartTransaction(chargePointId, request.(*StartTransactionRequest))
-		case StopTransactionFeatureName:
-			confirmation, err = cs.coreListener.OnStopTransaction(chargePointId, request.(*StopTransactionRequest))
-		case StatusNotificationFeatureName:
-			confirmation, err = cs.coreListener.OnStatusNotification(chargePointId, request.(*StatusNotificationRequest))
-		case DiagnosticsStatusNotificationFeatureName:
-			confirmation, err = cs.firmwareListener.OnDiagnosticsStatusNotification(chargePointId, request.(*DiagnosticsStatusNotificationRequest))
-		case FirmwareStatusNotificationFeatureName:
-			confirmation, err = cs.firmwareListener.OnFirmwareStatusNotification(chargePointId, request.(*FirmwareStatusNotificationRequest))
+		case core.BootNotificationFeatureName:
+			confirmation, err = cs.coreListener.OnBootNotification(chargePointId, request.(*core.BootNotificationRequest))
+		case core.AuthorizeFeatureName:
+			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*core.AuthorizeRequest))
+		case core.DataTransferFeatureName:
+			confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*core.DataTransferRequest))
+		case core.HeartbeatFeatureName:
+			confirmation, err = cs.coreListener.OnHeartbeat(chargePointId, request.(*core.HeartbeatRequest))
+		case core.MeterValuesFeatureName:
+			confirmation, err = cs.coreListener.OnMeterValues(chargePointId, request.(*core.MeterValuesRequest))
+		case core.StartTransactionFeatureName:
+			confirmation, err = cs.coreListener.OnStartTransaction(chargePointId, request.(*core.StartTransactionRequest))
+		case core.StopTransactionFeatureName:
+			confirmation, err = cs.coreListener.OnStopTransaction(chargePointId, request.(*core.StopTransactionRequest))
+		case core.StatusNotificationFeatureName:
+			confirmation, err = cs.coreListener.OnStatusNotification(chargePointId, request.(*core.StatusNotificationRequest))
+		case firmware.DiagnosticsStatusNotificationFeatureName:
+			confirmation, err = cs.firmwareListener.OnDiagnosticsStatusNotification(chargePointId, request.(*firmware.DiagnosticsStatusNotificationRequest))
+		case firmware.FirmwareStatusNotificationFeatureName:
+			confirmation, err = cs.firmwareListener.OnFirmwareStatusNotification(chargePointId, request.(*firmware.FirmwareStatusNotificationRequest))
 		default:
 			cs.notSupportedError(chargePointId, requestId, action)
 			return
@@ -472,7 +479,7 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 	}()
 }
 
-func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confirmation ocpp.Confirmation, requestId string) {
+func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confirmation ocpp.Response, requestId string) {
 	if callback, ok := cs.callbacks[chargePointId]; ok {
 		delete(cs.callbacks, chargePointId)
 		callback(confirmation, nil)

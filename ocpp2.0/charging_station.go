@@ -10,7 +10,7 @@ import (
 type chargingStation struct {
 	client               *ocppj.ChargePoint
 	messageHandler       ChargingStationHandler
-	confirmationListener chan ocpp.Confirmation
+	confirmationListener chan ocpp.Response
 	errorListener        chan error
 }
 
@@ -234,7 +234,7 @@ func (cp *chargingStation) SetMessageHandler(handler ChargingStationHandler) {
 //	cp.smartChargingListener = listener
 //}
 
-func (cp *chargingStation) SendRequest(request ocpp.Request) (ocpp.Confirmation, error) {
+func (cp *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, error) {
 	// TODO: check for supported feature
 	err := cp.client.SendRequest(request)
 	if err != nil {
@@ -249,7 +249,7 @@ func (cp *chargingStation) SendRequest(request ocpp.Request) (ocpp.Confirmation,
 	}
 }
 
-func (cp *chargingStation) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Confirmation, err error)) error {
+func (cp *chargingStation) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	switch request.GetFeatureName() {
 	case AuthorizeFeatureName, BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName, FirmwareStatusNotificationFeatureName, Get15118EVCertificateFeatureName, GetCertificateStatusFeatureName:
 		break
@@ -271,7 +271,7 @@ func (cp *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 	return err
 }
 
-func (cp *chargingStation) sendResponse(confirmation ocpp.Confirmation, err error, requestId string) {
+func (cp *chargingStation) sendResponse(confirmation ocpp.Response, err error, requestId string) {
 	if confirmation != nil {
 		err := cp.client.SendConfirmation(requestId, confirmation)
 		if err != nil {
@@ -352,7 +352,7 @@ func (cp *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		}
 	}
 	// Process request
-	var confirmation ocpp.Confirmation = nil
+	var confirmation ocpp.Response = nil
 	cp.client.GetProfileForFeature(action)
 	var err error = nil
 	switch action {

@@ -40,7 +40,7 @@ func (f Get15118EVCertificateFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(Get15118EVCertificateRequest{})
 }
 
-func (f Get15118EVCertificateFeature) GetConfirmationType() reflect.Type {
+func (f Get15118EVCertificateFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(Get15118EVCertificateConfirmation{})
 }
 

@@ -55,7 +55,7 @@ func (f ClearVariableMonitoringFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(ClearVariableMonitoringRequest{})
 }
 
-func (f ClearVariableMonitoringFeature) GetConfirmationType() reflect.Type {
+func (f ClearVariableMonitoringFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(ClearVariableMonitoringConfirmation{})
 }
 

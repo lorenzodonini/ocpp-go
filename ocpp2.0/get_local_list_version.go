@@ -29,7 +29,7 @@ func (f GetLocalListVersionFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(GetLocalListVersionRequest{})
 }
 
-func (f GetLocalListVersionFeature) GetConfirmationType() reflect.Type {
+func (f GetLocalListVersionFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(GetLocalListVersionConfirmation{})
 }
 

@@ -2,7 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
-	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/auth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -11,7 +11,7 @@ import (
 func (suite *OcppV16TestSuite) TestGetLocalListVersionRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp16.GetLocalListVersionRequest{}, true},
+		{auth.GetLocalListVersionRequest{}, true},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -19,11 +19,11 @@ func (suite *OcppV16TestSuite) TestGetLocalListVersionRequestValidation() {
 func (suite *OcppV16TestSuite) TestGetLocalListVersionConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp16.GetLocalListVersionConfirmation{ListVersion: 1}, true},
-		{ocpp16.GetLocalListVersionConfirmation{ListVersion: 0}, true},
-		{ocpp16.GetLocalListVersionConfirmation{}, true},
-		{ocpp16.GetLocalListVersionConfirmation{ListVersion: -1}, true},
-		{ocpp16.GetLocalListVersionConfirmation{ListVersion: -2}, false},
+		{auth.GetLocalListVersionConfirmation{ListVersion: 1}, true},
+		{auth.GetLocalListVersionConfirmation{ListVersion: 0}, true},
+		{auth.GetLocalListVersionConfirmation{}, true},
+		{auth.GetLocalListVersionConfirmation{ListVersion: -1}, true},
+		{auth.GetLocalListVersionConfirmation{ListVersion: -2}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -34,9 +34,9 @@ func (suite *OcppV16TestSuite) TestGetLocalListVersionE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	listVersion := 1
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, ocpp16.GetLocalListVersionFeatureName)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, auth.GetLocalListVersionFeatureName)
 	responseJson := fmt.Sprintf(`[3,"%v",{"listVersion":%v}]`, messageId, listVersion)
-	localListVersionConfirmation := ocpp16.NewGetLocalListVersionConfirmation(listVersion)
+	localListVersionConfirmation := auth.NewGetLocalListVersionConfirmation(listVersion)
 	channel := NewMockWebSocket(wsId)
 
 	localAuthListListener := MockChargePointLocalAuthListListener{}
@@ -49,7 +49,7 @@ func (suite *OcppV16TestSuite) TestGetLocalListVersionE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.GetLocalListVersion(wsId, func(confirmation *ocpp16.GetLocalListVersionConfirmation, err error) {
+	err = suite.centralSystem.GetLocalListVersion(wsId, func(confirmation *auth.GetLocalListVersionConfirmation, err error) {
 		assert.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		if confirmation != nil {
@@ -68,7 +68,7 @@ func (suite *OcppV16TestSuite) TestGetLocalListVersionE2EMocked() {
 
 func (suite *OcppV16TestSuite) TestGetLocalListVersionInvalidEndpoint() {
 	messageId := defaultMessageId
-	localListVersionRequest := ocpp16.NewGetLocalListVersionRequest()
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, ocpp16.GetLocalListVersionFeatureName)
+	localListVersionRequest := auth.NewGetLocalListVersionRequest()
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, auth.GetLocalListVersionFeatureName)
 	testUnsupportedRequestFromChargePoint(suite, localListVersionRequest, requestJson, messageId)
 }

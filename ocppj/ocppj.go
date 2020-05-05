@@ -71,9 +71,9 @@ func (call *Call) MarshalJSON() ([]byte, error) {
 // -------------------- Call Result --------------------
 type CallResult struct {
 	Message
-	MessageTypeId MessageType       `json:"messageTypeId" validate:"required,eq=3"`
-	UniqueId      string            `json:"uniqueId" validate:"required,max=36"`
-	Payload       ocpp.Confirmation `json:"payload" validate:"required"`
+	MessageTypeId MessageType   `json:"messageTypeId" validate:"required,eq=3"`
+	UniqueId      string        `json:"uniqueId" validate:"required,max=36"`
+	Payload       ocpp.Response `json:"payload" validate:"required"`
 }
 
 func (callResult *CallResult) GetMessageTypeId() MessageType {
@@ -260,7 +260,7 @@ func parseRawJsonRequest(raw interface{}, requestType reflect.Type) (ocpp.Reques
 	return result, nil
 }
 
-func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (ocpp.Confirmation, error) {
+func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (ocpp.Response, error) {
 	bytes, err := json.Marshal(raw)
 	if err != nil {
 		return nil, err
@@ -270,7 +270,7 @@ func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (o
 	if err != nil {
 		return nil, err
 	}
-	result := confirmation.(ocpp.Confirmation)
+	result := confirmation.(ocpp.Response)
 	return result, nil
 }
 
@@ -320,7 +320,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 			return nil, nil
 		}
 		profile, _ := endpoint.GetProfileForFeature(request.GetFeatureName())
-		confirmation, err := profile.ParseConfirmation(request.GetFeatureName(), arr[2], parseRawJsonConfirmation)
+		confirmation, err := profile.ParseResponse(request.GetFeatureName(), arr[2], parseRawJsonConfirmation)
 		if err != nil {
 			return nil, ocpp.NewError(FormationViolation, err.Error(), uniqueId)
 		}
@@ -384,7 +384,7 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	return &call, nil
 }
 
-func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Confirmation, uniqueId string) (*CallResult, error) {
+func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId string) (*CallResult, error) {
 	action := confirmation.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {

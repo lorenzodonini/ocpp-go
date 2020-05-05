@@ -140,7 +140,7 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
+	suite.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Response, requestId string) {
 		assert.Equal(t, mockUniqueId, requestId)
 		assert.NotNil(t, confirmation)
 	})

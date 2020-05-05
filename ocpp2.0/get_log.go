@@ -78,7 +78,7 @@ func (f GetLogFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(GetLogRequest{})
 }
 
-func (f GetLogFeature) GetConfirmationType() reflect.Type {
+func (f GetLogFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(GetLogConfirmation{})
 }
 

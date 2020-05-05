@@ -92,7 +92,7 @@ func (f GetDisplayMessagesFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(GetDisplayMessagesRequest{})
 }
 
-func (f GetDisplayMessagesFeature) GetConfirmationType() reflect.Type {
+func (f GetDisplayMessagesFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(GetDisplayMessagesConfirmation{})
 }
 

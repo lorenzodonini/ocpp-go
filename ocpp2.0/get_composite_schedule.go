@@ -60,7 +60,7 @@ func (f GetCompositeScheduleFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(GetCompositeScheduleRequest{})
 }
 
-func (f GetCompositeScheduleFeature) GetConfirmationType() reflect.Type {
+func (f GetCompositeScheduleFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(GetCompositeScheduleConfirmation{})
 }
 

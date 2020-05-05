@@ -48,7 +48,7 @@ func (f CertificateSignedFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(CertificateSignedRequest{})
 }
 
-func (f CertificateSignedFeature) GetConfirmationType() reflect.Type {
+func (f CertificateSignedFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(CertificateSignedConfirmation{})
 }
 

@@ -13,7 +13,7 @@ type CentralSystem struct {
 	newChargePointHandler          func(chargePointId string)
 	disconnectedChargePointHandler func(chargePointId string)
 	requestHandler                 func(chargePointId string, request ocpp.Request, requestId string, action string)
-	confirmationHandler            func(chargePointId string, confirmation ocpp.Confirmation, requestId string)
+	confirmationHandler            func(chargePointId string, confirmation ocpp.Response, requestId string)
 	errorHandler                   func(chargePointId string, err *ocpp.Error, details interface{})
 	clientPendingMessages          map[string]string
 }
@@ -34,7 +34,7 @@ func (centralSystem *CentralSystem) SetRequestHandler(handler func(chargePointId
 	centralSystem.requestHandler = handler
 }
 
-func (centralSystem *CentralSystem) SetConfirmationHandler(handler func(chargePointId string, confirmation ocpp.Confirmation, requestId string)) {
+func (centralSystem *CentralSystem) SetConfirmationHandler(handler func(chargePointId string, confirmation ocpp.Response, requestId string)) {
 	centralSystem.confirmationHandler = handler
 }
 
@@ -101,7 +101,7 @@ func (centralSystem *CentralSystem) SendRequest(chargePointId string, request oc
 	return err
 }
 
-func (centralSystem *CentralSystem) SendConfirmation(chargePointId string, requestId string, confirmation ocpp.Confirmation) error {
+func (centralSystem *CentralSystem) SendConfirmation(chargePointId string, requestId string, confirmation ocpp.Response) error {
 	err := Validate.Struct(confirmation)
 	if err != nil {
 		return err

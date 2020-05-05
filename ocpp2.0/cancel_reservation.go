@@ -49,7 +49,7 @@ func (f CancelReservationFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(CancelReservationRequest{})
 }
 
-func (f CancelReservationFeature) GetConfirmationType() reflect.Type {
+func (f CancelReservationFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(CancelReservationConfirmation{})
 }
 

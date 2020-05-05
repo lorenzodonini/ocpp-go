@@ -12,15 +12,15 @@ import (
 func (suite *OcppV2TestSuite) TestAuthorizeRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp2.AuthorizeRequest{EvseID: []int{4,2}, IdToken: ocpp2.IdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []ocpp2.OCSPRequestDataType{{SerialNumber: "serial0", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1", ResponderURL: "www.someurl.com"}}}, true},
-		{ocpp2.AuthorizeRequest{EvseID: []int{4,2}, IdToken: ocpp2.IdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, true},
+		{ocpp2.AuthorizeRequest{EvseID: []int{4, 2}, IdToken: ocpp2.IdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []ocpp2.OCSPRequestDataType{{SerialNumber: "serial0", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1", ResponderURL: "www.someurl.com"}}}, true},
+		{ocpp2.AuthorizeRequest{EvseID: []int{4, 2}, IdToken: ocpp2.IdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, true},
 		{ocpp2.AuthorizeRequest{IdToken: ocpp2.IdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []ocpp2.OCSPRequestDataType{{SerialNumber: "serial0", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1", ResponderURL: "www.someurl.com"}}}, true},
 		{ocpp2.AuthorizeRequest{IdToken: ocpp2.IdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []ocpp2.OCSPRequestDataType{}}, true},
 		{ocpp2.AuthorizeRequest{EvseID: []int{}, IdToken: ocpp2.IdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, true},
 		{ocpp2.AuthorizeRequest{}, false},
 		{ocpp2.AuthorizeRequest{IdToken: ocpp2.IdToken{Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, false},
 		{ocpp2.AuthorizeRequest{IdToken: ocpp2.IdToken{Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []ocpp2.OCSPRequestDataType{{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1"}}}, false},
-		{ocpp2.AuthorizeRequest{IdToken: ocpp2.IdToken{Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []ocpp2.OCSPRequestDataType{{SerialNumber: "s0", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h0", IssuerKeyHash: "h0.1"},{SerialNumber: "s1", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h1", IssuerKeyHash: "h1.1"},{SerialNumber: "s2", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h2", IssuerKeyHash: "h2.1"},{SerialNumber: "s3", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h3", IssuerKeyHash: "h3.1"},{SerialNumber: "s4", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h4", IssuerKeyHash: "h4.1"}}}, false},
+		{ocpp2.AuthorizeRequest{IdToken: ocpp2.IdToken{Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []ocpp2.OCSPRequestDataType{{SerialNumber: "s0", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h0", IssuerKeyHash: "h0.1"}, {SerialNumber: "s1", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h1", IssuerKeyHash: "h1.1"}, {SerialNumber: "s2", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h2", IssuerKeyHash: "h2.1"}, {SerialNumber: "s3", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h3", IssuerKeyHash: "h3.1"}, {SerialNumber: "s4", HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h4", IssuerKeyHash: "h4.1"}}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -28,12 +28,12 @@ func (suite *OcppV2TestSuite) TestAuthorizeRequestValidation() {
 func (suite *OcppV2TestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp2.AuthorizeConfirmation{CertificateStatus: ocpp2.CertificateStatusAccepted, EvseID: []int{4,2}, IdTokenInfo: ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted}}, true},
+		{ocpp2.AuthorizeConfirmation{CertificateStatus: ocpp2.CertificateStatusAccepted, EvseID: []int{4, 2}, IdTokenInfo: ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted}}, true},
 		{ocpp2.AuthorizeConfirmation{CertificateStatus: ocpp2.CertificateStatusAccepted, IdTokenInfo: ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted}}, true},
 		{ocpp2.AuthorizeConfirmation{IdTokenInfo: ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted}}, true},
 		{ocpp2.AuthorizeConfirmation{}, false},
-		{ocpp2.AuthorizeConfirmation{CertificateStatus:"invalidCertificateStatus", EvseID: []int{4,2}, IdTokenInfo: ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted}}, false},
-		{ocpp2.AuthorizeConfirmation{CertificateStatus:"invalidCertificateStatus", EvseID: []int{4,2}, IdTokenInfo: ocpp2.IdTokenInfo{Status: "invalidTokenInfoStatus"}}, false},
+		{ocpp2.AuthorizeConfirmation{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted}}, false},
+		{ocpp2.AuthorizeConfirmation{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: ocpp2.IdTokenInfo{Status: "invalidTokenInfoStatus"}}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -43,7 +43,7 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	evseIds := []int{4,2}
+	evseIds := []int{4, 2}
 	additionalInfo := ocpp2.AdditionalInfo{AdditionalIdToken: "at1", Type: "some"}
 	idToken := ocpp2.IdToken{IdToken: "tok1", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{additionalInfo}}
 	certHashData := ocpp2.OCSPRequestDataType{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h0", IssuerKeyHash: "h0.1", SerialNumber: "s0", ResponderURL: "http://www.test.org"}
@@ -100,7 +100,7 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestAuthorizeInvalidEndpoint() {
 	messageId := defaultMessageId
-	evseIds := []int{4,2}
+	evseIds := []int{4, 2}
 	additionalInfo := ocpp2.AdditionalInfo{AdditionalIdToken: "at1", Type: "some"}
 	idToken := ocpp2.IdToken{IdToken: "tok1", Type: ocpp2.IdTokenTypeKeyCode, AdditionalInfo: []ocpp2.AdditionalInfo{additionalInfo}}
 	certHashData := ocpp2.OCSPRequestDataType{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "h0", IssuerKeyHash: "h0.1", SerialNumber: "s0", ResponderURL: "http://www.test.org"}

@@ -53,7 +53,7 @@ func (f DataTransferFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(DataTransferRequest{})
 }
 
-func (f DataTransferFeature) GetConfirmationType() reflect.Type {
+func (f DataTransferFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(DataTransferConfirmation{})
 }
 

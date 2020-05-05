@@ -98,7 +98,7 @@ func (f BootNotificationFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(BootNotificationRequest{})
 }
 
-func (f BootNotificationFeature) GetConfirmationType() reflect.Type {
+func (f BootNotificationFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(BootNotificationConfirmation{})
 }
 

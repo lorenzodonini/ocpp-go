@@ -122,7 +122,7 @@ func (f MockFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(MockRequest{})
 }
 
-func (f MockFeature) GetConfirmationType() reflect.Type {
+func (f MockFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(MockConfirmation{})
 }
 
@@ -271,7 +271,7 @@ func (suite *OcppJTestSuite) TestGetProfile() {
 	feature := profile.GetFeature(MockFeatureName)
 	assert.NotNil(t, feature)
 	assert.Equal(t, reflect.TypeOf(MockRequest{}), feature.GetRequestType())
-	assert.Equal(t, reflect.TypeOf(MockConfirmation{}), feature.GetConfirmationType())
+	assert.Equal(t, reflect.TypeOf(MockConfirmation{}), feature.GetResponseType())
 }
 
 func (suite *OcppJTestSuite) TestGetProfileForFeature() {

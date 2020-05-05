@@ -124,7 +124,7 @@ func (f MockFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(MockRequest{})
 }
 
-func (f MockFeature) GetConfirmationType() reflect.Type {
+func (f MockFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(MockConfirmation{})
 }
 
@@ -249,6 +249,7 @@ func (coreListener MockChargePointCoreListener) OnChangeAvailability(request *oc
 	conf := args.Get(0).(*ocpp2.ChangeAvailabilityConfirmation)
 	return conf, args.Error(1)
 }
+
 //
 //func (coreListener MockChargePointCoreListener) OnDataTransfer(request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
 //	args := coreListener.MethodCalled("OnDataTransfer", request)
@@ -639,7 +640,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV2TestSuite, request ocpp.
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	// Run request test
-	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocpp.Confirmation, err error) {
+	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
 	require.Error(t, err)
@@ -676,7 +677,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	// Run request test
-	err = suite.csms.SendRequestAsync(wsId, request, func(confirmation ocpp.Confirmation, err error) {
+	err = suite.csms.SendRequestAsync(wsId, request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
 	require.Error(t, err)
@@ -698,7 +699,7 @@ type RequestTestEntry struct {
 }
 
 type ConfirmationTestEntry struct {
-	Confirmation  ocpp.Confirmation
+	Confirmation  ocpp.Response
 	ExpectedValid bool
 }
 

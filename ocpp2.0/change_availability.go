@@ -71,7 +71,7 @@ func (f ChangeAvailabilityFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(ChangeAvailabilityRequest{})
 }
 
-func (f ChangeAvailabilityFeature) GetConfirmationType() reflect.Type {
+func (f ChangeAvailabilityFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(ChangeAvailabilityConfirmation{})
 }
 

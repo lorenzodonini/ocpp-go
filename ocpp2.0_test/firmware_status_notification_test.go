@@ -16,7 +16,7 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationRequestValidation() 
 		{ocpp2.FirmwareStatusNotificationRequest{Status: ocpp2.FirmwareStatusDownloaded}, true},
 		{ocpp2.FirmwareStatusNotificationRequest{RequestID: 42}, false},
 		{ocpp2.FirmwareStatusNotificationRequest{}, false},
-		{ocpp2.FirmwareStatusNotificationRequest{Status: ocpp2.FirmwareStatusDownloaded, RequestID: -1},  false},
+		{ocpp2.FirmwareStatusNotificationRequest{Status: ocpp2.FirmwareStatusDownloaded, RequestID: -1}, false},
 		{ocpp2.FirmwareStatusNotificationRequest{Status: "invalidFirmwareStatus"}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)

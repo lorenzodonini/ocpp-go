@@ -33,7 +33,7 @@ func (f GetCertificateStatusFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(GetCertificateStatusRequest{})
 }
 
-func (f GetCertificateStatusFeature) GetConfirmationType() reflect.Type {
+func (f GetCertificateStatusFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(GetCertificateStatusConfirmation{})
 }
 

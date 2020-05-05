@@ -46,7 +46,7 @@ func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsE2EMocked() {
 	certificateType := ocpp2.CSMSRootCertificate
 	status := ocpp2.GetInstalledCertificateStatusAccepted
 	certificateHashData := []ocpp2.CertificateHashData{
-		{ HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0" },
+		{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"},
 	}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"typeOfCertificate":"%v"}]`, messageId, ocpp2.GetInstalledCertificateIdsFeatureName, certificateType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","certificateHashData":[{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v"}]}]`,

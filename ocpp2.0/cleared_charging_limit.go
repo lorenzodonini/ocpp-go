@@ -32,7 +32,7 @@ func (f ClearedChargingLimitFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(ClearedChargingLimitRequest{})
 }
 
-func (f ClearedChargingLimitFeature) GetConfirmationType() reflect.Type {
+func (f ClearedChargingLimitFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(ClearedChargingLimitConfirmation{})
 }
 

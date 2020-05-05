@@ -56,7 +56,7 @@ func (f CustomerInformationFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(CustomerInformationRequest{})
 }
 
-func (f CustomerInformationFeature) GetConfirmationType() reflect.Type {
+func (f CustomerInformationFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(CustomerInformationConfirmation{})
 }
 
