@@ -8,7 +8,7 @@ import (
 )
 
 type csms struct {
-	server       *ocppj.CentralSystem
+	server       *ocppj.Server
 	coreListener CSMSHandler
 	//localAuthListListener CentralSystemLocalAuthListListener
 	//firmwareListener      CentralSystemFirmwareManagementListener
@@ -566,11 +566,11 @@ func (cs *csms) SetMessageHandler(handler CSMSHandler) {
 //}
 
 func (cs *csms) SetNewChargingStationHandler(handler func(chargePointId string)) {
-	cs.server.SetNewChargePointHandler(handler)
+	cs.server.SetNewClientHandler(handler)
 }
 
 func (cs *csms) SetChargingStationDisconnectedHandler(handler func(chargePointId string)) {
-	cs.server.SetDisconnectedChargePointHandler(handler)
+	cs.server.SetDisconnectedClientHandler(handler)
 }
 
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
@@ -601,7 +601,7 @@ func (cs *csms) Start(listenPort int, listenPath string) {
 
 func (cs *csms) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
 	if confirmation != nil {
-		err := cs.server.SendConfirmation(chargePointId, requestId, confirmation)
+		err := cs.server.SendResponse(chargePointId, requestId, confirmation)
 		if err != nil {
 			//TODO: handle error somehow
 			log.Print(err)

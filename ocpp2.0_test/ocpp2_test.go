@@ -718,8 +718,8 @@ func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
 // ---------------------- TESTS ----------------------
 type OcppV2TestSuite struct {
 	suite.Suite
-	ocppjChargePoint   *ocppj.ChargePoint
-	ocppjCentralSystem *ocppj.CentralSystem
+	ocppjChargePoint   *ocppj.Client
+	ocppjCentralSystem *ocppj.Server
 	mockWsServer       *MockWebsocketServer
 	mockWsClient       *MockWebsocketClient
 	chargePoint        ocpp2.ChargingStation
@@ -748,8 +748,8 @@ func (suite *OcppV2TestSuite) SetupTest() {
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
-	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile)
-	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile)
+	suite.ocppjChargePoint = ocppj.NewClient("test_id", suite.mockWsClient, coreProfile)
+	suite.ocppjCentralSystem = ocppj.NewServer(suite.mockWsServer, coreProfile)
 	suite.chargePoint = ocpp2.NewChargingStation("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.csms = ocpp2.NewCSMS(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {

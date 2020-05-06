@@ -246,8 +246,8 @@ func init() {
 // ---------------------- TESTS ----------------------
 type OcppJTestSuite struct {
 	suite.Suite
-	chargePoint   *ocppj.ChargePoint
-	centralSystem *ocppj.CentralSystem
+	chargePoint   *ocppj.Client
+	centralSystem *ocppj.Server
 	mockServer    *MockWebsocketServer
 	mockClient    *MockWebsocketClient
 }
@@ -258,8 +258,8 @@ func (suite *OcppJTestSuite) SetupTest() {
 	mockServer := MockWebsocketServer{}
 	suite.mockClient = &mockClient
 	suite.mockServer = &mockServer
-	suite.chargePoint = ocppj.NewChargePoint("mock_id", suite.mockClient, mockProfile)
-	suite.centralSystem = ocppj.NewCentralSystem(suite.mockServer, mockProfile)
+	suite.chargePoint = ocppj.NewClient("mock_id", suite.mockClient, mockProfile)
+	suite.centralSystem = ocppj.NewServer(suite.mockServer, mockProfile)
 }
 
 // Protocol functions test

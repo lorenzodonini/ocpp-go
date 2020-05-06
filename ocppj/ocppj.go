@@ -1,3 +1,4 @@
+// Contains an implementation of OCPP message dispatcher via JSON over WebSocket.
 package ocppj
 
 import (
@@ -11,13 +12,14 @@ import (
 	"reflect"
 )
 
+// The validator, used for validating incoming/outgoing OCPP messages.
 var Validate = validator.New()
 
 func init() {
 	_ = Validate.RegisterValidation("errorCode", IsErrorCodeValid)
 }
 
-// -------------------- Message --------------------
+// MessageType identifies the type of message exchanged between two OCPP endpoints.
 type MessageType int
 
 const (
@@ -26,8 +28,11 @@ const (
 	CALL_ERROR  MessageType = 4
 )
 
+// An OCPP-J message.
 type Message interface {
+	// Returns the message type identifier of the message.
 	GetMessageTypeId() MessageType
+	// Returns the unique identifier of the message.
 	GetUniqueId() string
 	json.Marshaler
 }
@@ -43,6 +48,8 @@ func SetMessageIdGenerator(generator func() string) {
 }
 
 // -------------------- Call --------------------
+
+// An OCPP-J Call message, containing an OCPP Request.
 type Call struct {
 	Message       `validate:"-"`
 	MessageTypeId MessageType  `json:"messageTypeId" validate:"required,eq=2"`
@@ -69,6 +76,8 @@ func (call *Call) MarshalJSON() ([]byte, error) {
 }
 
 // -------------------- Call Result --------------------
+
+// An OCPP-J CallResult message, containing an OCPP Response.
 type CallResult struct {
 	Message
 	MessageTypeId MessageType   `json:"messageTypeId" validate:"required,eq=3"`
@@ -93,6 +102,8 @@ func (callResult *CallResult) MarshalJSON() ([]byte, error) {
 }
 
 // -------------------- Call Error --------------------
+
+// An OCPP-J CallError message, containing an OCPP Error.
 type CallError struct {
 	Message
 	MessageTypeId    MessageType    `json:"messageTypeId" validate:"required,eq=4"`
@@ -121,16 +132,16 @@ func (callError *CallError) MarshalJSON() ([]byte, error) {
 }
 
 const (
-	NotImplemented                ocpp.ErrorCode = "NotImplemented"
-	NotSupported                  ocpp.ErrorCode = "NotSupported"
-	InternalError                 ocpp.ErrorCode = "InternalError"
-	ProtocolError                 ocpp.ErrorCode = "ProtocolError"
-	SecurityError                 ocpp.ErrorCode = "SecurityError"
-	FormationViolation            ocpp.ErrorCode = "FormationViolation"
-	PropertyConstraintViolation   ocpp.ErrorCode = "PropertyConstraintViolation"
-	OccurrenceConstraintViolation ocpp.ErrorCode = "OccurrenceConstraintViolation"
-	TypeConstraintViolation       ocpp.ErrorCode = "TypeConstraintViolation"
-	GenericError                  ocpp.ErrorCode = "GenericError"
+	NotImplemented                ocpp.ErrorCode = "NotImplemented"                // Requested Action is not known by receiver.
+	NotSupported                  ocpp.ErrorCode = "NotSupported"                  // Requested Action is recognized but not supported by the receiver.
+	InternalError                 ocpp.ErrorCode = "InternalError"                 // An internal error occurred and the receiver was not able to process the requested Action successfully.
+	ProtocolError                 ocpp.ErrorCode = "ProtocolError"                 // Payload for Action is incomplete.
+	SecurityError                 ocpp.ErrorCode = "SecurityError"                 // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully.
+	FormationViolation            ocpp.ErrorCode = "FormationViolation"            // Payload for Action is syntactically incorrect or not conform the PDU structure for Action.
+	PropertyConstraintViolation   ocpp.ErrorCode = "PropertyConstraintViolation"   // Payload is syntactically correct but at least one field contains an invalid value.
+	OccurrenceConstraintViolation ocpp.ErrorCode = "OccurrenceConstraintViolation" // Payload for Action is syntactically correct but at least one of the fields violates occurrence constraints.
+	TypeConstraintViolation       ocpp.ErrorCode = "TypeConstraintViolation"       // Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. “somestring”: 12).
+	GenericError                  ocpp.ErrorCode = "GenericError"                  // Any other error not covered by the previous ones.
 )
 
 func IsErrorCodeValid(fl validator.FieldLevel) bool {
@@ -143,6 +154,9 @@ func IsErrorCodeValid(fl validator.FieldLevel) bool {
 }
 
 // -------------------- Logic --------------------
+
+// Unmarshals an OCPP-J json object from a byte array.
+// Returns the array of elements contained in the message.
 func ParseRawJsonMessage(dataJson []byte) []interface{} {
 	var arr []interface{}
 	err := json.Unmarshal(dataJson, &arr)
@@ -153,6 +167,8 @@ func ParseRawJsonMessage(dataJson []byte) []interface{} {
 	return arr
 }
 
+// Unmarshals an OCPP-J json object from a JSON string.
+// Returns the array of elements contained in the message.
 func ParseJsonMessage(dataJson string) []interface{} {
 	rawJson := []byte(dataJson)
 	return ParseRawJsonMessage(rawJson)
@@ -202,15 +218,21 @@ func errorFromValidation(validationErrors validator.ValidationErrors, messageId 
 }
 
 // -------------------- Endpoint --------------------
+
+// An OCPP-J endpoint is one of the two entities taking part in the communication.
+// The endpoint keeps state for supported OCPP profiles and pending requests.
 type Endpoint struct {
 	Profiles        []*ocpp.Profile
 	pendingRequests map[string]ocpp.Request
 }
 
+// Adds support for a new profile on the endpoint.
 func (endpoint *Endpoint) AddProfile(profile *ocpp.Profile) {
 	endpoint.Profiles = append(endpoint.Profiles, profile)
 }
 
+// Retrieves a profile for the given profile name.
+// Returns a false flag in case no profile matching the specified name was found.
 func (endpoint *Endpoint) GetProfile(name string) (*ocpp.Profile, bool) {
 	for _, p := range endpoint.Profiles {
 		if p.Name == name {
@@ -220,6 +242,8 @@ func (endpoint *Endpoint) GetProfile(name string) (*ocpp.Profile, bool) {
 	return nil, false
 }
 
+// Retrieves a profile for a given feature.
+// Returns a false flag in case no profile supporting the specified feature was found.
 func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*ocpp.Profile, bool) {
 	for _, p := range endpoint.Profiles {
 		if p.SupportsFeature(featureName) {
@@ -229,15 +253,20 @@ func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*ocpp.Profil
 	return nil, false
 }
 
+// Sets a Request as pending on the endpoint. Requests are considered pending until a response was received.
+// The function expects a message unique ID and the Request.
 func (endpoint *Endpoint) AddPendingRequest(id string, request ocpp.Request) {
 	endpoint.pendingRequests[id] = request
 }
 
+// Retrieves a pending Request, using the message ID.
+// If no request for the passed message ID is found, a false flag is returned.
 func (endpoint *Endpoint) GetPendingRequest(id string) (ocpp.Request, bool) {
 	request, ok := endpoint.pendingRequests[id]
 	return request, ok
 }
 
+// Deletes a pending Request from the endpoint, using the message ID.
 func (endpoint *Endpoint) DeletePendingRequest(id string) {
 	delete(endpoint.pendingRequests, id)
 }
@@ -274,6 +303,9 @@ func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (o
 	return result, nil
 }
 
+// Parses an OCPP-J message. The function expects an array of elements, as contained in the JSON message.
+//
+// Pending requests are automatically cleared, in case the received message is a CallResponse or CallError.
 func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error) {
 	// Checking message fields
 	if len(arr) < 3 {
@@ -363,6 +395,8 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 	}
 }
 
+// Creates a Call message, given an OCPP request. A unique ID for the message is automatically generated.
+// Returns an error in case the request's feature is not supported on this endpoint.
 func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	action := request.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
@@ -384,6 +418,8 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	return &call, nil
 }
 
+// Creates a CallResult message, given an OCPP response and the message's unique ID.
+// Returns an error in case the response's feature is not supported on this endpoint.
 func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId string) (*CallResult, error) {
 	action := confirmation.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
@@ -402,6 +438,7 @@ func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId 
 	return &callResult, nil
 }
 
+// Creates a CallError message, given the message's unique ID and the error.
 func (endpoint *Endpoint) CreateCallError(uniqueId string, code ocpp.ErrorCode, description string, details interface{}) *CallError {
 	callError := CallError{
 		MessageTypeId:    CALL_ERROR,

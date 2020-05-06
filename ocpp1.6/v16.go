@@ -19,16 +19,16 @@ import (
 // -------------------- v1.6 Charge Point --------------------
 
 // A Charge Point represents the physical system where an EV can be charged.
-// You can instantiate a default Charge Point struct by calling NewChargePoint.
+// You can instantiate a default Charge Point struct by calling NewClient.
 //
 // The logic for incoming messages needs to be implemented, and the message handlers need to be registered with the charge point:
 // 	handler := &ChargePointHandler{}
-//	chargePoint.SetChargePointCoreHandler(handler)
+//	client.SetChargePointCoreHandler(handler)
 // Refer to the ChargePointCoreHandler, ChargePointFirmwareHandler, ChargePointLocalAuthListHandler, ChargePointReservationHandler, ChargePointRemoteTriggerHandler and ChargePointSmartChargingHandlers interfaces for the implementation requirements.
 //
 // A charge point can be started and stopped using the Start and Stop functions.
 // While running, messages can be sent to the Central system by calling the Charge point's functions, e.g.
-//	bootConf, err := chargePoint.BootNotification("model1", "vendor1")
+//	bootConf, err := client.BootNotification("model1", "vendor1")
 //
 // All messages are synchronous blocking, and return either the response from the Central system or an error.
 // To send asynchronous messages and avoid blocking the calling thread, refer to SendRequestAsync.
@@ -81,7 +81,7 @@ type ChargePoint interface {
 	// The function doesn't block and returns right away, after having attempted to open a connection to the central system.
 	// If the connection couldn't be opened, an error is returned.
 	//
-	// Optional client options must be set before calling this function. Refer to NewChargePoint.
+	// Optional client options must be set before calling this function. Refer to NewClient.
 	//
 	// No auto-reconnect logic is implemented as of now, but is planned for the future.
 	Start(centralSystemUrl string) error
@@ -94,7 +94,7 @@ type ChargePoint interface {
 // The id parameter is required to uniquely identify the charge point.
 //
 // The dispatcher and client parameters may be omitted, in order to use a default configuration:
-//   chargePoint := NewChargePoint("someUniqueId", nil, nil)
+//   client := NewClient("someUniqueId", nil, nil)
 //
 // Additional networking parameters (e.g. TLS or proxy configuration) may be passed, by creating a custom client.
 // Here is an example for a client using TLS configuration with a self-signed certificate:
@@ -107,13 +107,13 @@ type ChargePoint interface {
 //	if !ok {
 //		log.Fatal("couldn't parse PEM certificate")
 //	}
-//	cp := NewChargePoint("someUniqueId", nil, ws.NewTLSClient(&tls.Config{
+//	cp := NewClient("someUniqueId", nil, ws.NewTLSClient(&tls.Config{
 //		RootCAs: certPool,
 //	})
 //
 // For more advanced options, or if a customer networking/occpj layer is required,
-// please refer to ocppj.ChargePoint and ws.WsClient.
-func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient) ChargePoint {
+// please refer to ocppj.Client and ws.WsClient.
+func NewChargePoint(id string, dispatcher *ocppj.Client, client ws.WsClient) ChargePoint {
 	if client == nil {
 		client = ws.NewClient()
 	}
@@ -131,37 +131,37 @@ func NewChargePoint(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient
 		}
 	})
 	if dispatcher == nil {
-		dispatcher = ocppj.NewChargePoint(id, client, core.Profile, auth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		dispatcher = ocppj.NewClient(id, client, core.Profile, auth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
-	cp := chargePoint{chargePoint: dispatcher, confirmationListener: make(chan ocpp.Response), errorListener: make(chan error)}
-	cp.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Response, requestId string) {
-		cp.confirmationListener <- confirmation
+	cp := chargePoint{client: dispatcher, confirmationHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
+	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
+		cp.confirmationHandler <- confirmation
 	})
-	cp.chargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
-		cp.errorListener <- err
+	cp.client.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+		cp.errorHandler <- err
 	})
-	cp.chargePoint.SetRequestHandler(cp.handleIncomingRequest)
+	cp.client.SetRequestHandler(cp.handleIncomingRequest)
 	return &cp
 }
 
 // -------------------- v1.6 Central System --------------------
 
 // A Central System manages Charge Points and has the information for authorizing users for using its Charge Points.
-// You can instantiate a default Central System struct by calling the NewCentralSystem function.
+// You can instantiate a default Central System struct by calling the NewServer function.
 //
 // The logic for handling incoming messages needs to be implemented, and the message handlers need to be registered with the central system:
 //	handler := &CentralSystemHandler{}
-//	centralSystem.SetCentralSystemCoreHandler(handler)
+//	server.SetCentralSystemCoreHandler(handler)
 // // Refer to the CentralSystemCoreHandler, CentralSystemFirmwareHandler, CentralSystemLocalAuthListHandler, CentralSystemReservationHandler, CentralSystemRemoteTriggerHandler and CentralSystemSmartChargingHandlers interfaces for the implementation requirements.
 //
 // A Central system can be started by using the Start function.
-// To be notified of incoming (dis)connections from charge points refer to the SetNewChargePointHandler and SetChargePointDisconnectedHandler functions.
+// To be notified of incoming (dis)connections from charge points refer to the SetNewClientHandler and SetChargePointDisconnectedHandler functions.
 //
 // While running, messages can be sent to a charge point by calling the Central system's functions, e.g.:
 //	callback := func(conf *ChangeAvailabilityConfirmation, err error) {
 //		// handle the response...
 //	}
-//	changeAvailabilityConf, err := centralSystem.ChangeAvailability("cs0001", callback, 1, AvailabilityTypeOperative)
+//	changeAvailabilityConf, err := server.ChangeAvailability("cs0001", callback, 1, AvailabilityTypeOperative)
 // All messages are sent asynchronously and do not block the caller.
 type CentralSystem interface {
 	// Instructs a charge point to change its availability. The target availability can be set for a single connector of for the whole charge point.
@@ -236,27 +236,27 @@ type CentralSystem interface {
 // Creates a new OCPP 1.6 central system.
 //
 // The dispatcher and client parameters may be omitted, in order to use a default configuration:
-//   chargePoint := NewCentralSystem(nil, nil)
+//   client := NewServer(nil, nil)
 //
 // It is recommended to use the default configuration, unless a custom networking / ocppj layer is required.
 // The default dispatcher supports all OCPP 1.6 profiles out-of-the-box.
 //
 // If you need a TLS server, you may use the following:
-//	cs := NewCentralSystem(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
-func NewCentralSystem(dispatcher *ocppj.CentralSystem, server ws.WsServer) CentralSystem {
+//	cs := NewServer(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
+func NewCentralSystem(dispatcher *ocppj.Server, server ws.WsServer) CentralSystem {
 	if server == nil {
 		server = ws.NewServer()
 	}
 	server.AddSupportedSubprotocol(types.V16Subprotocol)
 	if dispatcher == nil {
-		dispatcher = ocppj.NewCentralSystem(server, core.Profile, auth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		dispatcher = ocppj.NewServer(server, core.Profile, auth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
 	cs := centralSystem{
-		centralSystem: dispatcher,
-		callbacks:     map[string]func(confirmation ocpp.Response, err error){}}
-	cs.centralSystem.SetRequestHandler(cs.handleIncomingRequest)
-	cs.centralSystem.SetConfirmationHandler(cs.handleIncomingConfirmation)
-	cs.centralSystem.SetErrorHandler(cs.handleIncomingError)
+		server:    dispatcher,
+		callbacks: map[string]func(confirmation ocpp.Response, err error){}}
+	cs.server.SetRequestHandler(cs.handleIncomingRequest)
+	cs.server.SetResponseHandler(cs.handleIncomingConfirmation)
+	cs.server.SetErrorHandler(cs.handleIncomingError)
 	return &cs
 }
 

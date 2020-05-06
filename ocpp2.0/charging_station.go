@@ -8,7 +8,7 @@ import (
 )
 
 type chargingStation struct {
-	client               *ocppj.ChargePoint
+	client               *ocppj.Client
 	messageHandler       ChargingStationHandler
 	confirmationListener chan ocpp.Response
 	errorListener        chan error
@@ -273,7 +273,7 @@ func (cp *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 
 func (cp *chargingStation) sendResponse(confirmation ocpp.Response, err error, requestId string) {
 	if confirmation != nil {
-		err := cp.client.SendConfirmation(requestId, confirmation)
+		err := cp.client.SendResponse(requestId, confirmation)
 		if err != nil {
 			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 			//TODO: handle error somehow

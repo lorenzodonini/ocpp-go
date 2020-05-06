@@ -15,14 +15,14 @@ import (
 )
 
 type centralSystem struct {
-	centralSystem         *ocppj.CentralSystem
-	coreListener          core.CentralSystemCoreHandler
-	localAuthListListener auth.CentralSystemLocalAuthListHandler
-	firmwareListener      firmware.CentralSystemFirmwareManagementHandler
-	reservationListener   reservation.CentralSystemReservationHandler
-	remoteTriggerListener remotetrigger.CentralSystemRemoteTriggerHandler
-	smartChargingListener smartcharging.CentralSystemSmartChargingHandler
-	callbacks             map[string]func(confirmation ocpp.Response, err error)
+	server               *ocppj.Server
+	coreHandler          core.CentralSystemCoreHandler
+	localAuthListHandler auth.CentralSystemLocalAuthListHandler
+	firmwareHandler      firmware.CentralSystemFirmwareManagementHandler
+	reservationHandler   reservation.CentralSystemReservationHandler
+	remoteTriggerHandler remotetrigger.CentralSystemRemoteTriggerHandler
+	smartChargingHandler smartcharging.CentralSystemSmartChargingHandler
+	callbacks            map[string]func(confirmation ocpp.Response, err error)
 }
 
 func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *core.ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType core.AvailabilityType, props ...func(request *core.ChangeAvailabilityRequest)) error {
@@ -311,35 +311,35 @@ func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*sm
 }
 
 func (cs *centralSystem) SetCentralSystemCoreHandler(listener core.CentralSystemCoreHandler) {
-	cs.coreListener = listener
+	cs.coreHandler = listener
 }
 
 func (cs *centralSystem) SetLocalAuthListHandler(listener auth.CentralSystemLocalAuthListHandler) {
-	cs.localAuthListListener = listener
+	cs.localAuthListHandler = listener
 }
 
 func (cs *centralSystem) SetFirmwareManagementHandler(listener firmware.CentralSystemFirmwareManagementHandler) {
-	cs.firmwareListener = listener
+	cs.firmwareHandler = listener
 }
 
 func (cs *centralSystem) SetReservationHandler(listener reservation.CentralSystemReservationHandler) {
-	cs.reservationListener = listener
+	cs.reservationHandler = listener
 }
 
 func (cs *centralSystem) SetRemoteTriggerHandler(listener remotetrigger.CentralSystemRemoteTriggerHandler) {
-	cs.remoteTriggerListener = listener
+	cs.remoteTriggerHandler = listener
 }
 
 func (cs *centralSystem) SetSmartChargingHandler(listener smartcharging.CentralSystemSmartChargingHandler) {
-	cs.smartChargingListener = listener
+	cs.smartChargingHandler = listener
 }
 
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
-	cs.centralSystem.SetNewChargePointHandler(handler)
+	cs.server.SetNewClientHandler(handler)
 }
 
 func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePointId string)) {
-	cs.centralSystem.SetDisconnectedChargePointHandler(handler)
+	cs.server.SetDisconnectedClientHandler(handler)
 }
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
@@ -354,7 +354,7 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
 	}
 	cs.callbacks[clientId] = callback
-	err := cs.centralSystem.SendRequest(clientId, request)
+	err := cs.server.SendRequest(clientId, request)
 	if err != nil {
 		delete(cs.callbacks, clientId)
 		return err
@@ -363,18 +363,18 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 }
 
 func (cs *centralSystem) Start(listenPort int, listenPath string) {
-	cs.centralSystem.Start(listenPort, listenPath)
+	cs.server.Start(listenPort, listenPath)
 }
 
 func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
 	if confirmation != nil {
-		err := cs.centralSystem.SendConfirmation(chargePointId, requestId, confirmation)
+		err := cs.server.SendResponse(chargePointId, requestId, confirmation)
 		if err != nil {
 			//TODO: handle error somehow
 			log.Print(err)
 		}
 	} else {
-		err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
+		err := cs.server.SendError(chargePointId, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"client":  chargePointId,
@@ -386,7 +386,7 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Re
 
 func (cs *centralSystem) notImplementedError(chargePointId string, requestId string, action string) {
 	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
-	err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
+	err := cs.server.SendError(chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"client":  chargePointId,
@@ -397,7 +397,7 @@ func (cs *centralSystem) notImplementedError(chargePointId string, requestId str
 
 func (cs *centralSystem) notSupportedError(chargePointId string, requestId string, action string) {
 	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
-	err := cs.centralSystem.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
+	err := cs.server.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"client":  chargePointId,
@@ -407,7 +407,7 @@ func (cs *centralSystem) notSupportedError(chargePointId string, requestId strin
 }
 
 func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocpp.Request, requestId string, action string) {
-	profile, found := cs.centralSystem.GetProfileForFeature(action)
+	profile, found := cs.server.GetProfileForFeature(action)
 	// Check whether action is supported and a listener for it exists
 	if !found {
 		cs.notImplementedError(chargePointId, requestId, action)
@@ -415,32 +415,32 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 	} else {
 		switch profile.Name {
 		case core.ProfileName:
-			if cs.coreListener == nil {
+			if cs.coreHandler == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
 		case auth.ProfileName:
-			if cs.localAuthListListener == nil {
+			if cs.localAuthListHandler == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
 		case firmware.ProfileName:
-			if cs.firmwareListener == nil {
+			if cs.firmwareHandler == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
 		case reservation.ProfileName:
-			if cs.reservationListener == nil {
+			if cs.reservationHandler == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
 		case remotetrigger.ProfileName:
-			if cs.remoteTriggerListener == nil {
+			if cs.remoteTriggerHandler == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
 		case smartcharging.ProfileName:
-			if cs.smartChargingListener == nil {
+			if cs.smartChargingHandler == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
@@ -452,25 +452,25 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 	go func() {
 		switch action {
 		case core.BootNotificationFeatureName:
-			confirmation, err = cs.coreListener.OnBootNotification(chargePointId, request.(*core.BootNotificationRequest))
+			confirmation, err = cs.coreHandler.OnBootNotification(chargePointId, request.(*core.BootNotificationRequest))
 		case core.AuthorizeFeatureName:
-			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*core.AuthorizeRequest))
+			confirmation, err = cs.coreHandler.OnAuthorize(chargePointId, request.(*core.AuthorizeRequest))
 		case core.DataTransferFeatureName:
-			confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*core.DataTransferRequest))
+			confirmation, err = cs.coreHandler.OnDataTransfer(chargePointId, request.(*core.DataTransferRequest))
 		case core.HeartbeatFeatureName:
-			confirmation, err = cs.coreListener.OnHeartbeat(chargePointId, request.(*core.HeartbeatRequest))
+			confirmation, err = cs.coreHandler.OnHeartbeat(chargePointId, request.(*core.HeartbeatRequest))
 		case core.MeterValuesFeatureName:
-			confirmation, err = cs.coreListener.OnMeterValues(chargePointId, request.(*core.MeterValuesRequest))
+			confirmation, err = cs.coreHandler.OnMeterValues(chargePointId, request.(*core.MeterValuesRequest))
 		case core.StartTransactionFeatureName:
-			confirmation, err = cs.coreListener.OnStartTransaction(chargePointId, request.(*core.StartTransactionRequest))
+			confirmation, err = cs.coreHandler.OnStartTransaction(chargePointId, request.(*core.StartTransactionRequest))
 		case core.StopTransactionFeatureName:
-			confirmation, err = cs.coreListener.OnStopTransaction(chargePointId, request.(*core.StopTransactionRequest))
+			confirmation, err = cs.coreHandler.OnStopTransaction(chargePointId, request.(*core.StopTransactionRequest))
 		case core.StatusNotificationFeatureName:
-			confirmation, err = cs.coreListener.OnStatusNotification(chargePointId, request.(*core.StatusNotificationRequest))
+			confirmation, err = cs.coreHandler.OnStatusNotification(chargePointId, request.(*core.StatusNotificationRequest))
 		case firmware.DiagnosticsStatusNotificationFeatureName:
-			confirmation, err = cs.firmwareListener.OnDiagnosticsStatusNotification(chargePointId, request.(*firmware.DiagnosticsStatusNotificationRequest))
+			confirmation, err = cs.firmwareHandler.OnDiagnosticsStatusNotification(chargePointId, request.(*firmware.DiagnosticsStatusNotificationRequest))
 		case firmware.FirmwareStatusNotificationFeatureName:
-			confirmation, err = cs.firmwareListener.OnFirmwareStatusNotification(chargePointId, request.(*firmware.FirmwareStatusNotificationRequest))
+			confirmation, err = cs.firmwareHandler.OnFirmwareStatusNotification(chargePointId, request.(*firmware.FirmwareStatusNotificationRequest))
 		default:
 			cs.notSupportedError(chargePointId, requestId, action)
 			return

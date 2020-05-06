@@ -596,8 +596,8 @@ func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
 // ---------------------- TESTS ----------------------
 type OcppV16TestSuite struct {
 	suite.Suite
-	ocppjChargePoint   *ocppj.ChargePoint
-	ocppjCentralSystem *ocppj.CentralSystem
+	ocppjChargePoint   *ocppj.Client
+	ocppjCentralSystem *ocppj.Server
 	mockWsServer       *MockWebsocketServer
 	mockWsClient       *MockWebsocketClient
 	chargePoint        ocpp16.ChargePoint
@@ -626,8 +626,8 @@ func (suite *OcppV16TestSuite) SetupTest() {
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
-	suite.ocppjChargePoint = ocppj.NewChargePoint("test_id", suite.mockWsClient, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
-	suite.ocppjCentralSystem = ocppj.NewCentralSystem(suite.mockWsServer, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
+	suite.ocppjChargePoint = ocppj.NewClient("test_id", suite.mockWsClient, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
+	suite.ocppjCentralSystem = ocppj.NewServer(suite.mockWsServer, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
 	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {

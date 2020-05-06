@@ -15,15 +15,15 @@ import (
 )
 
 type chargePoint struct {
-	chargePoint           *ocppj.ChargePoint
-	coreListener          core.ChargePointCoreHandler
-	localAuthListListener auth.ChargePointLocalAuthListHandler
-	firmwareListener      firmware.ChargePointFirmwareManagementHandler
-	reservationListener   reservation.ChargePointReservationHandler
-	remoteTriggerListener remotetrigger.ChargePointRemoteTriggerHandler
-	smartChargingListener smartcharging.ChargePointSmartChargingHandler
-	confirmationListener  chan ocpp.Response
-	errorListener         chan error
+	client               *ocppj.Client
+	coreHandler          core.ChargePointCoreHandler
+	localAuthListHandler auth.ChargePointLocalAuthListHandler
+	firmwareHandler      firmware.ChargePointFirmwareManagementHandler
+	reservationHandler   reservation.ChargePointReservationHandler
+	remoteTriggerHandler remotetrigger.ChargePointRemoteTriggerHandler
+	smartChargingHandler smartcharging.ChargePointSmartChargingHandler
+	confirmationHandler  chan ocpp.Response
+	errorHandler         chan error
 }
 
 func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *core.BootNotificationRequest)) (*core.BootNotificationConfirmation, error) {
@@ -157,40 +157,40 @@ func (cp *chargePoint) FirmwareStatusNotification(status firmware.FirmwareStatus
 }
 
 func (cp *chargePoint) SetChargePointCoreHandler(listener core.ChargePointCoreHandler) {
-	cp.coreListener = listener
+	cp.coreHandler = listener
 }
 
 func (cp *chargePoint) SetLocalAuthListHandler(listener auth.ChargePointLocalAuthListHandler) {
-	cp.localAuthListListener = listener
+	cp.localAuthListHandler = listener
 }
 
 func (cp *chargePoint) SetFirmwareManagementHandler(listener firmware.ChargePointFirmwareManagementHandler) {
-	cp.firmwareListener = listener
+	cp.firmwareHandler = listener
 }
 
 func (cp *chargePoint) SetReservationHandler(listener reservation.ChargePointReservationHandler) {
-	cp.reservationListener = listener
+	cp.reservationHandler = listener
 }
 
 func (cp *chargePoint) SetRemoteTriggerHandler(listener remotetrigger.ChargePointRemoteTriggerHandler) {
-	cp.remoteTriggerListener = listener
+	cp.remoteTriggerHandler = listener
 }
 
 func (cp *chargePoint) SetSmartChargingHandler(listener smartcharging.ChargePointSmartChargingHandler) {
-	cp.smartChargingListener = listener
+	cp.smartChargingHandler = listener
 }
 
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) {
 	// TODO: check for supported feature
-	err := cp.chargePoint.SendRequest(request)
+	err := cp.client.SendRequest(request)
 	if err != nil {
 		return nil, err
 	}
 	//TODO: timeouts
 	select {
-	case confirmation := <-cp.confirmationListener:
+	case confirmation := <-cp.confirmationHandler:
 		return confirmation, nil
-	case err = <-cp.errorListener:
+	case err = <-cp.errorHandler:
 		return nil, err
 	}
 }
@@ -203,14 +203,14 @@ func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(conf
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
 	}
-	err := cp.chargePoint.SendRequest(request)
+	err := cp.client.SendRequest(request)
 	if err == nil {
 		// Retrieve result asynchronously
 		go func() {
 			select {
-			case confirmation := <-cp.confirmationListener:
+			case confirmation := <-cp.confirmationHandler:
 				callback(confirmation, nil)
-			case protoError := <-cp.errorListener:
+			case protoError := <-cp.errorHandler:
 				callback(nil, protoError)
 			}
 		}()
@@ -220,13 +220,13 @@ func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(conf
 
 func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, requestId string) {
 	if confirmation != nil {
-		err := cp.chargePoint.SendConfirmation(requestId, confirmation)
+		err := cp.client.SendResponse(requestId, confirmation)
 		if err != nil {
 			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 			//TODO: handle error somehow
 		}
 	} else {
-		err = cp.chargePoint.SendError(requestId, ocppj.ProtocolError, err.Error(), nil)
+		err = cp.client.SendError(requestId, ocppj.ProtocolError, err.Error(), nil)
 		if err != nil {
 			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 		}
@@ -235,16 +235,16 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, reque
 
 func (cp *chargePoint) Start(centralSystemUrl string) error {
 	// TODO: implement auto-reconnect logic
-	return cp.chargePoint.Start(centralSystemUrl)
+	return cp.client.Start(centralSystemUrl)
 }
 
 func (cp *chargePoint) Stop() {
-	cp.chargePoint.Stop()
+	cp.client.Stop()
 }
 
 func (cp *chargePoint) notImplementedError(requestId string, action string) {
 	log.WithField("request", requestId).Errorf("cannot handle call from central system. Sending CallError instead")
-	err := cp.chargePoint.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
+	err := cp.client.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
 		log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 	}
@@ -252,14 +252,14 @@ func (cp *chargePoint) notImplementedError(requestId string, action string) {
 
 func (cp *chargePoint) notSupportedError(requestId string, action string) {
 	log.WithField("request", requestId).Errorf("cannot handle call from central system. Sending CallError instead")
-	err := cp.chargePoint.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
+	err := cp.client.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
 	if err != nil {
 		log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
 	}
 }
 
 func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
-	profile, found := cp.chargePoint.GetProfileForFeature(action)
+	profile, found := cp.client.GetProfileForFeature(action)
 	// Check whether action is supported and a listener for it exists
 	if !found {
 		cp.notImplementedError(requestId, action)
@@ -267,32 +267,32 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	} else {
 		switch profile.Name {
 		case core.ProfileName:
-			if cp.coreListener == nil {
+			if cp.coreHandler == nil {
 				cp.notSupportedError(requestId, action)
 				return
 			}
 		case auth.ProfileName:
-			if cp.localAuthListListener == nil {
+			if cp.localAuthListHandler == nil {
 				cp.notSupportedError(requestId, action)
 				return
 			}
 		case firmware.ProfileName:
-			if cp.firmwareListener == nil {
+			if cp.firmwareHandler == nil {
 				cp.notSupportedError(requestId, action)
 				return
 			}
 		case reservation.ProfileName:
-			if cp.reservationListener == nil {
+			if cp.reservationHandler == nil {
 				cp.notSupportedError(requestId, action)
 				return
 			}
 		case remotetrigger.ProfileName:
-			if cp.remoteTriggerListener == nil {
+			if cp.remoteTriggerHandler == nil {
 				cp.notSupportedError(requestId, action)
 				return
 			}
 		case smartcharging.ProfileName:
-			if cp.smartChargingListener == nil {
+			if cp.smartChargingHandler == nil {
 				cp.notSupportedError(requestId, action)
 				return
 			}
@@ -300,47 +300,47 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	}
 	// Process request
 	var confirmation ocpp.Response = nil
-	cp.chargePoint.GetProfileForFeature(action)
+	cp.client.GetProfileForFeature(action)
 	var err error = nil
 	switch action {
 	case core.ChangeAvailabilityFeatureName:
-		confirmation, err = cp.coreListener.OnChangeAvailability(request.(*core.ChangeAvailabilityRequest))
+		confirmation, err = cp.coreHandler.OnChangeAvailability(request.(*core.ChangeAvailabilityRequest))
 	case core.ChangeConfigurationFeatureName:
-		confirmation, err = cp.coreListener.OnChangeConfiguration(request.(*core.ChangeConfigurationRequest))
+		confirmation, err = cp.coreHandler.OnChangeConfiguration(request.(*core.ChangeConfigurationRequest))
 	case core.ClearCacheFeatureName:
-		confirmation, err = cp.coreListener.OnClearCache(request.(*core.ClearCacheRequest))
+		confirmation, err = cp.coreHandler.OnClearCache(request.(*core.ClearCacheRequest))
 	case core.DataTransferFeatureName:
-		confirmation, err = cp.coreListener.OnDataTransfer(request.(*core.DataTransferRequest))
+		confirmation, err = cp.coreHandler.OnDataTransfer(request.(*core.DataTransferRequest))
 	case core.GetConfigurationFeatureName:
-		confirmation, err = cp.coreListener.OnGetConfiguration(request.(*core.GetConfigurationRequest))
+		confirmation, err = cp.coreHandler.OnGetConfiguration(request.(*core.GetConfigurationRequest))
 	case core.RemoteStartTransactionFeatureName:
-		confirmation, err = cp.coreListener.OnRemoteStartTransaction(request.(*core.RemoteStartTransactionRequest))
+		confirmation, err = cp.coreHandler.OnRemoteStartTransaction(request.(*core.RemoteStartTransactionRequest))
 	case core.RemoteStopTransactionFeatureName:
-		confirmation, err = cp.coreListener.OnRemoteStopTransaction(request.(*core.RemoteStopTransactionRequest))
+		confirmation, err = cp.coreHandler.OnRemoteStopTransaction(request.(*core.RemoteStopTransactionRequest))
 	case core.ResetFeatureName:
-		confirmation, err = cp.coreListener.OnReset(request.(*core.ResetRequest))
+		confirmation, err = cp.coreHandler.OnReset(request.(*core.ResetRequest))
 	case core.UnlockConnectorFeatureName:
-		confirmation, err = cp.coreListener.OnUnlockConnector(request.(*core.UnlockConnectorRequest))
+		confirmation, err = cp.coreHandler.OnUnlockConnector(request.(*core.UnlockConnectorRequest))
 	case auth.GetLocalListVersionFeatureName:
-		confirmation, err = cp.localAuthListListener.OnGetLocalListVersion(request.(*auth.GetLocalListVersionRequest))
+		confirmation, err = cp.localAuthListHandler.OnGetLocalListVersion(request.(*auth.GetLocalListVersionRequest))
 	case auth.SendLocalListFeatureName:
-		confirmation, err = cp.localAuthListListener.OnSendLocalList(request.(*auth.SendLocalListRequest))
+		confirmation, err = cp.localAuthListHandler.OnSendLocalList(request.(*auth.SendLocalListRequest))
 	case firmware.GetDiagnosticsFeatureName:
-		confirmation, err = cp.firmwareListener.OnGetDiagnostics(request.(*firmware.GetDiagnosticsRequest))
+		confirmation, err = cp.firmwareHandler.OnGetDiagnostics(request.(*firmware.GetDiagnosticsRequest))
 	case firmware.UpdateFirmwareFeatureName:
-		confirmation, err = cp.firmwareListener.OnUpdateFirmware(request.(*firmware.UpdateFirmwareRequest))
+		confirmation, err = cp.firmwareHandler.OnUpdateFirmware(request.(*firmware.UpdateFirmwareRequest))
 	case reservation.ReserveNowFeatureName:
-		confirmation, err = cp.reservationListener.OnReserveNow(request.(*reservation.ReserveNowRequest))
+		confirmation, err = cp.reservationHandler.OnReserveNow(request.(*reservation.ReserveNowRequest))
 	case reservation.CancelReservationFeatureName:
-		confirmation, err = cp.reservationListener.OnCancelReservation(request.(*reservation.CancelReservationRequest))
+		confirmation, err = cp.reservationHandler.OnCancelReservation(request.(*reservation.CancelReservationRequest))
 	case remotetrigger.TriggerMessageFeatureName:
-		confirmation, err = cp.remoteTriggerListener.OnTriggerMessage(request.(*remotetrigger.TriggerMessageRequest))
+		confirmation, err = cp.remoteTriggerHandler.OnTriggerMessage(request.(*remotetrigger.TriggerMessageRequest))
 	case smartcharging.SetChargingProfileFeatureName:
-		confirmation, err = cp.smartChargingListener.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
+		confirmation, err = cp.smartChargingHandler.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
 	case smartcharging.ClearChargingProfileFeatureName:
-		confirmation, err = cp.smartChargingListener.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
+		confirmation, err = cp.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
 	case smartcharging.GetCompositeScheduleFeatureName:
-		confirmation, err = cp.smartChargingListener.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
+		confirmation, err = cp.smartChargingHandler.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
 	default:
 		cp.notSupportedError(requestId, action)
 		return

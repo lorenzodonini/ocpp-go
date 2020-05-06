@@ -99,7 +99,7 @@ type ChargingStation interface {
 //
 // For more advanced options, or if a custom networking/occpj layer is required,
 // please refer to ocppj.ChargingStation and ws.WsClient.
-func NewChargingStation(id string, dispatcher *ocppj.ChargePoint, client ws.WsClient) ChargingStation {
+func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient) ChargingStation {
 	if client == nil {
 		client = ws.NewClient()
 	}
@@ -117,10 +117,10 @@ func NewChargingStation(id string, dispatcher *ocppj.ChargePoint, client ws.WsCl
 		}
 	})
 	if dispatcher == nil {
-		dispatcher = ocppj.NewChargePoint(id, client, CoreProfile)
+		dispatcher = ocppj.NewClient(id, client, CoreProfile)
 	}
 	cp := chargingStation{client: dispatcher, confirmationListener: make(chan ocpp.Response), errorListener: make(chan error)}
-	cp.client.SetConfirmationHandler(func(confirmation ocpp.Response, requestId string) {
+	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
 		cp.confirmationListener <- confirmation
 	})
 	cp.client.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
@@ -232,19 +232,19 @@ type CSMS interface {
 //
 // If you need a TLS server, you may use the following:
 //	cs := NewCSMS(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
-func NewCSMS(dispatcher *ocppj.CentralSystem, server ws.WsServer) CSMS {
+func NewCSMS(dispatcher *ocppj.Server, server ws.WsServer) CSMS {
 	if server == nil {
 		server = ws.NewServer()
 	}
 	server.AddSupportedSubprotocol(V2Subprotocol)
 	if dispatcher == nil {
-		dispatcher = ocppj.NewCentralSystem(server, CoreProfile)
+		dispatcher = ocppj.NewServer(server, CoreProfile)
 	}
 	cs := csms{
 		server:    dispatcher,
 		callbacks: map[string]func(confirmation ocpp.Response, err error){}}
 	cs.server.SetRequestHandler(cs.handleIncomingRequest)
-	cs.server.SetConfirmationHandler(cs.handleIncomingConfirmation)
+	cs.server.SetResponseHandler(cs.handleIncomingConfirmation)
 	cs.server.SetErrorHandler(cs.handleIncomingError)
 	return &cs
 }
