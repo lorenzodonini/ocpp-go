@@ -34,7 +34,7 @@ func (suite *OcppV16TestSuite) TestHeartbeatE2EMocked() {
 	wsUrl := "someUrl"
 	currentTime := types.NewDateTime(time.Now())
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, core.HeartbeatFeatureName)
-	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v"}]`, messageId, currentTime.Time.Format(types.ISO8601))
+	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v"}]`, messageId, currentTime.FormatTimestamp())
 	heartbeatConfirmation := core.NewHeartbeatConfirmation(currentTime)
 	channel := NewMockWebSocket(wsId)
 

@@ -49,7 +49,7 @@ func (suite *OcppV16TestSuite) TestReserveNowE2EMocked() {
 	expiryDate := types.NewDateTime(time.Now())
 	status := reservation.ReservationStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"expiryDate":"%v","idTag":"%v","parentIdTag":"%v","reservationId":%v}]`,
-		messageId, reservation.ReserveNowFeatureName, connectorId, expiryDate.Format(types.ISO8601), idTag, parentIdTag, reservationId)
+		messageId, reservation.ReserveNowFeatureName, connectorId, expiryDate.FormatTimestamp(), idTag, parentIdTag, reservationId)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
 	ReserveNowConfirmation := reservation.NewReserveNowConfirmation(status)
 	channel := NewMockWebSocket(wsId)
@@ -59,7 +59,7 @@ func (suite *OcppV16TestSuite) TestReserveNowE2EMocked() {
 		request, ok := args.Get(0).(*reservation.ReserveNowRequest)
 		assert.True(t, ok)
 		assert.Equal(t, connectorId, request.ConnectorId)
-		assert.Equal(t, expiryDate.Format(types.ISO8601), request.ExpiryDate.Format(types.ISO8601))
+		assert.Equal(t, expiryDate.FormatTimestamp(), request.ExpiryDate.FormatTimestamp())
 		assert.Equal(t, idTag, request.IdTag)
 		assert.Equal(t, parentIdTag, request.ParentIdTag)
 		assert.Equal(t, reservationId, request.ReservationId)
@@ -95,6 +95,6 @@ func (suite *OcppV16TestSuite) TestReserveNowInvalidEndpoint() {
 	reserveNowRequest := reservation.NewReserveNowRequest(connectorId, expiryDate, idTag, reservationId)
 	reserveNowRequest.ParentIdTag = parentIdTag
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"expiryDate":"%v","idTag":"%v","parentIdTag":"%v","reservationId":%v}]`,
-		messageId, reservation.ReserveNowFeatureName, connectorId, expiryDate.Format(types.ISO8601), idTag, parentIdTag, reservationId)
+		messageId, reservation.ReserveNowFeatureName, connectorId, expiryDate.FormatTimestamp(), idTag, parentIdTag, reservationId)
 	testUnsupportedRequestFromChargePoint(suite, reserveNowRequest, requestJson, messageId)
 }

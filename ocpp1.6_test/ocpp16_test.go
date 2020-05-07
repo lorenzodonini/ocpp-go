@@ -490,7 +490,7 @@ func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener core.
 }
 
 func assertDateTimeEquality(t *testing.T, expected types.DateTime, actual types.DateTime) {
-	assert.Equal(t, expected.Time.Format(types.ISO8601), actual.Time.Format(types.ISO8601))
+	assert.Equal(t, expected.FormatTimestamp(), actual.FormatTimestamp())
 }
 
 func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp.Request, requestJson string, messageId string) {

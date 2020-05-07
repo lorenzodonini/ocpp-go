@@ -1,55 +1,13 @@
 package types
 
 import (
-	"encoding/json"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"gopkg.in/go-playground/validator.v9"
-	"strings"
-	"time"
 )
 
 const (
-	ISO8601        = "2006-01-02T15:04:05Z"
 	V16Subprotocol = "ocpp1.6"
 )
-
-type DateTime struct {
-	time.Time
-}
-
-func NewDateTime(time time.Time) *DateTime {
-	return &DateTime{Time: time}
-}
-
-var DateTimeFormat = ISO8601
-
-func (dt *DateTime) UnmarshalJSON(input []byte) error {
-	strInput := string(input)
-	strInput = strings.Trim(strInput, `"`)
-	if DateTimeFormat == "" {
-		defaultTime := time.Time{}
-		err := json.Unmarshal(input, defaultTime)
-		if err != nil {
-			return err
-		}
-		dt.Time = defaultTime
-	} else {
-		newTime, err := time.Parse(DateTimeFormat, strInput)
-		if err != nil {
-			return err
-		}
-		dt.Time = newTime
-	}
-	return nil
-}
-
-func (dt *DateTime) MarshalJSON() ([]byte, error) {
-	if DateTimeFormat == "" {
-		return json.Marshal(dt.Time)
-	}
-	timeStr := dt.Time.Format(DateTimeFormat)
-	return json.Marshal(timeStr)
-}
 
 type PropertyViolation struct {
 	error
@@ -352,24 +310,6 @@ type SampledValue struct {
 type MeterValue struct {
 	Timestamp    *DateTime      `json:"timestamp" validate:"required"`
 	SampledValue []SampledValue `json:"sampledValue" validate:"required,min=1,dive"`
-}
-
-// DateTime Validation
-func DateTimeIsNull(dateTime *DateTime) bool {
-	return dateTime != nil && dateTime.IsZero()
-}
-
-func validateDateTimeGt(dateTime *DateTime, than time.Time) bool {
-	return dateTime != nil && dateTime.After(than)
-}
-
-func validateDateTimeNow(dateTime DateTime) bool {
-	dur := time.Now().Sub(dateTime.Time).Minutes()
-	return dur < 1
-}
-
-func validateDateTimeLt(dateTime DateTime, than time.Time) bool {
-	return dateTime.Before(than)
 }
 
 // Initialize validator

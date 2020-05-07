@@ -55,8 +55,8 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 	parentIdTag := "parentTag1"
 	status := types.AuthorizationStatusAccepted
 	expiryDate := types.NewDateTime(time.Now().Add(time.Hour * 8))
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v","meterStop":%v,"timestamp":"%v","transactionId":%v,"transactionData":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.StopTransactionFeatureName, idTag, meterStop, timestamp.Format(types.ISO8601), transactionId, timestamp.Format(types.ISO8601), mockValue, mockUnit)
-	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.Format(types.ISO8601), parentIdTag, status)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v","meterStop":%v,"timestamp":"%v","transactionId":%v,"transactionData":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.StopTransactionFeatureName, idTag, meterStop, timestamp.FormatTimestamp(), transactionId, timestamp.FormatTimestamp(), mockValue, mockUnit)
+	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.FormatTimestamp(), parentIdTag, status)
 	stopTransactionConfirmation := core.NewStopTransactionConfirmation()
 	stopTransactionConfirmation.IdTagInfo = &types.IdTagInfo{ExpiryDate: expiryDate, ParentIdTag: parentIdTag, Status: status}
 	requestRaw := []byte(requestJson)
@@ -105,6 +105,6 @@ func (suite *OcppV16TestSuite) TestStopTransactionInvalidEndpoint() {
 	timestamp := types.NewDateTime(time.Now())
 	stopTransactionRequest := core.NewStopTransactionRequest(meterStop, timestamp, transactionId)
 	stopTransactionRequest.IdTag = idTag
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v","meterStop":%v,"timestamp":"%v","transactionId":%v,"transactionData":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.StopTransactionFeatureName, idTag, meterStop, timestamp.Format(types.ISO8601), transactionId, timestamp.Format(types.ISO8601), mockValue, mockUnit)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v","meterStop":%v,"timestamp":"%v","transactionId":%v,"transactionData":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.StopTransactionFeatureName, idTag, meterStop, timestamp.FormatTimestamp(), transactionId, timestamp.FormatTimestamp(), mockValue, mockUnit)
 	testUnsupportedRequestFromCentralSystem(suite, stopTransactionRequest, requestJson, messageId)
 }

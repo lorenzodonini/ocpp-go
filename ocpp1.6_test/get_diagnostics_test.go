@@ -49,7 +49,7 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 	startTime := types.NewDateTime(time.Now().Add(-10 * time.Hour * 24))
 	endTime := types.NewDateTime(time.Now())
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"location":"%v","retries":%v,"retryInterval":%v,"startTime":"%v","endTime":"%v"}]`,
-		messageId, firmware.GetDiagnosticsFeatureName, location, retries, retryInterval, startTime.Format(types.ISO8601), endTime.Format(types.ISO8601))
+		messageId, firmware.GetDiagnosticsFeatureName, location, retries, retryInterval, startTime.FormatTimestamp(), endTime.FormatTimestamp())
 	responseJson := fmt.Sprintf(`[3,"%v",{"fileName":"%v"}]`, messageId, fileName)
 	getDiagnosticsConfirmation := firmware.NewGetDiagnosticsConfirmation()
 	getDiagnosticsConfirmation.FileName = fileName
@@ -96,6 +96,6 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsInvalidEndpoint() {
 	endTime := types.NewDateTime(time.Now())
 	localListVersionRequest := firmware.NewGetDiagnosticsRequest(location)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"location":"%v","retries":%v,"retryInterval":%v,"startTime":"%v","endTime":"%v"}]`,
-		messageId, firmware.GetDiagnosticsFeatureName, location, retries, retryInterval, startTime.Format(types.ISO8601), endTime.Format(types.ISO8601))
+		messageId, firmware.GetDiagnosticsFeatureName, location, retries, retryInterval, startTime.FormatTimestamp(), endTime.FormatTimestamp())
 	testUnsupportedRequestFromChargePoint(suite, localListVersionRequest, requestJson, messageId)
 }

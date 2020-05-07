@@ -51,8 +51,8 @@ func (suite *OcppV16TestSuite) TestStartTransactionE2EMocked() {
 	status := types.AuthorizationStatusAccepted
 	expiryDate := types.NewDateTime(time.Now().Add(time.Hour * 8))
 	transactionId := 16
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"idTag":"%v","meterStart":%v,"reservationId":%v,"timestamp":"%v"}]`, messageId, core.StartTransactionFeatureName, connectorId, idTag, meterStart, reservationId, timestamp.Format(types.ISO8601))
-	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"},"transactionId":%v}]`, messageId, expiryDate.Time.Format(types.ISO8601), parentIdTag, status, transactionId)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"idTag":"%v","meterStart":%v,"reservationId":%v,"timestamp":"%v"}]`, messageId, core.StartTransactionFeatureName, connectorId, idTag, meterStart, reservationId, timestamp.FormatTimestamp())
+	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"},"transactionId":%v}]`, messageId, expiryDate.FormatTimestamp(), parentIdTag, status, transactionId)
 	startTransactionConfirmation := core.NewStartTransactionConfirmation(&types.IdTagInfo{ExpiryDate: expiryDate, ParentIdTag: parentIdTag, Status: status}, transactionId)
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
@@ -91,6 +91,6 @@ func (suite *OcppV16TestSuite) TestStartTransactionInvalidEndpoint() {
 	connectorId := 1
 	timestamp := types.NewDateTime(time.Now())
 	authorizeRequest := core.NewStartTransactionRequest(connectorId, idTag, meterStart, timestamp)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"idTag":"%v","meterStart":%v,"reservationId":%v,"timestamp":"%v"}]`, messageId, core.StartTransactionFeatureName, connectorId, idTag, meterStart, reservationId, timestamp.Format(types.ISO8601))
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"idTag":"%v","meterStart":%v,"reservationId":%v,"timestamp":"%v"}]`, messageId, core.StartTransactionFeatureName, connectorId, idTag, meterStart, reservationId, timestamp.FormatTimestamp())
 	testUnsupportedRequestFromCentralSystem(suite, authorizeRequest, requestJson, messageId)
 }

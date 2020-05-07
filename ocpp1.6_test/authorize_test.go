@@ -40,7 +40,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	status := types.AuthorizationStatusAccepted
 	expiryDate := types.NewDateTime(time.Now().Add(time.Hour * 8))
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, core.AuthorizeFeatureName, idTag)
-	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.Time.Format(types.ISO8601), parentIdTag, status)
+	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.FormatTimestamp(), parentIdTag, status)
 	authorizeConfirmation := core.NewAuthorizationConfirmation(&types.IdTagInfo{ExpiryDate: expiryDate, ParentIdTag: parentIdTag, Status: status})
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)

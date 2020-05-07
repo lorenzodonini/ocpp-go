@@ -56,7 +56,7 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"duration":%v,"chargingRateUnit":"%v"}]`,
 		messageId, smartcharging.GetCompositeScheduleFeatureName, connectorId, duration, chargingRateUnit)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","connectorId":%v,"scheduleStart":"%v","chargingSchedule":{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}]`,
-		messageId, status, connectorId, scheduleStart.Format(types.ISO8601), chargingRateUnit, startPeriod, limit)
+		messageId, status, connectorId, scheduleStart.FormatTimestamp(), chargingRateUnit, startPeriod, limit)
 	getCompositeScheduleConfirmation := smartcharging.NewGetCompositeScheduleConfirmation(status)
 	getCompositeScheduleConfirmation.ChargingSchedule = chargingSchedule
 	getCompositeScheduleConfirmation.ScheduleStart = scheduleStart
@@ -86,7 +86,7 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleE2EMocked() {
 		} else {
 			assert.Equal(t, status, confirmation.Status)
 			assert.Equal(t, connectorId, confirmation.ConnectorId)
-			assert.Equal(t, scheduleStart.Format(types.ISO8601), confirmation.ScheduleStart.Format(types.ISO8601))
+			assert.Equal(t, scheduleStart.FormatTimestamp(), confirmation.ScheduleStart.FormatTimestamp())
 			assert.Equal(t, chargingSchedule.ChargingRateUnit, confirmation.ChargingSchedule.ChargingRateUnit)
 			assert.Equal(t, chargingSchedule.Duration, confirmation.ChargingSchedule.Duration)
 			assert.Equal(t, chargingSchedule.MinChargingRate, confirmation.ChargingSchedule.MinChargingRate)

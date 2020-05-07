@@ -61,7 +61,7 @@ func (suite *OcppV16TestSuite) TestSendLocalListE2EMocked() {
 		Status:      types.AuthorizationStatusAccepted,
 	}}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"listVersion":%v,"localAuthorizationList":[{"idTag":"%v","idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}],"updateType":"%v"}]`,
-		messageId, auth.SendLocalListFeatureName, listVersion, localAuthEntry.IdTag, localAuthEntry.IdTagInfo.ExpiryDate.Format(types.ISO8601), localAuthEntry.IdTagInfo.ParentIdTag, localAuthEntry.IdTagInfo.Status, updateType)
+		messageId, auth.SendLocalListFeatureName, listVersion, localAuthEntry.IdTag, localAuthEntry.IdTagInfo.ExpiryDate.FormatTimestamp(), localAuthEntry.IdTagInfo.ParentIdTag, localAuthEntry.IdTagInfo.Status, updateType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
 	sendLocalListConfirmation := auth.NewSendLocalListConfirmation(status)
 	channel := NewMockWebSocket(wsId)
@@ -105,7 +105,7 @@ func (suite *OcppV16TestSuite) TestSendLocalListInvalidEndpoint() {
 		Status:      types.AuthorizationStatusAccepted,
 	}}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"listVersion":%v,"localAuthorizationList":[{"idTag":"%v","idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}],"updateType":"%v"}]`,
-		messageId, auth.SendLocalListFeatureName, listVersion, localAuthEntry.IdTag, localAuthEntry.IdTagInfo.ExpiryDate.Format(types.ISO8601), localAuthEntry.IdTagInfo.ParentIdTag, localAuthEntry.IdTagInfo.Status, updateType)
+		messageId, auth.SendLocalListFeatureName, listVersion, localAuthEntry.IdTag, localAuthEntry.IdTagInfo.ExpiryDate.FormatTimestamp(), localAuthEntry.IdTagInfo.ParentIdTag, localAuthEntry.IdTagInfo.Status, updateType)
 	localListVersionRequest := auth.NewSendLocalListRequest(listVersion, updateType)
 	testUnsupportedRequestFromChargePoint(suite, localListVersionRequest, requestJson, messageId)
 }

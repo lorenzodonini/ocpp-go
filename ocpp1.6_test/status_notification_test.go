@@ -49,7 +49,7 @@ func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
 	info := "mockInfo"
 	vendorId := "mockVendorId"
 	vendorErrorCode := "mockErrorCode"
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"errorCode":"%v","info":"%v","status":"%v","timestamp":"%v","vendorId":"%v","vendorErrorCode":"%v"}]`, messageId, core.StatusNotificationFeatureName, connectorId, cpErrorCode, info, status, timestamp.Format(types.ISO8601), vendorId, vendorErrorCode)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"errorCode":"%v","info":"%v","status":"%v","timestamp":"%v","vendorId":"%v","vendorErrorCode":"%v"}]`, messageId, core.StatusNotificationFeatureName, connectorId, cpErrorCode, info, status, timestamp.FormatTimestamp(), vendorId, vendorErrorCode)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
 	statusNotificationConfirmation := core.NewStatusNotificationConfirmation()
 	channel := NewMockWebSocket(wsId)
@@ -96,6 +96,6 @@ func (suite *OcppV16TestSuite) TestStatusNotificationInvalidEndpoint() {
 	statusNotificationRequest.Timestamp = timestamp
 	statusNotificationRequest.VendorId = vendorId
 	statusNotificationRequest.VendorErrorCode = vendorErrorCode
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"errorCode":"%v","info":"%v","status":"%v","timestamp":"%v","vendorId":"%v","vendorErrorCode":"%v"}]`, messageId, core.StatusNotificationFeatureName, connectorId, cpErrorCode, info, status, timestamp.Format(types.ISO8601), vendorId, vendorErrorCode)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"errorCode":"%v","info":"%v","status":"%v","timestamp":"%v","vendorId":"%v","vendorErrorCode":"%v"}]`, messageId, core.StatusNotificationFeatureName, connectorId, cpErrorCode, info, status, timestamp.FormatTimestamp(), vendorId, vendorErrorCode)
 	testUnsupportedRequestFromCentralSystem(suite, statusNotificationRequest, requestJson, messageId)
 }

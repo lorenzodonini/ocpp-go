@@ -43,7 +43,7 @@ func (suite *OcppV16TestSuite) TestUpdateFirmwareE2EMocked() {
 	retryInterval := 600
 	retrieveDate := types.NewDateTime(time.Now())
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"location":"%v","retries":%v,"retrieveDate":"%v","retryInterval":%v}]`,
-		messageId, firmware.UpdateFirmwareFeatureName, location, retries, retrieveDate.Format(types.ISO8601), retryInterval)
+		messageId, firmware.UpdateFirmwareFeatureName, location, retries, retrieveDate.FormatTimestamp(), retryInterval)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
 	updateFirmwareConfirmation := firmware.NewUpdateFirmwareConfirmation()
 	channel := NewMockWebSocket(wsId)
@@ -85,6 +85,6 @@ func (suite *OcppV16TestSuite) TestUpdateFirmwareInvalidEndpoint() {
 	retrieveDate := types.NewDateTime(time.Now())
 	localListVersionRequest := firmware.NewUpdateFirmwareRequest(location, retrieveDate)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"location":"%v","retries":%v,"retrieveDate":"%v","retryInterval":%v}]`,
-		messageId, firmware.UpdateFirmwareFeatureName, location, retries, retrieveDate.Format(types.ISO8601), retryInterval)
+		messageId, firmware.UpdateFirmwareFeatureName, location, retries, retrieveDate.FormatTimestamp(), retryInterval)
 	testUnsupportedRequestFromChargePoint(suite, localListVersionRequest, requestJson, messageId)
 }
