@@ -8,6 +8,8 @@ import (
 
 // -------------------- Cancel Reservation (CS -> CP) --------------------
 
+const CancelReservationFeatureName = "CancelReservation"
+
 // Status reported in CancelReservationConfirmation.
 type CancelReservationStatus string
 

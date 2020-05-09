@@ -8,6 +8,8 @@ import (
 
 // -------------------- Clear Cache (CS -> CP) --------------------
 
+const ClearCacheFeatureName = "ClearCache"
+
 // Status returned in response to ClearCacheRequest.
 type ClearCacheStatus string
 

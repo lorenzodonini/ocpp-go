@@ -8,6 +8,8 @@ import (
 
 // -------------------- Boot Notification (CP -> CS) --------------------
 
+const BootNotificationFeatureName = "BootNotification"
+
 // Result of registration in response to a BootNotification request.
 type RegistrationStatus string
 

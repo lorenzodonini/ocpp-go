@@ -7,6 +7,8 @@ import (
 
 // -------------------- Heartbeat (CP -> CS) --------------------
 
+const MeterValuesFeatureName = "MeterValues"
+
 // The field definition of the MeterValues request payload sent by the Charge Point to the Central System.
 type MeterValuesRequest struct {
 	ConnectorId   int                `json:"connectorId" validate:"gte=0"`

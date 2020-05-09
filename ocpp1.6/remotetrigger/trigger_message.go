@@ -10,6 +10,8 @@ import (
 
 // -------------------- Trigger Message (CS -> CP) --------------------
 
+const TriggerMessageFeatureName = "TriggerMessage"
+
 // Status reported in TriggerMessageConfirmation.
 type TriggerMessageStatus string
 

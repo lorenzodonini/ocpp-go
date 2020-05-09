@@ -7,6 +7,8 @@ import (
 
 // -------------------- Get Diagnostics (CS -> CP) --------------------
 
+const UpdateFirmwareFeatureName = "UpdateFirmware"
+
 // The field definition of the UpdateFirmware request payload sent by the Central System to the Charge Point.
 type UpdateFirmwareRequest struct {
 	Location      string          `json:"location" validate:"required,uri"`

@@ -8,6 +8,8 @@ import (
 
 // -------------------- Heartbeat (CP -> CS) --------------------
 
+const HeartbeatFeatureName = "Heartbeat"
+
 // The field definition of the Heartbeat request payload sent by the Charge Point to the Central System.
 type HeartbeatRequest struct {
 }

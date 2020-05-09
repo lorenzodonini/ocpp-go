@@ -8,6 +8,8 @@ import (
 
 // -------------------- Firmware Status Notification (CP -> CS) --------------------
 
+const FirmwareStatusNotificationFeatureName = "FirmwareStatusNotification"
+
 // Status reported in FirmwareStatusNotificationRequest.
 type FirmwareStatus string
 

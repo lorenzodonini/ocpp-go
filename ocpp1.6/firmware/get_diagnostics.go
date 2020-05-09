@@ -7,6 +7,8 @@ import (
 
 // -------------------- Get Diagnostics (CS -> CP) --------------------
 
+const GetDiagnosticsFeatureName = "GetDiagnostics"
+
 // The field definition of the GetDiagnostics request payload sent by the Central System to the Charge Point.
 type GetDiagnosticsRequest struct {
 	Location      string          `json:"location" validate:"required,uri"`

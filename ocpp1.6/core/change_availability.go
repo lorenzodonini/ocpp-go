@@ -8,6 +8,8 @@ import (
 
 // -------------------- Change Availability (CS -> CP) --------------------
 
+const ChangeAvailabilityFeatureName = "ChangeAvailability"
+
 // Requested availability change in ChangeAvailabilityRequest.
 type AvailabilityType string
 

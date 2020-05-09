@@ -5,25 +5,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 )
 
-const (
-	BootNotificationFeatureName       = "BootNotification"
-	AuthorizeFeatureName              = "Authorize"
-	ChangeAvailabilityFeatureName     = "ChangeAvailability"
-	ChangeConfigurationFeatureName    = "ChangeConfiguration"
-	DataTransferFeatureName           = "DataTransfer"
-	GetConfigurationFeatureName       = "GetConfiguration"
-	ClearCacheFeatureName             = "ClearCache"
-	HeartbeatFeatureName              = "Heartbeat"
-	MeterValuesFeatureName            = "MeterValues"
-	RemoteStartTransactionFeatureName = "RemoteStartTransaction"
-	RemoteStopTransactionFeatureName  = "RemoteStopTransaction"
-	ResetFeatureName                  = "Reset"
-	StartTransactionFeatureName       = "StartTransaction"
-	StopTransactionFeatureName        = "StopTransaction"
-	StatusNotificationFeatureName     = "StatusNotification"
-	UnlockConnectorFeatureName        = "UnlockConnector"
-)
-
+// Needs to be implemented by Central systems for handling messages part of the OCPP 1.6 Core profile.
 type CentralSystemCoreHandler interface {
 	OnAuthorize(chargePointId string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
 	OnBootNotification(chargePointId string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
@@ -35,6 +17,7 @@ type CentralSystemCoreHandler interface {
 	OnStopTransaction(chargePointId string, request *StopTransactionRequest) (confirmation *StopTransactionConfirmation, err error)
 }
 
+// Needs to be implemented by Charge points for handling messages part of the OCPP 1.6 Core profile.
 type ChargePointCoreHandler interface {
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	OnChangeConfiguration(request *ChangeConfigurationRequest) (confirmation *ChangeConfigurationConfirmation, err error)
@@ -47,8 +30,10 @@ type ChargePointCoreHandler interface {
 	OnUnlockConnector(request *UnlockConnectorRequest) (confirmation *UnlockConnectorConfirmation, err error)
 }
 
+// THe profile name
 var ProfileName = "core"
 
+// Provides support for Basic Charge Point functionality comparable with OCPP 1.5.
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	BootNotificationFeature{},

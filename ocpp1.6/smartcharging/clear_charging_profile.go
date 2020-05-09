@@ -8,6 +8,8 @@ import (
 
 // -------------------- Clear Charging Profile (CS -> CP) --------------------
 
+const ClearChargingProfileFeatureName = "ClearChargingProfile"
+
 // Status reported in ClearChargingProfileConfirmation.
 type ClearChargingProfileStatus string
 

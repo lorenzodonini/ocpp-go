@@ -6,6 +6,8 @@ import (
 
 // -------------------- Get Local List Version (CS -> CP) --------------------
 
+const GetLocalListVersionFeatureName = "GetLocalListVersion"
+
 // The field definition of the GetLocalListVersion request payload sent by the Central System to the Charge Point.
 type GetLocalListVersionRequest struct {
 }

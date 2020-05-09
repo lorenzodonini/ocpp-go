@@ -1,3 +1,4 @@
+// Contains common and shared data types between OCPP 1.6 messages.
 package types
 
 import (

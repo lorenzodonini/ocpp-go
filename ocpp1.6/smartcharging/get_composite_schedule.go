@@ -8,6 +8,8 @@ import (
 
 // -------------------- Get Composite Schedule (CS -> CP) --------------------
 
+const GetCompositeScheduleFeatureName = "GetCompositeSchedule"
+
 // Status reported in GetCompositeScheduleConfirmation.
 type GetCompositeScheduleStatus string
 

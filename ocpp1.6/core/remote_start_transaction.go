@@ -7,6 +7,8 @@ import (
 
 // -------------------- Remote Start Transaction (CS -> CP) --------------------
 
+const RemoteStartTransactionFeatureName = "RemoteStartTransaction"
+
 // The field definition of the RemoteStartTransaction request payload sent by the Central System to the Charge Point.
 type RemoteStartTransactionRequest struct {
 	ConnectorId     int                    `json:"connectorId,omitempty" validate:"omitempty,gt=0"`

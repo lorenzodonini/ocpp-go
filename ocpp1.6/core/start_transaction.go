@@ -7,6 +7,8 @@ import (
 
 // -------------------- Start Transaction (CP -> CS) --------------------
 
+const StartTransactionFeatureName = "StartTransaction"
+
 // This field definition of the StartTransactionRequest payload sent by the Charge Point to the Central System.
 type StartTransactionRequest struct {
 	ConnectorId   int             `json:"connectorId" validate:"gt=0"`

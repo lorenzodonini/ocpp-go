@@ -7,6 +7,9 @@ import (
 )
 
 // -------------------- Send Local List (CS -> CP) --------------------
+
+const SendLocalListFeatureName = "SendLocalList"
+
 type UpdateType string
 type UpdateStatus string
 

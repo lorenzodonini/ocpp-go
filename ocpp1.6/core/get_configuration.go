@@ -6,6 +6,8 @@ import (
 
 // -------------------- Get Configuration (CS -> CP) --------------------
 
+const GetConfigurationFeatureName = "GetConfiguration"
+
 // Contains information about a specific configuration key. It is returned in GetConfigurationConfirmation
 type ConfigurationKey struct {
 	Key      string `json:"key" validate:"required,max=50"`

@@ -8,6 +8,8 @@ import (
 
 // -------------------- Stop Transaction (CP -> CS) --------------------
 
+const StopTransactionFeatureName = "StopTransaction"
+
 // Reason for stopping a transaction in StopTransactionRequest.
 type Reason string
 

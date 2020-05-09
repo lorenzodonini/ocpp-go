@@ -7,6 +7,8 @@ import (
 
 // -------------------- Authorize (CP -> CS) --------------------
 
+const AuthorizeFeatureName = "Authorize"
+
 // The field definition of the Authorize request payload sent by the Charge Point to the Central System.
 type AuthorizeRequest struct {
 	IdTag string `json:"idTag" validate:"required,max=20"`

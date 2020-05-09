@@ -15,8 +15,6 @@ const ISO8601 = "2006-01-02T15:04:05Z"
 // Change this if another format is desired.
 var DateTimeFormat = time.RFC3339
 
-//var DateTimeFormat = ISO8601
-
 // DateTime wraps a time.Time struct, allowing for improved dateTime JSON compatibility.
 type DateTime struct {
 	time.Time

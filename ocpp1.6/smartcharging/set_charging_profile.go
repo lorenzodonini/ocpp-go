@@ -8,6 +8,8 @@ import (
 
 // -------------------- Set Charging Profile (CS -> CP) --------------------
 
+const SetChargingProfileFeatureName = "SetChargingProfile"
+
 // Status reported in SetChargingProfileConfirmation.
 type ChargingProfileStatus string
 

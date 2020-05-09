@@ -7,6 +7,8 @@ import (
 
 // -------------------- Remote Stop Transaction (CS -> CP) --------------------
 
+const RemoteStopTransactionFeatureName = "RemoteStopTransaction"
+
 // The field definition of the RemoteStopTransaction request payload sent by the Central System to the Charge Point.
 type RemoteStopTransactionRequest struct {
 	TransactionId int `json:"transactionId" validate:"gte=0"`

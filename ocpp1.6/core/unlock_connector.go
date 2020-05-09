@@ -8,6 +8,8 @@ import (
 
 // -------------------- Unlock Connector (CS -> CP) --------------------
 
+const UnlockConnectorFeatureName = "UnlockConnector"
+
 // Status in response to UnlockConnectorRequest.
 type UnlockStatus string
 

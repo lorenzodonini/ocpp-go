@@ -8,6 +8,8 @@ import (
 
 // -------------------- Status Notification (CP -> CS) --------------------
 
+const StatusNotificationFeatureName = "StatusNotification"
+
 // Charge Point status reported in StatusNotificationRequest.
 type ChargePointErrorCode string
 

@@ -8,6 +8,8 @@ import (
 
 // -------------------- Diagnostics Status Notification (CP -> CS) --------------------
 
+const DiagnosticsStatusNotificationFeatureName = "DiagnosticsStatusNotification"
+
 // Status reported in DiagnosticsStatusNotificationRequest.
 type DiagnosticsStatus string
 

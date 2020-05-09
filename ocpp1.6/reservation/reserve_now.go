@@ -8,6 +8,8 @@ import (
 
 // -------------------- Reserve Now (CS -> CP) --------------------
 
+const ReserveNowFeatureName = "ReserveNow"
+
 // Status reported in ReserveNowConfirmation.
 type ReservationStatus string
 

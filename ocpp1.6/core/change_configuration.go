@@ -8,6 +8,8 @@ import (
 
 // -------------------- Change Configuration (CS -> CP) --------------------
 
+const ChangeConfigurationFeatureName = "ChangeConfiguration"
+
 // Status in ChangeConfigurationConfirmation.
 type ConfigurationStatus string
 

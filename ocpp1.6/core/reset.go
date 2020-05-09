@@ -8,6 +8,8 @@ import (
 
 // -------------------- Reset (CS -> CP) --------------------
 
+const ResetFeatureName = "Reset"
+
 // Type of reset requested by ResetRequest.
 type ResetType string
 

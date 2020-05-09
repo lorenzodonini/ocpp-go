@@ -8,6 +8,8 @@ import (
 
 // -------------------- Data Transfer (CP -> CS / CS -> CP) --------------------
 
+const DataTransferFeatureName = "DataTransfer"
+
 // Status in DataTransferConfirmation messages.
 type DataTransferStatus string
 
