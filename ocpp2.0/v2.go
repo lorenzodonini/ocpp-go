@@ -4,6 +4,9 @@ package ocpp2
 import (
 	"github.com/gorilla/websocket"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/security"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 	log "github.com/sirupsen/logrus"
@@ -27,11 +30,11 @@ import (
 // To send asynchronous messages and avoid blocking the calling thread, refer to SendRequestAsync.
 type ChargingStation interface {
 	// Sends a BootNotificationRequest to the CSMS, along with information about the charging station.
-	BootNotification(reason BootReason, model string, chargePointVendor string, props ...func(request *BootNotificationRequest)) (*BootNotificationConfirmation, error)
+	BootNotification(reason provisioning.BootReason, model string, chargePointVendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationConfirmation, error)
 	// Requests explicit authorization to the CSMS, provided a valid IdToken (typically the customer's). The CSMS may either authorize or reject the token.
-	Authorize(idToken string, tokenType IdTokenType, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
+	Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
 	// Notifies the CSMS, that a previously set charging limit was cleared.
-	ClearedChargingLimit(chargingLimitSource ChargingLimitSourceType, props ...func(request *ClearedChargingLimitRequest)) (*ClearedChargingLimitConfirmation, error)
+	ClearedChargingLimit(chargingLimitSource types.ChargingLimitSourceType, props ...func(request *ClearedChargingLimitRequest)) (*ClearedChargingLimitConfirmation, error)
 	// Performs a custom data transfer to the CSMS. The message payload is not pre-defined and must be supported by the CSMS.
 	DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error)
 	// Notifies the CSMS of a status change during a firmware update procedure (download, installation).
@@ -39,7 +42,7 @@ type ChargingStation interface {
 	// Requests a new certificate, required for an ISO 15118 EV, from the CSMS.
 	Get15118EVCertificate(schemaVersion string, exiRequest string, props ...func(request *Get15118EVCertificateRequest)) (*Get15118EVCertificateConfirmation, error)
 	// Requests the CSMS to provide OCSP certificate status for the charging station's 15118 certificates.
-	GetCertificateStatus(ocspRequestData OCSPRequestDataType, props ...func(request *GetCertificateStatusRequest)) (*GetCertificateStatusConfirmation, error)
+	GetCertificateStatus(ocspRequestData types.OCSPRequestDataType, props ...func(request *GetCertificateStatusRequest)) (*GetCertificateStatusConfirmation, error)
 	//Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
 	//MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error)
 	//StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
@@ -48,9 +51,14 @@ type ChargingStation interface {
 	//DiagnosticsStatusNotification(status DiagnosticsStatus, props ...func(request *DiagnosticsStatusNotificationRequest)) (*DiagnosticsStatusNotificationConfirmation, error)
 	//FirmwareStatusNotification(status FirmwareStatus, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationConfirmation, error)
 
+
 	// SetMessageHandler sets a handler for incoming messages from the CSMS.
 	// Refer to ChargingStationHandler for info on how to handle the callbacks.
 	SetMessageHandler(handler ChargingStationHandler)
+	// Registers a handler for incoming security profile messages
+	SetSecurityHandler(handler security.ChargingStationHandler)
+	// Registers a handler for incoming provisioning profile messages
+	SetProvisioningHandler(handler provisioning.ChargingStationHandler)
 	// Sends a request to the CSMS.
 	// The CSMS will respond with a confirmation, or with an error if the request was invalid or could not be processed.
 	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
@@ -107,24 +115,24 @@ func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient)
 		// Look for v2.0 subprotocol and add it, if not found
 		alreadyExists := false
 		for _, proto := range dialer.Subprotocols {
-			if proto == V2Subprotocol {
+			if proto == types.V2Subprotocol {
 				alreadyExists = true
 				break
 			}
 		}
 		if !alreadyExists {
-			dialer.Subprotocols = append(dialer.Subprotocols, V2Subprotocol)
+			dialer.Subprotocols = append(dialer.Subprotocols, types.V2Subprotocol)
 		}
 	})
 	if dispatcher == nil {
 		dispatcher = ocppj.NewClient(id, client, CoreProfile)
 	}
-	cp := chargingStation{client: dispatcher, confirmationListener: make(chan ocpp.Response), errorListener: make(chan error)}
+	cp := chargingStation{client: dispatcher, confirmationHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
 	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
-		cp.confirmationListener <- confirmation
+		cp.confirmationHandler <- confirmation
 	})
 	cp.client.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
-		cp.errorListener <- err
+		cp.errorHandler <- err
 	})
 	cp.client.SetRequestHandler(cp.handleIncomingRequest)
 	return &cp
@@ -153,7 +161,7 @@ type CSMS interface {
 	// Cancel a pending reservation, provided the reservationId, on a charging station.
 	CancelReservation(clientId string, callback func(*CancelReservationConfirmation, error), reservationId int, props ...func(*CancelReservationRequest)) error
 	// The CSMS installs a new certificate, signed by the CA, on the charging station. This typically follows a SignCertificate message, initiated by the charging station.
-	CertificateSigned(clientId string, callback func(*CertificateSignedConfirmation, error), certificate []string, props ...func(*CertificateSignedRequest)) error
+	CertificateSigned(clientId string, callback func(*security.CertificateSignedConfirmation, error), certificate []string, props ...func(*security.CertificateSignedRequest)) error
 	// Instructs a charging station to change its availability to the desired operational status.
 	ChangeAvailability(clientId string, callback func(*ChangeAvailabilityConfirmation, error), evseID int, operationalStatus OperationalStatus, props ...func(*ChangeAvailabilityRequest)) error
 	// Instructs a charging station to clear its current authorization cache. All authorization saved locally will be invalidated.
@@ -171,9 +179,9 @@ type CSMS interface {
 	// Performs a custom data transfer to a charging station. The message payload is not pre-defined and must be supported by the charging station.
 	DataTransfer(clientId string, callback func(*DataTransferConfirmation, error), vendorId string, props ...func(*DataTransferRequest)) error
 	// Deletes a previously installed certificate on a charging station.
-	DeleteCertificate(clientId string, callback func(*DeleteCertificateConfirmation, error), data CertificateHashData, props ...func(*DeleteCertificateRequest)) error
+	DeleteCertificate(clientId string, callback func(*DeleteCertificateConfirmation, error), data types.CertificateHashData, props ...func(*DeleteCertificateRequest)) error
 	// Requests a report from a charging station. The charging station will asynchronously send the report in chunks using NotifyReportRequest messages.
-	GetBaseReport(clientId string, callback func(*GetBaseReportConfirmation, error), requestId int, reportBase ReportBaseType, props ...func(*GetBaseReportRequest)) error
+	GetBaseReport(clientId string, callback func(*provisioning.GetBaseReportConfirmation, error), requestId int, reportBase provisioning.ReportBaseType, props ...func(*provisioning.GetBaseReportRequest)) error
 	// Request a charging station to report some or all installed charging profiles. The charging station will report these asynchronously using ReportChargingProfiles messages.
 	GetChargingProfiles(clientId string, callback func(*GetChargingProfilesConfirmation, error), chargingProfile ChargingProfileCriterion, props ...func(*GetChargingProfilesRequest)) error
 	// Requests a charging station to report the composite charging schedule for the indicated duration and evseID.
@@ -181,7 +189,7 @@ type CSMS interface {
 	// Retrieves all messages currently configured on a charging station.
 	GetDisplayMessages(clientId string, callback func(*GetDisplayMessagesConfirmation, error), requestId int, props ...func(*GetDisplayMessagesRequest)) error
 	// Retrieves all installed certificates on a charging station.
-	GetInstalledCertificateIds(clientId string, callback func(*GetInstalledCertificateIdsConfirmation, error), typeOfCertificate CertificateUse, props ...func(*GetInstalledCertificateIdsRequest)) error
+	GetInstalledCertificateIds(clientId string, callback func(*GetInstalledCertificateIdsConfirmation, error), typeOfCertificate types.CertificateUse, props ...func(*GetInstalledCertificateIdsRequest)) error
 	// Queries a charging station for version number of the Local Authorization List.
 	GetLocalListVersion(clientId string, callback func(*GetLocalListVersionConfirmation, error), props ...func(*GetLocalListVersionRequest)) error
 	// Instructs a charging station to upload a diagnostics or security logfile to the CSMS.
@@ -206,6 +214,10 @@ type CSMS interface {
 	// SetMessageHandler sets a handler for incoming messages from the Charging station.
 	// Refer to CSMSHandler for info on how to handle the callbacks.
 	SetMessageHandler(handler CSMSHandler)
+	// Registers a handler for incoming security profile messages
+	SetSecurityHandler(handler security.CSMSHandler)
+	// Registers a handler for incoming provisioning profile messages
+	SetProvisioningHandler(handler provisioning.CSMSHandler)
 	// Registers a handler for new incoming Charging station connections.
 	SetNewChargingStationHandler(handler func(chargePointId string))
 	// Registers a handler for Charging station disconnections.
@@ -236,7 +248,7 @@ func NewCSMS(dispatcher *ocppj.Server, server ws.WsServer) CSMS {
 	if server == nil {
 		server = ws.NewServer()
 	}
-	server.AddSupportedSubprotocol(V2Subprotocol)
+	server.AddSupportedSubprotocol(types.V2Subprotocol)
 	if dispatcher == nil {
 		dispatcher = ocppj.NewServer(server, CoreProfile)
 	}

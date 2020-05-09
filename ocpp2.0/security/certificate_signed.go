@@ -1,11 +1,14 @@
-package ocpp2
+package security
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
 
 // -------------------- Certificate Signed (CSMS -> CS) --------------------
+
+const CertificateSignedFeatureName = "CertificateSigned"
 
 // Status returned in response to CertificateSignedRequest, that indicates whether certificate signing has been accepted or rejected.
 type CertificateSignedStatus string
@@ -27,8 +30,8 @@ func isValidCertificateSignedStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the CertificateSignedRequest PDU sent by the CSMS to the Charging Station.
 type CertificateSignedRequest struct {
-	Cert              []string              `json:"cert" validate:"required,min=1,dive,max=800"`
-	TypeOfCertificate CertificateSigningUse `json:"typeOfCertificate,omitempty" validate:"omitempty,certificateSigningUse"`
+	Cert              []string                    `json:"cert" validate:"required,min=1,dive,max=800"`
+	TypeOfCertificate types.CertificateSigningUse `json:"typeOfCertificate,omitempty" validate:"omitempty,certificateSigningUse"`
 }
 
 // The field definition of the CertificateSignedResponse payload sent by the Charging Station to the CSMS in response to a CertificateSignedRequest.
@@ -71,5 +74,5 @@ func NewCertificateSignedConfirmation(status CertificateSignedStatus) *Certifica
 }
 
 func init() {
-	_ = Validate.RegisterValidation("certificateSignedStatus", isValidCertificateSignedStatus)
+	_ = types.Validate.RegisterValidation("certificateSignedStatus", isValidCertificateSignedStatus)
 }

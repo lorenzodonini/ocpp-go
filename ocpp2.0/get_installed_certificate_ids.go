@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -27,13 +28,13 @@ func isValidGetInstalledCertificateStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the GetInstalledCertificateIdsRequest PDU sent by the CSMS to the Charging Station.
 type GetInstalledCertificateIdsRequest struct {
-	TypeOfCertificate CertificateUse `json:"typeOfCertificate" validate:"required,certificateUse"`
+	TypeOfCertificate types.CertificateUse `json:"typeOfCertificate" validate:"required,certificateUse"`
 }
 
 // The field definition of the GetInstalledCertificateIdsResponse payload sent by the Charging Station to the CSMS in response to a GetInstalledCertificateIdsRequest.
 type GetInstalledCertificateIdsConfirmation struct {
 	Status              GetInstalledCertificateStatus `json:"status" validate:"required,getInstalledCertificateStatus"`
-	CertificateHashData []CertificateHashData         `json:"certificateHashData,omitempty" validate:"omitempty,dive"`
+	CertificateHashData []types.CertificateHashData   `json:"certificateHashData,omitempty" validate:"omitempty,dive"`
 }
 
 // To facilitate the management of the Charging Station’s installed certificates, a method of retrieving the installed certificates is provided.
@@ -62,7 +63,7 @@ func (c GetInstalledCertificateIdsConfirmation) GetFeatureName() string {
 }
 
 // Creates a new GetInstalledCertificateIdsRequest, containing all required fields. There are no optional fields for this message.
-func NewGetInstalledCertificateIdsRequest(typeOfCertificate CertificateUse) *GetInstalledCertificateIdsRequest {
+func NewGetInstalledCertificateIdsRequest(typeOfCertificate types.CertificateUse) *GetInstalledCertificateIdsRequest {
 	return &GetInstalledCertificateIdsRequest{TypeOfCertificate: typeOfCertificate}
 }
 
@@ -72,5 +73,5 @@ func NewGetInstalledCertificateIdsConfirmation(status GetInstalledCertificateSta
 }
 
 func init() {
-	_ = Validate.RegisterValidation("getInstalledCertificateStatus", isValidGetInstalledCertificateStatus)
+	_ = types.Validate.RegisterValidation("getInstalledCertificateStatus", isValidGetInstalledCertificateStatus)
 }

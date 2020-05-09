@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -78,5 +79,5 @@ func NewClearVariableMonitoringConfirmation(result []ClearMonitoringResult) *Cle
 }
 
 func init() {
-	_ = Validate.RegisterValidation("clearMonitoringStatus", isValidClearMonitoringStatus)
+	_ = types.Validate.RegisterValidation("clearMonitoringStatus", isValidClearMonitoringStatus)
 }

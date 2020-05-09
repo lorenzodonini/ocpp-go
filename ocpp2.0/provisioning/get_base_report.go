@@ -1,11 +1,14 @@
-package ocpp2
+package provisioning
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
 
 // -------------------- Get Base Report (CSMS -> CS) --------------------
+
+const GetBaseReportFeatureName = "GetBaseReport"
 
 // Requested availability change in GetBaseReportRequest.
 type ReportBaseType string
@@ -35,7 +38,7 @@ type GetBaseReportRequest struct {
 // This field definition of the GetBaseReport confirmation payload, sent by the Charging Station to the CSMS in response to a GetBaseReportRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetBaseReportConfirmation struct {
-	Status GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus"`
+	Status types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus"`
 }
 
 // The CSO may trigger the CSMS to request a report from a Charging Station.
@@ -70,10 +73,10 @@ func NewGetBaseReportRequest(requestID int, reportBase ReportBaseType) *GetBaseR
 }
 
 // Creates a new GetBaseReportConfirmation, containing all required fields. There are no optional fields for this message.
-func NewGetBaseReportConfirmation(status GenericDeviceModelStatus) *GetBaseReportConfirmation {
+func NewGetBaseReportConfirmation(status types.GenericDeviceModelStatus) *GetBaseReportConfirmation {
 	return &GetBaseReportConfirmation{Status: status}
 }
 
 func init() {
-	_ = Validate.RegisterValidation("reportBaseType", isValidReportBaseType)
+	_ = types.Validate.RegisterValidation("reportBaseType", isValidReportBaseType)
 }

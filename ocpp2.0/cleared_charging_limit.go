@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"reflect"
 )
 
@@ -8,8 +9,8 @@ import (
 
 // The field definition of the ClearedChargingLimit request payload sent by the Charging Station to the CSMS.
 type ClearedChargingLimitRequest struct {
-	ChargingLimitSource ChargingLimitSourceType `json:"chargingLimitSource" validate:"required,chargingLimitSource"`
-	EvseID              *int                    `json:"evseId,omitempty" validate:"omitempty,gte=0"`
+	ChargingLimitSource types.ChargingLimitSourceType `json:"chargingLimitSource" validate:"required,chargingLimitSource"`
+	EvseID              *int                          `json:"evseId,omitempty" validate:"omitempty,gte=0"`
 }
 
 // This field definition of the ClearedChargingLimit confirmation payload, sent by the CSMS to the Charging Station in response to a ClearedChargingLimitRequest.
@@ -45,7 +46,7 @@ func (c ClearedChargingLimitConfirmation) GetFeatureName() string {
 }
 
 // Creates a new ClearedChargingLimitRequest, containing all required fields. Optional fields may be set afterwards.
-func NewClearedChargingLimitRequest(chargingLimitSource ChargingLimitSourceType) *ClearedChargingLimitRequest {
+func NewClearedChargingLimitRequest(chargingLimitSource types.ChargingLimitSourceType) *ClearedChargingLimitRequest {
 	return &ClearedChargingLimitRequest{ChargingLimitSource: chargingLimitSource}
 }
 

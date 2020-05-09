@@ -60,7 +60,7 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringE2EMocked() {
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.ClearVariableMonitoring(wsId, func(confirmation *ocpp2.ClearVariableMonitoringConfirmation, err error) {

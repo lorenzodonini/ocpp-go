@@ -53,7 +53,7 @@ func (suite *OcppV2TestSuite) TestClearDisplayE2EMocked() {
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.ClearDisplay(wsId, func(confirmation *ocpp2.ClearDisplayConfirmation, err error) {

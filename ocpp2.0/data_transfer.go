@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -76,5 +77,5 @@ func NewDataTransferConfirmation(status DataTransferStatus) *DataTransferConfirm
 }
 
 func init() {
-	_ = Validate.RegisterValidation("dataTransferStatus", isValidDataTransferStatus)
+	_ = types.Validate.RegisterValidation("dataTransferStatus", isValidDataTransferStatus)
 }

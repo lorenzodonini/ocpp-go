@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -28,7 +29,7 @@ func isValidDeleteCertificateStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the DeleteCertificate request payload sent by the CSMS to the Charging Station.
 type DeleteCertificateRequest struct {
-	CertificateHashData CertificateHashData `json:"certificateHashData" validate:"required"`
+	CertificateHashData types.CertificateHashData `json:"certificateHashData" validate:"required"`
 }
 
 // This field definition of the DeleteCertificate confirmation payload, sent by the Charging Station to the CSMS in response to a DeleteCertificateRequest.
@@ -62,7 +63,7 @@ func (c DeleteCertificateConfirmation) GetFeatureName() string {
 }
 
 // Creates a new DeleteCertificateRequest, containing all required fields. There are no optional fields for this message.
-func NewDeleteCertificateRequest(certificateHashData CertificateHashData) *DeleteCertificateRequest {
+func NewDeleteCertificateRequest(certificateHashData types.CertificateHashData) *DeleteCertificateRequest {
 	return &DeleteCertificateRequest{CertificateHashData: certificateHashData}
 }
 
@@ -72,5 +73,5 @@ func NewDeleteCertificateConfirmation(status DeleteCertificateStatus) *DeleteCer
 }
 
 func init() {
-	_ = Validate.RegisterValidation("deleteCertificateStatus", isValidDeleteCertificateStatus)
+	_ = types.Validate.RegisterValidation("deleteCertificateStatus", isValidDeleteCertificateStatus)
 }

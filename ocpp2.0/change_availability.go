@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -94,6 +95,6 @@ func NewChangeAvailabilityConfirmation(status ChangeAvailabilityStatus) *ChangeA
 }
 
 func init() {
-	_ = Validate.RegisterValidation("operationalStatus", isValidOperationalStatus)
-	_ = Validate.RegisterValidation("changeAvailabilityStatus", isValidChangeAvailabilityStatus)
+	_ = types.Validate.RegisterValidation("operationalStatus", isValidOperationalStatus)
+	_ = types.Validate.RegisterValidation("changeAvailabilityStatus", isValidChangeAvailabilityStatus)
 }

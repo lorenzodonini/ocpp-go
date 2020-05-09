@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -28,10 +29,10 @@ func isValidGetChargingProfileStatus(fl validator.FieldLevel) bool {
 // ChargingProfileCriterion specifies the charging profile within a GetChargingProfilesRequest.
 // A ChargingProfile consists of ChargingSchedule, describing the amount of power or current that can be delivered per time interval.
 type ChargingProfileCriterion struct {
-	ChargingProfilePurpose ChargingProfilePurposeType `json:"chargingProfilePurpose,omitempty" validate:"omitempty,chargingProfilePurpose"`
-	StackLevel             *int                       `json:"stackLevel,omitempty" validate:"omitempty,gte=0"`
-	ChargingProfileID      []int                      `json:"chargingProfileId,omitempty" validate:"omitempty,dive,gte=0"` // This field SHALL NOT contain more ids than set in ChargingProfileEntries.maxLimit
-	ChargingLimitSource    []ChargingLimitSourceType  `json:"chargingLimitSource,omitempty" validate:"omitempty,max=4,dive,chargingLimitSource"`
+	ChargingProfilePurpose types.ChargingProfilePurposeType `json:"chargingProfilePurpose,omitempty" validate:"omitempty,chargingProfilePurpose"`
+	StackLevel             *int                             `json:"stackLevel,omitempty" validate:"omitempty,gte=0"`
+	ChargingProfileID      []int                            `json:"chargingProfileId,omitempty" validate:"omitempty,dive,gte=0"` // This field SHALL NOT contain more ids than set in ChargingProfileEntries.maxLimit
+	ChargingLimitSource    []types.ChargingLimitSourceType  `json:"chargingLimitSource,omitempty" validate:"omitempty,max=4,dive,chargingLimitSource"`
 }
 
 // The field definition of the GetChargingProfiles request payload sent by the CSMS to the Charging Station.
@@ -83,5 +84,5 @@ func NewGetChargingProfilesConfirmation(status GetChargingProfileStatus) *GetCha
 }
 
 func init() {
-	_ = Validate.RegisterValidation("getChargingProfileStatus", isValidGetChargingProfileStatus)
+	_ = types.Validate.RegisterValidation("getChargingProfileStatus", isValidGetChargingProfileStatus)
 }

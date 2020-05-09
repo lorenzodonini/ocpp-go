@@ -1,11 +1,14 @@
-package ocpp2
+package provisioning
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
 
 // -------------------- Boot Notification (CS -> CSMS) --------------------
+
+const BootNotificationFeatureName = "BootNotification"
 
 // Result of registration in response to a BootNotification request.
 type RegistrationStatus string
@@ -72,7 +75,7 @@ type BootNotificationRequest struct {
 // The field definition of the BootNotification confirmation payload, sent by the CSMS to the Charging Station in response to a BootNotificationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type BootNotificationConfirmation struct {
-	CurrentTime *DateTime          `json:"currentTime" validate:"required"`
+	CurrentTime *types.DateTime          `json:"currentTime" validate:"required"`
 	Interval    int                `json:"interval" validate:"gte=0"`
 	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
 }
@@ -116,11 +119,11 @@ func NewBootNotificationRequest(reason BootReason, model string, vendorName stri
 }
 
 // Creates a new BootNotificationConfirmation. There are no optional fields for this message.
-func NewBootNotificationConfirmation(currentTime *DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
+func NewBootNotificationConfirmation(currentTime *types.DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
 	return &BootNotificationConfirmation{CurrentTime: currentTime, Interval: interval, Status: status}
 }
 
 func init() {
-	_ = Validate.RegisterValidation("registrationStatus", isValidRegistrationStatus)
-	_ = Validate.RegisterValidation("bootReason", isValidBootReason)
+	_ = types.Validate.RegisterValidation("registrationStatus", isValidRegistrationStatus)
+	_ = types.Validate.RegisterValidation("bootReason", isValidBootReason)
 }

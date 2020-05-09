@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -26,15 +27,15 @@ func isValidGetCompositeScheduleStatus(fl validator.FieldLevel) bool {
 }
 
 type CompositeSchedule struct {
-	StartDateTime    *DateTime         `json:"startDateTime,omitempty" validate:"omitempty"`
-	ChargingSchedule *ChargingSchedule `json:"chargingSchedule,omitempty" validate:"omitempty"`
+	StartDateTime    *types.DateTime               `json:"startDateTime,omitempty" validate:"omitempty"`
+	ChargingSchedule *types.ChargingSchedule `json:"chargingSchedule,omitempty" validate:"omitempty"`
 }
 
 // The field definition of the GetCompositeSchedule request payload sent by the CSMS to the Charging System.
 type GetCompositeScheduleRequest struct {
-	Duration         int                  `json:"duration" validate:"gte=0"`
-	ChargingRateUnit ChargingRateUnitType `json:"chargingRateUnit,omitempty" validate:"omitempty,chargingRateUnit"`
-	EvseID           int                  `json:"evseId" validate:"gte=0"`
+	Duration         int                        `json:"duration" validate:"gte=0"`
+	ChargingRateUnit types.ChargingRateUnitType `json:"chargingRateUnit,omitempty" validate:"omitempty,chargingRateUnit"`
+	EvseID           int                        `json:"evseId" validate:"gte=0"`
 }
 
 // This field definition of the GetCompositeSchedule confirmation payload, sent by the Charging System to the CSMS in response to a GetCompositeScheduleRequest.
@@ -83,5 +84,5 @@ func NewGetCompositeScheduleConfirmation(status GetCompositeScheduleStatus, evse
 }
 
 func init() {
-	_ = Validate.RegisterValidation("getCompositeScheduleStatus", isValidGetCompositeScheduleStatus)
+	_ = types.Validate.RegisterValidation("getCompositeScheduleStatus", isValidGetCompositeScheduleStatus)
 }

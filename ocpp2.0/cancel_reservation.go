@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -72,5 +73,5 @@ func NewCancelReservationConfirmation(status CancelReservationStatus) *CancelRes
 }
 
 func init() {
-	_ = Validate.RegisterValidation("cancelReservationStatus", isValidCancelReservationStatus)
+	_ = types.Validate.RegisterValidation("cancelReservationStatus", isValidCancelReservationStatus)
 }

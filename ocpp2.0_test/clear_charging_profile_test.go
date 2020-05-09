@@ -3,6 +3,7 @@ package ocpp2_test
 import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -12,8 +13,8 @@ import (
 func (suite *OcppV2TestSuite) TestClearChargingProfileRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp2.ClearChargingProfileRequest{EvseID: newInt(1), ChargingProfile: &ocpp2.ClearChargingProfileType{ID: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, StackLevel: 1}}, true},
-		{ocpp2.ClearChargingProfileRequest{EvseID: newInt(1), ChargingProfile: &ocpp2.ClearChargingProfileType{ID: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile}}, true},
+		{ocpp2.ClearChargingProfileRequest{EvseID: newInt(1), ChargingProfile: &ocpp2.ClearChargingProfileType{ID: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, StackLevel: 1}}, true},
+		{ocpp2.ClearChargingProfileRequest{EvseID: newInt(1), ChargingProfile: &ocpp2.ClearChargingProfileType{ID: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile}}, true},
 		{ocpp2.ClearChargingProfileRequest{EvseID: newInt(1), ChargingProfile: &ocpp2.ClearChargingProfileType{ID: 1}}, true},
 		{ocpp2.ClearChargingProfileRequest{ChargingProfile: &ocpp2.ClearChargingProfileType{ID: 1}}, true},
 		{ocpp2.ClearChargingProfileRequest{ChargingProfile: &ocpp2.ClearChargingProfileType{}}, true},
@@ -43,7 +44,7 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 	wsUrl := "someUrl"
 	chargingProfileId := 1
 	evseID := 1
-	chargingProfilePurpose := ocpp2.ChargingProfilePurposeChargingStationMaxProfile
+	chargingProfilePurpose := types.ChargingProfilePurposeChargingStationMaxProfile
 	stackLevel := 1
 	status := ocpp2.ClearChargingProfileStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"chargingProfile":{"id":%v,"chargingProfilePurpose":"%v","stackLevel":%v}}]`,
@@ -66,7 +67,7 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.ClearChargingProfile(wsId, func(confirmation *ocpp2.ClearChargingProfileConfirmation, err error) {
@@ -88,7 +89,7 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileInvalidEndpoint() {
 	evseID := 1
 	chargingProfileId := 1
 	stackLevel := 1
-	chargingProfilePurpose := ocpp2.ChargingProfilePurposeChargingStationMaxProfile
+	chargingProfilePurpose := types.ChargingProfilePurposeChargingStationMaxProfile
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"chargingProfile":{"id":%v,"chargingProfilePurpose":"%v","stackLevel":%v}}]`,
 		messageId, ocpp2.ClearChargingProfileFeatureName, evseID, chargingProfileId, chargingProfilePurpose, stackLevel)
 	clearChargingProfileRequest := ocpp2.NewClearChargingProfileRequest()

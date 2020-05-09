@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -44,8 +45,8 @@ func isValidLogStatus(fl validator.FieldLevel) bool {
 // LogParameters specifies the requested log and the location to which the log should be sent. It is used in GetLogRequest.
 type LogParameters struct {
 	RemoteLocation  string    `json:"remoteLocation" validate:"required,max=512,url"`
-	OldestTimestamp *DateTime `json:"oldestTimestamp,omitempty" validate:"omitempty"`
-	LatestTimestamp *DateTime `json:"latestTimestamp,omitempty" validate:"omitempty"`
+	OldestTimestamp *types.DateTime `json:"oldestTimestamp,omitempty" validate:"omitempty"`
+	LatestTimestamp *types.DateTime `json:"latestTimestamp,omitempty" validate:"omitempty"`
 }
 
 // The field definition of the GetLog request payload sent by the CSMS to the Charging Station.
@@ -101,6 +102,6 @@ func NewGetLogConfirmation(status LogStatus) *GetLogConfirmation {
 }
 
 func init() {
-	_ = Validate.RegisterValidation("logType", isValidLogType)
-	_ = Validate.RegisterValidation("logStatus", isValidLogStatus)
+	_ = types.Validate.RegisterValidation("logType", isValidLogType)
+	_ = types.Validate.RegisterValidation("logStatus", isValidLogStatus)
 }

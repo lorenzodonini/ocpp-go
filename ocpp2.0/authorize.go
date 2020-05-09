@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"reflect"
 )
 
@@ -8,17 +9,17 @@ import (
 
 // The field definition of the Authorize request payload sent by the Charging Station to the CSMS.
 type AuthorizeRequest struct {
-	EvseID              []int                 `json:"evseId,omitempty"`
-	IdToken             IdToken               `json:"idToken" validate:"required"`
-	CertificateHashData []OCSPRequestDataType `json:"15118CertificateHashData,omitempty" validate:"max=4"`
+	EvseID              []int                       `json:"evseId,omitempty"`
+	IdToken             types.IdToken               `json:"idToken" validate:"required"`
+	CertificateHashData []types.OCSPRequestDataType `json:"15118CertificateHashData,omitempty" validate:"max=4"`
 }
 
 // This field definition of the Authorize confirmation payload, sent by the Charging Station to the CSMS in response to an AuthorizeRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type AuthorizeConfirmation struct {
-	CertificateStatus CertificateStatus `json:"certificateStatus,omitempty" validate:"omitempty,certificateStatus"`
-	EvseID            []int             `json:"evseId,omitempty"`
-	IdTokenInfo       IdTokenInfo       `json:"idTokenInfo" validate:"required"`
+	CertificateStatus types.CertificateStatus `json:"certificateStatus,omitempty" validate:"omitempty,certificateStatus"`
+	EvseID            []int                   `json:"evseId,omitempty"`
+	IdTokenInfo       types.IdTokenInfo       `json:"idTokenInfo" validate:"required"`
 }
 
 // Before the owner of an electric vehicle can start or stop charging, the Charging Station has to authorize the operation.
@@ -52,11 +53,11 @@ func (c AuthorizeConfirmation) GetFeatureName() string {
 }
 
 // Creates a new AuthorizeRequest, containing all required fields. There are no optional fields for this message.
-func NewAuthorizationRequest(idToken string, tokenType IdTokenType) *AuthorizeRequest {
-	return &AuthorizeRequest{IdToken: IdToken{IdToken: idToken, Type: tokenType}}
+func NewAuthorizationRequest(idToken string, tokenType types.IdTokenType) *AuthorizeRequest {
+	return &AuthorizeRequest{IdToken: types.IdToken{IdToken: idToken, Type: tokenType}}
 }
 
 // Creates a new AuthorizeConfirmation. There are no optional fields for this message.
-func NewAuthorizationConfirmation(idTokenInfo IdTokenInfo) *AuthorizeConfirmation {
+func NewAuthorizationConfirmation(idTokenInfo types.IdTokenInfo) *AuthorizeConfirmation {
 	return &AuthorizeConfirmation{IdTokenInfo: idTokenInfo}
 }

@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -16,9 +17,9 @@ const (
 )
 
 type ClearChargingProfileType struct {
-	ID                     int                        `json:"id,omitempty" validate:"gte=0"`
-	ChargingProfilePurpose ChargingProfilePurposeType `json:"chargingProfilePurpose,omitempty" validate:"omitempty,chargingProfilePurpose"`
-	StackLevel             int                        `json:"stackLevel,omitempty" validate:"omitempty,gt=0"`
+	ID                     int                              `json:"id,omitempty" validate:"gte=0"`
+	ChargingProfilePurpose types.ChargingProfilePurposeType `json:"chargingProfilePurpose,omitempty" validate:"omitempty,chargingProfilePurpose"`
+	StackLevel             int                              `json:"stackLevel,omitempty" validate:"omitempty,gt=0"`
 }
 
 func isValidClearChargingProfileStatus(fl validator.FieldLevel) bool {
@@ -81,5 +82,5 @@ func NewClearChargingProfileConfirmation(status ClearChargingProfileStatus) *Cle
 }
 
 func init() {
-	_ = Validate.RegisterValidation("clearChargingProfileStatus", isValidClearChargingProfileStatus)
+	_ = types.Validate.RegisterValidation("clearChargingProfileStatus", isValidClearChargingProfileStatus)
 }

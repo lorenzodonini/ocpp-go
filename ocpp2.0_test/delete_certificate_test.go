@@ -3,6 +3,7 @@ package ocpp2_test
 import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -12,9 +13,9 @@ import (
 func (suite *OcppV2TestSuite) TestDeleteCertificateRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp2.DeleteCertificateRequest{CertificateHashData: ocpp2.CertificateHashData{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, true},
+		{ocpp2.DeleteCertificateRequest{CertificateHashData: types.CertificateHashData{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, true},
 		{ocpp2.DeleteCertificateRequest{}, false},
-		{ocpp2.DeleteCertificateRequest{CertificateHashData: ocpp2.CertificateHashData{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, false},
+		{ocpp2.DeleteCertificateRequest{CertificateHashData: types.CertificateHashData{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -36,7 +37,7 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	certificateHashData := ocpp2.CertificateHashData{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}
+	certificateHashData := types.CertificateHashData{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}
 	status := ocpp2.DeleteCertificateStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateHashData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v"}}]`,
 		messageId, ocpp2.DeleteCertificateFeatureName, certificateHashData.HashAlgorithm, certificateHashData.IssuerNameHash, certificateHashData.IssuerKeyHash, certificateHashData.SerialNumber)
@@ -58,7 +59,7 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.DeleteCertificate(wsId, func(confirmation *ocpp2.DeleteCertificateConfirmation, err error) {
@@ -74,7 +75,7 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestDeleteCertificateInvalidEndpoint() {
 	messageId := defaultMessageId
-	certificateHashData := ocpp2.CertificateHashData{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}
+	certificateHashData := types.CertificateHashData{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}
 	deleteCertificateRequest := ocpp2.NewDeleteCertificateRequest(certificateHashData)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateHashData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v"}}]`,
 		messageId, ocpp2.DeleteCertificateFeatureName, certificateHashData.HashAlgorithm, certificateHashData.IssuerNameHash, certificateHashData.IssuerKeyHash, certificateHashData.SerialNumber)

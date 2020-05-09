@@ -5,10 +5,8 @@ import (
 )
 
 const (
-	BootNotificationFeatureName           = "BootNotification"
 	AuthorizeFeatureName                  = "Authorize"
 	CancelReservationFeatureName          = "CancelReservation"
-	CertificateSignedFeatureName          = "CertificateSigned"
 	ChangeAvailabilityFeatureName         = "ChangeAvailability"
 	ClearCacheFeatureName                 = "ClearCache"
 	ClearDisplayFeatureName               = "ClearDisplay"
@@ -21,7 +19,6 @@ const (
 	DeleteCertificateFeatureName          = "DeleteCertificate"
 	FirmwareStatusNotificationFeatureName = "FirmwareStatusNotification"
 	Get15118EVCertificateFeatureName      = "Get15118EVCertificate"
-	GetBaseReportFeatureName              = "GetBaseReport"
 	GetCertificateStatusFeatureName       = "GetCertificateStatus"
 	GetChargingProfilesFeatureName        = "GetChargingProfiles"
 	GetCompositeScheduleFeatureName       = "GetCompositeSchedule"
@@ -47,8 +44,6 @@ const (
 type CSMSHandler interface {
 	// OnCancelReservation is called on the CSMS whenever an AuthorizeRequest is received from a charging station.
 	OnAuthorize(chargingStationID string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
-	// OnBootNotification is called on the CSMS whenever a BootNotificationRequest is received from a charging station.
-	OnBootNotification(chargingStationID string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
 	// OnClearedChargingLimit is called on the CSMS whenever a ClearedChargingLimitRequest is received from a charging station.
 	OnClearedChargingLimit(chargingStationID string, request *ClearedChargingLimitRequest) (confirmation *ClearedChargingLimitConfirmation, err error)
 	// OnDataTransfer is called on the CSMS whenever a DataTransferRequest is received from a charging station.
@@ -69,8 +64,6 @@ type CSMSHandler interface {
 type ChargingStationHandler interface {
 	// OnCancelReservation is called on a charging station whenever a CancelReservationRequest is received from the CSMS.
 	OnCancelReservation(request *CancelReservationRequest) (confirmation *CancelReservationConfirmation, err error)
-	// OnCertificateSigned is called on a charging station whenever a CertificateSignedRequest is received from the CSMS.
-	OnCertificateSigned(request *CertificateSignedRequest) (confirmation *CertificateSignedConfirmation, err error)
 	// OnChangeAvailability is called on a charging station whenever a ChangeAvailabilityRequest is received from the CSMS.
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	// OnClearCache is called on a charging station whenever a ClearCacheRequest is received from the CSMS.
@@ -89,8 +82,6 @@ type ChargingStationHandler interface {
 	OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
 	// OnDeleteCertificate is called on a charging station whenever a DeleteCertificateRequest is received from the CSMS.
 	OnDeleteCertificate(request *DeleteCertificateRequest) (confirmation *DeleteCertificateConfirmation, err error)
-	// OnGetBaseReport is called on a charging station whenever a GetBaseReportRequest is received from the CSMS.
-	OnGetBaseReport(request *GetBaseReportRequest) (confirmation *GetBaseReportConfirmation, err error)
 	// OnGetChargingProfiles is called on a charging station whenever a GetChargingProfilesRequest is received from the CSMS.
 	OnGetChargingProfiles(request *GetChargingProfilesRequest) (confirmation *GetChargingProfilesConfirmation, err error)
 	// OnGetCompositeSchedule is called on a charging station whenever a GetCompositeScheduleRequest is received from the CSMS.
@@ -116,10 +107,8 @@ var CoreProfileName = "core"
 
 var CoreProfile = ocpp.NewProfile(
 	CoreProfileName,
-	BootNotificationFeature{},
 	AuthorizeFeature{},
 	CancelReservationFeature{},
-	CertificateSignedFeature{},
 	ChangeAvailabilityFeature{},
 	ClearCacheFeature{},
 	ClearDisplayFeature{},
@@ -132,7 +121,6 @@ var CoreProfile = ocpp.NewProfile(
 	DeleteCertificateFeature{},
 	FirmwareStatusNotificationFeature{},
 	Get15118EVCertificateFeature{},
-	GetBaseReportFeature{},
 	GetCertificateStatusFeature{},
 	GetChargingProfilesFeature{},
 	GetCompositeScheduleFeature{},

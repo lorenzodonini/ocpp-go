@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -72,5 +73,5 @@ func NewClearDisplayConfirmation(status ClearMessageStatus) *ClearDisplayConfirm
 }
 
 func init() {
-	_ = Validate.RegisterValidation("clearMessageStatus", isValidClearMessageStatus)
+	_ = types.Validate.RegisterValidation("clearMessageStatus", isValidClearMessageStatus)
 }

@@ -3,19 +3,24 @@ package ocpp2
 import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/security"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	log "github.com/sirupsen/logrus"
 )
 
 type csms struct {
-	server       *ocppj.Server
-	coreListener CSMSHandler
+	server              *ocppj.Server
+	coreListener        CSMSHandler
+	provisioningHandler provisioning.CSMSHandler
+	securityHandler     security.CSMSHandler
+	callbacks           map[string]func(confirmation ocpp.Response, err error)
 	//localAuthListListener CentralSystemLocalAuthListListener
 	//firmwareListener      CentralSystemFirmwareManagementListener
 	//reservationListener   CentralSystemReservationListener
 	//remoteTriggerListener CentralSystemRemoteTriggerListener
 	//smartChargingListener CentralSystemSmartChargingListener
-	callbacks map[string]func(confirmation ocpp.Response, err error)
 }
 
 // Cancels a previously reserved charge point or connector, given the reservation Id.
@@ -35,14 +40,14 @@ func (cs *csms) CancelReservation(clientId string, callback func(*CancelReservat
 }
 
 // Sends a new certificate (chain) to the charging station.
-func (cs *csms) CertificateSigned(clientId string, callback func(*CertificateSignedConfirmation, error), certificate []string, props ...func(*CertificateSignedRequest)) error {
-	request := NewCertificateSignedRequest(certificate)
+func (cs *csms) CertificateSigned(clientId string, callback func(*security.CertificateSignedConfirmation, error), certificate []string, props ...func(*security.CertificateSignedRequest)) error {
+	request := security.NewCertificateSignedRequest(certificate)
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*CertificateSignedConfirmation), protoError)
+			callback(confirmation.(*security.CertificateSignedConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -191,7 +196,7 @@ func (cs *csms) DataTransfer(clientId string, callback func(confirmation *DataTr
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) DeleteCertificate(clientId string, callback func(*DeleteCertificateConfirmation, error), data CertificateHashData, props ...func(*DeleteCertificateRequest)) error {
+func (cs *csms) DeleteCertificate(clientId string, callback func(*DeleteCertificateConfirmation, error), data types.CertificateHashData, props ...func(*DeleteCertificateRequest)) error {
 	request := NewDeleteCertificateRequest(data)
 	for _, fn := range props {
 		fn(request)
@@ -206,14 +211,14 @@ func (cs *csms) DeleteCertificate(clientId string, callback func(*DeleteCertific
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetBaseReport(clientId string, callback func(*GetBaseReportConfirmation, error), requestId int, reportBase ReportBaseType, props ...func(*GetBaseReportRequest)) error {
-	request := NewGetBaseReportRequest(requestId, reportBase)
+func (cs *csms) GetBaseReport(clientId string, callback func(*provisioning.GetBaseReportConfirmation, error), requestId int, reportBase provisioning.ReportBaseType, props ...func(*provisioning.GetBaseReportRequest)) error {
+	request := provisioning.NewGetBaseReportRequest(requestId, reportBase)
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetBaseReportConfirmation), protoError)
+			callback(confirmation.(*provisioning.GetBaseReportConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -266,7 +271,7 @@ func (cs *csms) GetDisplayMessages(clientId string, callback func(*GetDisplayMes
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*GetInstalledCertificateIdsConfirmation, error), typeOfCertificate CertificateUse, props ...func(*GetInstalledCertificateIdsRequest)) error {
+func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*GetInstalledCertificateIdsConfirmation, error), typeOfCertificate types.CertificateUse, props ...func(*GetInstalledCertificateIdsRequest)) error {
 	request := NewGetInstalledCertificateIdsRequest(typeOfCertificate)
 	for _, fn := range props {
 		fn(request)
@@ -540,6 +545,14 @@ func (cs *csms) SetMessageHandler(handler CSMSHandler) {
 	cs.coreListener = handler
 }
 
+func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
+	cs.securityHandler = handler
+}
+
+func (cs *csms) SetProvisioningHandler(handler provisioning.CSMSHandler) {
+	cs.provisioningHandler = handler
+}
+
 // Registers a handler for incoming local authorization profile messages.
 //func (cs *server) SetLocalAuthListHandler(listener CentralSystemLocalAuthListListener) {
 //	cs.localAuthListListener = listener
@@ -575,7 +588,7 @@ func (cs *csms) SetChargingStationDisconnectedHandler(handler func(chargePointId
 
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	switch request.GetFeatureName() {
-	case CancelReservationFeatureName, CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearChargingProfileFeatureName, ClearDisplayFeatureName, ClearVariableMonitoringFeatureName, CostUpdatedFeatureName, CustomerInformationFeatureName, DataTransferFeatureName, DeleteCertificateFeatureName, GetBaseReportFeatureName, GetChargingProfilesFeatureName, GetCompositeScheduleFeatureName, GetDisplayMessagesFeatureName, GetInstalledCertificateIdsFeatureName, GetLocalListVersionFeatureName, GetLogFeatureName, GetMonitoringReportFeatureName:
+	case CancelReservationFeatureName, security.CertificateSignedFeatureName, ChangeAvailabilityFeatureName, ClearCacheFeatureName, ClearChargingProfileFeatureName, ClearDisplayFeatureName, ClearVariableMonitoringFeatureName, CostUpdatedFeatureName, CustomerInformationFeatureName, DataTransferFeatureName, DeleteCertificateFeatureName, provisioning.GetBaseReportFeatureName, GetChargingProfilesFeatureName, GetCompositeScheduleFeatureName, GetDisplayMessagesFeatureName, GetInstalledCertificateIdsFeatureName, GetLocalListVersionFeatureName, GetLogFeatureName, GetMonitoringReportFeatureName:
 		break
 	//case ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
@@ -684,8 +697,8 @@ func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request
 	// Execute in separate goroutine, so the caller goroutine is available
 	go func() {
 		switch action {
-		case BootNotificationFeatureName:
-			confirmation, err = cs.coreListener.OnBootNotification(chargePointId, request.(*BootNotificationRequest))
+		case provisioning.BootNotificationFeatureName:
+			confirmation, err = cs.provisioningHandler.OnBootNotification(chargePointId, request.(*provisioning.BootNotificationRequest))
 		case AuthorizeFeatureName:
 			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*AuthorizeRequest))
 		case ClearedChargingLimitFeatureName:

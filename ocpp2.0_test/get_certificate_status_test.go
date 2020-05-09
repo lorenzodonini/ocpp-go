@@ -3,6 +3,7 @@ package ocpp2_test
 import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -12,9 +13,9 @@ import (
 func (suite *OcppV2TestSuite) TestGetCertificateStatusRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp2.GetCertificateStatusRequest{OcspRequestData: ocpp2.OCSPRequestDataType{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}}, true},
+		{ocpp2.GetCertificateStatusRequest{OcspRequestData: types.OCSPRequestDataType{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}}, true},
 		{ocpp2.GetCertificateStatusRequest{}, false},
-		{ocpp2.GetCertificateStatusRequest{OcspRequestData: ocpp2.OCSPRequestDataType{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}}, false},
+		{ocpp2.GetCertificateStatusRequest{OcspRequestData: types.OCSPRequestDataType{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -22,9 +23,9 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetCertificateStatusConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp2.GetCertificateStatusConfirmation{Status: ocpp2.GenericStatusAccepted, OcspResult: "deadbeef"}, true},
-		{ocpp2.GetCertificateStatusConfirmation{Status: ocpp2.GenericStatusAccepted}, true},
-		{ocpp2.GetCertificateStatusConfirmation{Status: ocpp2.GenericStatusRejected}, true},
+		{ocpp2.GetCertificateStatusConfirmation{Status: types.GenericStatusAccepted, OcspResult: "deadbeef"}, true},
+		{ocpp2.GetCertificateStatusConfirmation{Status: types.GenericStatusAccepted}, true},
+		{ocpp2.GetCertificateStatusConfirmation{Status: types.GenericStatusRejected}, true},
 		{ocpp2.GetCertificateStatusConfirmation{Status: "invalidGenericStatus"}, false},
 		{ocpp2.GetCertificateStatusConfirmation{}, false},
 	}
@@ -36,9 +37,9 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusE2EMocked() {
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	ocspData := ocpp2.OCSPRequestDataType{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}
+	ocspData := types.OCSPRequestDataType{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}
 	ocspResult := "deadbeef"
-	status := ocpp2.GenericStatusAccepted
+	status := types.GenericStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"ocspRequestData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}}]`,
 		messageId, ocpp2.GetCertificateStatusFeatureName, ocspData.HashAlgorithm, ocspData.IssuerNameHash, ocspData.IssuerKeyHash, ocspData.SerialNumber, ocspData.ResponderURL)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","ocspResult":"%v"}]`, messageId, status, ocspResult)
@@ -46,7 +47,7 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusE2EMocked() {
 	getCertificateStatusConfirmation.OcspResult = ocspResult
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockCentralSystemCoreListener{}
+	coreListener := MockCSMSHandler{}
 	coreListener.On("OnGetCertificateStatus", mock.AnythingOfType("string"), mock.Anything).Return(getCertificateStatusConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*ocpp2.GetCertificateStatusRequest)
 		require.True(t, ok)
@@ -61,9 +62,9 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusE2EMocked() {
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.GetCertificateStatus(ocspData)
+	confirmation, err := suite.chargingStation.GetCertificateStatus(ocspData)
 	require.Nil(t, err)
 	require.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.Status)
@@ -72,7 +73,7 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestGetCertificateStatusInvalidEndpoint() {
 	messageId := defaultMessageId
-	ocspData := ocpp2.OCSPRequestDataType{HashAlgorithm: ocpp2.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}
+	ocspData := types.OCSPRequestDataType{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}
 	getCertificateStatusRequest := ocpp2.NewGetCertificateStatusRequest(ocspData)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"ocspRequestData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}}]`,
 		messageId, ocpp2.GetCertificateStatusFeatureName, ocspData.HashAlgorithm, ocspData.IssuerNameHash, ocspData.IssuerKeyHash, ocspData.SerialNumber, ocspData.ResponderURL)

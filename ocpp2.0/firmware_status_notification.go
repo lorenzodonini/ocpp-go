@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -77,5 +78,5 @@ func NewFirmwareStatusNotificationConfirmation() *FirmwareStatusNotificationConf
 }
 
 func init() {
-	_ = Validate.RegisterValidation("firmwareStatus", isValidFirmwareStatus)
+	_ = types.Validate.RegisterValidation("firmwareStatus", isValidFirmwareStatus)
 }

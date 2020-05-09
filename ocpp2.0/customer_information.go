@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -28,12 +29,12 @@ func isValidCustomerInformationStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the CustomerInformation request payload sent by the CSMS to the Charging Station.
 type CustomerInformationRequest struct {
-	RequestID           int                  `json:"requestId" validate:"gte=0"`
-	Report              bool                 `json:"report"`
-	Clear               bool                 `json:"clear"`
-	CustomerIdentifier  string               `json:"customerIdentifier,omitempty" validate:"max=64"`
-	IdToken             *IdToken             `json:"idToken,omitempty" validate:"omitempty,dive"`
-	CustomerCertificate *CertificateHashData `json:"customerCertificate,omitempty" validate:"omitempty,dive"`
+	RequestID           int                        `json:"requestId" validate:"gte=0"`
+	Report              bool                       `json:"report"`
+	Clear               bool                       `json:"clear"`
+	CustomerIdentifier  string                     `json:"customerIdentifier,omitempty" validate:"max=64"`
+	IdToken             *types.IdToken             `json:"idToken,omitempty" validate:"omitempty,dive"`
+	CustomerCertificate *types.CertificateHashData `json:"customerCertificate,omitempty" validate:"omitempty,dive"`
 }
 
 // This field definition of the CustomerInformation confirmation payload, sent by the Charging Station to the CSMS in response to a CustomerInformationRequest.
@@ -79,5 +80,5 @@ func NewCustomerInformationConfirmation(status CustomerInformationStatus) *Custo
 }
 
 func init() {
-	_ = Validate.RegisterValidation("customerInformationStatus", isValidCustomerInformationStatus)
+	_ = types.Validate.RegisterValidation("customerInformationStatus", isValidCustomerInformationStatus)
 }

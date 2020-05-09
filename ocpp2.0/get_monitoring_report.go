@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -28,15 +29,15 @@ func isValidMonitoringCriteriaType(fl validator.FieldLevel) bool {
 
 // The field definition of the GetMonitoringReport request payload sent by the CSMS to the Charging Station.
 type GetMonitoringReportRequest struct {
-	RequestID          *int                     `json:"requestId,omitempty" validate:"omitempty,gte=0"`                                  // The Id of the request.
-	MonitoringCriteria []MonitoringCriteriaType `json:"monitoringCriteria,omitempty" validate:"omitempty,max=3,dive,monitoringCriteria"` // This field contains criteria for components for which a monitoring report is requested.
-	ComponentVariable  []ComponentVariable      `json:"componentVariable,omitempty" validate:"omitempty,dive"`                           // This field specifies the components and variables for which a monitoring report is requested.
+	RequestID          *int                      `json:"requestId,omitempty" validate:"omitempty,gte=0"`                                  // The Id of the request.
+	MonitoringCriteria []MonitoringCriteriaType  `json:"monitoringCriteria,omitempty" validate:"omitempty,max=3,dive,monitoringCriteria"` // This field contains criteria for components for which a monitoring report is requested.
+	ComponentVariable  []types.ComponentVariable `json:"componentVariable,omitempty" validate:"omitempty,dive"`                           // This field specifies the components and variables for which a monitoring report is requested.
 }
 
 // This field definition of the GetMonitoringReport confirmation payload, sent by the Charging Station to the CSMS in response to a GetMonitoringReportRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetMonitoringReportConfirmation struct {
-	Status GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus"` // This field indicates whether the Charging Station was able to accept the request.
+	Status types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus"` // This field indicates whether the Charging Station was able to accept the request.
 }
 
 // A CSMS can request the Charging Station to send a report about configured monitoring settings per component and variable.
@@ -72,10 +73,10 @@ func NewGetMonitoringReportRequest() *GetMonitoringReportRequest {
 }
 
 // Creates a new GetMonitoringReportConfirmation, containing all required fields. There are no optional fields for this message.
-func NewGetMonitoringReportConfirmation(status GenericDeviceModelStatus) *GetMonitoringReportConfirmation {
+func NewGetMonitoringReportConfirmation(status types.GenericDeviceModelStatus) *GetMonitoringReportConfirmation {
 	return &GetMonitoringReportConfirmation{Status: status}
 }
 
 func init() {
-	_ = Validate.RegisterValidation("monitoringCriteria", isValidMonitoringCriteriaType)
+	_ = types.Validate.RegisterValidation("monitoringCriteria", isValidMonitoringCriteriaType)
 }

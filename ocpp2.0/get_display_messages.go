@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
@@ -115,7 +116,7 @@ func NewGetDisplayMessagesConfirmation(status MessageStatus) *GetDisplayMessages
 }
 
 func init() {
-	_ = Validate.RegisterValidation("messagePriority", isValidMessagePriority)
-	_ = Validate.RegisterValidation("messageState", isValidMessageState)
-	_ = Validate.RegisterValidation("messageStatus", isValidMessageStatus)
+	_ = types.Validate.RegisterValidation("messagePriority", isValidMessagePriority)
+	_ = types.Validate.RegisterValidation("messageState", isValidMessageState)
+	_ = types.Validate.RegisterValidation("messageStatus", isValidMessageStatus)
 }

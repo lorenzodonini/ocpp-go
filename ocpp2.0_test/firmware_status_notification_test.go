@@ -42,7 +42,7 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	firmwareStatusNotificationConfirmation := ocpp2.NewFirmwareStatusNotificationConfirmation()
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockCentralSystemCoreListener{}
+	coreListener := MockCSMSHandler{}
 	coreListener.On("OnFirmwareStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(firmwareStatusNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*ocpp2.FirmwareStatusNotificationRequest)
 		require.True(t, ok)
@@ -53,9 +53,9 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.FirmwareStatusNotification(status, requestID)
+	confirmation, err := suite.chargingStation.FirmwareStatusNotification(status, requestID)
 	assert.Nil(t, err)
 	assert.NotNil(t, confirmation)
 }

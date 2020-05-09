@@ -47,7 +47,7 @@ func (suite *OcppV2TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	dataTransferConfirmation := ocpp2.NewDataTransferConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockCentralSystemCoreListener{}
+	coreListener := MockCSMSHandler{}
 	coreListener.On("OnDataTransfer", mock.AnythingOfType("string"), mock.Anything).Return(dataTransferConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*ocpp2.DataTransferRequest)
 		require.True(t, ok)
@@ -58,9 +58,9 @@ func (suite *OcppV2TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
-	confirmation, err := suite.chargePoint.DataTransfer(vendorId)
+	confirmation, err := suite.chargingStation.DataTransfer(vendorId)
 	assert.Nil(t, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.Status)
@@ -89,7 +89,7 @@ func (suite *OcppV2TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.DataTransfer(wsId, func(confirmation *ocpp2.DataTransferConfirmation, err error) {
