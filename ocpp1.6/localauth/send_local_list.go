@@ -1,4 +1,4 @@
-package auth
+package localauth
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"

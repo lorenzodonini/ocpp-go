@@ -4,9 +4,9 @@ package ocpp16
 import (
 	"github.com/gorilla/websocket"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/auth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
@@ -57,7 +57,7 @@ type ChargePoint interface {
 	// Registers a handler for incoming core profile messages
 	SetChargePointCoreHandler(listener core.ChargePointCoreHandler)
 	// Registers a handler for incoming local authorization profile messages
-	SetLocalAuthListHandler(listener auth.ChargePointLocalAuthListHandler)
+	SetLocalAuthListHandler(listener localauth.ChargePointLocalAuthListHandler)
 	// Registers a handler for incoming firmware management profile messages
 	SetFirmwareManagementHandler(listener firmware.ChargePointFirmwareManagementHandler)
 	// Registers a handler for incoming reservation profile messages
@@ -131,7 +131,7 @@ func NewChargePoint(id string, dispatcher *ocppj.Client, client ws.WsClient) Cha
 		}
 	})
 	if dispatcher == nil {
-		dispatcher = ocppj.NewClient(id, client, core.Profile, auth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		dispatcher = ocppj.NewClient(id, client, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
 	cp := chargePoint{client: dispatcher, confirmationHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
 	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
@@ -185,9 +185,9 @@ type CentralSystem interface {
 	// Attempts to unlock a specific connector on a charge point. Used for remote support purposes.
 	UnlockConnector(clientId string, callback func(*core.UnlockConnectorConfirmation, error), connectorId int, props ...func(*core.UnlockConnectorRequest)) error
 	// Queries the current version of the local authorization list from a charge point.
-	GetLocalListVersion(clientId string, callback func(*auth.GetLocalListVersionConfirmation, error), props ...func(request *auth.GetLocalListVersionRequest)) error
+	GetLocalListVersion(clientId string, callback func(*localauth.GetLocalListVersionConfirmation, error), props ...func(request *localauth.GetLocalListVersionRequest)) error
 	// Sends or updates a local authorization list on a charge point. Versioning rules must be followed.
-	SendLocalList(clientId string, callback func(*auth.SendLocalListConfirmation, error), version int, updateType auth.UpdateType, props ...func(request *auth.SendLocalListRequest)) error
+	SendLocalList(clientId string, callback func(*localauth.SendLocalListConfirmation, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error
 	// Requests diagnostics data from a charge point. The data will be uploaded out-of-band to the provided URL location.
 	GetDiagnostics(clientId string, callback func(*firmware.GetDiagnosticsConfirmation, error), location string, props ...func(request *firmware.GetDiagnosticsRequest)) error
 	// Instructs the charge point to download and install a new firmware version. The firmware binary will be downloaded out-of-band from the provided URL location.
@@ -208,7 +208,7 @@ type CentralSystem interface {
 	// Registers a handler for incoming core profile messages.
 	SetCentralSystemCoreHandler(listener core.CentralSystemCoreHandler)
 	// Registers a handler for incoming local authorization profile messages.
-	SetLocalAuthListHandler(listener auth.CentralSystemLocalAuthListHandler)
+	SetLocalAuthListHandler(listener localauth.CentralSystemLocalAuthListHandler)
 	// Registers a handler for incoming firmware management profile messages.
 	SetFirmwareManagementHandler(listener firmware.CentralSystemFirmwareManagementHandler)
 	// Registers a handler for incoming reservation profile messages.
@@ -249,7 +249,7 @@ func NewCentralSystem(dispatcher *ocppj.Server, server ws.WsServer) CentralSyste
 	}
 	server.AddSupportedSubprotocol(types.V16Subprotocol)
 	if dispatcher == nil {
-		dispatcher = ocppj.NewServer(server, core.Profile, auth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		dispatcher = ocppj.NewServer(server, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
 	cs := centralSystem{
 		server:    dispatcher,

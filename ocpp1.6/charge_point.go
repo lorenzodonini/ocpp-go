@@ -3,9 +3,9 @@ package ocpp16
 import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/auth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
@@ -17,7 +17,7 @@ import (
 type chargePoint struct {
 	client               *ocppj.Client
 	coreHandler          core.ChargePointCoreHandler
-	localAuthListHandler auth.ChargePointLocalAuthListHandler
+	localAuthListHandler localauth.ChargePointLocalAuthListHandler
 	firmwareHandler      firmware.ChargePointFirmwareManagementHandler
 	reservationHandler   reservation.ChargePointReservationHandler
 	remoteTriggerHandler remotetrigger.ChargePointRemoteTriggerHandler
@@ -160,7 +160,7 @@ func (cp *chargePoint) SetChargePointCoreHandler(listener core.ChargePointCoreHa
 	cp.coreHandler = listener
 }
 
-func (cp *chargePoint) SetLocalAuthListHandler(listener auth.ChargePointLocalAuthListHandler) {
+func (cp *chargePoint) SetLocalAuthListHandler(listener localauth.ChargePointLocalAuthListHandler) {
 	cp.localAuthListHandler = listener
 }
 
@@ -271,7 +271,7 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 				cp.notSupportedError(requestId, action)
 				return
 			}
-		case auth.ProfileName:
+		case localauth.ProfileName:
 			if cp.localAuthListHandler == nil {
 				cp.notSupportedError(requestId, action)
 				return
@@ -321,10 +321,10 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.coreHandler.OnReset(request.(*core.ResetRequest))
 	case core.UnlockConnectorFeatureName:
 		confirmation, err = cp.coreHandler.OnUnlockConnector(request.(*core.UnlockConnectorRequest))
-	case auth.GetLocalListVersionFeatureName:
-		confirmation, err = cp.localAuthListHandler.OnGetLocalListVersion(request.(*auth.GetLocalListVersionRequest))
-	case auth.SendLocalListFeatureName:
-		confirmation, err = cp.localAuthListHandler.OnSendLocalList(request.(*auth.SendLocalListRequest))
+	case localauth.GetLocalListVersionFeatureName:
+		confirmation, err = cp.localAuthListHandler.OnGetLocalListVersion(request.(*localauth.GetLocalListVersionRequest))
+	case localauth.SendLocalListFeatureName:
+		confirmation, err = cp.localAuthListHandler.OnSendLocalList(request.(*localauth.SendLocalListRequest))
 	case firmware.GetDiagnosticsFeatureName:
 		confirmation, err = cp.firmwareHandler.OnGetDiagnostics(request.(*firmware.GetDiagnosticsRequest))
 	case firmware.UpdateFirmwareFeatureName:

@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/auth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
@@ -28,7 +28,7 @@ type ChargePointHandler struct {
 	errorCode            core.ChargePointErrorCode
 	configuration        map[string]core.ConfigurationKey
 	meterValue           int
-	localAuthList        []auth.AuthorizationData
+	localAuthList        []localauth.AuthorizationData
 	localAuthListVersion int
 }
 
@@ -116,22 +116,22 @@ func (handler *ChargePointHandler) OnUnlockConnector(request *core.UnlockConnect
 }
 
 // Local authorization list profile callbacks
-func (handler *ChargePointHandler) OnGetLocalListVersion(request *auth.GetLocalListVersionRequest) (confirmation *auth.GetLocalListVersionConfirmation, err error) {
-	return auth.NewGetLocalListVersionConfirmation(handler.localAuthListVersion), nil
+func (handler *ChargePointHandler) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionConfirmation, err error) {
+	return localauth.NewGetLocalListVersionConfirmation(handler.localAuthListVersion), nil
 }
 
-func (handler *ChargePointHandler) OnSendLocalList(request *auth.SendLocalListRequest) (confirmation *auth.SendLocalListConfirmation, err error) {
+func (handler *ChargePointHandler) OnSendLocalList(request *localauth.SendLocalListRequest) (confirmation *localauth.SendLocalListConfirmation, err error) {
 	if request.ListVersion <= handler.localAuthListVersion {
-		return auth.NewSendLocalListConfirmation(auth.UpdateStatusVersionMismatch), nil
+		return localauth.NewSendLocalListConfirmation(localauth.UpdateStatusVersionMismatch), nil
 	}
-	if request.UpdateType == auth.UpdateTypeFull {
+	if request.UpdateType == localauth.UpdateTypeFull {
 		handler.localAuthList = request.LocalAuthorizationList
 		handler.localAuthListVersion = request.ListVersion
-	} else if request.UpdateType == auth.UpdateTypeDifferential {
+	} else if request.UpdateType == localauth.UpdateTypeDifferential {
 		handler.localAuthList = append(handler.localAuthList, request.LocalAuthorizationList...)
 		handler.localAuthListVersion = request.ListVersion
 	}
-	return auth.NewSendLocalListConfirmation(auth.UpdateStatusAccepted), nil
+	return localauth.NewSendLocalListConfirmation(localauth.UpdateStatusAccepted), nil
 }
 
 // Firmware management profile callbacks
@@ -316,7 +316,7 @@ func main() {
 		connectors:           connectors,
 		configuration:        map[string]core.ConfigurationKey{},
 		errorCode:            core.NoError,
-		localAuthList:        []auth.AuthorizationData{},
+		localAuthList:        []localauth.AuthorizationData{},
 		localAuthListVersion: 0}
 	chargePoint.SetChargePointCoreHandler(handler)
 	// Connects to central system

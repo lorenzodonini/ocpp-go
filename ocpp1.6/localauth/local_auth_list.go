@@ -1,5 +1,5 @@
 // Contains features to manage the local authorization list in Charge Points.
-package auth
+package localauth
 
 import "github.com/lorenzodonini/ocpp-go/ocpp"
 

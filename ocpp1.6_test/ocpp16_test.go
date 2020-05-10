@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/auth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
@@ -272,15 +272,15 @@ type MockChargePointLocalAuthListListener struct {
 	mock.Mock
 }
 
-func (localAuthListListener MockChargePointLocalAuthListListener) OnGetLocalListVersion(request *auth.GetLocalListVersionRequest) (confirmation *auth.GetLocalListVersionConfirmation, err error) {
+func (localAuthListListener MockChargePointLocalAuthListListener) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionConfirmation, err error) {
 	args := localAuthListListener.MethodCalled("OnGetLocalListVersion", request)
-	conf := args.Get(0).(*auth.GetLocalListVersionConfirmation)
+	conf := args.Get(0).(*localauth.GetLocalListVersionConfirmation)
 	return conf, args.Error(1)
 }
 
-func (localAuthListListener MockChargePointLocalAuthListListener) OnSendLocalList(request *auth.SendLocalListRequest) (confirmation *auth.SendLocalListConfirmation, err error) {
+func (localAuthListListener MockChargePointLocalAuthListListener) OnSendLocalList(request *localauth.SendLocalListRequest) (confirmation *localauth.SendLocalListConfirmation, err error) {
 	args := localAuthListListener.MethodCalled("OnSendLocalList", request)
-	conf := args.Get(0).(*auth.SendLocalListConfirmation)
+	conf := args.Get(0).(*localauth.SendLocalListConfirmation)
 	return conf, args.Error(1)
 }
 
@@ -617,7 +617,7 @@ var defaultMessageId = "1234"
 
 func (suite *OcppV16TestSuite) SetupTest() {
 	coreProfile := core.Profile
-	localAuthListProfile := auth.Profile
+	localAuthListProfile := localauth.Profile
 	firmwareProfile := firmware.Profile
 	reservationProfile := reservation.Profile
 	remoteTriggerProfile := remotetrigger.Profile

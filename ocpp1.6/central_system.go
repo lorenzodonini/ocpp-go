@@ -3,9 +3,9 @@ package ocpp16
 import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/auth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
@@ -17,7 +17,7 @@ import (
 type centralSystem struct {
 	server               *ocppj.Server
 	coreHandler          core.CentralSystemCoreHandler
-	localAuthListHandler auth.CentralSystemLocalAuthListHandler
+	localAuthListHandler localauth.CentralSystemLocalAuthListHandler
 	firmwareHandler      firmware.CentralSystemFirmwareManagementHandler
 	reservationHandler   reservation.CentralSystemReservationHandler
 	remoteTriggerHandler remotetrigger.CentralSystemRemoteTriggerHandler
@@ -160,14 +160,14 @@ func (cs *centralSystem) UnlockConnector(clientId string, callback func(*core.Un
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetLocalListVersion(clientId string, callback func(*auth.GetLocalListVersionConfirmation, error), props ...func(request *auth.GetLocalListVersionRequest)) error {
-	request := auth.NewGetLocalListVersionRequest()
+func (cs *centralSystem) GetLocalListVersion(clientId string, callback func(*localauth.GetLocalListVersionConfirmation, error), props ...func(request *localauth.GetLocalListVersionRequest)) error {
+	request := localauth.NewGetLocalListVersionRequest()
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*auth.GetLocalListVersionConfirmation), protoError)
+			callback(confirmation.(*localauth.GetLocalListVersionConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -175,14 +175,14 @@ func (cs *centralSystem) GetLocalListVersion(clientId string, callback func(*aut
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) SendLocalList(clientId string, callback func(*auth.SendLocalListConfirmation, error), version int, updateType auth.UpdateType, props ...func(request *auth.SendLocalListRequest)) error {
-	request := auth.NewSendLocalListRequest(version, updateType)
+func (cs *centralSystem) SendLocalList(clientId string, callback func(*localauth.SendLocalListConfirmation, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error {
+	request := localauth.NewSendLocalListRequest(version, updateType)
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*auth.SendLocalListConfirmation), protoError)
+			callback(confirmation.(*localauth.SendLocalListConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -314,7 +314,7 @@ func (cs *centralSystem) SetCentralSystemCoreHandler(listener core.CentralSystem
 	cs.coreHandler = listener
 }
 
-func (cs *centralSystem) SetLocalAuthListHandler(listener auth.CentralSystemLocalAuthListHandler) {
+func (cs *centralSystem) SetLocalAuthListHandler(listener localauth.CentralSystemLocalAuthListHandler) {
 	cs.localAuthListHandler = listener
 }
 
@@ -345,7 +345,7 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	switch request.GetFeatureName() {
 	case core.ChangeAvailabilityFeatureName, core.ChangeConfigurationFeatureName, core.ClearCacheFeatureName, core.DataTransferFeatureName, core.GetConfigurationFeatureName, core.RemoteStartTransactionFeatureName, core.RemoteStopTransactionFeatureName, core.ResetFeatureName, core.UnlockConnectorFeatureName,
-		auth.GetLocalListVersionFeatureName, auth.SendLocalListFeatureName,
+		localauth.GetLocalListVersionFeatureName, localauth.SendLocalListFeatureName,
 		firmware.GetDiagnosticsFeatureName, firmware.UpdateFirmwareFeatureName,
 		reservation.ReserveNowFeatureName, reservation.CancelReservationFeatureName,
 		remotetrigger.TriggerMessageFeatureName,
@@ -419,7 +419,7 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
 			}
-		case auth.ProfileName:
+		case localauth.ProfileName:
 			if cs.localAuthListHandler == nil {
 				cs.notSupportedError(chargePointId, requestId, action)
 				return
