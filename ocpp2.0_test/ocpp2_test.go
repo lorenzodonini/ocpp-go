@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	ocpp2 "github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/security"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -185,16 +186,25 @@ func (handler MockChargingStationProvisioningHandler) OnGetBaseReport(request *p
 	return conf, args.Error(1)
 }
 
+// ---------------------- MOCK CSMS AUTHORIZATION HANDLER ----------------------
+type MockCSMSAuthorizationHandler struct {
+	mock.Mock
+}
+
+func (handler MockCSMSAuthorizationHandler) OnAuthorize(chargePointId string, request *authorization.AuthorizeRequest) (confirmation *authorization.AuthorizeConfirmation, err error) {
+	args := handler.MethodCalled("OnAuthorize", chargePointId, request)
+	conf := args.Get(0).(*authorization.AuthorizeConfirmation)
+	return conf, args.Error(1)
+}
+
+// ---------------------- MOCK CS AUTHORIZATION HANDLER ----------------------
+type MockChargingStationAuthorizationHandler struct {
+	mock.Mock
+}
 
 // ---------------------- MOCK CSMS CORE LISTENER ----------------------
 type MockCSMSHandler struct {
 	mock.Mock
-}
-
-func (coreListener MockCSMSHandler) OnAuthorize(chargePointId string, request *ocpp2.AuthorizeRequest) (confirmation *ocpp2.AuthorizeConfirmation, err error) {
-	args := coreListener.MethodCalled("OnAuthorize", chargePointId, request)
-	conf := args.Get(0).(*ocpp2.AuthorizeConfirmation)
-	return conf, args.Error(1)
 }
 
 func (coreListener MockCSMSHandler) OnClearedChargingLimit(chargePointId string, request *ocpp2.ClearedChargingLimitRequest) (confirmation *ocpp2.ClearedChargingLimitConfirmation, err error) {
@@ -765,13 +775,14 @@ func (suite *OcppV2TestSuite) SetupTest() {
 	coreProfile := ocpp2.CoreProfile
 	securityProfile := security.Profile
 	provisioningProfile := provisioning.Profile
+	authProfile := authorization.Profile
 	// TODO: init additional profiles
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
-	suite.ocppjClient = ocppj.NewClient("test_id", suite.mockWsClient, coreProfile, securityProfile, provisioningProfile)
-	suite.ocppjServer = ocppj.NewServer(suite.mockWsServer, coreProfile, securityProfile, provisioningProfile)
+	suite.ocppjClient = ocppj.NewClient("test_id", suite.mockWsClient, coreProfile, securityProfile, provisioningProfile, authProfile)
+	suite.ocppjServer = ocppj.NewServer(suite.mockWsServer, coreProfile, securityProfile, provisioningProfile, authProfile)
 	suite.chargingStation = ocpp2.NewChargingStation("test_id", suite.ocppjClient, suite.mockWsClient)
 	suite.csms = ocpp2.NewCSMS(suite.ocppjServer, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {

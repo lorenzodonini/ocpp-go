@@ -3,20 +3,48 @@ package ocpp2
 import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/availability"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/data"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/diagnostics"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/display"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/iso15118"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/meter"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/remotecontrol"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/security"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/smartcharging"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/tariffcost"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	log "github.com/sirupsen/logrus"
 )
 
 type chargingStation struct {
-	client              *ocppj.Client
-	messageHandler      ChargingStationHandler
-	securityHandler     security.ChargingStationHandler
-	provisioningHandler provisioning.ChargingStationHandler
-	confirmationHandler chan ocpp.Response
-	errorHandler        chan error
+	client               *ocppj.Client
+	messageHandler       ChargingStationHandler
+	securityHandler      security.ChargingStationHandler
+	provisioningHandler  provisioning.ChargingStationHandler
+	authorizationHandler authorization.ChargingStationHandler
+	localAuthListHandler localauth.ChargingStationHandler
+	transactionsHandler  transactions.ChargingStationHandler
+	remoteControlHandler remotecontrol.ChargingStationHandler
+	availabilityHandler  availability.ChargingStationHandler
+	reservationHandler   reservation.ChargingStationHandler
+	tariffCostHandler    tariffcost.ChargingStationHandler
+	meterHandler         meter.ChargingStationHandler
+	smartChargingHandler smartcharging.ChargingStationHandler
+	firmwareHandler      firmware.ChargingStationHandler
+	iso15118Handler      iso15118.ChargingStationHandler
+	diagnosticsHandler   diagnostics.ChargingStationHandler
+	displayHandler       display.ChargingStationHandler
+	dataHandler          data.CSMSHandler
+	confirmationHandler  chan ocpp.Response
+	errorHandler         chan error
 }
 
 func (cs *chargingStation) BootNotification(reason provisioning.BootReason, model string, chargePointVendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationConfirmation, error) {
@@ -32,8 +60,8 @@ func (cs *chargingStation) BootNotification(reason provisioning.BootReason, mode
 	}
 }
 
-func (cs *chargingStation) Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error) {
-	request := NewAuthorizationRequest(idToken, tokenType)
+func (cs *chargingStation) Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *authorization.AuthorizeRequest)) (*authorization.AuthorizeConfirmation, error) {
+	request := authorization.NewAuthorizationRequest(idToken, tokenType)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -41,7 +69,7 @@ func (cs *chargingStation) Authorize(idToken string, tokenType types.IdTokenType
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*AuthorizeConfirmation), err
+		return confirmation.(*authorization.AuthorizeConfirmation), err
 	}
 }
 
@@ -222,6 +250,62 @@ func (cs *chargingStation) SetProvisioningHandler(handler provisioning.ChargingS
 	cs.provisioningHandler = handler
 }
 
+func (cs *chargingStation) SetAuthorizationHandler(handler authorization.ChargingStationHandler) {
+	cs.authorizationHandler = handler
+}
+
+func (cs *chargingStation) SetLocalAuthListHandler(handler localauth.ChargingStationHandler) {
+	cs.localAuthListHandler = handler
+}
+
+func (cs *chargingStation) SetTransactionsHandler(handler transactions.ChargingStationHandler) {
+	cs.transactionsHandler = handler
+}
+
+func (cs *chargingStation) SetRemoteControlHandler(handler transactions.ChargingStationHandler) {
+	cs.remoteControlHandler = handler
+}
+
+func (cs *chargingStation) SetAvailabilityHandler(handler transactions.ChargingStationHandler) {
+	cs.availabilityHandler = handler
+}
+
+func (cs *chargingStation) SetReservationHandler(handler reservation.ChargingStationHandler) {
+	cs.reservationHandler = handler
+}
+
+func (cs *chargingStation) SetTariffCostHandler(handler tariffcost.ChargingStationHandler) {
+	cs.tariffCostHandler = handler
+}
+
+func (cs *chargingStation) SetMeterHandler(handler tariffcost.ChargingStationHandler) {
+	cs.meterHandler = handler
+}
+
+func (cs *chargingStation) SetSmartChargingHandler(handler smartcharging.ChargingStationHandler) {
+	cs.smartChargingHandler = handler
+}
+
+func (cs *chargingStation) SetFirmwareHandler(handler firmware.ChargingStationHandler) {
+	cs.firmwareHandler = handler
+}
+
+func (cs *chargingStation) SetISO15118Handler(handler iso15118.ChargingStationHandler) {
+	cs.iso15118Handler = handler
+}
+
+func (cs *chargingStation) SetDiagnosticsHandler(handler diagnostics.ChargingStationHandler) {
+	cs.diagnosticsHandler = handler
+}
+
+func (cs *chargingStation) SetDisplayHandler(handler display.ChargingStationHandler) {
+	cs.displayHandler = handler
+}
+
+func (cs *chargingStation) SetDataHandler(handler data.ChargingStationHandler) {
+	cs.dataHandler = handler
+}
+
 //// Registers a handler for incoming local authorization profile messages
 //func (cp *chargingStation) SetLocalAuthListHandler(listener ChargePointLocalAuthListListener) {
 //	cp.localAuthListListener = listener
@@ -264,7 +348,7 @@ func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, err
 
 func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	switch request.GetFeatureName() {
-	case AuthorizeFeatureName, provisioning.BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName, FirmwareStatusNotificationFeatureName, Get15118EVCertificateFeatureName, GetCertificateStatusFeatureName:
+	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName, FirmwareStatusNotificationFeatureName, Get15118EVCertificateFeatureName, GetCertificateStatusFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -334,6 +418,21 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		switch profile.Name {
 		case CoreProfileName:
 			if cs.messageHandler == nil {
+				cs.notSupportedError(requestId, action)
+				return
+			}
+		case security.ProfileName:
+			if cs.securityHandler == nil {
+				cs.notSupportedError(requestId, action)
+				return
+			}
+		case provisioning.ProfileName:
+			if cs.provisioningHandler == nil {
+				cs.notSupportedError(requestId, action)
+				return
+			}
+		case authorization.ProfileName:
+			if cs.authorizationHandler == nil {
 				cs.notSupportedError(requestId, action)
 				return
 			}

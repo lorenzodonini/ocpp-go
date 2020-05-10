@@ -4,8 +4,19 @@ package ocpp2
 import (
 	"github.com/gorilla/websocket"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/data"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/diagnostics"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/display"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/iso15118"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/security"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/smartcharging"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/tariffcost"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -32,7 +43,7 @@ type ChargingStation interface {
 	// Sends a BootNotificationRequest to the CSMS, along with information about the charging station.
 	BootNotification(reason provisioning.BootReason, model string, chargePointVendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationConfirmation, error)
 	// Requests explicit authorization to the CSMS, provided a valid IdToken (typically the customer's). The CSMS may either authorize or reject the token.
-	Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *AuthorizeRequest)) (*AuthorizeConfirmation, error)
+	Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *authorization.AuthorizeRequest)) (*authorization.AuthorizeConfirmation, error)
 	// Notifies the CSMS, that a previously set charging limit was cleared.
 	ClearedChargingLimit(chargingLimitSource types.ChargingLimitSourceType, props ...func(request *ClearedChargingLimitRequest)) (*ClearedChargingLimitConfirmation, error)
 	// Performs a custom data transfer to the CSMS. The message payload is not pre-defined and must be supported by the CSMS.
@@ -51,7 +62,6 @@ type ChargingStation interface {
 	//DiagnosticsStatusNotification(status DiagnosticsStatus, props ...func(request *DiagnosticsStatusNotificationRequest)) (*DiagnosticsStatusNotificationConfirmation, error)
 	//FirmwareStatusNotification(status FirmwareStatus, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationConfirmation, error)
 
-
 	// SetMessageHandler sets a handler for incoming messages from the CSMS.
 	// Refer to ChargingStationHandler for info on how to handle the callbacks.
 	SetMessageHandler(handler ChargingStationHandler)
@@ -59,6 +69,34 @@ type ChargingStation interface {
 	SetSecurityHandler(handler security.ChargingStationHandler)
 	// Registers a handler for incoming provisioning profile messages
 	SetProvisioningHandler(handler provisioning.ChargingStationHandler)
+	// Registers a handler for incoming authorization profile messages
+	SetAuthorizationHandler(handler authorization.ChargingStationHandler)
+	// Registers a handler for incoming local authorization list profile messages
+	SetLocalAuthListHandler(handler localauth.ChargingStationHandler)
+	// Registers a handler for incoming transactions profile messages
+	SetTransactionsHandler(handler transactions.ChargingStationHandler)
+	// Registers a handler for incoming remote control profile messages
+	SetRemoteControlHandler(handler transactions.ChargingStationHandler)
+	// Registers a handler for incoming availability profile messages
+	SetAvailabilityHandler(handler transactions.ChargingStationHandler)
+	// Registers a handler for incoming reservation profile messages
+	SetReservationHandler(handler reservation.ChargingStationHandler)
+	// Registers a handler for incoming tariff and cost profile messages
+	SetTariffCostHandler(handler tariffcost.ChargingStationHandler)
+	// Registers a handler for incoming meter profile messages
+	SetMeterHandler(handler tariffcost.ChargingStationHandler)
+	// Registers a handler for incoming smart charging messages
+	SetSmartChargingHandler(handler smartcharging.ChargingStationHandler)
+	// Registers a handler for incoming firmware management messages
+	SetFirmwareHandler(handler firmware.ChargingStationHandler)
+	// Registers a handler for incoming ISO15118 management messages
+	SetISO15118Handler(handler iso15118.ChargingStationHandler)
+	// Registers a handler for incoming diagnostics messages
+	SetDiagnosticsHandler(handler diagnostics.ChargingStationHandler)
+	// Registers a handler for incoming display messages
+	SetDisplayHandler(handler display.ChargingStationHandler)
+	// Registers a handler for incoming data transfer messages
+	SetDataHandler(handler data.ChargingStationHandler)
 	// Sends a request to the CSMS.
 	// The CSMS will respond with a confirmation, or with an error if the request was invalid or could not be processed.
 	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
@@ -125,7 +163,7 @@ func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient)
 		}
 	})
 	if dispatcher == nil {
-		dispatcher = ocppj.NewClient(id, client, CoreProfile)
+		dispatcher = ocppj.NewClient(id, client, CoreProfile, security.Profile, provisioning.Profile, authorization.Profile)
 	}
 	cp := chargingStation{client: dispatcher, confirmationHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
 	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
@@ -214,10 +252,38 @@ type CSMS interface {
 	// SetMessageHandler sets a handler for incoming messages from the Charging station.
 	// Refer to CSMSHandler for info on how to handle the callbacks.
 	SetMessageHandler(handler CSMSHandler)
-	// Registers a handler for incoming security profile messages
+	// Registers a handler for incoming security profile messages.
 	SetSecurityHandler(handler security.CSMSHandler)
-	// Registers a handler for incoming provisioning profile messages
+	// Registers a handler for incoming provisioning profile messages.
 	SetProvisioningHandler(handler provisioning.CSMSHandler)
+	// Registers a handler for incoming authorization profile messages.
+	SetAuthorizationHandler(handler authorization.CSMSHandler)
+	// Registers a handler for incoming local authorization list profile messages.
+	SetLocalAuthListHandler(handler localauth.CSMSHandler)
+	// Registers a handler for incoming transactions profile messages
+	SetTransactionsHandler(handler transactions.CSMSHandler)
+	// Registers a handler for incoming remote control profile messages
+	SetRemoteControlHandler(handler transactions.CSMSHandler)
+	// Registers a handler for incoming availability profile messages
+	SetAvailabilityHandler(handler transactions.CSMSHandler)
+	// Registers a handler for incoming reservation profile messages
+	SetReservationHandler(handler reservation.CSMSHandler)
+	// Registers a handler for incoming tariff and cost profile messages
+	SetTariffCostHandler(handler tariffcost.CSMSHandler)
+	// Registers a handler for incoming meter profile messages
+	SetMeterHandler(handler tariffcost.CSMSHandler)
+	// Registers a handler for incoming smart charging messages
+	SetSmartChargingHandler(handler smartcharging.CSMSHandler)
+	// Registers a handler for incoming firmware management messages
+	SetFirmwareHandler(handler firmware.CSMSHandler)
+	// Registers a handler for incoming ISO15118 management messages
+	SetISO15118Handler(handler iso15118.CSMSHandler)
+	// Registers a handler for incoming diagnostics messages
+	SetDiagnosticsHandler(handler diagnostics.CSMSHandler)
+	// Registers a handler for incoming display messages
+	SetDisplayHandler(handler display.CSMSHandler)
+	// Registers a handler for incoming data transfer messages
+	SetDataHandler(handler data.CSMSHandler)
 	// Registers a handler for new incoming Charging station connections.
 	SetNewChargingStationHandler(handler func(chargePointId string))
 	// Registers a handler for Charging station disconnections.
@@ -250,7 +316,7 @@ func NewCSMS(dispatcher *ocppj.Server, server ws.WsServer) CSMS {
 	}
 	server.AddSupportedSubprotocol(types.V2Subprotocol)
 	if dispatcher == nil {
-		dispatcher = ocppj.NewServer(server, CoreProfile)
+		dispatcher = ocppj.NewServer(server, CoreProfile, security.Profile, provisioning.Profile, authorization.Profile)
 	}
 	cs := csms{
 		server:    dispatcher,

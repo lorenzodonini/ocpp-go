@@ -1,4 +1,4 @@
-package ocpp2
+package authorization
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -6,6 +6,8 @@ import (
 )
 
 // -------------------- Authorize (CS -> CSMS) --------------------
+
+const AuthorizeFeatureName = "Authorize"
 
 // The field definition of the Authorize request payload sent by the Charging Station to the CSMS.
 type AuthorizeRequest struct {

@@ -2,7 +2,7 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,15 +13,15 @@ import (
 func (suite *OcppV2TestSuite) TestAuthorizeRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp2.AuthorizeRequest{EvseID: []int{4, 2}, IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{{SerialNumber: "serial0", HashAlgorithm: types.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1", ResponderURL: "www.someurl.com"}}}, true},
-		{ocpp2.AuthorizeRequest{EvseID: []int{4, 2}, IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, true},
-		{ocpp2.AuthorizeRequest{IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{{SerialNumber: "serial0", HashAlgorithm: types.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1", ResponderURL: "www.someurl.com"}}}, true},
-		{ocpp2.AuthorizeRequest{IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{}}, true},
-		{ocpp2.AuthorizeRequest{EvseID: []int{}, IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, true},
-		{ocpp2.AuthorizeRequest{}, false},
-		{ocpp2.AuthorizeRequest{IdToken: types.IdToken{Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, false},
-		{ocpp2.AuthorizeRequest{IdToken: types.IdToken{Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{{HashAlgorithm: types.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1"}}}, false},
-		{ocpp2.AuthorizeRequest{IdToken: types.IdToken{Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{{SerialNumber: "s0", HashAlgorithm: types.SHA256, IssuerNameHash: "h0", IssuerKeyHash: "h0.1"}, {SerialNumber: "s1", HashAlgorithm: types.SHA256, IssuerNameHash: "h1", IssuerKeyHash: "h1.1"}, {SerialNumber: "s2", HashAlgorithm: types.SHA256, IssuerNameHash: "h2", IssuerKeyHash: "h2.1"}, {SerialNumber: "s3", HashAlgorithm: types.SHA256, IssuerNameHash: "h3", IssuerKeyHash: "h3.1"}, {SerialNumber: "s4", HashAlgorithm: types.SHA256, IssuerNameHash: "h4", IssuerKeyHash: "h4.1"}}}, false},
+		{authorization.AuthorizeRequest{EvseID: []int{4, 2}, IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{{SerialNumber: "serial0", HashAlgorithm: types.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1", ResponderURL: "www.someurl.com"}}}, true},
+		{authorization.AuthorizeRequest{EvseID: []int{4, 2}, IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, true},
+		{authorization.AuthorizeRequest{IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{{SerialNumber: "serial0", HashAlgorithm: types.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1", ResponderURL: "www.someurl.com"}}}, true},
+		{authorization.AuthorizeRequest{IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{}}, true},
+		{authorization.AuthorizeRequest{EvseID: []int{}, IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, true},
+		{authorization.AuthorizeRequest{}, false},
+		{authorization.AuthorizeRequest{IdToken: types.IdToken{Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}}, false},
+		{authorization.AuthorizeRequest{IdToken: types.IdToken{Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{{HashAlgorithm: types.SHA256, IssuerNameHash: "hash0", IssuerKeyHash: "hash1"}}}, false},
+		{authorization.AuthorizeRequest{IdToken: types.IdToken{Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{{AdditionalIdToken: "0000", Type: "someType"}}}, CertificateHashData: []types.OCSPRequestDataType{{SerialNumber: "s0", HashAlgorithm: types.SHA256, IssuerNameHash: "h0", IssuerKeyHash: "h0.1"}, {SerialNumber: "s1", HashAlgorithm: types.SHA256, IssuerNameHash: "h1", IssuerKeyHash: "h1.1"}, {SerialNumber: "s2", HashAlgorithm: types.SHA256, IssuerNameHash: "h2", IssuerKeyHash: "h2.1"}, {SerialNumber: "s3", HashAlgorithm: types.SHA256, IssuerNameHash: "h3", IssuerKeyHash: "h3.1"}, {SerialNumber: "s4", HashAlgorithm: types.SHA256, IssuerNameHash: "h4", IssuerKeyHash: "h4.1"}}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -29,12 +29,12 @@ func (suite *OcppV2TestSuite) TestAuthorizeRequestValidation() {
 func (suite *OcppV2TestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp2.AuthorizeConfirmation{CertificateStatus: types.CertificateStatusAccepted, EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
-		{ocpp2.AuthorizeConfirmation{CertificateStatus: types.CertificateStatusAccepted, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
-		{ocpp2.AuthorizeConfirmation{IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
-		{ocpp2.AuthorizeConfirmation{}, false},
-		{ocpp2.AuthorizeConfirmation{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, false},
-		{ocpp2.AuthorizeConfirmation{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: "invalidTokenInfoStatus"}}, false},
+		{authorization.AuthorizeConfirmation{CertificateStatus: types.CertificateStatusAccepted, EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
+		{authorization.AuthorizeConfirmation{CertificateStatus: types.CertificateStatusAccepted, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
+		{authorization.AuthorizeConfirmation{IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
+		{authorization.AuthorizeConfirmation{}, false},
+		{authorization.AuthorizeConfirmation{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, false},
+		{authorization.AuthorizeConfirmation{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: "invalidTokenInfoStatus"}}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -51,19 +51,19 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 	status := types.AuthorizationStatusAccepted
 	certificateStatus := types.CertificateStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":[%v,%v],"idToken":{"idToken":"%v","type":"%v","additionalInfo":[{"additionalIdToken":"%v","type":"%v"}]},"15118CertificateHashData":[{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}]}]`,
-		messageId, ocpp2.AuthorizeFeatureName, evseIds[0], evseIds[1], idToken.IdToken, idToken.Type, additionalInfo.AdditionalIdToken, additionalInfo.Type, certHashData.HashAlgorithm, certHashData.IssuerNameHash, certHashData.IssuerKeyHash, certHashData.SerialNumber, certHashData.ResponderURL)
+		messageId, authorization.AuthorizeFeatureName, evseIds[0], evseIds[1], idToken.IdToken, idToken.Type, additionalInfo.AdditionalIdToken, additionalInfo.Type, certHashData.HashAlgorithm, certHashData.IssuerNameHash, certHashData.IssuerKeyHash, certHashData.SerialNumber, certHashData.ResponderURL)
 	responseJson := fmt.Sprintf(`[3,"%v",{"certificateStatus":"%v","evseId":[%v,%v],"idTokenInfo":{"status":"%v"}}]`,
 		messageId, certificateStatus, evseIds[0], evseIds[1], status)
-	authorizeConfirmation := ocpp2.NewAuthorizationConfirmation(types.IdTokenInfo{Status: status})
+	authorizeConfirmation := authorization.NewAuthorizationConfirmation(types.IdTokenInfo{Status: status})
 	authorizeConfirmation.EvseID = evseIds
 	authorizeConfirmation.CertificateStatus = certificateStatus
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockCSMSHandler{}
-	coreListener.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(authorizeConfirmation, nil).Run(func(args mock.Arguments) {
-		request := args.Get(1).(*ocpp2.AuthorizeRequest)
+	authHandler := MockCSMSAuthorizationHandler{}
+	authHandler.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(authorizeConfirmation, nil).Run(func(args mock.Arguments) {
+		request := args.Get(1).(*authorization.AuthorizeRequest)
 		require.Len(t, request.EvseID, 2)
 		assert.Equal(t, evseIds[0], request.EvseID[0])
 		assert.Equal(t, evseIds[1], request.EvseID[1])
@@ -79,13 +79,14 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 		assert.Equal(t, certHashData.SerialNumber, request.CertificateHashData[0].SerialNumber)
 		assert.Equal(t, certHashData.ResponderURL, request.CertificateHashData[0].ResponderURL)
 	})
-	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true})
+	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true})
+	suite.csms.SetAuthorizationHandler(authHandler)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: requestRaw, forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargingStation.Authorize(idToken.IdToken, idToken.Type, func(request *ocpp2.AuthorizeRequest) {
+	confirmation, err := suite.chargingStation.Authorize(idToken.IdToken, idToken.Type, func(request *authorization.AuthorizeRequest) {
 		request.IdToken.AdditionalInfo = []types.AdditionalInfo{additionalInfo}
 		request.EvseID = evseIds
 		request.CertificateHashData = []types.OCSPRequestDataType{certHashData}
@@ -105,8 +106,8 @@ func (suite *OcppV2TestSuite) TestAuthorizeInvalidEndpoint() {
 	additionalInfo := types.AdditionalInfo{AdditionalIdToken: "at1", Type: "some"}
 	idToken := types.IdToken{IdToken: "tok1", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{additionalInfo}}
 	certHashData := types.OCSPRequestDataType{HashAlgorithm: types.SHA256, IssuerNameHash: "h0", IssuerKeyHash: "h0.1", SerialNumber: "s0", ResponderURL: "http://www.test.org"}
-	authorizeRequest := ocpp2.NewAuthorizationRequest(idToken.IdToken, idToken.Type)
+	authorizeRequest := authorization.NewAuthorizationRequest(idToken.IdToken, idToken.Type)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":[%v,%v],"idToken":{"idToken":"%v","type":"%v","additionalInfo":[{"additionalIdToken":"%v","type":"%v"}]},"15118CertificateHashData":[{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}]}]`,
-		messageId, ocpp2.AuthorizeFeatureName, evseIds[0], evseIds[1], idToken.IdToken, idToken.Type, additionalInfo.AdditionalIdToken, additionalInfo.Type, certHashData.HashAlgorithm, certHashData.IssuerNameHash, certHashData.IssuerKeyHash, certHashData.SerialNumber, certHashData.ResponderURL)
+		messageId, authorization.AuthorizeFeatureName, evseIds[0], evseIds[1], idToken.IdToken, idToken.Type, additionalInfo.AdditionalIdToken, additionalInfo.Type, certHashData.HashAlgorithm, certHashData.IssuerNameHash, certHashData.IssuerKeyHash, certHashData.SerialNumber, certHashData.ResponderURL)
 	testUnsupportedRequestFromCentralSystem(suite, authorizeRequest, requestJson, messageId)
 }

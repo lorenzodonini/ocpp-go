@@ -3,19 +3,47 @@ package ocpp2
 import (
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/availability"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/data"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/diagnostics"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/display"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/iso15118"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/meter"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/remotecontrol"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/security"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/smartcharging"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/tariffcost"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	log "github.com/sirupsen/logrus"
 )
 
 type csms struct {
-	server              *ocppj.Server
-	coreListener        CSMSHandler
-	provisioningHandler provisioning.CSMSHandler
-	securityHandler     security.CSMSHandler
-	callbacks           map[string]func(confirmation ocpp.Response, err error)
+	server               *ocppj.Server
+	coreListener         CSMSHandler
+	securityHandler      security.CSMSHandler
+	provisioningHandler  provisioning.CSMSHandler
+	authorizationHandler authorization.CSMSHandler
+	localAuthListHandler localauth.CSMSHandler
+	transactionsHandler  transactions.CSMSHandler
+	remoteControlHandler remotecontrol.CSMSHandler
+	availabilityHandler  availability.CSMSHandler
+	reservationHandler   reservation.CSMSHandler
+	tariffCostHandler    tariffcost.CSMSHandler
+	meterHandler         meter.CSMSHandler
+	smartChargingHandler smartcharging.CSMSHandler
+	firmwareHandler      firmware.CSMSHandler
+	iso15118Handler      iso15118.CSMSHandler
+	diagnosticsHandler   diagnostics.CSMSHandler
+	displayHandler       display.CSMSHandler
+	dataHandler          data.CSMSHandler
+	callbacks            map[string]func(confirmation ocpp.Response, err error)
 	//localAuthListListener CentralSystemLocalAuthListListener
 	//firmwareListener      CentralSystemFirmwareManagementListener
 	//reservationListener   CentralSystemReservationListener
@@ -553,6 +581,62 @@ func (cs *csms) SetProvisioningHandler(handler provisioning.CSMSHandler) {
 	cs.provisioningHandler = handler
 }
 
+func (cs *csms) SetAuthorizationHandler(handler authorization.CSMSHandler) {
+	cs.authorizationHandler = handler
+}
+
+func (cs *csms) SetLocalAuthListHandler(handler localauth.CSMSHandler) {
+	cs.localAuthListHandler = handler
+}
+
+func (cs *csms) SetTransactionsHandler(handler transactions.CSMSHandler) {
+	cs.transactionsHandler = handler
+}
+
+func (cs *csms) SetRemoteControlHandler(handler transactions.CSMSHandler) {
+	cs.remoteControlHandler = handler
+}
+
+func (cs *csms) SetAvailabilityHandler(handler transactions.CSMSHandler) {
+	cs.availabilityHandler = handler
+}
+
+func (cs *csms) SetReservationHandler(handler reservation.CSMSHandler) {
+	cs.reservationHandler = handler
+}
+
+func (cs *csms) SetTariffCostHandler(handler tariffcost.CSMSHandler) {
+	cs.tariffCostHandler = handler
+}
+
+func (cs *csms) SetMeterHandler(handler tariffcost.CSMSHandler) {
+	cs.meterHandler = handler
+}
+
+func (cs *csms) SetSmartChargingHandler(handler smartcharging.CSMSHandler) {
+	cs.smartChargingHandler = handler
+}
+
+func (cs *csms) SetFirmwareHandler(handler firmware.CSMSHandler) {
+	cs.firmwareHandler = handler
+}
+
+func (cs *csms) SetISO15118Handler(handler iso15118.CSMSHandler) {
+	cs.iso15118Handler = handler
+}
+
+func (cs *csms) SetDiagnosticsHandler(handler diagnostics.CSMSHandler) {
+	cs.diagnosticsHandler = handler
+}
+
+func (cs *csms) SetDisplayHandler(handler display.CSMSHandler) {
+	cs.displayHandler = handler
+}
+
+func (cs *csms) SetDataHandler(handler data.CSMSHandler) {
+	cs.dataHandler = handler
+}
+
 // Registers a handler for incoming local authorization profile messages.
 //func (cs *server) SetLocalAuthListHandler(listener CentralSystemLocalAuthListListener) {
 //	cs.localAuthListListener = listener
@@ -578,11 +662,11 @@ func (cs *csms) SetProvisioningHandler(handler provisioning.CSMSHandler) {
 //	cs.smartChargingListener = listener
 //}
 
-func (cs *csms) SetNewChargingStationHandler(handler func(chargePointId string)) {
+func (cs *csms) SetNewChargingStationHandler(handler func(chargingStationID string)) {
 	cs.server.SetNewClientHandler(handler)
 }
 
-func (cs *csms) SetChargingStationDisconnectedHandler(handler func(chargePointId string)) {
+func (cs *csms) SetChargingStationDisconnectedHandler(handler func(chargingStationID string)) {
 	cs.server.SetDisconnectedClientHandler(handler)
 }
 
@@ -612,82 +696,97 @@ func (cs *csms) Start(listenPort int, listenPath string) {
 	cs.server.Start(listenPort, listenPath)
 }
 
-func (cs *csms) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
+func (cs *csms) sendResponse(chargingStationID string, confirmation ocpp.Response, err error, requestId string) {
 	if confirmation != nil {
-		err := cs.server.SendResponse(chargePointId, requestId, confirmation)
+		err := cs.server.SendResponse(chargingStationID, requestId, confirmation)
 		if err != nil {
 			//TODO: handle error somehow
 			log.Print(err)
 		}
 	} else {
-		err := cs.server.SendError(chargePointId, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
+		err := cs.server.SendError(chargingStationID, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"client":  chargePointId,
+				"client":  chargingStationID,
 				"request": requestId,
 			}).Errorf("unknown error %v while replying to message with CallError", err)
 		}
 	}
 }
 
-func (cs *csms) notImplementedError(chargePointId string, requestId string, action string) {
-	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
-	err := cs.server.SendError(chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
+func (cs *csms) notImplementedError(chargingStationID string, requestId string, action string) {
+	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargingStationID)
+	err := cs.server.SendError(chargingStationID, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"client":  chargePointId,
+			"client":  chargingStationID,
 			"request": requestId,
 		}).Errorf("unknown error %v while replying to message with CallError", err)
 	}
 }
 
-func (cs *csms) notSupportedError(chargePointId string, requestId string, action string) {
-	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
-	err := cs.server.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
+func (cs *csms) notSupportedError(chargingStationID string, requestId string, action string) {
+	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargingStationID)
+	err := cs.server.SendError(chargingStationID, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"client":  chargePointId,
+			"client":  chargingStationID,
 			"request": requestId,
 		}).Errorf("unknown error %v while replying to message with CallError", err)
 	}
 }
 
-func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request, requestId string, action string) {
+func (cs *csms) handleIncomingRequest(chargingStationID string, request ocpp.Request, requestId string, action string) {
 	profile, found := cs.server.GetProfileForFeature(action)
 	// Check whether action is supported and a listener for it exists
 	if !found {
-		cs.notImplementedError(chargePointId, requestId, action)
+		cs.notImplementedError(chargingStationID, requestId, action)
 		return
 	} else {
 		switch profile.Name {
 		case CoreProfileName:
 			if cs.coreListener == nil {
-				cs.notSupportedError(chargePointId, requestId, action)
+				cs.notSupportedError(chargingStationID, requestId, action)
+				return
+			}
+		case security.ProfileName:
+			if cs.securityHandler == nil {
+				cs.notSupportedError(chargingStationID, requestId, action)
+				return
+			}
+		case provisioning.ProfileName:
+			if cs.provisioningHandler == nil {
+				cs.notSupportedError(chargingStationID, requestId, action)
+				return
+			}
+		case authorization.ProfileName:
+			if cs.authorizationHandler == nil {
+				cs.notSupportedError(chargingStationID, requestId, action)
 				return
 			}
 			//case LocalAuthListProfileName:
 			//	if cs.localAuthListListener == nil {
-			//		cs.notSupportedError(chargePointId, requestId, action)
+			//		cs.notSupportedError(chargingStationID, requestId, action)
 			//		return
 			//	}
 			//case FirmwareManagementProfileName:
 			//	if cs.firmwareListener == nil {
-			//		cs.notSupportedError(chargePointId, requestId, action)
+			//		cs.notSupportedError(chargingStationID, requestId, action)
 			//		return
 			//	}
 			//case ReservationProfileName:
 			//	if cs.reservationListener == nil {
-			//		cs.notSupportedError(chargePointId, requestId, action)
+			//		cs.notSupportedError(chargingStationID, requestId, action)
 			//		return
 			//	}
 			//case RemoteTriggerProfileName:
 			//	if cs.remoteTriggerListener == nil {
-			//		cs.notSupportedError(chargePointId, requestId, action)
+			//		cs.notSupportedError(chargingStationID, requestId, action)
 			//		return
 			//	}
 			//case SmartChargingProfileName:
 			//	if cs.smartChargingListener == nil {
-			//		cs.notSupportedError(chargePointId, requestId, action)
+			//		cs.notSupportedError(chargingStationID, requestId, action)
 			//		return
 			//	}
 		}
@@ -698,60 +797,60 @@ func (cs *csms) handleIncomingRequest(chargePointId string, request ocpp.Request
 	go func() {
 		switch action {
 		case provisioning.BootNotificationFeatureName:
-			confirmation, err = cs.provisioningHandler.OnBootNotification(chargePointId, request.(*provisioning.BootNotificationRequest))
-		case AuthorizeFeatureName:
-			confirmation, err = cs.coreListener.OnAuthorize(chargePointId, request.(*AuthorizeRequest))
+			confirmation, err = cs.provisioningHandler.OnBootNotification(chargingStationID, request.(*provisioning.BootNotificationRequest))
+		case authorization.AuthorizeFeatureName:
+			confirmation, err = cs.authorizationHandler.OnAuthorize(chargingStationID, request.(*authorization.AuthorizeRequest))
 		case ClearedChargingLimitFeatureName:
-			confirmation, err = cs.coreListener.OnClearedChargingLimit(chargePointId, request.(*ClearedChargingLimitRequest))
+			confirmation, err = cs.coreListener.OnClearedChargingLimit(chargingStationID, request.(*ClearedChargingLimitRequest))
 		case DataTransferFeatureName:
-			confirmation, err = cs.coreListener.OnDataTransfer(chargePointId, request.(*DataTransferRequest))
+			confirmation, err = cs.coreListener.OnDataTransfer(chargingStationID, request.(*DataTransferRequest))
 		case FirmwareStatusNotificationFeatureName:
-			confirmation, err = cs.coreListener.OnFirmwareStatusNotification(chargePointId, request.(*FirmwareStatusNotificationRequest))
+			confirmation, err = cs.coreListener.OnFirmwareStatusNotification(chargingStationID, request.(*FirmwareStatusNotificationRequest))
 		case Get15118EVCertificateFeatureName:
-			confirmation, err = cs.coreListener.OnGet15118EVCertificate(chargePointId, request.(*Get15118EVCertificateRequest))
+			confirmation, err = cs.coreListener.OnGet15118EVCertificate(chargingStationID, request.(*Get15118EVCertificateRequest))
 		case GetCertificateStatusFeatureName:
-			confirmation, err = cs.coreListener.OnGetCertificateStatus(chargePointId, request.(*GetCertificateStatusRequest))
+			confirmation, err = cs.coreListener.OnGetCertificateStatus(chargingStationID, request.(*GetCertificateStatusRequest))
 		//case HeartbeatFeatureName:
-		//	confirmation, err = cs.messageHandler.OnHeartbeat(chargePointId, request.(*HeartbeatRequest))
+		//	confirmation, err = cs.messageHandler.OnHeartbeat(chargingStationID, request.(*HeartbeatRequest))
 		//case MeterValuesFeatureName:
-		//	confirmation, err = cs.messageHandler.OnMeterValues(chargePointId, request.(*MeterValuesRequest))
+		//	confirmation, err = cs.messageHandler.OnMeterValues(chargingStationID, request.(*MeterValuesRequest))
 		//case StartTransactionFeatureName:
-		//	confirmation, err = cs.messageHandler.OnStartTransaction(chargePointId, request.(*StartTransactionRequest))
+		//	confirmation, err = cs.messageHandler.OnStartTransaction(chargingStationID, request.(*StartTransactionRequest))
 		//case StopTransactionFeatureName:
-		//	confirmation, err = cs.messageHandler.OnStopTransaction(chargePointId, request.(*StopTransactionRequest))
+		//	confirmation, err = cs.messageHandler.OnStopTransaction(chargingStationID, request.(*StopTransactionRequest))
 		//case StatusNotificationFeatureName:
-		//	confirmation, err = cs.messageHandler.OnStatusNotification(chargePointId, request.(*StatusNotificationRequest))
+		//	confirmation, err = cs.messageHandler.OnStatusNotification(chargingStationID, request.(*StatusNotificationRequest))
 		//case DiagnosticsStatusNotificationFeatureName:
-		//	confirmation, err = cs.firmwareListener.OnDiagnosticsStatusNotification(chargePointId, request.(*DiagnosticsStatusNotificationRequest))
+		//	confirmation, err = cs.firmwareListener.OnDiagnosticsStatusNotification(chargingStationID, request.(*DiagnosticsStatusNotificationRequest))
 		//case FirmwareStatusNotificationFeatureName:
-		//	confirmation, err = cs.firmwareListener.OnFirmwareStatusNotification(chargePointId, request.(*FirmwareStatusNotificationRequest))
+		//	confirmation, err = cs.firmwareListener.OnFirmwareStatusNotification(chargingStationID, request.(*FirmwareStatusNotificationRequest))
 		default:
-			cs.notSupportedError(chargePointId, requestId, action)
+			cs.notSupportedError(chargingStationID, requestId, action)
 			return
 		}
-		cs.sendResponse(chargePointId, confirmation, err, requestId)
+		cs.sendResponse(chargingStationID, confirmation, err, requestId)
 	}()
 }
 
-func (cs *csms) handleIncomingConfirmation(chargePointId string, confirmation ocpp.Response, requestId string) {
-	if callback, ok := cs.callbacks[chargePointId]; ok {
-		delete(cs.callbacks, chargePointId)
+func (cs *csms) handleIncomingConfirmation(chargingStationID string, confirmation ocpp.Response, requestId string) {
+	if callback, ok := cs.callbacks[chargingStationID]; ok {
+		delete(cs.callbacks, chargingStationID)
 		callback(confirmation, nil)
 	} else {
 		log.WithFields(log.Fields{
-			"client":  chargePointId,
+			"client":  chargingStationID,
 			"request": requestId,
 		}).Errorf("no handler available for Call Result of type %v", confirmation.GetFeatureName())
 	}
 }
 
-func (cs *csms) handleIncomingError(chargePointId string, err *ocpp.Error, details interface{}) {
-	if callback, ok := cs.callbacks[chargePointId]; ok {
-		delete(cs.callbacks, chargePointId)
+func (cs *csms) handleIncomingError(chargingStationID string, err *ocpp.Error, details interface{}) {
+	if callback, ok := cs.callbacks[chargingStationID]; ok {
+		delete(cs.callbacks, chargingStationID)
 		callback(nil, err)
 	} else {
 		log.WithFields(log.Fields{
-			"client":  chargePointId,
+			"client":  chargingStationID,
 			"request": err.MessageId,
 		}).Errorf("no handler available for Call Error %v", err.Code)
 	}

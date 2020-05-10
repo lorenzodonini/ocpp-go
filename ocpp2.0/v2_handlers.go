@@ -5,7 +5,6 @@ import (
 )
 
 const (
-	AuthorizeFeatureName                  = "Authorize"
 	CancelReservationFeatureName          = "CancelReservation"
 	ChangeAvailabilityFeatureName         = "ChangeAvailability"
 	ClearCacheFeatureName                 = "ClearCache"
@@ -42,8 +41,6 @@ const (
 )
 
 type CSMSHandler interface {
-	// OnCancelReservation is called on the CSMS whenever an AuthorizeRequest is received from a charging station.
-	OnAuthorize(chargingStationID string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
 	// OnClearedChargingLimit is called on the CSMS whenever a ClearedChargingLimitRequest is received from a charging station.
 	OnClearedChargingLimit(chargingStationID string, request *ClearedChargingLimitRequest) (confirmation *ClearedChargingLimitConfirmation, err error)
 	// OnDataTransfer is called on the CSMS whenever a DataTransferRequest is received from a charging station.
@@ -107,7 +104,6 @@ var CoreProfileName = "core"
 
 var CoreProfile = ocpp.NewProfile(
 	CoreProfileName,
-	AuthorizeFeature{},
 	CancelReservationFeature{},
 	ChangeAvailabilityFeature{},
 	ClearCacheFeature{},
