@@ -42,7 +42,7 @@ type chargingStation struct {
 	iso15118Handler      iso15118.ChargingStationHandler
 	diagnosticsHandler   diagnostics.ChargingStationHandler
 	displayHandler       display.ChargingStationHandler
-	dataHandler          data.CSMSHandler
+	dataHandler          data.ChargingStationHandler
 	confirmationHandler  chan ocpp.Response
 	errorHandler         chan error
 }
@@ -73,8 +73,8 @@ func (cs *chargingStation) Authorize(idToken string, tokenType types.IdTokenType
 	}
 }
 
-func (cs *chargingStation) ClearedChargingLimit(chargingLimitSource types.ChargingLimitSourceType, props ...func(request *ClearedChargingLimitRequest)) (*ClearedChargingLimitConfirmation, error) {
-	request := NewClearedChargingLimitRequest(chargingLimitSource)
+func (cs *chargingStation) ClearedChargingLimit(chargingLimitSource types.ChargingLimitSourceType, props ...func(request *smartcharging.ClearedChargingLimitRequest)) (*smartcharging.ClearedChargingLimitConfirmation, error) {
+	request := smartcharging.NewClearedChargingLimitRequest(chargingLimitSource)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -82,13 +82,13 @@ func (cs *chargingStation) ClearedChargingLimit(chargingLimitSource types.Chargi
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*ClearedChargingLimitConfirmation), err
+		return confirmation.(*smartcharging.ClearedChargingLimitConfirmation), err
 	}
 }
 
 // Starts a custom data transfer request. Every vendor may implement their own proprietary logic for this message.
-func (cs *chargingStation) DataTransfer(vendorId string, props ...func(request *DataTransferRequest)) (*DataTransferConfirmation, error) {
-	request := NewDataTransferRequest(vendorId)
+func (cs *chargingStation) DataTransfer(vendorId string, props ...func(request *data.DataTransferRequest)) (*data.DataTransferConfirmation, error) {
+	request := data.NewDataTransferRequest(vendorId)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -96,12 +96,12 @@ func (cs *chargingStation) DataTransfer(vendorId string, props ...func(request *
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*DataTransferConfirmation), err
+		return confirmation.(*data.DataTransferConfirmation), err
 	}
 }
 
-func (cs *chargingStation) FirmwareStatusNotification(status FirmwareStatus, requestID int, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationConfirmation, error) {
-	request := NewFirmwareStatusNotificationRequest(status, requestID)
+func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareStatus, requestID int, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationConfirmation, error) {
+	request := firmware.NewFirmwareStatusNotificationRequest(status, requestID)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -109,7 +109,7 @@ func (cs *chargingStation) FirmwareStatusNotification(status FirmwareStatus, req
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*FirmwareStatusNotificationConfirmation), err
+		return confirmation.(*firmware.FirmwareStatusNotificationConfirmation), err
 	}
 }
 
@@ -262,11 +262,11 @@ func (cs *chargingStation) SetTransactionsHandler(handler transactions.ChargingS
 	cs.transactionsHandler = handler
 }
 
-func (cs *chargingStation) SetRemoteControlHandler(handler transactions.ChargingStationHandler) {
+func (cs *chargingStation) SetRemoteControlHandler(handler remotecontrol.ChargingStationHandler) {
 	cs.remoteControlHandler = handler
 }
 
-func (cs *chargingStation) SetAvailabilityHandler(handler transactions.ChargingStationHandler) {
+func (cs *chargingStation) SetAvailabilityHandler(handler availability.ChargingStationHandler) {
 	cs.availabilityHandler = handler
 }
 
@@ -278,7 +278,7 @@ func (cs *chargingStation) SetTariffCostHandler(handler tariffcost.ChargingStati
 	cs.tariffCostHandler = handler
 }
 
-func (cs *chargingStation) SetMeterHandler(handler tariffcost.ChargingStationHandler) {
+func (cs *chargingStation) SetMeterHandler(handler meter.ChargingStationHandler) {
 	cs.meterHandler = handler
 }
 
@@ -348,7 +348,7 @@ func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, err
 
 func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	switch request.GetFeatureName() {
-	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, ClearedChargingLimitFeatureName, DataTransferFeatureName, FirmwareStatusNotificationFeatureName, Get15118EVCertificateFeatureName, GetCertificateStatusFeatureName:
+	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, Get15118EVCertificateFeatureName, GetCertificateStatusFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -468,30 +468,30 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 	cs.client.GetProfileForFeature(action)
 	var err error = nil
 	switch action {
-	case CancelReservationFeatureName:
-		confirmation, err = cs.messageHandler.OnCancelReservation(request.(*CancelReservationRequest))
+	case reservation.CancelReservationFeatureName:
+		confirmation, err = cs.reservationHandler.OnCancelReservation(request.(*reservation.CancelReservationRequest))
 	case security.CertificateSignedFeatureName:
 		confirmation, err = cs.securityHandler.OnCertificateSigned(request.(*security.CertificateSignedRequest))
-	case ChangeAvailabilityFeatureName:
-		confirmation, err = cs.messageHandler.OnChangeAvailability(request.(*ChangeAvailabilityRequest))
+	case availability.ChangeAvailabilityFeatureName:
+		confirmation, err = cs.availabilityHandler.OnChangeAvailability(request.(*availability.ChangeAvailabilityRequest))
 	//case ChangeConfigurationFeatureName:
 	//	confirmation, err = cp.messageHandler.OnChangeConfiguration(request.(*ChangeConfigurationRequest))
-	case ClearCacheFeatureName:
-		confirmation, err = cs.messageHandler.OnClearCache(request.(*ClearCacheRequest))
-	case ClearChargingProfileFeatureName:
-		confirmation, err = cs.messageHandler.OnClearChargingProfile(request.(*ClearChargingProfileRequest))
-	case ClearDisplayFeatureName:
-		confirmation, err = cs.messageHandler.OnClearDisplay(request.(*ClearDisplayRequest))
-	case ClearVariableMonitoringFeatureName:
-		confirmation, err = cs.messageHandler.OnClearVariableMonitoring(request.(*ClearVariableMonitoringRequest))
-	case CostUpdatedFeatureName:
-		confirmation, err = cs.messageHandler.OnCostUpdated(request.(*CostUpdatedRequest))
-	case CustomerInformationFeatureName:
-		confirmation, err = cs.messageHandler.OnCustomerInformation(request.(*CustomerInformationRequest))
-	case DataTransferFeatureName:
-		confirmation, err = cs.messageHandler.OnDataTransfer(request.(*DataTransferRequest))
-	case DeleteCertificateFeatureName:
-		confirmation, err = cs.messageHandler.OnDeleteCertificate(request.(*DeleteCertificateRequest))
+	case authorization.ClearCacheFeatureName:
+		confirmation, err = cs.authorizationHandler.OnClearCache(request.(*authorization.ClearCacheRequest))
+	case smartcharging.ClearChargingProfileFeatureName:
+		confirmation, err = cs.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
+	case display.ClearDisplayFeatureName:
+		confirmation, err = cs.displayHandler.OnClearDisplay(request.(*display.ClearDisplayRequest))
+	case diagnostics.ClearVariableMonitoringFeatureName:
+		confirmation, err = cs.diagnosticsHandler.OnClearVariableMonitoring(request.(*diagnostics.ClearVariableMonitoringRequest))
+	case tariffcost.CostUpdatedFeatureName:
+		confirmation, err = cs.tariffCostHandler.OnCostUpdated(request.(*tariffcost.CostUpdatedRequest))
+	case diagnostics.CustomerInformationFeatureName:
+		confirmation, err = cs.diagnosticsHandler.OnCustomerInformation(request.(*diagnostics.CustomerInformationRequest))
+	case data.DataTransferFeatureName:
+		confirmation, err = cs.dataHandler.OnDataTransfer(request.(*data.DataTransferRequest))
+	case iso15118.DeleteCertificateFeatureName:
+		confirmation, err = cs.iso15118Handler.OnDeleteCertificate(request.(*iso15118.DeleteCertificateRequest))
 	case provisioning.GetBaseReportFeatureName:
 		confirmation, err = cs.provisioningHandler.OnGetBaseReport(request.(*provisioning.GetBaseReportRequest))
 	case GetChargingProfilesFeatureName:

@@ -1,4 +1,4 @@
-package ocpp2
+package diagnostics
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Customer Information (CSMS -> CS) --------------------
+
+const CustomerInformationFeatureName = "CustomerInformation"
 
 // Status returned in response to CustomerInformationRequest.
 type CustomerInformationStatus string

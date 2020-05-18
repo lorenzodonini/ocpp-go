@@ -75,7 +75,7 @@ type BootNotificationRequest struct {
 // The field definition of the BootNotification confirmation payload, sent by the CSMS to the Charging Station in response to a BootNotificationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type BootNotificationConfirmation struct {
-	CurrentTime *types.DateTime          `json:"currentTime" validate:"required"`
+	CurrentTime *types.DateTime    `json:"currentTime" validate:"required"`
 	Interval    int                `json:"interval" validate:"gte=0"`
 	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
 }

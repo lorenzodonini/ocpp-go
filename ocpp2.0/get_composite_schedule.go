@@ -27,7 +27,7 @@ func isValidGetCompositeScheduleStatus(fl validator.FieldLevel) bool {
 }
 
 type CompositeSchedule struct {
-	StartDateTime    *types.DateTime               `json:"startDateTime,omitempty" validate:"omitempty"`
+	StartDateTime    *types.DateTime         `json:"startDateTime,omitempty" validate:"omitempty"`
 	ChargingSchedule *types.ChargingSchedule `json:"chargingSchedule,omitempty" validate:"omitempty"`
 }
 

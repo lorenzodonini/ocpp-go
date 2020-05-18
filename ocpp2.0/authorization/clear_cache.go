@@ -1,4 +1,4 @@
-package ocpp2
+package authorization
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Clear Cache (CSMS -> CS) --------------------
+
+const ClearCacheFeatureName = "ClearCache"
 
 // Status returned in response to ClearCacheRequest.
 type ClearCacheStatus string

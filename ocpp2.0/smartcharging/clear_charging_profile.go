@@ -1,4 +1,4 @@
-package ocpp2
+package smartcharging
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Clear Charging Profile (CSMS -> CS) --------------------
+
+const ClearChargingProfileFeatureName = "ClearChargingProfile"
 
 // Status reported in ClearChargingProfileConfirmation.
 type ClearChargingProfileStatus string

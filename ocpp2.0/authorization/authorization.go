@@ -11,10 +11,14 @@ type CSMSHandler interface {
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Authorization profile.
 type ChargingStationHandler interface {
+	// OnClearCache is called on a charging station whenever a ClearCacheRequest is received from the CSMS.
+	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
 }
 
 const ProfileName = "authorization"
 
 var Profile = ocpp.NewProfile(
 	ProfileName,
-	AuthorizeFeature{})
+	AuthorizeFeature{},
+	ClearCacheFeature{},
+	)

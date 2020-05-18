@@ -5,18 +5,6 @@ import (
 )
 
 const (
-	CancelReservationFeatureName          = "CancelReservation"
-	ChangeAvailabilityFeatureName         = "ChangeAvailability"
-	ClearCacheFeatureName                 = "ClearCache"
-	ClearDisplayFeatureName               = "ClearDisplay"
-	ClearChargingProfileFeatureName       = "ClearChargingProfile"
-	ClearedChargingLimitFeatureName       = "ClearedChargingLimit"
-	ClearVariableMonitoringFeatureName    = "ClearVariableMonitoring"
-	CostUpdatedFeatureName                = "CostUpdated"
-	CustomerInformationFeatureName        = "CustomerInformation"
-	DataTransferFeatureName               = "DataTransfer"
-	DeleteCertificateFeatureName          = "DeleteCertificate"
-	FirmwareStatusNotificationFeatureName = "FirmwareStatusNotification"
 	Get15118EVCertificateFeatureName      = "Get15118EVCertificate"
 	GetCertificateStatusFeatureName       = "GetCertificateStatus"
 	GetChargingProfilesFeatureName        = "GetChargingProfiles"
@@ -41,12 +29,6 @@ const (
 )
 
 type CSMSHandler interface {
-	// OnClearedChargingLimit is called on the CSMS whenever a ClearedChargingLimitRequest is received from a charging station.
-	OnClearedChargingLimit(chargingStationID string, request *ClearedChargingLimitRequest) (confirmation *ClearedChargingLimitConfirmation, err error)
-	// OnDataTransfer is called on the CSMS whenever a DataTransferRequest is received from a charging station.
-	OnDataTransfer(chargingStationID string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
-	// OnFirmwareStatusNotification is called on the CSMS whenever a FirmwareStatusNotificationRequest is received from a charging station.
-	OnFirmwareStatusNotification(chargingStationID string, request *FirmwareStatusNotificationRequest) (confirmation *FirmwareStatusNotificationConfirmation, err error)
 	// OnGet15118EVCertificate is called on the CSMS whenever a Get15118EVCertificateRequest is received from a charging station.
 	OnGet15118EVCertificate(chargingStationID string, request *Get15118EVCertificateRequest) (confirmation *Get15118EVCertificateConfirmation, err error)
 	// OnGetCertificateStatus is called on the CSMS whenever a GetCertificateStatusRequest is received from a charging station.
@@ -59,26 +41,6 @@ type CSMSHandler interface {
 }
 
 type ChargingStationHandler interface {
-	// OnCancelReservation is called on a charging station whenever a CancelReservationRequest is received from the CSMS.
-	OnCancelReservation(request *CancelReservationRequest) (confirmation *CancelReservationConfirmation, err error)
-	// OnChangeAvailability is called on a charging station whenever a ChangeAvailabilityRequest is received from the CSMS.
-	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
-	// OnClearCache is called on a charging station whenever a ClearCacheRequest is received from the CSMS.
-	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
-	// OnClearDisplay is called on a charging station whenever a ClearDisplayRequest is received from the CSMS.
-	OnClearDisplay(request *ClearDisplayRequest) (confirmation *ClearDisplayConfirmation, err error)
-	// OnClearChargingProfile is called on a charging station whenever a ClearChargingProfileRequest is received from the CSMS.
-	OnClearChargingProfile(request *ClearChargingProfileRequest) (confirmation *ClearChargingProfileConfirmation, err error)
-	// OnClearVariableMonitoring is called on a charging station whenever a ClearVariableMonitoringRequest is received from the CSMS.
-	OnClearVariableMonitoring(request *ClearVariableMonitoringRequest) (confirmation *ClearVariableMonitoringConfirmation, err error)
-	// OnCostUpdated is called on a charging station whenever a CostUpdatedRequest is received from the CSMS.
-	OnCostUpdated(request *CostUpdatedRequest) (confirmation *CostUpdatedConfirmation, err error)
-	// OnCustomerInformation is called on a charging station whenever a CustomerInformationRequest is received from the CSMS.
-	OnCustomerInformation(request *CustomerInformationRequest) (confirmation *CustomerInformationConfirmation, err error)
-	// OnDataTransfer is called on a charging station whenever a DataTransferRequest is received from the CSMS.
-	OnDataTransfer(request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
-	// OnDeleteCertificate is called on a charging station whenever a DeleteCertificateRequest is received from the CSMS.
-	OnDeleteCertificate(request *DeleteCertificateRequest) (confirmation *DeleteCertificateConfirmation, err error)
 	// OnGetChargingProfiles is called on a charging station whenever a GetChargingProfilesRequest is received from the CSMS.
 	OnGetChargingProfiles(request *GetChargingProfilesRequest) (confirmation *GetChargingProfilesConfirmation, err error)
 	// OnGetCompositeSchedule is called on a charging station whenever a GetCompositeScheduleRequest is received from the CSMS.
@@ -104,18 +66,6 @@ var CoreProfileName = "core"
 
 var CoreProfile = ocpp.NewProfile(
 	CoreProfileName,
-	CancelReservationFeature{},
-	ChangeAvailabilityFeature{},
-	ClearCacheFeature{},
-	ClearDisplayFeature{},
-	ClearChargingProfileFeature{},
-	ClearedChargingLimitFeature{},
-	ClearVariableMonitoringFeature{},
-	CostUpdatedFeature{},
-	CustomerInformationFeature{},
-	DataTransferFeature{},
-	DeleteCertificateFeature{},
-	FirmwareStatusNotificationFeature{},
 	Get15118EVCertificateFeature{},
 	GetCertificateStatusFeature{},
 	GetChargingProfilesFeature{},

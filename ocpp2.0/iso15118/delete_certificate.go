@@ -1,4 +1,4 @@
-package ocpp2
+package iso15118
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Clear Display (CSMS -> CS) --------------------
+
+const DeleteCertificateFeatureName = "DeleteCertificate"
 
 // Status returned in response to DeleteCertificateRequest.
 type DeleteCertificateStatus string

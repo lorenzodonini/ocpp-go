@@ -1,4 +1,4 @@
-package ocpp2
+package smartcharging
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -6,6 +6,8 @@ import (
 )
 
 // -------------------- Cleared Charging Limit (CS -> CSMS) --------------------
+
+const ClearedChargingLimitFeatureName = "ClearedChargingLimit"
 
 // The field definition of the ClearedChargingLimit request payload sent by the Charging Station to the CSMS.
 type ClearedChargingLimitRequest struct {

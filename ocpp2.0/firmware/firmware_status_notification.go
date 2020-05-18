@@ -1,4 +1,4 @@
-package ocpp2
+package firmware
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Firmware Status Notification (CS -> CSMS) --------------------
+
+const FirmwareStatusNotificationFeatureName = "FirmwareStatusNotification"
 
 // Status reported in FirmwareStatusNotificationRequest.
 type FirmwareStatus string

@@ -1,17 +1,26 @@
 // The Smart charging functional block contains OCPP 2.0 features that enable the CSO (or a third party) to influence the charging current/power transferred during a transaction, or set limits to the amount of current/power a Charging Station can draw from the grid.
 package smartcharging
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import (
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+)
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Smart charging profile.
 type CSMSHandler interface {
+	// OnClearedChargingLimit is called on the CSMS whenever a ClearedChargingLimitRequest is received from a charging station.
+	OnClearedChargingLimit(chargingStationID string, request *ClearedChargingLimitRequest) (confirmation *ClearedChargingLimitConfirmation, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Smart charging profile.
 type ChargingStationHandler interface {
+	// OnClearChargingProfile is called on a charging station whenever a ClearChargingProfileRequest is received from the CSMS.
+	OnClearChargingProfile(request *ClearChargingProfileRequest) (confirmation *ClearChargingProfileConfirmation, err error)
 }
 
 const ProfileName = "smartCharging"
 
 var Profile = ocpp.NewProfile(
-	ProfileName)
+	ProfileName,
+	ClearChargingProfileFeature{},
+	ClearedChargingLimitFeature{},
+	)

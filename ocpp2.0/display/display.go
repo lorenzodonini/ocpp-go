@@ -9,9 +9,13 @@ type CSMSHandler interface {
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Display profile.
 type ChargingStationHandler interface {
+	// OnClearDisplay is called on a charging station whenever a ClearDisplayRequest is received from the CSMS.
+	OnClearDisplay(request *ClearDisplayRequest) (confirmation *ClearDisplayConfirmation, err error)
 }
 
 const ProfileName = "display"
 
 var Profile = ocpp.NewProfile(
-	ProfileName)
+	ProfileName,
+	ClearDisplayFeature{},
+	)

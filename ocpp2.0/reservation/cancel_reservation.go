@@ -1,4 +1,4 @@
-package ocpp2
+package reservation
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Cancel Reservation (CSMS -> CS) --------------------
+
+const CancelReservationFeatureName = "CancelReservation"
 
 // Status reported in CancelReservationConfirmation.
 type CancelReservationStatus string

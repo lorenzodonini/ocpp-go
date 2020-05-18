@@ -1,10 +1,12 @@
-package ocpp2
+package tariffcost
 
 import (
 	"reflect"
 )
 
 // -------------------- Cost Updated (CSMS -> CS) --------------------
+
+const CostUpdatedFeatureName = "CostUpdated"
 
 // The field definition of the CostUpdated request payload sent by the CSMS to the Charging Station.
 type CostUpdatedRequest struct {

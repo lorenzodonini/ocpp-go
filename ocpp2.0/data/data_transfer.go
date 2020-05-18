@@ -1,4 +1,4 @@
-package ocpp2
+package data
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Data Transfer (CS -> CSMS / CSMS -> CS) --------------------
+
+const DataTransferFeatureName = "DataTransfer"
 
 // Status in DataTransferConfirmation messages.
 type DataTransferStatus string

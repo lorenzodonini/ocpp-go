@@ -1,4 +1,4 @@
-package ocpp2
+package display
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Clear Display (CSMS -> CS) --------------------
+
+const ClearDisplayFeatureName = "ClearDisplay"
 
 // Status returned in response to ClearDisplayRequest.
 type ClearMessageStatus string

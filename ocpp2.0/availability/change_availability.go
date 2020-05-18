@@ -1,4 +1,4 @@
-package ocpp2
+package availability
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Change Availability (CSMS -> CS) --------------------
+
+const ChangeAvailabilityFeatureName = "ChangeAvailability"
 
 // Requested availability change in ChangeAvailabilityRequest.
 type OperationalStatus string

@@ -13,9 +13,13 @@ type CSMSHandler interface {
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 ISO 15118 profile.
 type ChargingStationHandler interface {
+	// OnDeleteCertificate is called on a charging station whenever a DeleteCertificateRequest is received from the CSMS.
+	OnDeleteCertificate(request *DeleteCertificateRequest) (confirmation *DeleteCertificateConfirmation, err error)
 }
 
 const ProfileName = "iso15118"
 
 var Profile = ocpp.NewProfile(
-	ProfileName)
+	ProfileName,
+	DeleteCertificateFeature{},
+	)

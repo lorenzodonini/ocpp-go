@@ -18,5 +18,6 @@ const ProfileName = "security"
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	CertificateSignedFeature{},
-	// SetVariables
-	)
+
+// SetVariables
+)

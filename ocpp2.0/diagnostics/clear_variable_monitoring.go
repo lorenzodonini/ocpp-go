@@ -1,4 +1,4 @@
-package ocpp2
+package diagnostics
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Clear Variable Monitoring (CSMS -> CP) --------------------
+
+const ClearVariableMonitoringFeatureName = "ClearVariableMonitoring"
 
 // Status contained inside a ClearMonitoringResult struct.
 type ClearMonitoringStatus string
