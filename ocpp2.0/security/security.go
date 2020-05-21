@@ -10,7 +10,7 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Security profile.
 type ChargingStationHandler interface {
 	// OnCertificateSigned is called on a charging station whenever a CertificateSignedRequest is received from the CSMS.
-	OnCertificateSigned(request *CertificateSignedRequest) (response *CertificateSignedConfirmation, err error)
+	OnCertificateSigned(request *CertificateSignedRequest) (response *CertificateSignedResponse, err error)
 }
 
 const ProfileName = "security"

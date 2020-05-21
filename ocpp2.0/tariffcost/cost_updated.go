@@ -14,9 +14,9 @@ type CostUpdatedRequest struct {
 	TransactionID string  `json:"transactionId" validate:"required,max=36"`
 }
 
-// This field definition of the CostUpdated confirmation payload, sent by the Charging Station to the CSMS in response to a CostUpdatedRequest.
+// This field definition of the CostUpdated response payload, sent by the Charging Station to the CSMS in response to a CostUpdatedRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type CostUpdatedConfirmation struct {
+type CostUpdatedResponse struct {
 }
 
 // The driver wants to know how much the running total cost is, updated at a relevant interval, while a transaction is ongoing.
@@ -33,14 +33,14 @@ func (f CostUpdatedFeature) GetRequestType() reflect.Type {
 }
 
 func (f CostUpdatedFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(CostUpdatedConfirmation{})
+	return reflect.TypeOf(CostUpdatedResponse{})
 }
 
 func (r CostUpdatedRequest) GetFeatureName() string {
 	return CostUpdatedFeatureName
 }
 
-func (c CostUpdatedConfirmation) GetFeatureName() string {
+func (c CostUpdatedResponse) GetFeatureName() string {
 	return CostUpdatedFeatureName
 }
 
@@ -49,7 +49,7 @@ func NewCostUpdatedRequest(totalCost float64, transactionID string) *CostUpdated
 	return &CostUpdatedRequest{TotalCost: totalCost, TransactionID: transactionID}
 }
 
-// Creates a new CostUpdatedConfirmation, which doesn't contain any required or optional fields.
-func NewCostUpdatedConfirmation() *CostUpdatedConfirmation {
-	return &CostUpdatedConfirmation{}
+// Creates a new CostUpdatedResponse, which doesn't contain any required or optional fields.
+func NewCostUpdatedResponse() *CostUpdatedResponse {
+	return &CostUpdatedResponse{}
 }

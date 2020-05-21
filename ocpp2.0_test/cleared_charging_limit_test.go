@@ -25,7 +25,7 @@ func (suite *OcppV2TestSuite) TestClearedChargingLimitRequestValidation() {
 func (suite *OcppV2TestSuite) TestClearedChargingLimitConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{smartcharging.ClearedChargingLimitConfirmation{}, true},
+		{smartcharging.ClearedChargingLimitResponse{}, true},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -39,7 +39,7 @@ func (suite *OcppV2TestSuite) TestClearedChargingLimitE2EMocked() {
 	evseID := 42
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargingLimitSource":"%v","evseId":%v}]`, messageId, smartcharging.ClearedChargingLimitFeatureName, chargingLimitSource, evseID)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
-	clearedChargingLimitConfirmation := smartcharging.NewClearedChargingLimitConfirmation()
+	clearedChargingLimitConfirmation := smartcharging.NewClearedChargingLimitResponse()
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockCSMSSmartChargingHandler{}
@@ -50,8 +50,8 @@ func (suite *OcppV2TestSuite) TestClearedChargingLimitE2EMocked() {
 		assert.Equal(t, chargingLimitSource, request.ChargingLimitSource)
 		assert.Equal(t, evseID, *request.EvseID)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)

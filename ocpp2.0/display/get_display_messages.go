@@ -18,7 +18,7 @@ type MessagePriority string
 // Used within a GetDisplayMessagesRequest.
 type MessageState string
 
-// MessageStatus represents the status of the request, used in a GetDisplayMessagesConfirmation.
+// MessageStatus represents the status of the request, used in a GetDisplayMessagesResponse.
 type MessageStatus string
 
 const (
@@ -71,9 +71,9 @@ type GetDisplayMessagesRequest struct {
 	ID        []int           `json:"id,omitempty" validate:"omitempty,dive,gte=0"`
 }
 
-// This field definition of the GetDisplayMessages confirmation payload, sent by the Charging Station to the CSMS in response to a GetDisplayMessagesRequest.
+// This field definition of the GetDisplayMessages response payload, sent by the Charging Station to the CSMS in response to a GetDisplayMessagesRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type GetDisplayMessagesConfirmation struct {
+type GetDisplayMessagesResponse struct {
 	Status MessageStatus `json:"status" validate:"required,messageStatus"`
 }
 
@@ -96,14 +96,14 @@ func (f GetDisplayMessagesFeature) GetRequestType() reflect.Type {
 }
 
 func (f GetDisplayMessagesFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(GetDisplayMessagesConfirmation{})
+	return reflect.TypeOf(GetDisplayMessagesResponse{})
 }
 
 func (r GetDisplayMessagesRequest) GetFeatureName() string {
 	return GetDisplayMessagesFeatureName
 }
 
-func (c GetDisplayMessagesConfirmation) GetFeatureName() string {
+func (c GetDisplayMessagesResponse) GetFeatureName() string {
 	return GetDisplayMessagesFeatureName
 }
 
@@ -112,9 +112,9 @@ func NewGetDisplayMessagesRequest(requestId int) *GetDisplayMessagesRequest {
 	return &GetDisplayMessagesRequest{RequestID: requestId}
 }
 
-// Creates a new GetDisplayMessagesConfirmation, containing all required fields. There are no optional fields for this message.
-func NewGetDisplayMessagesConfirmation(status MessageStatus) *GetDisplayMessagesConfirmation {
-	return &GetDisplayMessagesConfirmation{Status: status}
+// Creates a new GetDisplayMessagesResponse, containing all required fields. There are no optional fields for this message.
+func NewGetDisplayMessagesResponse(status MessageStatus) *GetDisplayMessagesResponse {
+	return &GetDisplayMessagesResponse{Status: status}
 }
 
 func init() {

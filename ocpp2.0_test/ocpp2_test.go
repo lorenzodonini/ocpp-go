@@ -33,6 +33,7 @@ import (
 )
 
 // ---------------------- MOCK WEBSOCKET ----------------------
+
 type MockWebSocket struct {
 	id string
 }
@@ -46,6 +47,7 @@ func NewMockWebSocket(id string) MockWebSocket {
 }
 
 // ---------------------- MOCK WEBSOCKET SERVER ----------------------
+
 type MockWebsocketServer struct {
 	mock.Mock
 	ws.WsServer
@@ -87,6 +89,7 @@ func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client
 }
 
 // ---------------------- MOCK WEBSOCKET CLIENT ----------------------
+
 type MockWebsocketClient struct {
 	mock.Mock
 	ws.WsClient
@@ -162,661 +165,355 @@ func newMockConfirmation(value string) *MockConfirmation {
 }
 
 // ---------------------- MOCK CSMS SECURITY HANDLER ----------------------
+
 type MockCSMSSecurityHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CS SECURITY HANDLER ----------------------
+
 type MockChargingStationSecurityHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationSecurityHandler) OnCertificateSigned(request *security.CertificateSignedRequest) (response *security.CertificateSignedConfirmation, err error) {
+func (handler MockChargingStationSecurityHandler) OnCertificateSigned(request *security.CertificateSignedRequest) (response *security.CertificateSignedResponse, err error) {
 	args := handler.MethodCalled("OnCertificateSigned", request)
-	conf := args.Get(0).(*security.CertificateSignedConfirmation)
+	conf := args.Get(0).(*security.CertificateSignedResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS PROVISIONING HANDLER ----------------------
+
 type MockCSMSProvisioningHandler struct {
 	mock.Mock
 }
 
-func (handler MockCSMSProvisioningHandler) OnBootNotification(chargePointId string, request *provisioning.BootNotificationRequest) (confirmation *provisioning.BootNotificationConfirmation, err error) {
-	args := handler.MethodCalled("OnBootNotification", chargePointId, request)
-	conf := args.Get(0).(*provisioning.BootNotificationConfirmation)
+func (handler MockCSMSProvisioningHandler) OnBootNotification(chargingStationId string, request *provisioning.BootNotificationRequest) (confirmation *provisioning.BootNotificationResponse, err error) {
+	args := handler.MethodCalled("OnBootNotification", chargingStationId, request)
+	conf := args.Get(0).(*provisioning.BootNotificationResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CS PROVISIONING HANDLER ----------------------
+
 type MockChargingStationProvisioningHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationProvisioningHandler) OnGetBaseReport(request *provisioning.GetBaseReportRequest) (confirmation *provisioning.GetBaseReportConfirmation, err error) {
+func (handler MockChargingStationProvisioningHandler) OnGetBaseReport(request *provisioning.GetBaseReportRequest) (confirmation *provisioning.GetBaseReportResponse, err error) {
 	args := handler.MethodCalled("OnGetBaseReport", request)
-	conf := args.Get(0).(*provisioning.GetBaseReportConfirmation)
+	conf := args.Get(0).(*provisioning.GetBaseReportResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS AUTHORIZATION HANDLER ----------------------
+
 type MockCSMSAuthorizationHandler struct {
 	mock.Mock
 }
 
-func (handler MockCSMSAuthorizationHandler) OnAuthorize(chargePointId string, request *authorization.AuthorizeRequest) (confirmation *authorization.AuthorizeConfirmation, err error) {
-	args := handler.MethodCalled("OnAuthorize", chargePointId, request)
-	conf := args.Get(0).(*authorization.AuthorizeConfirmation)
+func (handler MockCSMSAuthorizationHandler) OnAuthorize(chargingStationId string, request *authorization.AuthorizeRequest) (confirmation *authorization.AuthorizeResponse, err error) {
+	args := handler.MethodCalled("OnAuthorize", chargingStationId, request)
+	conf := args.Get(0).(*authorization.AuthorizeResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CS AUTHORIZATION HANDLER ----------------------
+
 type MockChargingStationAuthorizationHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationAuthorizationHandler) OnClearCache(request *authorization.ClearCacheRequest) (confirmation *authorization.ClearCacheConfirmation, err error) {
+func (handler MockChargingStationAuthorizationHandler) OnClearCache(request *authorization.ClearCacheRequest) (confirmation *authorization.ClearCacheResponse, err error) {
 	args := handler.MethodCalled("OnClearCache", request)
-	conf := args.Get(0).(*authorization.ClearCacheConfirmation)
+	conf := args.Get(0).(*authorization.ClearCacheResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CS RESERVATION HANDLER ----------------------
+
 type MockChargingStationReservationHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationReservationHandler) OnCancelReservation(request *reservation.CancelReservationRequest) (confirmation *reservation.CancelReservationConfirmation, err error) {
+func (handler MockChargingStationReservationHandler) OnCancelReservation(request *reservation.CancelReservationRequest) (confirmation *reservation.CancelReservationResponse, err error) {
 	args := handler.MethodCalled("OnCancelReservation", request)
-	conf := args.Get(0).(*reservation.CancelReservationConfirmation)
+	conf := args.Get(0).(*reservation.CancelReservationResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS RESERVATION HANDLER ----------------------
+
 type MockCSMSReservationHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CS AVAILABILITY HANDLER ----------------------
+
 type MockChargingStationAvailabilityHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationAvailabilityHandler) OnChangeAvailability(request *availability.ChangeAvailabilityRequest) (confirmation *availability.ChangeAvailabilityConfirmation, err error) {
+func (handler MockChargingStationAvailabilityHandler) OnChangeAvailability(request *availability.ChangeAvailabilityRequest) (confirmation *availability.ChangeAvailabilityResponse, err error) {
 	args := handler.MethodCalled("OnChangeAvailability", request)
-	conf := args.Get(0).(*availability.ChangeAvailabilityConfirmation)
+	conf := args.Get(0).(*availability.ChangeAvailabilityResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS AVAILABILITY HANDLER ----------------------
+
 type MockCSMSAvailabilityHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CS DATA HANDLER ----------------------
+
 type MockChargingStationDataHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationDataHandler) OnDataTransfer(request *data.DataTransferRequest) (confirmation *data.DataTransferConfirmation, err error) {
+func (handler MockChargingStationDataHandler) OnDataTransfer(request *data.DataTransferRequest) (confirmation *data.DataTransferResponse, err error) {
 	args := handler.MethodCalled("OnDataTransfer", request)
-	conf := args.Get(0).(*data.DataTransferConfirmation)
+	conf := args.Get(0).(*data.DataTransferResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS DATA HANDLER ----------------------
+
 type MockCSMSDataHandler struct {
 	mock.Mock
 }
 
-func (handler MockCSMSDataHandler) OnDataTransfer(chargingStationID string, request *data.DataTransferRequest) (confirmation *data.DataTransferConfirmation, err error) {
+func (handler MockCSMSDataHandler) OnDataTransfer(chargingStationID string, request *data.DataTransferRequest) (confirmation *data.DataTransferResponse, err error) {
 	args := handler.MethodCalled("OnDataTransfer", chargingStationID, request)
-	conf := args.Get(0).(*data.DataTransferConfirmation)
+	conf := args.Get(0).(*data.DataTransferResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CS DIAGNOSTICS HANDLER ----------------------
+
 type MockChargingStationDiagnosticsHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationDiagnosticsHandler) OnClearVariableMonitoring(request *diagnostics.ClearVariableMonitoringRequest) (confirmation *diagnostics.ClearVariableMonitoringConfirmation, err error) {
+func (handler MockChargingStationDiagnosticsHandler) OnClearVariableMonitoring(request *diagnostics.ClearVariableMonitoringRequest) (confirmation *diagnostics.ClearVariableMonitoringResponse, err error) {
 	args := handler.MethodCalled("OnClearVariableMonitoring", request)
-	conf := args.Get(0).(*diagnostics.ClearVariableMonitoringConfirmation)
+	conf := args.Get(0).(*diagnostics.ClearVariableMonitoringResponse)
 	return conf, args.Error(1)
 }
 
-func (handler MockChargingStationDiagnosticsHandler) OnCustomerInformation(request *diagnostics.CustomerInformationRequest) (confirmation *diagnostics.CustomerInformationConfirmation, err error) {
+func (handler MockChargingStationDiagnosticsHandler) OnCustomerInformation(request *diagnostics.CustomerInformationRequest) (confirmation *diagnostics.CustomerInformationResponse, err error) {
 	args := handler.MethodCalled("OnCustomerInformation", request)
-	conf := args.Get(0).(*diagnostics.CustomerInformationConfirmation)
+	conf := args.Get(0).(*diagnostics.CustomerInformationResponse)
 	return conf, args.Error(1)
 }
 
-func (handler MockChargingStationDiagnosticsHandler) OnGetLog(request *diagnostics.GetLogRequest) (confirmation *diagnostics.GetLogConfirmation, err error) {
+func (handler MockChargingStationDiagnosticsHandler) OnGetLog(request *diagnostics.GetLogRequest) (confirmation *diagnostics.GetLogResponse, err error) {
 	args := handler.MethodCalled("OnGetLog", request)
-	conf := args.Get(0).(*diagnostics.GetLogConfirmation)
+	conf := args.Get(0).(*diagnostics.GetLogResponse)
 	return conf, args.Error(1)
 }
 
-func (handler MockChargingStationDiagnosticsHandler) OnGetMonitoringReport(request *diagnostics.GetMonitoringReportRequest) (confirmation *diagnostics.GetMonitoringReportConfirmation, err error) {
+func (handler MockChargingStationDiagnosticsHandler) OnGetMonitoringReport(request *diagnostics.GetMonitoringReportRequest) (confirmation *diagnostics.GetMonitoringReportResponse, err error) {
 	args := handler.MethodCalled("OnGetMonitoringReport", request)
-	conf := args.Get(0).(*diagnostics.GetMonitoringReportConfirmation)
+	conf := args.Get(0).(*diagnostics.GetMonitoringReportResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS DIAGNOSTICS HANDLER ----------------------
+
 type MockCSMSDiagnosticsHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CS DISPLAY HANDLER ----------------------
+
 type MockChargingStationDisplayHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationDisplayHandler) OnClearDisplay(request *display.ClearDisplayRequest) (confirmation *display.ClearDisplayConfirmation, err error) {
+func (handler MockChargingStationDisplayHandler) OnClearDisplay(request *display.ClearDisplayRequest) (confirmation *display.ClearDisplayResponse, err error) {
 	args := handler.MethodCalled("OnClearDisplay", request)
-	conf := args.Get(0).(*display.ClearDisplayConfirmation)
+	conf := args.Get(0).(*display.ClearDisplayResponse)
 	return conf, args.Error(1)
 }
 
-func (handler MockChargingStationDisplayHandler) OnGetDisplayMessages(request *display.GetDisplayMessagesRequest) (confirmation *display.GetDisplayMessagesConfirmation, err error) {
+func (handler MockChargingStationDisplayHandler) OnGetDisplayMessages(request *display.GetDisplayMessagesRequest) (confirmation *display.GetDisplayMessagesResponse, err error) {
 	args := handler.MethodCalled("OnGetDisplayMessages", request)
-	conf := args.Get(0).(*display.GetDisplayMessagesConfirmation)
+	conf := args.Get(0).(*display.GetDisplayMessagesResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS DISPLAY HANDLER ----------------------
+
 type MockCSMSDisplayHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CS FIRMWARE HANDLER ----------------------
+
 type MockChargingStationFirmwareHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CSMS FIRMWARE HANDLER ----------------------
+
 type MockCSMSFirmwareHandler struct {
 	mock.Mock
 }
 
-func (handler MockCSMSFirmwareHandler) OnFirmwareStatusNotification(chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (confirmation *firmware.FirmwareStatusNotificationConfirmation, err error) {
+func (handler MockCSMSFirmwareHandler) OnFirmwareStatusNotification(chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (confirmation *firmware.FirmwareStatusNotificationResponse, err error) {
 	args := handler.MethodCalled("OnFirmwareStatusNotification", chargingStationID, request)
-	conf := args.Get(0).(*firmware.FirmwareStatusNotificationConfirmation)
+	conf := args.Get(0).(*firmware.FirmwareStatusNotificationResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CS ISO15118 HANDLER ----------------------
+
 type MockChargingStationIso15118Handler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationIso15118Handler) OnDeleteCertificate(request *iso15118.DeleteCertificateRequest) (confirmation *iso15118.DeleteCertificateConfirmation, err error) {
+func (handler MockChargingStationIso15118Handler) OnDeleteCertificate(request *iso15118.DeleteCertificateRequest) (confirmation *iso15118.DeleteCertificateResponse, err error) {
 	args := handler.MethodCalled("OnDeleteCertificate", request)
-	conf := args.Get(0).(*iso15118.DeleteCertificateConfirmation)
+	conf := args.Get(0).(*iso15118.DeleteCertificateResponse)
 	return conf, args.Error(1)
 }
 
-func (handler MockChargingStationIso15118Handler) OnGetInstalledCertificateIds(request *iso15118.GetInstalledCertificateIdsRequest) (confirmation *iso15118.GetInstalledCertificateIdsConfirmation, err error) {
+func (handler MockChargingStationIso15118Handler) OnGetInstalledCertificateIds(request *iso15118.GetInstalledCertificateIdsRequest) (confirmation *iso15118.GetInstalledCertificateIdsResponse, err error) {
 	args := handler.MethodCalled("OnGetInstalledCertificateIds", request)
-	conf := args.Get(0).(*iso15118.GetInstalledCertificateIdsConfirmation)
+	conf := args.Get(0).(*iso15118.GetInstalledCertificateIdsResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS ISO15118 HANDLER ----------------------
+
 type MockCSMSIso15118Handler struct {
 	mock.Mock
 }
 
-func (handler MockCSMSIso15118Handler) OnGet15118EVCertificate(chargingStationID string, request *iso15118.Get15118EVCertificateRequest) (confirmation *iso15118.Get15118EVCertificateConfirmation, err error) {
+func (handler MockCSMSIso15118Handler) OnGet15118EVCertificate(chargingStationID string, request *iso15118.Get15118EVCertificateRequest) (confirmation *iso15118.Get15118EVCertificateResponse, err error) {
 	args := handler.MethodCalled("OnGet15118EVCertificate", chargingStationID, request)
-	conf := args.Get(0).(*iso15118.Get15118EVCertificateConfirmation)
+	conf := args.Get(0).(*iso15118.Get15118EVCertificateResponse)
 	return conf, args.Error(1)
 }
 
-func (handler MockCSMSIso15118Handler) OnGetCertificateStatus(chargingStationID string, request *iso15118.GetCertificateStatusRequest) (confirmation *iso15118.GetCertificateStatusConfirmation, err error) {
+func (handler MockCSMSIso15118Handler) OnGetCertificateStatus(chargingStationID string, request *iso15118.GetCertificateStatusRequest) (confirmation *iso15118.GetCertificateStatusResponse, err error) {
 	args := handler.MethodCalled("OnGetCertificateStatus", chargingStationID, request)
-	conf := args.Get(0).(*iso15118.GetCertificateStatusConfirmation)
+	conf := args.Get(0).(*iso15118.GetCertificateStatusResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CS LOCAL AUTH HANDLER ----------------------
+
 type MockChargingStationLocalAuthHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationLocalAuthHandler) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionConfirmation, err error) {
+func (handler MockChargingStationLocalAuthHandler) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionResponse, err error) {
 	args := handler.MethodCalled("OnGetLocalListVersion", request)
-	conf := args.Get(0).(*localauth.GetLocalListVersionConfirmation)
+	conf := args.Get(0).(*localauth.GetLocalListVersionResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS LOCAL AUTH HANDLER ----------------------
+
 type MockCSMSLocalAuthHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CS METER HANDLER ----------------------
+
 type MockChargingStationMeterHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CSMS METER HANDLER ----------------------
+
 type MockCSMSMeterHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CS REMOTE CONTROL HANDLER ----------------------
+
 type MockChargingStationRemoteControlHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CSMS REMOTE CONTROL HANDLER ----------------------
+
 type MockCSMSRemoteControlHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CS SMART CHARGING HANDLER ----------------------
+
 type MockChargingStationSmartChargingHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationSmartChargingHandler) OnClearChargingProfile(request *smartcharging.ClearChargingProfileRequest) (confirmation *smartcharging.ClearChargingProfileConfirmation, err error) {
+func (handler MockChargingStationSmartChargingHandler) OnClearChargingProfile(request *smartcharging.ClearChargingProfileRequest) (confirmation *smartcharging.ClearChargingProfileResponse, err error) {
 	args := handler.MethodCalled("OnClearChargingProfile", request)
-	conf := args.Get(0).(*smartcharging.ClearChargingProfileConfirmation)
+	conf := args.Get(0).(*smartcharging.ClearChargingProfileResponse)
 	return conf, args.Error(1)
 }
 
-func (handler MockChargingStationSmartChargingHandler) OnGetChargingProfiles(request *smartcharging.GetChargingProfilesRequest) (confirmation *smartcharging.GetChargingProfilesConfirmation, err error) {
+func (handler MockChargingStationSmartChargingHandler) OnGetChargingProfiles(request *smartcharging.GetChargingProfilesRequest) (confirmation *smartcharging.GetChargingProfilesResponse, err error) {
 	args := handler.MethodCalled("OnGetChargingProfiles", request)
-	conf := args.Get(0).(*smartcharging.GetChargingProfilesConfirmation)
+	conf := args.Get(0).(*smartcharging.GetChargingProfilesResponse)
 	return conf, args.Error(1)
 }
 
-func (handler MockChargingStationSmartChargingHandler) OnGetCompositeSchedule(request *smartcharging.GetCompositeScheduleRequest) (confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
+func (handler MockChargingStationSmartChargingHandler) OnGetCompositeSchedule(request *smartcharging.GetCompositeScheduleRequest) (confirmation *smartcharging.GetCompositeScheduleResponse, err error) {
 	args := handler.MethodCalled("OnGetCompositeSchedule", request)
-	conf := args.Get(0).(*smartcharging.GetCompositeScheduleConfirmation)
+	conf := args.Get(0).(*smartcharging.GetCompositeScheduleResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS SMART CHARGING HANDLER ----------------------
+
 type MockCSMSSmartChargingHandler struct {
 	mock.Mock
 }
 
-func (handler MockCSMSSmartChargingHandler) OnClearedChargingLimit(chargingStationID string, request *smartcharging.ClearedChargingLimitRequest) (confirmation *smartcharging.ClearedChargingLimitConfirmation, err error) {
+func (handler MockCSMSSmartChargingHandler) OnClearedChargingLimit(chargingStationID string, request *smartcharging.ClearedChargingLimitRequest) (confirmation *smartcharging.ClearedChargingLimitResponse, err error) {
 	args := handler.MethodCalled("OnClearedChargingLimit", chargingStationID, request)
-	conf := args.Get(0).(*smartcharging.ClearedChargingLimitConfirmation)
+	conf := args.Get(0).(*smartcharging.ClearedChargingLimitResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CS TARIFF COST HANDLER ----------------------
+
 type MockChargingStationTariffCostHandler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationTariffCostHandler) OnCostUpdated(request *tariffcost.CostUpdatedRequest) (confirmation *tariffcost.CostUpdatedConfirmation, err error) {
+func (handler MockChargingStationTariffCostHandler) OnCostUpdated(request *tariffcost.CostUpdatedRequest) (confirmation *tariffcost.CostUpdatedResponse, err error) {
 	args := handler.MethodCalled("OnCostUpdated", request)
-	conf := args.Get(0).(*tariffcost.CostUpdatedConfirmation)
+	conf := args.Get(0).(*tariffcost.CostUpdatedResponse)
 	return conf, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS TARIFF COST HANDLER ----------------------
+
 type MockCSMSTariffCostHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CS TRANSACTIONS HANDLER ----------------------
+
 type MockChargingStationTransactionHandler struct {
 	mock.Mock
 }
 
 // ---------------------- MOCK CSMS TRANSACTIONS HANDLER ----------------------
+
 type MockCSMSTransactionsHandler struct {
 	mock.Mock
 }
 
-
-// ---------------------- MOCK CSMS CORE LISTENER ----------------------
-type MockCSMSHandler struct {
-	mock.Mock
-}
-
-func (coreListener MockCSMSHandler) OnClearedChargingLimit(chargePointId string, request *smartcharging.ClearedChargingLimitRequest) (confirmation *smartcharging.ClearedChargingLimitConfirmation, err error) {
-	args := coreListener.MethodCalled("OnClearedChargingLimit", chargePointId, request)
-	conf := args.Get(0).(*smartcharging.ClearedChargingLimitConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockCSMSHandler) OnDataTransfer(chargePointId string, request *data.DataTransferRequest) (confirmation *data.DataTransferConfirmation, err error) {
-	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
-	conf := args.Get(0).(*data.DataTransferConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockCSMSHandler) OnFirmwareStatusNotification(chargePointId string, request *firmware.FirmwareStatusNotificationRequest) (confirmation *firmware.FirmwareStatusNotificationConfirmation, err error) {
-	args := coreListener.MethodCalled("OnFirmwareStatusNotification", chargePointId, request)
-	conf := args.Get(0).(*firmware.FirmwareStatusNotificationConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockCSMSHandler) OnGet15118EVCertificate(chargePointId string, request *iso15118.Get15118EVCertificateRequest) (confirmation *iso15118.Get15118EVCertificateConfirmation, err error) {
-	args := coreListener.MethodCalled("OnGet15118EVCertificate", chargePointId, request)
-	conf := args.Get(0).(*iso15118.Get15118EVCertificateConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockCSMSHandler) OnGetCertificateStatus(chargePointId string, request *iso15118.GetCertificateStatusRequest) (confirmation *iso15118.GetCertificateStatusConfirmation, err error) {
-	args := coreListener.MethodCalled("OnGetCertificateStatus", chargePointId, request)
-	conf := args.Get(0).(*iso15118.GetCertificateStatusConfirmation)
-	return conf, args.Error(1)
-}
-
-//func (coreListener MockCSMSHandler) OnDataTransfer(chargePointId string, request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
-//	conf := args.Get(0).(*ocpp2.DataTransferConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockCSMSHandler) OnHeartbeat(chargePointId string, request *ocpp2.HeartbeatRequest) (confirmation *ocpp2.HeartbeatConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnHeartbeat", chargePointId, request)
-//	conf := args.Get(0).(*ocpp2.HeartbeatConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockCSMSHandler) OnMeterValues(chargePointId string, request *ocpp2.MeterValuesRequest) (confirmation *ocpp2.MeterValuesConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnMeterValues", chargePointId, request)
-//	conf := args.Get(0).(*ocpp2.MeterValuesConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockCSMSHandler) OnStartTransaction(chargePointId string, request *ocpp2.StartTransactionRequest) (confirmation *ocpp2.StartTransactionConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnStartTransaction", chargePointId, request)
-//	conf := args.Get(0).(*ocpp2.StartTransactionConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockCSMSHandler) OnStatusNotification(chargePointId string, request *ocpp2.StatusNotificationRequest) (confirmation *ocpp2.StatusNotificationConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnStatusNotification", chargePointId, request)
-//	conf := args.Get(0).(*ocpp2.StatusNotificationConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockCSMSHandler) OnStopTransaction(chargePointId string, request *ocpp2.StopTransactionRequest) (confirmation *ocpp2.StopTransactionConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnStopTransaction", chargePointId, request)
-//	conf := args.Get(0).(*ocpp2.StopTransactionConfirmation)
-//	return conf, args.Error(1)
-//}
-
-// ---------------------- MOCK CP CORE LISTENER ----------------------
-type MockChargePointCoreListener struct {
-	mock.Mock
-}
-
-func (coreListener MockChargePointCoreListener) OnCancelReservation(request *reservation.CancelReservationRequest) (confirmation *reservation.CancelReservationConfirmation, err error) {
-	args := coreListener.MethodCalled("OnCancelReservation", request)
-	conf := args.Get(0).(*reservation.CancelReservationConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnChangeAvailability(request *availability.ChangeAvailabilityRequest) (confirmation *availability.ChangeAvailabilityConfirmation, err error) {
-	args := coreListener.MethodCalled("OnChangeAvailability", request)
-	conf := args.Get(0).(*availability.ChangeAvailabilityConfirmation)
-	return conf, args.Error(1)
-}
-
-//
-//func (coreListener MockChargePointCoreListener) OnDataTransfer(request *ocpp2.DataTransferRequest) (confirmation *ocpp2.DataTransferConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnDataTransfer", request)
-//	conf := args.Get(0).(*ocpp2.DataTransferConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockChargePointCoreListener) OnChangeConfiguration(request *ocpp2.ChangeConfigurationRequest) (confirmation *ocpp2.ChangeConfigurationConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnChangeConfiguration", request)
-//	conf := args.Get(0).(*ocpp2.ChangeConfigurationConfirmation)
-//	return conf, args.Error(1)
-//}
-
-func (coreListener MockChargePointCoreListener) OnClearCache(request *authorization.ClearCacheRequest) (confirmation *authorization.ClearCacheConfirmation, err error) {
-	args := coreListener.MethodCalled("OnClearCache", request)
-	conf := args.Get(0).(*authorization.ClearCacheConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnClearChargingProfile(request *smartcharging.ClearChargingProfileRequest) (confirmation *smartcharging.ClearChargingProfileConfirmation, err error) {
-	args := coreListener.MethodCalled("OnClearChargingProfile", request)
-	conf := args.Get(0).(*smartcharging.ClearChargingProfileConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnClearDisplay(request *display.ClearDisplayRequest) (confirmation *display.ClearDisplayConfirmation, err error) {
-	args := coreListener.MethodCalled("OnClearDisplay", request)
-	conf := args.Get(0).(*display.ClearDisplayConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnClearVariableMonitoring(request *diagnostics.ClearVariableMonitoringRequest) (confirmation *diagnostics.ClearVariableMonitoringConfirmation, err error) {
-	args := coreListener.MethodCalled("OnClearVariableMonitoring", request)
-	conf := args.Get(0).(*diagnostics.ClearVariableMonitoringConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnCostUpdated(request *tariffcost.CostUpdatedRequest) (confirmation *tariffcost.CostUpdatedConfirmation, err error) {
-	args := coreListener.MethodCalled("OnCostUpdated", request)
-	conf := args.Get(0).(*tariffcost.CostUpdatedConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnCustomerInformation(request *diagnostics.CustomerInformationRequest) (confirmation *diagnostics.CustomerInformationConfirmation, err error) {
-	args := coreListener.MethodCalled("OnCustomerInformation", request)
-	conf := args.Get(0).(*diagnostics.CustomerInformationConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnDataTransfer(request *data.DataTransferRequest) (confirmation *data.DataTransferConfirmation, err error) {
-	args := coreListener.MethodCalled("OnDataTransfer", request)
-	conf := args.Get(0).(*data.DataTransferConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnDeleteCertificate(request *iso15118.DeleteCertificateRequest) (confirmation *iso15118.DeleteCertificateConfirmation, err error) {
-	args := coreListener.MethodCalled("OnDeleteCertificate", request)
-	conf := args.Get(0).(*iso15118.DeleteCertificateConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnGetChargingProfiles(request *smartcharging.GetChargingProfilesRequest) (confirmation *smartcharging.GetChargingProfilesConfirmation, err error) {
-	args := coreListener.MethodCalled("OnGetChargingProfiles", request)
-	conf := args.Get(0).(*smartcharging.GetChargingProfilesConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnGetCompositeSchedule(request *smartcharging.GetCompositeScheduleRequest) (confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
-	args := coreListener.MethodCalled("OnGetCompositeSchedule", request)
-	conf := args.Get(0).(*smartcharging.GetCompositeScheduleConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnGetDisplayMessages(request *display.GetDisplayMessagesRequest) (confirmation *display.GetDisplayMessagesConfirmation, err error) {
-	args := coreListener.MethodCalled("OnGetDisplayMessages", request)
-	conf := args.Get(0).(*display.GetDisplayMessagesConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnGetInstalledCertificateIds(request *iso15118.GetInstalledCertificateIdsRequest) (confirmation *iso15118.GetInstalledCertificateIdsConfirmation, err error) {
-	args := coreListener.MethodCalled("OnGetInstalledCertificateIds", request)
-	conf := args.Get(0).(*iso15118.GetInstalledCertificateIdsConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionConfirmation, err error) {
-	args := coreListener.MethodCalled("OnGetLocalListVersion", request)
-	conf := args.Get(0).(*localauth.GetLocalListVersionConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnGetLog(request *diagnostics.GetLogRequest) (confirmation *diagnostics.GetLogConfirmation, err error) {
-	args := coreListener.MethodCalled("OnGetLog", request)
-	conf := args.Get(0).(*diagnostics.GetLogConfirmation)
-	return conf, args.Error(1)
-}
-
-func (coreListener MockChargePointCoreListener) OnGetMonitoringReport(request *diagnostics.GetMonitoringReportRequest) (confirmation *diagnostics.GetMonitoringReportConfirmation, err error) {
-	args := coreListener.MethodCalled("OnGetMonitoringReport", request)
-	conf := args.Get(0).(*diagnostics.GetMonitoringReportConfirmation)
-	return conf, args.Error(1)
-}
-
-//func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *ocpp2.GetConfigurationRequest) (confirmation *ocpp2.GetConfigurationConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnGetConfiguration", request)
-//	conf := args.Get(0).(*ocpp2.GetConfigurationConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockChargePointCoreListener) OnReset(request *ocpp2.ResetRequest) (confirmation *ocpp2.ResetConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnReset", request)
-//	conf := args.Get(0).(*ocpp2.ResetConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockChargePointCoreListener) OnUnlockConnector(request *ocpp2.UnlockConnectorRequest) (confirmation *ocpp2.UnlockConnectorConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnUnlockConnector", request)
-//	conf := args.Get(0).(*ocpp2.UnlockConnectorConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockChargePointCoreListener) OnRemoteStartTransaction(request *ocpp2.RemoteStartTransactionRequest) (confirmation *ocpp2.RemoteStartTransactionConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnRemoteStartTransaction", request)
-//	conf := args.Get(0).(*ocpp2.RemoteStartTransactionConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (coreListener MockChargePointCoreListener) OnRemoteStopTransaction(request *ocpp2.RemoteStopTransactionRequest) (confirmation *ocpp2.RemoteStopTransactionConfirmation, err error) {
-//	args := coreListener.MethodCalled("OnRemoteStopTransaction", request)
-//	conf := args.Get(0).(*ocpp2.RemoteStopTransactionConfirmation)
-//	return conf, args.Error(1)
-//}
-
-// ---------------------- MOCK CS LOCAL AUTH LIST LISTENER ----------------------
-type MockCentralSystemLocalAuthListListener struct {
-	mock.Mock
-}
-
-// ---------------------- MOCK CP LOCAL AUTH LIST LISTENER ----------------------
-type MockChargePointLocalAuthListListener struct {
-	mock.Mock
-}
-
-//func (localAuthListListener MockChargePointLocalAuthListListener) OnGetLocalListVersion(request *ocpp2.GetLocalListVersionRequest) (confirmation *ocpp2.GetLocalListVersionConfirmation, err error) {
-//	args := localAuthListListener.MethodCalled("OnGetLocalListVersion", request)
-//	conf := args.Get(0).(*ocpp2.GetLocalListVersionConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (localAuthListListener MockChargePointLocalAuthListListener) OnSendLocalList(request *ocpp2.SendLocalListRequest) (confirmation *ocpp2.SendLocalListConfirmation, err error) {
-//	args := localAuthListListener.MethodCalled("OnSendLocalList", request)
-//	conf := args.Get(0).(*ocpp2.SendLocalListConfirmation)
-//	return conf, args.Error(1)
-//}
-
-// ---------------------- MOCK CS FIRMWARE MANAGEMENT LISTENER ----------------------
-type MockCentralSystemFirmwareManagementListener struct {
-	mock.Mock
-}
-
-//func (firmwareListener MockCentralSystemFirmwareManagementListener) OnDiagnosticsStatusNotification(chargePointId string, request *ocpp2.DiagnosticsStatusNotificationRequest) (confirmation *ocpp2.DiagnosticsStatusNotificationConfirmation, err error) {
-//	args := firmwareListener.MethodCalled("OnDiagnosticsStatusNotification", chargePointId, request)
-//	conf := args.Get(0).(*ocpp2.DiagnosticsStatusNotificationConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (firmwareListener MockCentralSystemFirmwareManagementListener) OnFirmwareStatusNotification(chargePointId string, request *ocpp2.FirmwareStatusNotificationRequest) (confirmation *ocpp2.FirmwareStatusNotificationConfirmation, err error) {
-//	args := firmwareListener.MethodCalled("OnFirmwareStatusNotification", chargePointId, request)
-//	conf := args.Get(0).(*ocpp2.FirmwareStatusNotificationConfirmation)
-//	return conf, args.Error(1)
-//}
-
-// ---------------------- MOCK CP FIRMWARE MANAGEMENT LISTENER ----------------------
-type MockChargePointFirmwareManagementListener struct {
-	mock.Mock
-}
-
-//func (firmwareListener MockChargePointFirmwareManagementListener) OnGetDiagnostics(request *ocpp2.GetDiagnosticsRequest) (confirmation *ocpp2.GetDiagnosticsConfirmation, err error) {
-//	args := firmwareListener.MethodCalled("OnGetDiagnostics", request)
-//	conf := args.Get(0).(*ocpp2.GetDiagnosticsConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (firmwareListener MockChargePointFirmwareManagementListener) OnUpdateFirmware(request *ocpp2.UpdateFirmwareRequest) (confirmation *ocpp2.UpdateFirmwareConfirmation, err error) {
-//	args := firmwareListener.MethodCalled("OnUpdateFirmware", request)
-//	conf := args.Get(0).(*ocpp2.UpdateFirmwareConfirmation)
-//	return conf, args.Error(1)
-//}
-
-// ---------------------- MOCK CS RESERVATION LISTENER ----------------------
-type MockCentralSystemReservationListener struct {
-	mock.Mock
-}
-
-// ---------------------- MOCK CP RESERVATION LISTENER ----------------------
-type MockChargePointReservationListener struct {
-	mock.Mock
-}
-
-//func (reservationListener MockChargePointReservationListener) OnReserveNow(request *ocpp2.ReserveNowRequest) (confirmation *ocpp2.ReserveNowConfirmation, err error) {
-//	args := reservationListener.MethodCalled("OnReserveNow", request)
-//	conf := args.Get(0).(*ocpp2.ReserveNowConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-
-// ---------------------- MOCK CS REMOTE TRIGGER LISTENER ----------------------
-type MockCentralSystemRemoteTriggerListener struct {
-	mock.Mock
-}
-
-// ---------------------- MOCK CP REMOTE TRIGGER LISTENER ----------------------
-type MockChargePointRemoteTriggerListener struct {
-	mock.Mock
-}
-
-//func (remoteTriggerListener MockChargePointRemoteTriggerListener) OnTriggerMessage(request *ocpp2.TriggerMessageRequest) (confirmation *ocpp2.TriggerMessageConfirmation, err error) {
-//	args := remoteTriggerListener.MethodCalled("OnTriggerMessage", request)
-//	conf := args.Get(0).(*ocpp2.TriggerMessageConfirmation)
-//	return conf, args.Error(1)
-//}
-
-// ---------------------- MOCK CS SMART CHARGING LISTENER ----------------------
-type MockCentralSystemSmartChargingListener struct {
-	mock.Mock
-}
-
-// ---------------------- MOCK CP SMART CHARGING LISTENER ----------------------
-type MockChargePointSmartChargingListener struct {
-	mock.Mock
-}
-
-//func (smartChargingListener MockChargePointSmartChargingListener) OnSetChargingProfile(request *ocpp2.SetChargingProfileRequest) (confirmation *ocpp2.SetChargingProfileConfirmation, err error) {
-//	args := smartChargingListener.MethodCalled("OnSetChargingProfile", request)
-//	conf := args.Get(0).(*ocpp2.SetChargingProfileConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (smartChargingListener MockChargePointSmartChargingListener) OnClearChargingProfile(request *ocpp2.ClearChargingProfileRequest) (confirmation *ocpp2.ClearChargingProfileConfirmation, err error) {
-//	args := smartChargingListener.MethodCalled("OnClearChargingProfile", request)
-//	conf := args.Get(0).(*ocpp2.ClearChargingProfileConfirmation)
-//	return conf, args.Error(1)
-//}
-//
-//func (smartChargingListener MockChargePointSmartChargingListener) OnGetCompositeSchedule(request *ocpp2.GetCompositeScheduleRequest) (confirmation *ocpp2.GetCompositeScheduleConfirmation, err error) {
-//	args := smartChargingListener.MethodCalled("OnGetCompositeSchedule", request)
-//	conf := args.Get(0).(*ocpp2.GetCompositeScheduleConfirmation)
-//	return conf, args.Error(1)
-//}
-
 // ---------------------- COMMON UTILITY METHODS ----------------------
+
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
 	wsServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
@@ -852,7 +549,7 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return &wsClient
 }
 
-type expectedCentralSystemOptions struct {
+type expectedCSMSOptions struct {
 	clientId              string
 	rawWrittenMessage     []byte
 	startReturnArgument   interface{}
@@ -860,7 +557,7 @@ type expectedCentralSystemOptions struct {
 	forwardWrittenMessage bool
 }
 
-type expectedChargePointOptions struct {
+type expectedChargingStationOptions struct {
 	serverUrl             string
 	clientId              string
 	createChannelOnStart  bool
@@ -871,7 +568,7 @@ type expectedChargePointOptions struct {
 	forwardWrittenMessage bool
 }
 
-func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCentralSystemOptions, handlers... interface{}) {
+func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOptions, handlers... interface{}) {
 	t := suite.T()
 	for _,h := range handlers {
 		switch h.(type) {
@@ -909,8 +606,8 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCentralSys
 			suite.csms.SetTransactionsHandler(h.(MockChargingStationTransactionHandler))
 		}
 	}
-	suite.csms.SetNewChargingStationHandler(func(chargePointId string) {
-		assert.Equal(t, options.clientId, chargePointId)
+	suite.csms.SetNewChargingStationHandler(func(chargingStationId string) {
+		assert.Equal(t, options.clientId, chargingStationId)
 	})
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
 	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
@@ -930,7 +627,7 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCentralSys
 	})
 }
 
-func setupDefaultChargingStationHandlers(suite *OcppV2TestSuite, options expectedChargePointOptions, handlers... interface{}) {
+func setupDefaultChargingStationHandlers(suite *OcppV2TestSuite, options expectedChargingStationOptions, handlers... interface{}) {
 	t := suite.T()
 	for _, h := range handlers {
 		switch h.(type) {
@@ -1004,8 +701,8 @@ func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request o
 	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
 	channel := NewMockWebSocket(wsId)
 
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: false})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true}, handlers...)
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: false})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true}, handlers...)
 	resultChannel := make(chan bool, 1)
 	suite.ocppjClient.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
 		assert.Equal(t, messageId, err.MessageId)
@@ -1041,11 +738,11 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
 	channel := NewMockWebSocket(wsId)
 
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true}, handlers...)
-	suite.ocppjServer.SetErrorHandler(func(chargePointId string, err *ocpp.Error, details interface{}) {
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true}, handlers...)
+	suite.ocppjServer.SetErrorHandler(func(chargingStationId string, err *ocpp.Error, details interface{}) {
 		assert.Equal(t, messageId, err.MessageId)
-		assert.Equal(t, wsId, chargePointId)
+		assert.Equal(t, wsId, chargingStationId)
 		assert.Equal(t, ocppj.NotSupported, err.Code)
 		assert.Equal(t, errorDescription, err.Description)
 		assert.Nil(t, details)
@@ -1055,7 +752,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	// Run request test
-	err = suite.csms.SendRequestAsync(wsId, request, func(confirmation ocpp.Response, err error) {
+	err = suite.csms.SendRequestAsync(wsId, request, func(response ocpp.Response, err error) {
 		t.Fail()
 	})
 	require.Error(t, err)
@@ -1068,16 +765,6 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 
 type GenericTestEntry struct {
 	Element       interface{}
-	ExpectedValid bool
-}
-
-type RequestTestEntry struct {
-	Request       ocpp.Request
-	ExpectedValid bool
-}
-
-type ConfirmationTestEntry struct {
-	Confirmation  ocpp.Response
 	ExpectedValid bool
 }
 

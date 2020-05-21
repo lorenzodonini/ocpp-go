@@ -39,15 +39,15 @@ type ClearVariableMonitoringRequest struct {
 	ID []int `json:"id" validate:"required,min=1,dive,gte=0"` // List of the monitors to be cleared, identified by their Id.
 }
 
-// This field definition of the ClearVariableMonitoring confirmation payload, sent by the Charging Station to the CSMS in response to a ClearVariableMonitoringRequest.
+// This field definition of the ClearVariableMonitoring response payload, sent by the Charging Station to the CSMS in response to a ClearVariableMonitoringRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type ClearVariableMonitoringConfirmation struct {
+type ClearVariableMonitoringResponse struct {
 	ClearMonitoringResult []ClearMonitoringResult `json:"clearMonitoringResult" validate:"required,min=1,dive"` // List of result statuses per monitor.
 }
 
 // The CSMS asks the Charging Station to clear a display message that has been configured in the Charging Station to be cleared/removed.
 // The Charging station checks for a message with the requested ID and removes it.
-// The Charging station then responds with a ClearVariableMonitoringConfirmation. The response payload indicates whether the Charging Station was able to remove the message from display or not.
+// The Charging station then responds with a ClearVariableMonitoringResponse. The response payload indicates whether the Charging Station was able to remove the message from display or not.
 type ClearVariableMonitoringFeature struct{}
 
 func (f ClearVariableMonitoringFeature) GetFeatureName() string {
@@ -59,14 +59,14 @@ func (f ClearVariableMonitoringFeature) GetRequestType() reflect.Type {
 }
 
 func (f ClearVariableMonitoringFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(ClearVariableMonitoringConfirmation{})
+	return reflect.TypeOf(ClearVariableMonitoringResponse{})
 }
 
 func (r ClearVariableMonitoringRequest) GetFeatureName() string {
 	return ClearVariableMonitoringFeatureName
 }
 
-func (c ClearVariableMonitoringConfirmation) GetFeatureName() string {
+func (c ClearVariableMonitoringResponse) GetFeatureName() string {
 	return ClearVariableMonitoringFeatureName
 }
 
@@ -75,9 +75,9 @@ func NewClearVariableMonitoringRequest(id []int) *ClearVariableMonitoringRequest
 	return &ClearVariableMonitoringRequest{ID: id}
 }
 
-// Creates a new ClearVariableMonitoringConfirmation, containing all required fields. There are no optional fields for this message.
-func NewClearVariableMonitoringConfirmation(result []ClearMonitoringResult) *ClearVariableMonitoringConfirmation {
-	return &ClearVariableMonitoringConfirmation{ClearMonitoringResult: result}
+// Creates a new ClearVariableMonitoringResponse, containing all required fields. There are no optional fields for this message.
+func NewClearVariableMonitoringResponse(result []ClearMonitoringResult) *ClearVariableMonitoringResponse {
+	return &ClearVariableMonitoringResponse{ClearMonitoringResult: result}
 }
 
 func init() {

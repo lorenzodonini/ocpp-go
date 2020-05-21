@@ -14,9 +14,9 @@ type GetCertificateStatusRequest struct {
 	OcspRequestData types.OCSPRequestDataType `json:"ocspRequestData" validate:"required"`
 }
 
-// This field definition of the GetCertificateStatus confirmation payload, sent by the CSMS to the Charging Station in response to a GetCertificateStatusRequest.
+// This field definition of the GetCertificateStatus response payload, sent by the CSMS to the Charging Station in response to a GetCertificateStatusRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type GetCertificateStatusConfirmation struct {
+type GetCertificateStatusResponse struct {
 	Status     types.GenericStatus `json:"status" validate:"required,genericStatus"`
 	OcspResult string              `json:"ocspResult,omitempty" validate:"omitempty,max=5500"`
 }
@@ -37,14 +37,14 @@ func (f GetCertificateStatusFeature) GetRequestType() reflect.Type {
 }
 
 func (f GetCertificateStatusFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(GetCertificateStatusConfirmation{})
+	return reflect.TypeOf(GetCertificateStatusResponse{})
 }
 
 func (r GetCertificateStatusRequest) GetFeatureName() string {
 	return GetCertificateStatusFeatureName
 }
 
-func (c GetCertificateStatusConfirmation) GetFeatureName() string {
+func (c GetCertificateStatusResponse) GetFeatureName() string {
 	return GetCertificateStatusFeatureName
 }
 
@@ -53,7 +53,7 @@ func NewGetCertificateStatusRequest(ocspRequestData types.OCSPRequestDataType) *
 	return &GetCertificateStatusRequest{OcspRequestData: ocspRequestData}
 }
 
-// Creates a new GetCertificateStatusConfirmation, containing all required fields. Optional fields may be set afterwards.
-func NewGetCertificateStatusConfirmation(status types.GenericStatus) *GetCertificateStatusConfirmation {
-	return &GetCertificateStatusConfirmation{Status: status}
+// Creates a new GetCertificateStatusResponse, containing all required fields. Optional fields may be set afterwards.
+func NewGetCertificateStatusResponse(status types.GenericStatus) *GetCertificateStatusResponse {
+	return &GetCertificateStatusResponse{Status: status}
 }

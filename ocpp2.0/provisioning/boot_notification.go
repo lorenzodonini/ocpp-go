@@ -72,9 +72,9 @@ type BootNotificationRequest struct {
 	ChargingStation ChargingStationType `json:"chargingStation" validate:"required,dive"`
 }
 
-// The field definition of the BootNotification confirmation payload, sent by the CSMS to the Charging Station in response to a BootNotificationRequest.
+// The field definition of the BootNotification response payload, sent by the CSMS to the Charging Station in response to a BootNotificationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type BootNotificationConfirmation struct {
+type BootNotificationResponse struct {
 	CurrentTime *types.DateTime    `json:"currentTime" validate:"required"`
 	Interval    int                `json:"interval" validate:"gte=0"`
 	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
@@ -84,7 +84,7 @@ type BootNotificationConfirmation struct {
 // The CSMS SHALL respond to indicate whether it will accept the Charging Station.
 // Between the physical power-on/reboot and the successful completion of a BootNotification, where CSMS returns Accepted or Pending, the Charging Station SHALL NOT send any other request to the CSMS.
 //
-// When the CSMS responds with a BootNotificationConfirmation with a status Accepted, the Charging Station will adjust the heartbeat
+// When the CSMS responds with a BootNotificationResponse with a status Accepted, the Charging Station will adjust the heartbeat
 // interval in accordance with the interval from the response PDU and it is RECOMMENDED to synchronize its internal clock with the supplied CSMS’s current time.
 //
 // If that interval value is zero, the Charging Station chooses a waiting interval on its own, in a way that avoids flooding the CSMS with requests.
@@ -102,14 +102,14 @@ func (f BootNotificationFeature) GetRequestType() reflect.Type {
 }
 
 func (f BootNotificationFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(BootNotificationConfirmation{})
+	return reflect.TypeOf(BootNotificationResponse{})
 }
 
 func (r BootNotificationRequest) GetFeatureName() string {
 	return BootNotificationFeatureName
 }
 
-func (c BootNotificationConfirmation) GetFeatureName() string {
+func (c BootNotificationResponse) GetFeatureName() string {
 	return BootNotificationFeatureName
 }
 
@@ -118,9 +118,9 @@ func NewBootNotificationRequest(reason BootReason, model string, vendorName stri
 	return &BootNotificationRequest{Reason: reason, ChargingStation: ChargingStationType{Model: model, VendorName: vendorName}}
 }
 
-// Creates a new BootNotificationConfirmation. There are no optional fields for this message.
-func NewBootNotificationConfirmation(currentTime *types.DateTime, interval int, status RegistrationStatus) *BootNotificationConfirmation {
-	return &BootNotificationConfirmation{CurrentTime: currentTime, Interval: interval, Status: status}
+// Creates a new BootNotificationResponse. There are no optional fields for this message.
+func NewBootNotificationResponse(currentTime *types.DateTime, interval int, status RegistrationStatus) *BootNotificationResponse {
+	return &BootNotificationResponse{CurrentTime: currentTime, Interval: interval, Status: status}
 }
 
 func init() {

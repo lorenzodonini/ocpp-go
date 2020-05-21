@@ -38,12 +38,12 @@ func (suite *OcppV2TestSuite) TestBootNotificationRequestValidation() {
 func (suite *OcppV2TestSuite) TestBootNotificationConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{provisioning.BootNotificationConfirmation{CurrentTime: types.NewDateTime(time.Now()), Interval: 60, Status: provisioning.RegistrationStatusAccepted}, true},
-		{provisioning.BootNotificationConfirmation{CurrentTime: types.NewDateTime(time.Now()), Status: provisioning.RegistrationStatusAccepted}, true},
-		{provisioning.BootNotificationConfirmation{CurrentTime: types.NewDateTime(time.Now()), Interval: -1, Status: provisioning.RegistrationStatusAccepted}, false},
-		{provisioning.BootNotificationConfirmation{CurrentTime: types.NewDateTime(time.Now()), Interval: 60, Status: "invalidRegistrationStatus"}, false},
-		{provisioning.BootNotificationConfirmation{CurrentTime: types.NewDateTime(time.Now()), Interval: 60}, false},
-		{provisioning.BootNotificationConfirmation{Interval: 60, Status: provisioning.RegistrationStatusAccepted}, false},
+		{provisioning.BootNotificationResponse{CurrentTime: types.NewDateTime(time.Now()), Interval: 60, Status: provisioning.RegistrationStatusAccepted}, true},
+		{provisioning.BootNotificationResponse{CurrentTime: types.NewDateTime(time.Now()), Status: provisioning.RegistrationStatusAccepted}, true},
+		{provisioning.BootNotificationResponse{CurrentTime: types.NewDateTime(time.Now()), Interval: -1, Status: provisioning.RegistrationStatusAccepted}, false},
+		{provisioning.BootNotificationResponse{CurrentTime: types.NewDateTime(time.Now()), Interval: 60, Status: "invalidRegistrationStatus"}, false},
+		{provisioning.BootNotificationResponse{CurrentTime: types.NewDateTime(time.Now()), Interval: 60}, false},
+		{provisioning.BootNotificationResponse{Interval: 60, Status: provisioning.RegistrationStatusAccepted}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -62,7 +62,7 @@ func (suite *OcppV2TestSuite) TestBootNotificationE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"reason":"%v","chargingStation":{"model":"%v","vendorName":"%v"}}]`, messageId, provisioning.BootNotificationFeatureName, reason, chargePointModel, chargePointVendor)
 	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v","interval":%v,"status":"%v"}]`, messageId, currentTime.FormatTimestamp(), interval, registrationStatus)
 	fmt.Println(responseJson)
-	bootNotificationConfirmation := provisioning.NewBootNotificationConfirmation(currentTime, interval, registrationStatus)
+	bootNotificationConfirmation := provisioning.NewBootNotificationResponse(currentTime, interval, registrationStatus)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockCSMSProvisioningHandler{}
@@ -72,8 +72,8 @@ func (suite *OcppV2TestSuite) TestBootNotificationE2EMocked() {
 		assert.Equal(t, chargePointVendor, request.ChargingStation.VendorName)
 		assert.Equal(t, chargePointModel, request.ChargingStation.Model)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)

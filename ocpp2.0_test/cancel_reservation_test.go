@@ -22,9 +22,9 @@ func (suite *OcppV2TestSuite) TestCancelReservationRequestValidation() {
 func (suite *OcppV2TestSuite) TestCancelReservationConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{reservation.CancelReservationConfirmation{Status: reservation.CancelReservationStatusAccepted}, true},
-		{reservation.CancelReservationConfirmation{Status: "invalidCancelReservationStatus"}, false},
-		{reservation.CancelReservationConfirmation{}, false},
+		{reservation.CancelReservationResponse{Status: reservation.CancelReservationStatusAccepted}, true},
+		{reservation.CancelReservationResponse{Status: "invalidCancelReservationStatus"}, false},
+		{reservation.CancelReservationResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -38,7 +38,7 @@ func (suite *OcppV2TestSuite) TestCancelReservationE2EMocked() {
 	status := reservation.CancelReservationStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"reservationId":%v}]`, messageId, reservation.CancelReservationFeatureName, reservationId)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	cancelReservationConfirmation := reservation.NewCancelReservationConfirmation(status)
+	cancelReservationConfirmation := reservation.NewCancelReservationResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationReservationHandler{}
@@ -47,14 +47,14 @@ func (suite *OcppV2TestSuite) TestCancelReservationE2EMocked() {
 		require.True(t, ok)
 		assert.Equal(t, reservationId, request.ReservationId)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.CancelReservation(wsId, func(confirmation *reservation.CancelReservationConfirmation, err error) {
+	err = suite.csms.CancelReservation(wsId, func(confirmation *reservation.CancelReservationResponse, err error) {
 		require.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		require.Equal(t, status, confirmation.Status)

@@ -36,9 +36,9 @@ type GetMonitoringReportRequest struct {
 	ComponentVariable  []types.ComponentVariable `json:"componentVariable,omitempty" validate:"omitempty,dive"`                           // This field specifies the components and variables for which a monitoring report is requested.
 }
 
-// This field definition of the GetMonitoringReport confirmation payload, sent by the Charging Station to the CSMS in response to a GetMonitoringReportRequest.
+// This field definition of the GetMonitoringReport response payload, sent by the Charging Station to the CSMS in response to a GetMonitoringReportRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type GetMonitoringReportConfirmation struct {
+type GetMonitoringReportResponse struct {
 	Status types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus"` // This field indicates whether the Charging Station was able to accept the request.
 }
 
@@ -58,14 +58,14 @@ func (f GetMonitoringReportFeature) GetRequestType() reflect.Type {
 }
 
 func (f GetMonitoringReportFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(GetMonitoringReportConfirmation{})
+	return reflect.TypeOf(GetMonitoringReportResponse{})
 }
 
 func (r GetMonitoringReportRequest) GetFeatureName() string {
 	return GetMonitoringReportFeatureName
 }
 
-func (c GetMonitoringReportConfirmation) GetFeatureName() string {
+func (c GetMonitoringReportResponse) GetFeatureName() string {
 	return GetMonitoringReportFeatureName
 }
 
@@ -74,9 +74,9 @@ func NewGetMonitoringReportRequest() *GetMonitoringReportRequest {
 	return &GetMonitoringReportRequest{}
 }
 
-// Creates a new GetMonitoringReportConfirmation, containing all required fields. There are no optional fields for this message.
-func NewGetMonitoringReportConfirmation(status types.GenericDeviceModelStatus) *GetMonitoringReportConfirmation {
-	return &GetMonitoringReportConfirmation{Status: status}
+// Creates a new GetMonitoringReportResponse, containing all required fields. There are no optional fields for this message.
+func NewGetMonitoringReportResponse(status types.GenericDeviceModelStatus) *GetMonitoringReportResponse {
+	return &GetMonitoringReportResponse{Status: status}
 }
 
 func init() {

@@ -23,11 +23,11 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetCertificateStatusConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{iso15118.GetCertificateStatusConfirmation{Status: types.GenericStatusAccepted, OcspResult: "deadbeef"}, true},
-		{iso15118.GetCertificateStatusConfirmation{Status: types.GenericStatusAccepted}, true},
-		{iso15118.GetCertificateStatusConfirmation{Status: types.GenericStatusRejected}, true},
-		{iso15118.GetCertificateStatusConfirmation{Status: "invalidGenericStatus"}, false},
-		{iso15118.GetCertificateStatusConfirmation{}, false},
+		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted, OcspResult: "deadbeef"}, true},
+		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted}, true},
+		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusRejected}, true},
+		{iso15118.GetCertificateStatusResponse{Status: "invalidGenericStatus"}, false},
+		{iso15118.GetCertificateStatusResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -43,7 +43,7 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"ocspRequestData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}}]`,
 		messageId, iso15118.GetCertificateStatusFeatureName, ocspData.HashAlgorithm, ocspData.IssuerNameHash, ocspData.IssuerKeyHash, ocspData.SerialNumber, ocspData.ResponderURL)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","ocspResult":"%v"}]`, messageId, status, ocspResult)
-	getCertificateStatusConfirmation := iso15118.NewGetCertificateStatusConfirmation(status)
+	getCertificateStatusConfirmation := iso15118.NewGetCertificateStatusResponse(status)
 	getCertificateStatusConfirmation.OcspResult = ocspResult
 	channel := NewMockWebSocket(wsId)
 
@@ -58,8 +58,8 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusE2EMocked() {
 		assert.Equal(t, ocspData.SerialNumber, request.OcspRequestData.SerialNumber)
 		assert.Equal(t, ocspData.ResponderURL, request.OcspRequestData.ResponderURL)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)

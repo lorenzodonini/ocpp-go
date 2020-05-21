@@ -34,9 +34,9 @@ type DeleteCertificateRequest struct {
 	CertificateHashData types.CertificateHashData `json:"certificateHashData" validate:"required"`
 }
 
-// This field definition of the DeleteCertificate confirmation payload, sent by the Charging Station to the CSMS in response to a DeleteCertificateRequest.
+// This field definition of the DeleteCertificate response payload, sent by the Charging Station to the CSMS in response to a DeleteCertificateRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type DeleteCertificateConfirmation struct {
+type DeleteCertificateResponse struct {
 	Status DeleteCertificateStatus `json:"status" validate:"required,deleteCertificateStatus"`
 }
 
@@ -53,14 +53,14 @@ func (f DeleteCertificateFeature) GetRequestType() reflect.Type {
 }
 
 func (f DeleteCertificateFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(DeleteCertificateConfirmation{})
+	return reflect.TypeOf(DeleteCertificateResponse{})
 }
 
 func (r DeleteCertificateRequest) GetFeatureName() string {
 	return DeleteCertificateFeatureName
 }
 
-func (c DeleteCertificateConfirmation) GetFeatureName() string {
+func (c DeleteCertificateResponse) GetFeatureName() string {
 	return DeleteCertificateFeatureName
 }
 
@@ -69,9 +69,9 @@ func NewDeleteCertificateRequest(certificateHashData types.CertificateHashData) 
 	return &DeleteCertificateRequest{CertificateHashData: certificateHashData}
 }
 
-// Creates a new DeleteCertificateConfirmation, containing all required fields. There are no optional fields for this message.
-func NewDeleteCertificateConfirmation(status DeleteCertificateStatus) *DeleteCertificateConfirmation {
-	return &DeleteCertificateConfirmation{Status: status}
+// Creates a new DeleteCertificateResponse, containing all required fields. There are no optional fields for this message.
+func NewDeleteCertificateResponse(status DeleteCertificateStatus) *DeleteCertificateResponse {
+	return &DeleteCertificateResponse{Status: status}
 }
 
 func init() {

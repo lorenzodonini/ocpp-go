@@ -15,9 +15,9 @@ type ClearedChargingLimitRequest struct {
 	EvseID              *int                          `json:"evseId,omitempty" validate:"omitempty,gte=0"`
 }
 
-// This field definition of the ClearedChargingLimit confirmation payload, sent by the CSMS to the Charging Station in response to a ClearedChargingLimitRequest.
+// This field definition of the ClearedChargingLimit response payload, sent by the CSMS to the Charging Station in response to a ClearedChargingLimitRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type ClearedChargingLimitConfirmation struct {
+type ClearedChargingLimitResponse struct {
 }
 
 // When an external control system sends a signal to release a previously imposed charging limit to a Charging Station,
@@ -36,14 +36,14 @@ func (f ClearedChargingLimitFeature) GetRequestType() reflect.Type {
 }
 
 func (f ClearedChargingLimitFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(ClearedChargingLimitConfirmation{})
+	return reflect.TypeOf(ClearedChargingLimitResponse{})
 }
 
 func (r ClearedChargingLimitRequest) GetFeatureName() string {
 	return ClearedChargingLimitFeatureName
 }
 
-func (c ClearedChargingLimitConfirmation) GetFeatureName() string {
+func (c ClearedChargingLimitResponse) GetFeatureName() string {
 	return ClearedChargingLimitFeatureName
 }
 
@@ -52,7 +52,7 @@ func NewClearedChargingLimitRequest(chargingLimitSource types.ChargingLimitSourc
 	return &ClearedChargingLimitRequest{ChargingLimitSource: chargingLimitSource}
 }
 
-// Creates a new ClearedChargingLimitConfirmation, which doesn't contain any required or optional fields.
-func NewClearedChargingLimitConfirmation() *ClearedChargingLimitConfirmation {
-	return &ClearedChargingLimitConfirmation{}
+// Creates a new ClearedChargingLimitResponse, which doesn't contain any required or optional fields.
+func NewClearedChargingLimitResponse() *ClearedChargingLimitResponse {
+	return &ClearedChargingLimitResponse{}
 }

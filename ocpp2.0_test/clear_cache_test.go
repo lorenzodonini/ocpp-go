@@ -20,10 +20,10 @@ func (suite *OcppV2TestSuite) TestClearCacheRequestValidation() {
 func (suite *OcppV2TestSuite) TestClearCacheConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{authorization.ClearCacheConfirmation{Status: authorization.ClearCacheStatusAccepted}, true},
-		{authorization.ClearCacheConfirmation{Status: authorization.ClearCacheStatusRejected}, true},
-		{authorization.ClearCacheConfirmation{Status: "invalidClearCacheStatus"}, false},
-		{authorization.ClearCacheConfirmation{}, false},
+		{authorization.ClearCacheResponse{Status: authorization.ClearCacheStatusAccepted}, true},
+		{authorization.ClearCacheResponse{Status: authorization.ClearCacheStatusRejected}, true},
+		{authorization.ClearCacheResponse{Status: "invalidClearCacheStatus"}, false},
+		{authorization.ClearCacheResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -36,19 +36,19 @@ func (suite *OcppV2TestSuite) TestClearCacheE2EMocked() {
 	status := authorization.ClearCacheStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, authorization.ClearCacheFeatureName)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	clearCacheConfirmation := authorization.NewClearCacheConfirmation(status)
+	clearCacheConfirmation := authorization.NewClearCacheResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationAuthorizationHandler{}
 	handler.On("OnClearCache", mock.Anything).Return(clearCacheConfirmation, nil)
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.ClearCache(wsId, func(confirmation *authorization.ClearCacheConfirmation, err error) {
+	err = suite.csms.ClearCache(wsId, func(confirmation *authorization.ClearCacheResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

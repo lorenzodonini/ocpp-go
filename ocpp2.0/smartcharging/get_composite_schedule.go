@@ -10,7 +10,7 @@ import (
 
 const GetCompositeScheduleFeatureName = "GetCompositeSchedule"
 
-// Status reported in GetCompositeScheduleConfirmation.
+// Status reported in GetCompositeScheduleResponse.
 type GetCompositeScheduleStatus string
 
 const (
@@ -40,17 +40,17 @@ type GetCompositeScheduleRequest struct {
 	EvseID           int                        `json:"evseId" validate:"gte=0"`
 }
 
-// This field definition of the GetCompositeSchedule confirmation payload, sent by the Charging System to the CSMS in response to a GetCompositeScheduleRequest.
+// This field definition of the GetCompositeSchedule response payload, sent by the Charging System to the CSMS in response to a GetCompositeScheduleRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type GetCompositeScheduleConfirmation struct {
+type GetCompositeScheduleResponse struct {
 	Status   GetCompositeScheduleStatus `json:"status" validate:"required,getCompositeScheduleStatus"`
 	EvseID   int                        `json:"evseId" validate:"gte=0"`
 	Schedule *CompositeSchedule         `json:"schedule,omitempty" validate:"omitempty"`
 }
 
 // The CSMS MAY request the Charging System to report the Composite Charging Schedule by sending a GetCompositeScheduleRequest.
-// The Charging System SHALL calculate the Composite Charging Schedule intervals, from the moment the request payload is received: Time X, up to X + Duration, and send them in the GetCompositeScheduleConfirmation to the CSMS.
-// The reported schedule, in the GetCompositeScheduleConfirmation payload, is the result of the calculation of all active schedules and possible local limits present in the Charging System.
+// The Charging System SHALL calculate the Composite Charging Schedule intervals, from the moment the request payload is received: Time X, up to X + Duration, and send them in the GetCompositeScheduleResponse to the CSMS.
+// The reported schedule, in the GetCompositeScheduleResponse payload, is the result of the calculation of all active schedules and possible local limits present in the Charging System.
 // If the ConnectorId in the request is set to '0', the Charging System SHALL report the total expected power or current the Charging System expects to consume from the grid during the requested time period.
 // If the Charging System is not able to report the requested schedule, for instance if the connectorId is unknown, it SHALL respond with a status Rejected.
 type GetCompositeScheduleFeature struct{}
@@ -64,14 +64,14 @@ func (f GetCompositeScheduleFeature) GetRequestType() reflect.Type {
 }
 
 func (f GetCompositeScheduleFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(GetCompositeScheduleConfirmation{})
+	return reflect.TypeOf(GetCompositeScheduleResponse{})
 }
 
 func (r GetCompositeScheduleRequest) GetFeatureName() string {
 	return GetCompositeScheduleFeatureName
 }
 
-func (c GetCompositeScheduleConfirmation) GetFeatureName() string {
+func (c GetCompositeScheduleResponse) GetFeatureName() string {
 	return GetCompositeScheduleFeatureName
 }
 
@@ -80,9 +80,9 @@ func NewGetCompositeScheduleRequest(duration int, evseId int) *GetCompositeSched
 	return &GetCompositeScheduleRequest{Duration: duration, EvseID: evseId}
 }
 
-// Creates a new GetCompositeScheduleConfirmation, containing all required fields. Optional fields may be set afterwards.
-func NewGetCompositeScheduleConfirmation(status GetCompositeScheduleStatus, evseId int) *GetCompositeScheduleConfirmation {
-	return &GetCompositeScheduleConfirmation{Status: status, EvseID: evseId}
+// Creates a new GetCompositeScheduleResponse, containing all required fields. Optional fields may be set afterwards.
+func NewGetCompositeScheduleResponse(status GetCompositeScheduleStatus, evseId int) *GetCompositeScheduleResponse {
+	return &GetCompositeScheduleResponse{Status: status, EvseID: evseId}
 }
 
 func init() {

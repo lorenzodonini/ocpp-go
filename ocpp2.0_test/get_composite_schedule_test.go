@@ -36,14 +36,14 @@ func (suite *OcppV2TestSuite) TestGetCompositeScheduleConfirmationValidation() {
 		ChargingSchedule: chargingSchedule,
 	}
 	var confirmationTable = []GenericTestEntry{
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: 1, Schedule: &compositeSchedule}, true},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: 1, Schedule: &smartcharging.CompositeSchedule{}}, true},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: 1}, true},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted}, true},
-		{smartcharging.GetCompositeScheduleConfirmation{}, false},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: "invalidGetCompositeScheduleStatus"}, false},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: -1}, false},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: 1, Schedule: &smartcharging.CompositeSchedule{StartDateTime: types.NewDateTime(time.Now()), ChargingSchedule: types.NewChargingSchedule("invalidChargingRateUnit")}}, false},
+		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: 1, Schedule: &compositeSchedule}, true},
+		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: 1, Schedule: &smartcharging.CompositeSchedule{}}, true},
+		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: 1}, true},
+		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted}, true},
+		{smartcharging.GetCompositeScheduleResponse{}, false},
+		{smartcharging.GetCompositeScheduleResponse{Status: "invalidGetCompositeScheduleStatus"}, false},
+		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: -1}, false},
+		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, EvseID: 1, Schedule: &smartcharging.CompositeSchedule{StartDateTime: types.NewDateTime(time.Now()), ChargingSchedule: types.NewChargingSchedule("invalidChargingRateUnit")}}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -69,7 +69,7 @@ func (suite *OcppV2TestSuite) TestGetCompositeScheduleE2EMocked() {
 		messageId, smartcharging.GetCompositeScheduleFeatureName, duration, chargingRateUnit, evseID)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","evseId":%v,"schedule":{"startDateTime":"%v","chargingSchedule":{"startSchedule":"%v","duration":%v,"chargingRateUnit":"%v","minChargingRate":%v,"chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v,"numberPhases":%v}]}}}]`,
 		messageId, status, evseID, compositeSchedule.StartDateTime.FormatTimestamp(), chargingSchedule.StartSchedule.FormatTimestamp(), *chargingSchedule.Duration, chargingSchedule.ChargingRateUnit, *chargingSchedule.MinChargingRate, chargingSchedulePeriod.StartPeriod, chargingSchedulePeriod.Limit, *chargingSchedulePeriod.NumberPhases)
-	getCompositeScheduleConfirmation := smartcharging.NewGetCompositeScheduleConfirmation(status, evseID)
+	getCompositeScheduleConfirmation := smartcharging.NewGetCompositeScheduleResponse(status, evseID)
 	getCompositeScheduleConfirmation.Schedule = &compositeSchedule
 	channel := NewMockWebSocket(wsId)
 
@@ -82,14 +82,14 @@ func (suite *OcppV2TestSuite) TestGetCompositeScheduleE2EMocked() {
 		assert.Equal(t, chargingRateUnit, request.ChargingRateUnit)
 		assert.Equal(t, evseID, request.EvseID)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetCompositeSchedule(wsId, func(confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
+	err = suite.csms.GetCompositeSchedule(wsId, func(confirmation *smartcharging.GetCompositeScheduleResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

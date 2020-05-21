@@ -39,9 +39,9 @@ type FirmwareStatusNotificationRequest struct {
 	RequestID int            `json:"requestId" validate:"gte=0"`
 }
 
-// This field definition of the FirmwareStatusNotification confirmation payload, sent by the CSMS to the Charging Station in response to a FirmwareStatusNotificationRequest.
+// This field definition of the FirmwareStatusNotification response payload, sent by the CSMS to the Charging Station in response to a FirmwareStatusNotificationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type FirmwareStatusNotificationConfirmation struct {
+type FirmwareStatusNotificationResponse struct {
 }
 
 // The Charging Station sends a notification to inform the CSMS about the progress of the downloading and installation of a firmware update.
@@ -58,14 +58,14 @@ func (f FirmwareStatusNotificationFeature) GetRequestType() reflect.Type {
 }
 
 func (f FirmwareStatusNotificationFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(FirmwareStatusNotificationConfirmation{})
+	return reflect.TypeOf(FirmwareStatusNotificationResponse{})
 }
 
 func (r FirmwareStatusNotificationRequest) GetFeatureName() string {
 	return FirmwareStatusNotificationFeatureName
 }
 
-func (c FirmwareStatusNotificationConfirmation) GetFeatureName() string {
+func (c FirmwareStatusNotificationResponse) GetFeatureName() string {
 	return FirmwareStatusNotificationFeatureName
 }
 
@@ -74,9 +74,9 @@ func NewFirmwareStatusNotificationRequest(status FirmwareStatus, requestId int) 
 	return &FirmwareStatusNotificationRequest{Status: status, RequestID: requestId}
 }
 
-// Creates a new FirmwareStatusNotificationConfirmation, which doesn't contain any required or optional fields.
-func NewFirmwareStatusNotificationConfirmation() *FirmwareStatusNotificationConfirmation {
-	return &FirmwareStatusNotificationConfirmation{}
+// Creates a new FirmwareStatusNotificationResponse, which doesn't contain any required or optional fields.
+func NewFirmwareStatusNotificationResponse() *FirmwareStatusNotificationResponse {
+	return &FirmwareStatusNotificationResponse{}
 }
 
 func init() {

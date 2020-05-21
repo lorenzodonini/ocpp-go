@@ -53,9 +53,9 @@ type ChangeAvailabilityRequest struct {
 	OperationalStatus OperationalStatus `json:"operationalStatus" validate:"required,operationalStatus"`
 }
 
-// This field definition of the ChangeAvailability confirmation payload, sent by the Charging Station to the CSMS in response to a ChangeAvailabilityRequest.
+// This field definition of the ChangeAvailability response payload, sent by the Charging Station to the CSMS in response to a ChangeAvailabilityRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type ChangeAvailabilityConfirmation struct {
+type ChangeAvailabilityResponse struct {
 	Status ChangeAvailabilityStatus `json:"status" validate:"required,changeAvailabilityStatus"`
 }
 
@@ -75,14 +75,14 @@ func (f ChangeAvailabilityFeature) GetRequestType() reflect.Type {
 }
 
 func (f ChangeAvailabilityFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(ChangeAvailabilityConfirmation{})
+	return reflect.TypeOf(ChangeAvailabilityResponse{})
 }
 
 func (r ChangeAvailabilityRequest) GetFeatureName() string {
 	return ChangeAvailabilityFeatureName
 }
 
-func (c ChangeAvailabilityConfirmation) GetFeatureName() string {
+func (c ChangeAvailabilityResponse) GetFeatureName() string {
 	return ChangeAvailabilityFeatureName
 }
 
@@ -91,9 +91,9 @@ func NewChangeAvailabilityRequest(evseID int, operationalStatus OperationalStatu
 	return &ChangeAvailabilityRequest{EvseID: evseID, OperationalStatus: operationalStatus}
 }
 
-// Creates a new ChangeAvailabilityConfirmation, containing all required fields. There are no optional fields for this message.
-func NewChangeAvailabilityConfirmation(status ChangeAvailabilityStatus) *ChangeAvailabilityConfirmation {
-	return &ChangeAvailabilityConfirmation{Status: status}
+// Creates a new ChangeAvailabilityResponse, containing all required fields. There are no optional fields for this message.
+func NewChangeAvailabilityResponse(status ChangeAvailabilityStatus) *ChangeAvailabilityResponse {
+	return &ChangeAvailabilityResponse{Status: status}
 }
 
 func init() {

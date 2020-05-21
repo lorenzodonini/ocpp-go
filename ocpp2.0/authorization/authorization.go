@@ -6,13 +6,13 @@ import "github.com/lorenzodonini/ocpp-go/ocpp"
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Authorization profile.
 type CSMSHandler interface {
 	// OnAuthorize is called on the CSMS whenever an AuthorizeRequest is received from a charging station.
-	OnAuthorize(chargingStationID string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
+	OnAuthorize(chargingStationID string, request *AuthorizeRequest) (confirmation *AuthorizeResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Authorization profile.
 type ChargingStationHandler interface {
 	// OnClearCache is called on a charging station whenever a ClearCacheRequest is received from the CSMS.
-	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
+	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheResponse, err error)
 }
 
 const ProfileName = "authorization"

@@ -36,9 +36,9 @@ func (suite *OcppV2TestSuite) TestGetMonitoringReportRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetMonitoringReportConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{diagnostics.GetMonitoringReportConfirmation{Status: types.GenericDeviceModelStatusAccepted}, true},
-		{diagnostics.GetMonitoringReportConfirmation{Status: "invalidDeviceModelStatus"}, false},
-		{diagnostics.GetMonitoringReportConfirmation{}, false},
+		{diagnostics.GetMonitoringReportResponse{Status: types.GenericDeviceModelStatusAccepted}, true},
+		{diagnostics.GetMonitoringReportResponse{Status: "invalidDeviceModelStatus"}, false},
+		{diagnostics.GetMonitoringReportResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -59,7 +59,7 @@ func (suite *OcppV2TestSuite) TestGetMonitoringReportE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"monitoringCriteria":["%v","%v"],"componentVariable":[{"component":{"name":"%v","instance":"%v","evse":{"id":%v,"connectorId":%v}},"variable":{"name":"%v","instance":"%v"}}]}]`,
 		messageId, diagnostics.GetMonitoringReportFeatureName, *requestID, monitoringCriteria[0], monitoringCriteria[1], componentVariable.Component.Name, componentVariable.Component.Instance, componentVariable.Component.EVSE.ID, *componentVariable.Component.EVSE.ConnectorID, componentVariable.Variable.Name, componentVariable.Variable.Instance)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	getMonitoringReportConfirmation := diagnostics.NewGetMonitoringReportConfirmation(status)
+	getMonitoringReportConfirmation := diagnostics.NewGetMonitoringReportResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationDiagnosticsHandler{}
@@ -80,14 +80,14 @@ func (suite *OcppV2TestSuite) TestGetMonitoringReportE2EMocked() {
 		assert.Equal(t, componentVariable.Variable.Name, request.ComponentVariable[0].Variable.Name)
 		assert.Equal(t, componentVariable.Variable.Instance, request.ComponentVariable[0].Variable.Instance)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetMonitoringReport(wsId, func(confirmation *diagnostics.GetMonitoringReportConfirmation, err error) {
+	err = suite.csms.GetMonitoringReport(wsId, func(confirmation *diagnostics.GetMonitoringReportResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

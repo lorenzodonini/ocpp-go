@@ -33,8 +33,8 @@ type GetInstalledCertificateIdsRequest struct {
 	TypeOfCertificate types.CertificateUse `json:"typeOfCertificate" validate:"required,certificateUse"`
 }
 
-// The field definition of the GetInstalledCertificateIdsResponse payload sent by the Charging Station to the CSMS in response to a GetInstalledCertificateIdsRequest.
-type GetInstalledCertificateIdsConfirmation struct {
+// The field definition of the GetInstalledCertificateIds response payload sent by the Charging Station to the CSMS in response to a GetInstalledCertificateIdsRequest.
+type GetInstalledCertificateIdsResponse struct {
 	Status              GetInstalledCertificateStatus `json:"status" validate:"required,getInstalledCertificateStatus"`
 	CertificateHashData []types.CertificateHashData   `json:"certificateHashData,omitempty" validate:"omitempty,dive"`
 }
@@ -53,14 +53,14 @@ func (f GetInstalledCertificateIdsFeature) GetRequestType() reflect.Type {
 }
 
 func (f GetInstalledCertificateIdsFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(GetInstalledCertificateIdsConfirmation{})
+	return reflect.TypeOf(GetInstalledCertificateIdsResponse{})
 }
 
 func (r GetInstalledCertificateIdsRequest) GetFeatureName() string {
 	return GetInstalledCertificateIdsFeatureName
 }
 
-func (c GetInstalledCertificateIdsConfirmation) GetFeatureName() string {
+func (c GetInstalledCertificateIdsResponse) GetFeatureName() string {
 	return GetInstalledCertificateIdsFeatureName
 }
 
@@ -69,9 +69,9 @@ func NewGetInstalledCertificateIdsRequest(typeOfCertificate types.CertificateUse
 	return &GetInstalledCertificateIdsRequest{TypeOfCertificate: typeOfCertificate}
 }
 
-// Creates a new ChangeAvailabilityConfirmation, containing all required fields. Additional optional fields may be set afterwards.
-func NewGetInstalledCertificateIdsConfirmation(status GetInstalledCertificateStatus) *GetInstalledCertificateIdsConfirmation {
-	return &GetInstalledCertificateIdsConfirmation{Status: status}
+// Creates a new NewGetInstalledCertificateIdsResponse, containing all required fields. Additional optional fields may be set afterwards.
+func NewGetInstalledCertificateIdsResponse(status GetInstalledCertificateStatus) *GetInstalledCertificateIdsResponse {
+	return &GetInstalledCertificateIdsResponse{Status: status}
 }
 
 func init() {

@@ -25,10 +25,10 @@ func (suite *OcppV2TestSuite) TestCertificateSignedRequestValidation() {
 func (suite *OcppV2TestSuite) TestCertificateSignedConfirmationValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{security.CertificateSignedConfirmation{Status: security.CertificateSignedStatusAccepted}, true},
-		{security.CertificateSignedConfirmation{Status: security.CertificateSignedStatusRejected}, true},
-		{security.CertificateSignedConfirmation{Status: "invalidCertificateSignedStatus"}, false},
-		{security.CertificateSignedConfirmation{}, false},
+		{security.CertificateSignedResponse{Status: security.CertificateSignedStatusAccepted}, true},
+		{security.CertificateSignedResponse{Status: security.CertificateSignedStatusRejected}, true},
+		{security.CertificateSignedResponse{Status: "invalidCertificateSignedStatus"}, false},
+		{security.CertificateSignedResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -44,7 +44,7 @@ func (suite *OcppV2TestSuite) TestCertificateSignedE2EMocked() {
 	status := security.CertificateSignedStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"cert":["%v"],"typeOfCertificate":"%v"}]`, messageId, security.CertificateSignedFeatureName, certificate, certificateType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	certificateSignedConfirmation := security.NewCertificateSignedConfirmation(status)
+	certificateSignedConfirmation := security.NewCertificateSignedResponse(status)
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
 	handler := MockChargingStationSecurityHandler{}
@@ -55,14 +55,14 @@ func (suite *OcppV2TestSuite) TestCertificateSignedE2EMocked() {
 		assert.Equal(t, certificate, request.Cert[0])
 		assert.Equal(t, certificateType, request.TypeOfCertificate)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.CertificateSigned(wsId, func(confirmation *security.CertificateSignedConfirmation, err error) {
+	err = suite.csms.CertificateSigned(wsId, func(confirmation *security.CertificateSignedResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

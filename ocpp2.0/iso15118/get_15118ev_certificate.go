@@ -21,9 +21,9 @@ type Get15118EVCertificateRequest struct {
 	ExiRequest    string `json:"exiRequest" validate:"required,max=5500"`
 }
 
-// This field definition of the Get15118EVCertificate confirmation payload, sent by the CSMS to the Charging Station in response to a Get15118EVCertificateRequest.
+// This field definition of the Get15118EVCertificate response payload, sent by the CSMS to the Charging Station in response to a Get15118EVCertificateRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type Get15118EVCertificateConfirmation struct {
+type Get15118EVCertificateResponse struct {
 	Status                            types.Certificate15118EVStatus `json:"status" validate:"required,15118EVCertificate"`
 	ExiResponse                       string                         `json:"exiResponse" validate:"required,max=5500"`
 	ContractSignatureCertificateChain CertificateChain               `json:"contractSignatureCertificateChain" validate:"required"`
@@ -44,14 +44,14 @@ func (f Get15118EVCertificateFeature) GetRequestType() reflect.Type {
 }
 
 func (f Get15118EVCertificateFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(Get15118EVCertificateConfirmation{})
+	return reflect.TypeOf(Get15118EVCertificateResponse{})
 }
 
 func (r Get15118EVCertificateRequest) GetFeatureName() string {
 	return Get15118EVCertificateFeatureName
 }
 
-func (c Get15118EVCertificateConfirmation) GetFeatureName() string {
+func (c Get15118EVCertificateResponse) GetFeatureName() string {
 	return Get15118EVCertificateFeatureName
 }
 
@@ -60,9 +60,9 @@ func NewGet15118EVCertificateRequest(schemaVersion string, exiRequest string) *G
 	return &Get15118EVCertificateRequest{SchemaVersion: schemaVersion, ExiRequest: exiRequest}
 }
 
-// Creates a new Get15118EVCertificateConfirmation, containing all required fields.
-func NewGet15118EVCertificateConfirmation(status types.Certificate15118EVStatus, exiResponse string, contractSignatureCertificateChain CertificateChain, saProvisioningCertificateChain CertificateChain) *Get15118EVCertificateConfirmation {
-	return &Get15118EVCertificateConfirmation{Status: status, ExiResponse: exiResponse, ContractSignatureCertificateChain: contractSignatureCertificateChain, SaProvisioningCertificateChain: saProvisioningCertificateChain}
+// Creates a new Get15118EVCertificateResponse, containing all required fields.
+func NewGet15118EVCertificateResponse(status types.Certificate15118EVStatus, exiResponse string, contractSignatureCertificateChain CertificateChain, saProvisioningCertificateChain CertificateChain) *Get15118EVCertificateResponse {
+	return &Get15118EVCertificateResponse{Status: status, ExiResponse: exiResponse, ContractSignatureCertificateChain: contractSignatureCertificateChain, SaProvisioningCertificateChain: saProvisioningCertificateChain}
 }
 
 func init() {

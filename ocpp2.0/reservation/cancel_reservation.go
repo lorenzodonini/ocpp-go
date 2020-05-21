@@ -10,7 +10,7 @@ import (
 
 const CancelReservationFeatureName = "CancelReservation"
 
-// Status reported in CancelReservationConfirmation.
+// Status reported in CancelReservationResponse.
 type CancelReservationStatus string
 
 const (
@@ -33,9 +33,9 @@ type CancelReservationRequest struct {
 	ReservationId int `json:"reservationId" validate:"gte=0"`
 }
 
-// This field definition of the CancelReservation confirmation payload, sent by the Charging Station to the CSMS in response to a CancelReservationRequest.
+// This field definition of the CancelReservation response payload, sent by the Charging Station to the CSMS in response to a CancelReservationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type CancelReservationConfirmation struct {
+type CancelReservationResponse struct {
 	Status CancelReservationStatus `json:"status" validate:"required,cancelReservationStatus"`
 }
 
@@ -53,14 +53,14 @@ func (f CancelReservationFeature) GetRequestType() reflect.Type {
 }
 
 func (f CancelReservationFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(CancelReservationConfirmation{})
+	return reflect.TypeOf(CancelReservationResponse{})
 }
 
 func (r CancelReservationRequest) GetFeatureName() string {
 	return CancelReservationFeatureName
 }
 
-func (c CancelReservationConfirmation) GetFeatureName() string {
+func (c CancelReservationResponse) GetFeatureName() string {
 	return CancelReservationFeatureName
 }
 
@@ -69,9 +69,9 @@ func NewCancelReservationRequest(reservationId int) *CancelReservationRequest {
 	return &CancelReservationRequest{ReservationId: reservationId}
 }
 
-// Creates a new CancelReservationConfirmation, containing all required fields. There are no optional fields for this message.
-func NewCancelReservationConfirmation(status CancelReservationStatus) *CancelReservationConfirmation {
-	return &CancelReservationConfirmation{Status: status}
+// Creates a new CancelReservationResponse, containing all required fields. There are no optional fields for this message.
+func NewCancelReservationResponse(status CancelReservationStatus) *CancelReservationResponse {
+	return &CancelReservationResponse{Status: status}
 }
 
 func init() {

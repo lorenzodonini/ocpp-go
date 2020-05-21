@@ -47,7 +47,7 @@ type chargingStation struct {
 	errorHandler         chan error
 }
 
-func (cs *chargingStation) BootNotification(reason provisioning.BootReason, model string, chargePointVendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationConfirmation, error) {
+func (cs *chargingStation) BootNotification(reason provisioning.BootReason, model string, chargePointVendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationResponse, error) {
 	request := provisioning.NewBootNotificationRequest(reason, model, chargePointVendor)
 	for _, fn := range props {
 		fn(request)
@@ -56,11 +56,11 @@ func (cs *chargingStation) BootNotification(reason provisioning.BootReason, mode
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*provisioning.BootNotificationConfirmation), err
+		return confirmation.(*provisioning.BootNotificationResponse), err
 	}
 }
 
-func (cs *chargingStation) Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *authorization.AuthorizeRequest)) (*authorization.AuthorizeConfirmation, error) {
+func (cs *chargingStation) Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *authorization.AuthorizeRequest)) (*authorization.AuthorizeResponse, error) {
 	request := authorization.NewAuthorizationRequest(idToken, tokenType)
 	for _, fn := range props {
 		fn(request)
@@ -69,11 +69,11 @@ func (cs *chargingStation) Authorize(idToken string, tokenType types.IdTokenType
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*authorization.AuthorizeConfirmation), err
+		return confirmation.(*authorization.AuthorizeResponse), err
 	}
 }
 
-func (cs *chargingStation) ClearedChargingLimit(chargingLimitSource types.ChargingLimitSourceType, props ...func(request *smartcharging.ClearedChargingLimitRequest)) (*smartcharging.ClearedChargingLimitConfirmation, error) {
+func (cs *chargingStation) ClearedChargingLimit(chargingLimitSource types.ChargingLimitSourceType, props ...func(request *smartcharging.ClearedChargingLimitRequest)) (*smartcharging.ClearedChargingLimitResponse, error) {
 	request := smartcharging.NewClearedChargingLimitRequest(chargingLimitSource)
 	for _, fn := range props {
 		fn(request)
@@ -82,12 +82,12 @@ func (cs *chargingStation) ClearedChargingLimit(chargingLimitSource types.Chargi
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*smartcharging.ClearedChargingLimitConfirmation), err
+		return confirmation.(*smartcharging.ClearedChargingLimitResponse), err
 	}
 }
 
 // Starts a custom data transfer request. Every vendor may implement their own proprietary logic for this message.
-func (cs *chargingStation) DataTransfer(vendorId string, props ...func(request *data.DataTransferRequest)) (*data.DataTransferConfirmation, error) {
+func (cs *chargingStation) DataTransfer(vendorId string, props ...func(request *data.DataTransferRequest)) (*data.DataTransferResponse, error) {
 	request := data.NewDataTransferRequest(vendorId)
 	for _, fn := range props {
 		fn(request)
@@ -96,11 +96,11 @@ func (cs *chargingStation) DataTransfer(vendorId string, props ...func(request *
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*data.DataTransferConfirmation), err
+		return confirmation.(*data.DataTransferResponse), err
 	}
 }
 
-func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareStatus, requestID int, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationConfirmation, error) {
+func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareStatus, requestID int, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationResponse, error) {
 	request := firmware.NewFirmwareStatusNotificationRequest(status, requestID)
 	for _, fn := range props {
 		fn(request)
@@ -109,11 +109,11 @@ func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareSt
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*firmware.FirmwareStatusNotificationConfirmation), err
+		return confirmation.(*firmware.FirmwareStatusNotificationResponse), err
 	}
 }
 
-func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateConfirmation, error) {
+func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateResponse, error) {
 	request := iso15118.NewGet15118EVCertificateRequest(schemaVersion, exiRequest)
 	for _, fn := range props {
 		fn(request)
@@ -122,11 +122,11 @@ func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, exiReques
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*iso15118.Get15118EVCertificateConfirmation), err
+		return confirmation.(*iso15118.Get15118EVCertificateResponse), err
 	}
 }
 
-func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPRequestDataType, props ...func(request *iso15118.GetCertificateStatusRequest)) (*iso15118.GetCertificateStatusConfirmation, error) {
+func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPRequestDataType, props ...func(request *iso15118.GetCertificateStatusRequest)) (*iso15118.GetCertificateStatusResponse, error) {
 	request := iso15118.NewGetCertificateStatusRequest(ocspRequestData)
 	for _, fn := range props {
 		fn(request)
@@ -135,7 +135,7 @@ func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPReques
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*iso15118.GetCertificateStatusConfirmation), err
+		return confirmation.(*iso15118.GetCertificateStatusResponse), err
 	}
 }
 
@@ -225,7 +225,7 @@ func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPReques
 //}
 //
 //// Notifies the central system of a status change during the download of a new firmware version.
-//func (cp *chargingStation) FirmwareStatusNotification(status FirmwareStatus, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationConfirmation, error) {
+//func (cp *chargingStation) FirmwareStatusNotification(status FirmwareStatus, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationResponse, error) {
 //	request := NewFirmwareStatusNotificationRequest(status)
 //	for _, fn := range props {
 //		fn(request)
@@ -234,7 +234,7 @@ func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPReques
 //	if err != nil {
 //		return nil, err
 //	} else {
-//		return confirmation.(*FirmwareStatusNotificationConfirmation), err
+//		return confirmation.(*FirmwareStatusNotificationResponse), err
 //	}
 //}
 

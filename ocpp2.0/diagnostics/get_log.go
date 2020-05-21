@@ -13,7 +13,7 @@ const GetLogFeatureName = "GetLog"
 // LogType represents the type of log file that the Charging Station should send. It is used in GetLogRequest.
 type LogType string
 
-// LogStatus represents the status returned by a Charging Station in a GetLogConfirmation.
+// LogStatus represents the status returned by a Charging Station in a GetLogResponse.
 type LogStatus string
 
 const (
@@ -60,16 +60,16 @@ type GetLogRequest struct {
 	Log           LogParameters `json:"log" validate:"required"`
 }
 
-// This field definition of the GetLog confirmation payload, sent by the Charging Station to the CSMS in response to a GetLogRequest.
+// This field definition of the GetLog response payload, sent by the Charging Station to the CSMS in response to a GetLogRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type GetLogConfirmation struct {
+type GetLogResponse struct {
 	Status   LogStatus `json:"status" validate:"required,logStatus"`            // This field indicates whether the Charging Station was able to accept the request.
 	Filename string    `json:"filename,omitempty" validate:"omitempty,max=256"` // This contains the name of the log file that will be uploaded. This field is not present when no logging information is available.
 }
 
 // The CSO may trigger the CSMS to request a report from a Charging Station.
 // The CSMS shall then request a Charging Station to send a predefined report as defined in ReportBase.
-// The Charging Station responds with GetLogConfirmation.
+// The Charging Station responds with GetLogResponse.
 // The result will be returned asynchronously in one or more NotifyReportRequest messages (one for each report part).
 type GetLogFeature struct{}
 
@@ -82,14 +82,14 @@ func (f GetLogFeature) GetRequestType() reflect.Type {
 }
 
 func (f GetLogFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(GetLogConfirmation{})
+	return reflect.TypeOf(GetLogResponse{})
 }
 
 func (r GetLogRequest) GetFeatureName() string {
 	return GetLogFeatureName
 }
 
-func (c GetLogConfirmation) GetFeatureName() string {
+func (c GetLogResponse) GetFeatureName() string {
 	return GetLogFeatureName
 }
 
@@ -98,9 +98,9 @@ func NewGetLogRequest(logType LogType, requestID int, logParameters LogParameter
 	return &GetLogRequest{LogType: logType, RequestID: requestID, Log: logParameters}
 }
 
-// Creates a new GetLogConfirmation, containing all required fields. Optional fields may be set afterwards.
-func NewGetLogConfirmation(status LogStatus) *GetLogConfirmation {
-	return &GetLogConfirmation{Status: status}
+// Creates a new GetLogResponse, containing all required fields. Optional fields may be set afterwards.
+func NewGetLogResponse(status LogStatus) *GetLogResponse {
+	return &GetLogResponse{Status: status}
 }
 
 func init() {

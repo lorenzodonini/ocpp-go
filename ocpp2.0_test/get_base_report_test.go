@@ -26,9 +26,9 @@ func (suite *OcppV2TestSuite) TestGetBaseReportRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetBaseReportConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{provisioning.GetBaseReportConfirmation{Status: types.GenericDeviceModelStatusAccepted}, true},
-		{provisioning.GetBaseReportConfirmation{Status: "invalidDeviceModelStatus"}, false},
-		{provisioning.GetBaseReportConfirmation{}, false},
+		{provisioning.GetBaseReportResponse{Status: types.GenericDeviceModelStatusAccepted}, true},
+		{provisioning.GetBaseReportResponse{Status: "invalidDeviceModelStatus"}, false},
+		{provisioning.GetBaseReportResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -43,7 +43,7 @@ func (suite *OcppV2TestSuite) TestGetBaseReportE2EMocked() {
 	status := types.GenericDeviceModelStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"reportBase":"%v"}]`, messageId, provisioning.GetBaseReportFeatureName, requestID, reportBase)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	getBaseReportConfirmation := provisioning.NewGetBaseReportConfirmation(status)
+	getBaseReportConfirmation := provisioning.NewGetBaseReportResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationProvisioningHandler{}
@@ -54,14 +54,14 @@ func (suite *OcppV2TestSuite) TestGetBaseReportE2EMocked() {
 		assert.Equal(t, requestID, request.RequestID)
 		assert.Equal(t, reportBase, request.ReportBase)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetBaseReport(wsId, func(confirmation *provisioning.GetBaseReportConfirmation, err error) {
+	err = suite.csms.GetBaseReport(wsId, func(confirmation *provisioning.GetBaseReportResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

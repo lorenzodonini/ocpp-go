@@ -10,7 +10,7 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Tariff and cost profile.
 type ChargingStationHandler interface {
 	// OnCostUpdated is called on a charging station whenever a CostUpdatedRequest is received from the CSMS.
-	OnCostUpdated(request *CostUpdatedRequest) (confirmation *CostUpdatedConfirmation, err error)
+	OnCostUpdated(request *CostUpdatedRequest) (confirmation *CostUpdatedResponse, err error)
 }
 
 const ProfileName = "tariffCost"

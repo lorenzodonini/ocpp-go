@@ -38,13 +38,13 @@ func (suite *OcppV2TestSuite) TestGetLogRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetLogConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{diagnostics.GetLogConfirmation{Status: diagnostics.LogStatusAccepted, Filename: "testFileName.log"}, true},
-		{diagnostics.GetLogConfirmation{Status: diagnostics.LogStatusAccepted}, true},
-		{diagnostics.GetLogConfirmation{Status: diagnostics.LogStatusRejected}, true},
-		{diagnostics.GetLogConfirmation{Status: diagnostics.LogStatusAcceptedCanceled}, true},
-		{diagnostics.GetLogConfirmation{}, false},
-		{diagnostics.GetLogConfirmation{Status: "invalidLogStatus"}, false},
-		{diagnostics.GetLogConfirmation{Status: diagnostics.LogStatusAccepted, Filename: ">256............................................................................................................................................................................................................................................................."}, false},
+		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAccepted, Filename: "testFileName.log"}, true},
+		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAccepted}, true},
+		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusRejected}, true},
+		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAcceptedCanceled}, true},
+		{diagnostics.GetLogResponse{}, false},
+		{diagnostics.GetLogResponse{Status: "invalidLogStatus"}, false},
+		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAccepted, Filename: ">256............................................................................................................................................................................................................................................................."}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -68,7 +68,7 @@ func (suite *OcppV2TestSuite) TestGetLogE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"logType":"%v","requestId":%v,"retries":%v,"retryInterval":%v,"log":{"remoteLocation":"%v","oldestTimestamp":"%v","latestTimestamp":"%v"}}]`,
 		messageId, diagnostics.GetLogFeatureName, logType, requestID, *retries, *retryInterval, logParameters.RemoteLocation, logParameters.OldestTimestamp.FormatTimestamp(), logParameters.LatestTimestamp.FormatTimestamp())
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","filename":"%v"}]`, messageId, status, filename)
-	getLogConfirmation := diagnostics.NewGetLogConfirmation(status)
+	getLogConfirmation := diagnostics.NewGetLogResponse(status)
 	getLogConfirmation.Filename = filename
 	channel := NewMockWebSocket(wsId)
 
@@ -85,14 +85,14 @@ func (suite *OcppV2TestSuite) TestGetLogE2EMocked() {
 		assert.Equal(t, logParameters.LatestTimestamp.FormatTimestamp(), request.Log.LatestTimestamp.FormatTimestamp())
 		assert.Equal(t, logParameters.OldestTimestamp.FormatTimestamp(), request.Log.OldestTimestamp.FormatTimestamp())
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetLog(wsId, func(confirmation *diagnostics.GetLogConfirmation, err error) {
+	err = suite.csms.GetLog(wsId, func(confirmation *diagnostics.GetLogResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

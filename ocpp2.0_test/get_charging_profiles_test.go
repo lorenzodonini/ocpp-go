@@ -39,10 +39,10 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetChargingProfilesConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{smartcharging.GetChargingProfilesConfirmation{Status: smartcharging.GetChargingProfileStatusAccepted}, true},
-		{smartcharging.GetChargingProfilesConfirmation{Status: smartcharging.GetChargingProfileStatusNoProfiles}, true},
-		{smartcharging.GetChargingProfilesConfirmation{Status: "invalidGetChargingProfilesStatus"}, false},
-		{smartcharging.GetChargingProfilesConfirmation{}, false},
+		{smartcharging.GetChargingProfilesResponse{Status: smartcharging.GetChargingProfileStatusAccepted}, true},
+		{smartcharging.GetChargingProfilesResponse{Status: smartcharging.GetChargingProfileStatusNoProfiles}, true},
+		{smartcharging.GetChargingProfilesResponse{Status: "invalidGetChargingProfilesStatus"}, false},
+		{smartcharging.GetChargingProfilesResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -64,7 +64,7 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"evseId":%v,"chargingProfile":{"chargingProfilePurpose":"%v","stackLevel":%v,"chargingProfileId":[%v,%v],"chargingLimitSource":["%v"]}}]`,
 		messageId, smartcharging.GetChargingProfilesFeatureName, requestID, evseID, chargingProfileCriterion.ChargingProfilePurpose, *chargingProfileCriterion.StackLevel, chargingProfileCriterion.ChargingProfileID[0], chargingProfileCriterion.ChargingProfileID[1], chargingProfileCriterion.ChargingLimitSource[0])
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	getChargingProfilesConfirmation := smartcharging.NewGetChargingProfilesConfirmation(status)
+	getChargingProfilesConfirmation := smartcharging.NewGetChargingProfilesResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationSmartChargingHandler{}
@@ -83,14 +83,14 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 		require.Len(t, request.ChargingProfile.ChargingLimitSource, len(chargingProfileCriterion.ChargingLimitSource))
 		assert.Equal(t, chargingProfileCriterion.ChargingLimitSource[0], request.ChargingProfile.ChargingLimitSource[0])
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetChargingProfiles(wsId, func(confirmation *smartcharging.GetChargingProfilesConfirmation, err error) {
+	err = suite.csms.GetChargingProfiles(wsId, func(confirmation *smartcharging.GetChargingProfilesResponse, err error) {
 		// Assert confirmation message contents
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)

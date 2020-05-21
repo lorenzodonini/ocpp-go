@@ -10,7 +10,7 @@ import (
 
 const GetChargingProfilesFeatureName = "GetChargingProfiles"
 
-// Status reported in GetChargingProfilesConfirmation.
+// Status reported in GetChargingProfilesResponse.
 type GetChargingProfileStatus string
 
 const (
@@ -44,9 +44,9 @@ type GetChargingProfilesRequest struct {
 	ChargingProfile ChargingProfileCriterion `json:"chargingProfile" validate:"required"`
 }
 
-// This field definition of the GetChargingProfiles confirmation payload, sent by the Charging Station to the CSMS in response to a GetChargingProfilesRequest.
+// This field definition of the GetChargingProfiles response payload, sent by the Charging Station to the CSMS in response to a GetChargingProfilesRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type GetChargingProfilesConfirmation struct {
+type GetChargingProfilesResponse struct {
 	Status GetChargingProfileStatus `json:"status" validate:"required,getChargingProfileStatus"`
 }
 
@@ -64,14 +64,14 @@ func (f GetChargingProfilesFeature) GetRequestType() reflect.Type {
 }
 
 func (f GetChargingProfilesFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(GetChargingProfilesConfirmation{})
+	return reflect.TypeOf(GetChargingProfilesResponse{})
 }
 
 func (r GetChargingProfilesRequest) GetFeatureName() string {
 	return GetChargingProfilesFeatureName
 }
 
-func (c GetChargingProfilesConfirmation) GetFeatureName() string {
+func (c GetChargingProfilesResponse) GetFeatureName() string {
 	return GetChargingProfilesFeatureName
 }
 
@@ -80,9 +80,9 @@ func NewGetChargingProfilesRequest(chargingProfile ChargingProfileCriterion) *Ge
 	return &GetChargingProfilesRequest{ChargingProfile: chargingProfile}
 }
 
-// Creates a new GetChargingProfilesConfirmation, containing all required fields. There are no optional fields for this message.
-func NewGetChargingProfilesConfirmation(status GetChargingProfileStatus) *GetChargingProfilesConfirmation {
-	return &GetChargingProfilesConfirmation{Status: status}
+// Creates a new GetChargingProfilesResponse, containing all required fields. There are no optional fields for this message.
+func NewGetChargingProfilesResponse(status GetChargingProfileStatus) *GetChargingProfilesResponse {
+	return &GetChargingProfilesResponse{Status: status}
 }
 
 func init() {

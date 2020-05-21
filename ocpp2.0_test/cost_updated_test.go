@@ -24,7 +24,7 @@ func (suite *OcppV2TestSuite) TestCostUpdatedRequestValidation() {
 func (suite *OcppV2TestSuite) TestCostUpdatedConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{tariffcost.CostUpdatedConfirmation{}, true},
+		{tariffcost.CostUpdatedResponse{}, true},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -38,7 +38,7 @@ func (suite *OcppV2TestSuite) TestCostUpdatedE2EMocked() {
 	transactionId := "1234"
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"totalCost":%v,"transactionId":"%v"}]`, messageId, tariffcost.CostUpdatedFeatureName, totalCost, transactionId)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
-	costUpdatedConfirmation := tariffcost.NewCostUpdatedConfirmation()
+	costUpdatedConfirmation := tariffcost.NewCostUpdatedResponse()
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationTariffCostHandler{}
@@ -49,14 +49,14 @@ func (suite *OcppV2TestSuite) TestCostUpdatedE2EMocked() {
 		assert.Equal(t, totalCost, request.TotalCost)
 		assert.Equal(t, transactionId, request.TransactionID)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.CostUpdated(wsId, func(confirmation *tariffcost.CostUpdatedConfirmation, err error) {
+	err = suite.csms.CostUpdated(wsId, func(confirmation *tariffcost.CostUpdatedResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		resultChannel <- true

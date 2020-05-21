@@ -23,11 +23,11 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateRequestValidation() {
 func (suite *OcppV2TestSuite) TestDeleteCertificateConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{iso15118.DeleteCertificateConfirmation{Status: iso15118.DeleteCertificateStatusAccepted}, true},
-		{iso15118.DeleteCertificateConfirmation{Status: iso15118.DeleteCertificateStatusFailed}, true},
-		{iso15118.DeleteCertificateConfirmation{Status: iso15118.DeleteCertificateStatusNotFound}, true},
-		{iso15118.DeleteCertificateConfirmation{Status: "invalidDeleteCertificateStatus"}, false},
-		{iso15118.DeleteCertificateConfirmation{}, false},
+		{iso15118.DeleteCertificateResponse{Status: iso15118.DeleteCertificateStatusAccepted}, true},
+		{iso15118.DeleteCertificateResponse{Status: iso15118.DeleteCertificateStatusFailed}, true},
+		{iso15118.DeleteCertificateResponse{Status: iso15118.DeleteCertificateStatusNotFound}, true},
+		{iso15118.DeleteCertificateResponse{Status: "invalidDeleteCertificateStatus"}, false},
+		{iso15118.DeleteCertificateResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -42,7 +42,7 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateHashData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v"}}]`,
 		messageId, iso15118.DeleteCertificateFeatureName, certificateHashData.HashAlgorithm, certificateHashData.IssuerNameHash, certificateHashData.IssuerKeyHash, certificateHashData.SerialNumber)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	deleteCertificateConfirmation := iso15118.NewDeleteCertificateConfirmation(status)
+	deleteCertificateConfirmation := iso15118.NewDeleteCertificateResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationIso15118Handler{}
@@ -55,14 +55,14 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 		assert.Equal(t, certificateHashData.IssuerKeyHash, request.CertificateHashData.IssuerKeyHash)
 		assert.Equal(t, certificateHashData.SerialNumber, request.CertificateHashData.SerialNumber)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.DeleteCertificate(wsId, func(confirmation *iso15118.DeleteCertificateConfirmation, err error) {
+	err = suite.csms.DeleteCertificate(wsId, func(confirmation *iso15118.DeleteCertificateResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

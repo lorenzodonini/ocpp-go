@@ -30,10 +30,10 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{display.GetDisplayMessagesConfirmation{Status: display.MessageStatusAccepted}, true},
-		{display.GetDisplayMessagesConfirmation{Status: display.MessageStatusUnknown}, true},
-		{display.GetDisplayMessagesConfirmation{Status: "invalidMessageStatus"}, false},
-		{display.GetDisplayMessagesConfirmation{}, false},
+		{display.GetDisplayMessagesResponse{Status: display.MessageStatusAccepted}, true},
+		{display.GetDisplayMessagesResponse{Status: display.MessageStatusUnknown}, true},
+		{display.GetDisplayMessagesResponse{Status: "invalidMessageStatus"}, false},
+		{display.GetDisplayMessagesResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -51,7 +51,7 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"priority":"%v","state":"%v","id":[%v,%v]}]`,
 		messageId, display.GetDisplayMessagesFeatureName, requestId, priority, state, messageIds[0], messageIds[1])
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	getDisplayMessagesConfirmation := display.NewGetDisplayMessagesConfirmation(status)
+	getDisplayMessagesConfirmation := display.NewGetDisplayMessagesResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationDisplayHandler{}
@@ -66,14 +66,14 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
 		assert.Equal(t, messageIds[0], request.ID[0])
 		assert.Equal(t, messageIds[1], request.ID[1])
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetDisplayMessages(wsId, func(confirmation *display.GetDisplayMessagesConfirmation, err error) {
+	err = suite.csms.GetDisplayMessages(wsId, func(confirmation *display.GetDisplayMessagesResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

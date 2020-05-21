@@ -24,11 +24,11 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityRequestValidation() {
 func (suite *OcppV2TestSuite) TestChangeAvailabilityConfirmationValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{availability.ChangeAvailabilityConfirmation{Status: availability.ChangeAvailabilityStatusAccepted}, true},
-		{availability.ChangeAvailabilityConfirmation{Status: availability.ChangeAvailabilityStatusRejected}, true},
-		{availability.ChangeAvailabilityConfirmation{Status: availability.ChangeAvailabilityStatusScheduled}, true},
-		{availability.ChangeAvailabilityConfirmation{Status: "invalidAvailabilityStatus"}, false},
-		{availability.ChangeAvailabilityConfirmation{}, false},
+		{availability.ChangeAvailabilityResponse{Status: availability.ChangeAvailabilityStatusAccepted}, true},
+		{availability.ChangeAvailabilityResponse{Status: availability.ChangeAvailabilityStatusRejected}, true},
+		{availability.ChangeAvailabilityResponse{Status: availability.ChangeAvailabilityStatusScheduled}, true},
+		{availability.ChangeAvailabilityResponse{Status: "invalidAvailabilityStatus"}, false},
+		{availability.ChangeAvailabilityResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -44,7 +44,7 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
 	status := availability.ChangeAvailabilityStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"operationalStatus":"%v"}]`, messageId, availability.ChangeAvailabilityFeatureName, evseID, operationalStatus)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	changeAvailabilityConfirmation := availability.NewChangeAvailabilityConfirmation(status)
+	changeAvailabilityConfirmation := availability.NewChangeAvailabilityResponse(status)
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
 	handler := MockChargingStationAvailabilityHandler{}
@@ -54,14 +54,14 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
 		assert.Equal(t, evseID, request.EvseID)
 		assert.Equal(t, operationalStatus, request.OperationalStatus)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.ChangeAvailability(wsId, func(confirmation *availability.ChangeAvailabilityConfirmation, err error) {
+	err = suite.csms.ChangeAvailability(wsId, func(confirmation *availability.ChangeAvailabilityResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

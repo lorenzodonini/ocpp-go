@@ -6,7 +6,7 @@ import "github.com/lorenzodonini/ocpp-go/ocpp"
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Firmware profile.
 type CSMSHandler interface {
 	// OnFirmwareStatusNotification is called on the CSMS whenever a FirmwareStatusNotificationRequest is received from a charging station.
-	OnFirmwareStatusNotification(chargingStationID string, request *FirmwareStatusNotificationRequest) (confirmation *FirmwareStatusNotificationConfirmation, err error)
+	OnFirmwareStatusNotification(chargingStationID string, request *FirmwareStatusNotificationRequest) (confirmation *FirmwareStatusNotificationResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Firmware profile.

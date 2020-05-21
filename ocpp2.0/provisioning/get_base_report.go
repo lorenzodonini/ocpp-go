@@ -35,15 +35,15 @@ type GetBaseReportRequest struct {
 	ReportBase ReportBaseType `json:"reportBase" validate:"required,reportBaseType"`
 }
 
-// This field definition of the GetBaseReport confirmation payload, sent by the Charging Station to the CSMS in response to a GetBaseReportRequest.
+// This field definition of the GetBaseReport response payload, sent by the Charging Station to the CSMS in response to a GetBaseReportRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type GetBaseReportConfirmation struct {
+type GetBaseReportResponse struct {
 	Status types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus"`
 }
 
 // The CSO may trigger the CSMS to request a report from a Charging Station.
 // The CSMS shall then request a Charging Station to send a predefined report as defined in ReportBase.
-// The Charging Station responds with GetBaseReportConfirmation.
+// The Charging Station responds with GetBaseReportResponse.
 // The result will be returned asynchronously in one or more NotifyReportRequest messages (one for each report part).
 type GetBaseReportFeature struct{}
 
@@ -56,14 +56,14 @@ func (f GetBaseReportFeature) GetRequestType() reflect.Type {
 }
 
 func (f GetBaseReportFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(GetBaseReportConfirmation{})
+	return reflect.TypeOf(GetBaseReportResponse{})
 }
 
 func (r GetBaseReportRequest) GetFeatureName() string {
 	return GetBaseReportFeatureName
 }
 
-func (c GetBaseReportConfirmation) GetFeatureName() string {
+func (c GetBaseReportResponse) GetFeatureName() string {
 	return GetBaseReportFeatureName
 }
 
@@ -72,9 +72,9 @@ func NewGetBaseReportRequest(requestID int, reportBase ReportBaseType) *GetBaseR
 	return &GetBaseReportRequest{RequestID: requestID, ReportBase: reportBase}
 }
 
-// Creates a new GetBaseReportConfirmation, containing all required fields. There are no optional fields for this message.
-func NewGetBaseReportConfirmation(status types.GenericDeviceModelStatus) *GetBaseReportConfirmation {
-	return &GetBaseReportConfirmation{Status: status}
+// Creates a new GetBaseReportResponse, containing all required fields. There are no optional fields for this message.
+func NewGetBaseReportResponse(status types.GenericDeviceModelStatus) *GetBaseReportResponse {
+	return &GetBaseReportResponse{Status: status}
 }
 
 func init() {

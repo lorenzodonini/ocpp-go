@@ -39,15 +39,15 @@ type CustomerInformationRequest struct {
 	CustomerCertificate *types.CertificateHashData `json:"customerCertificate,omitempty" validate:"omitempty,dive"`
 }
 
-// This field definition of the CustomerInformation confirmation payload, sent by the Charging Station to the CSMS in response to a CustomerInformationRequest.
+// This field definition of the CustomerInformation response payload, sent by the Charging Station to the CSMS in response to a CustomerInformationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type CustomerInformationConfirmation struct {
+type CustomerInformationResponse struct {
 	Status CustomerInformationStatus `json:"status" validate:"required,customerInformationStatus"`
 }
 
 // CSMS can request a Charging Station to clear its Authorization Cache.
 // The CSMS SHALL send a CustomerInformationRequest payload for clearing the Charging Station’s Authorization Cache.
-// Upon receipt of a CustomerInformationRequest, the Charging Station SHALL respond with a CustomerInformationConfirmation payload.
+// Upon receipt of a CustomerInformationRequest, the Charging Station SHALL respond with a CustomerInformationResponse payload.
 // The response payload SHALL indicate whether the Charging Station was able to clear its Authorization Cache.
 type CustomerInformationFeature struct{}
 
@@ -60,14 +60,14 @@ func (f CustomerInformationFeature) GetRequestType() reflect.Type {
 }
 
 func (f CustomerInformationFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(CustomerInformationConfirmation{})
+	return reflect.TypeOf(CustomerInformationResponse{})
 }
 
 func (r CustomerInformationRequest) GetFeatureName() string {
 	return CustomerInformationFeatureName
 }
 
-func (c CustomerInformationConfirmation) GetFeatureName() string {
+func (c CustomerInformationResponse) GetFeatureName() string {
 	return CustomerInformationFeatureName
 }
 
@@ -76,9 +76,9 @@ func NewCustomerInformationRequest(requestId int, report bool, clear bool) *Cust
 	return &CustomerInformationRequest{RequestID: requestId, Report: report, Clear: clear}
 }
 
-// Creates a new CustomerInformationConfirmation, containing all required fields. There are no optional fields for this message.
-func NewCustomerInformationConfirmation(status CustomerInformationStatus) *CustomerInformationConfirmation {
-	return &CustomerInformationConfirmation{Status: status}
+// Creates a new CustomerInformationResponse, containing all required fields. There are no optional fields for this message.
+func NewCustomerInformationResponse(status CustomerInformationStatus) *CustomerInformationResponse {
+	return &CustomerInformationResponse{Status: status}
 }
 
 func init() {

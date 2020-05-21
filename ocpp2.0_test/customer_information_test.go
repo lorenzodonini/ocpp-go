@@ -32,9 +32,9 @@ func (suite *OcppV2TestSuite) TestCustomerInformationRequestValidation() {
 func (suite *OcppV2TestSuite) TestCustomerInformationConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{diagnostics.CustomerInformationConfirmation{Status: diagnostics.CustomerInformationStatusAccepted}, true},
-		{diagnostics.CustomerInformationConfirmation{}, false},
-		{diagnostics.CustomerInformationConfirmation{Status: "invalidCustomerInformationStatus"}, false},
+		{diagnostics.CustomerInformationResponse{Status: diagnostics.CustomerInformationStatusAccepted}, true},
+		{diagnostics.CustomerInformationResponse{}, false},
+		{diagnostics.CustomerInformationResponse{Status: "invalidCustomerInformationStatus"}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -54,7 +54,7 @@ func (suite *OcppV2TestSuite) TestCustomerInformationE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"report":%v,"clear":%v,"customerIdentifier":"%v","idToken":{"idToken":"%v","type":"%v"},"customerCertificate":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v"}}]`,
 		messageId, diagnostics.CustomerInformationFeatureName, requestId, report, clear, customerId, idToken.IdToken, idToken.Type, customerCertificate.HashAlgorithm, customerCertificate.IssuerNameHash, customerCertificate.IssuerKeyHash, customerCertificate.SerialNumber)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	customerInformationConfirmation := diagnostics.NewCustomerInformationConfirmation(status)
+	customerInformationConfirmation := diagnostics.NewCustomerInformationResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationDiagnosticsHandler{}
@@ -69,14 +69,14 @@ func (suite *OcppV2TestSuite) TestCustomerInformationE2EMocked() {
 		require.NotNil(t, request.IdToken)
 		require.NotNil(t, request.CustomerCertificate)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.CustomerInformation(wsId, func(confirmation *diagnostics.CustomerInformationConfirmation, err error) {
+	err = suite.csms.CustomerInformation(wsId, func(confirmation *diagnostics.CustomerInformationResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		require.Equal(t, status, confirmation.Status)

@@ -24,12 +24,12 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringRequestValidation() {
 func (suite *OcppV2TestSuite) TestClearVariableMonitoringConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{diagnostics.ClearVariableMonitoringConfirmation{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2, Status: diagnostics.ClearMonitoringStatusAccepted}}}, true},
-		{diagnostics.ClearVariableMonitoringConfirmation{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2}}}, false},
-		{diagnostics.ClearVariableMonitoringConfirmation{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{}}, false},
-		{diagnostics.ClearVariableMonitoringConfirmation{}, false},
-		{diagnostics.ClearVariableMonitoringConfirmation{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: -1, Status: diagnostics.ClearMonitoringStatusAccepted}}}, false},
-		{diagnostics.ClearVariableMonitoringConfirmation{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2, Status: "invalidClearMonitoringStatus"}}}, false},
+		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2, Status: diagnostics.ClearMonitoringStatusAccepted}}}, true},
+		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2}}}, false},
+		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{}}, false},
+		{diagnostics.ClearVariableMonitoringResponse{}, false},
+		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: -1, Status: diagnostics.ClearMonitoringStatusAccepted}}}, false},
+		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2, Status: "invalidClearMonitoringStatus"}}}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -44,7 +44,7 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringE2EMocked() {
 	result2 := diagnostics.ClearMonitoringResult{ID: 2, Status: diagnostics.ClearMonitoringStatusNotFound}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":[%v,%v]}]`, messageId, diagnostics.ClearVariableMonitoringFeatureName, ids[0], ids[1])
 	responseJson := fmt.Sprintf(`[3,"%v",{"clearMonitoringResult":[{"id":%v,"status":"%v"},{"id":%v,"status":"%v"}]}]`, messageId, result1.ID, result1.Status, result2.ID, result2.Status)
-	clearVariableMonitoringConfirmation := diagnostics.NewClearVariableMonitoringConfirmation([]diagnostics.ClearMonitoringResult{result1, result2})
+	clearVariableMonitoringConfirmation := diagnostics.NewClearVariableMonitoringResponse([]diagnostics.ClearMonitoringResult{result1, result2})
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationDiagnosticsHandler{}
@@ -56,14 +56,14 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringE2EMocked() {
 		assert.Equal(t, ids[0], request.ID[0])
 		assert.Equal(t, ids[1], request.ID[1])
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.ClearVariableMonitoring(wsId, func(confirmation *diagnostics.ClearVariableMonitoringConfirmation, err error) {
+	err = suite.csms.ClearVariableMonitoring(wsId, func(confirmation *diagnostics.ClearVariableMonitoringResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		require.Len(t, confirmation.ClearMonitoringResult, 2)

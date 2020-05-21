@@ -35,7 +35,7 @@ type CertificateSignedRequest struct {
 }
 
 // The field definition of the CertificateSignedResponse payload sent by the Charging Station to the CSMS in response to a CertificateSignedRequest.
-type CertificateSignedConfirmation struct {
+type CertificateSignedResponse struct {
 	Status CertificateSignedStatus `json:"status" validate:"required,certificateSignedStatus"`
 }
 
@@ -52,14 +52,14 @@ func (f CertificateSignedFeature) GetRequestType() reflect.Type {
 }
 
 func (f CertificateSignedFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(CertificateSignedConfirmation{})
+	return reflect.TypeOf(CertificateSignedResponse{})
 }
 
 func (r CertificateSignedRequest) GetFeatureName() string {
 	return CertificateSignedFeatureName
 }
 
-func (c CertificateSignedConfirmation) GetFeatureName() string {
+func (c CertificateSignedResponse) GetFeatureName() string {
 	return CertificateSignedFeatureName
 }
 
@@ -68,9 +68,9 @@ func NewCertificateSignedRequest(certificate []string) *CertificateSignedRequest
 	return &CertificateSignedRequest{Cert: certificate}
 }
 
-// Creates a new CertificateSignedConfirmation, containing all required fields. There are no optional fields for this message.
-func NewCertificateSignedConfirmation(status CertificateSignedStatus) *CertificateSignedConfirmation {
-	return &CertificateSignedConfirmation{Status: status}
+// Creates a new CertificateSignedResponse, containing all required fields. There are no optional fields for this message.
+func NewCertificateSignedResponse(status CertificateSignedStatus) *CertificateSignedResponse {
+	return &CertificateSignedResponse{Status: status}
 }
 
 func init() {

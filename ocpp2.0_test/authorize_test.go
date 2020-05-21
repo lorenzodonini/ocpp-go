@@ -29,12 +29,12 @@ func (suite *OcppV2TestSuite) TestAuthorizeRequestValidation() {
 func (suite *OcppV2TestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{authorization.AuthorizeConfirmation{CertificateStatus: types.CertificateStatusAccepted, EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
-		{authorization.AuthorizeConfirmation{CertificateStatus: types.CertificateStatusAccepted, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
-		{authorization.AuthorizeConfirmation{IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
-		{authorization.AuthorizeConfirmation{}, false},
-		{authorization.AuthorizeConfirmation{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, false},
-		{authorization.AuthorizeConfirmation{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: "invalidTokenInfoStatus"}}, false},
+		{authorization.AuthorizeResponse{CertificateStatus: types.CertificateStatusAccepted, EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
+		{authorization.AuthorizeResponse{CertificateStatus: types.CertificateStatusAccepted, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
+		{authorization.AuthorizeResponse{IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, true},
+		{authorization.AuthorizeResponse{}, false},
+		{authorization.AuthorizeResponse{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}}, false},
+		{authorization.AuthorizeResponse{CertificateStatus: "invalidCertificateStatus", EvseID: []int{4, 2}, IdTokenInfo: types.IdTokenInfo{Status: "invalidTokenInfoStatus"}}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -54,7 +54,7 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 		messageId, authorization.AuthorizeFeatureName, evseIds[0], evseIds[1], idToken.IdToken, idToken.Type, additionalInfo.AdditionalIdToken, additionalInfo.Type, certHashData.HashAlgorithm, certHashData.IssuerNameHash, certHashData.IssuerKeyHash, certHashData.SerialNumber, certHashData.ResponderURL)
 	responseJson := fmt.Sprintf(`[3,"%v",{"certificateStatus":"%v","evseId":[%v,%v],"idTokenInfo":{"status":"%v"}}]`,
 		messageId, certificateStatus, evseIds[0], evseIds[1], status)
-	authorizeConfirmation := authorization.NewAuthorizationConfirmation(types.IdTokenInfo{Status: status})
+	authorizeConfirmation := authorization.NewAuthorizationResponse(types.IdTokenInfo{Status: status})
 	authorizeConfirmation.EvseID = evseIds
 	authorizeConfirmation.CertificateStatus = certificateStatus
 	requestRaw := []byte(requestJson)
@@ -79,8 +79,8 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 		assert.Equal(t, certHashData.SerialNumber, request.CertificateHashData[0].SerialNumber)
 		assert.Equal(t, certHashData.ResponderURL, request.CertificateHashData[0].ResponderURL)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true}, handler)
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: requestRaw, forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: requestRaw, forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)

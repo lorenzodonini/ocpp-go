@@ -10,7 +10,7 @@ import (
 
 const ClearChargingProfileFeatureName = "ClearChargingProfile"
 
-// Status reported in ClearChargingProfileConfirmation.
+// Status reported in ClearChargingProfileResponse.
 type ClearChargingProfileStatus string
 
 const (
@@ -40,9 +40,9 @@ type ClearChargingProfileRequest struct {
 	ChargingProfile *ClearChargingProfileType `json:"chargingProfile,omitempty" validate:"omitempty,dive"`
 }
 
-// This field definition of the ClearChargingProfile confirmation payload, sent by the Charging Station to the CSMS in response to a ClearChargingProfileRequest.
+// This field definition of the ClearChargingProfile response payload, sent by the Charging Station to the CSMS in response to a ClearChargingProfileRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type ClearChargingProfileConfirmation struct {
+type ClearChargingProfileResponse struct {
 	Status ClearChargingProfileStatus `json:"status" validate:"required,clearChargingProfileStatus"`
 }
 
@@ -50,7 +50,7 @@ type ClearChargingProfileConfirmation struct {
 // it SHALL send a ClearChargingProfileRequest.
 // The CSMS can use this message to clear (remove) either a specific charging profile (denoted by id) or a selection of
 // charging profiles that match with the values of the optional connectorId, stackLevel and chargingProfilePurpose fields.
-// The Charging Station SHALL respond with a ClearChargingProfileConfirmation payload specifying whether it was able to process the request.
+// The Charging Station SHALL respond with a ClearChargingProfileResponse payload specifying whether it was able to process the request.
 type ClearChargingProfileFeature struct{}
 
 func (f ClearChargingProfileFeature) GetFeatureName() string {
@@ -62,14 +62,14 @@ func (f ClearChargingProfileFeature) GetRequestType() reflect.Type {
 }
 
 func (f ClearChargingProfileFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(ClearChargingProfileConfirmation{})
+	return reflect.TypeOf(ClearChargingProfileResponse{})
 }
 
 func (r ClearChargingProfileRequest) GetFeatureName() string {
 	return ClearChargingProfileFeatureName
 }
 
-func (c ClearChargingProfileConfirmation) GetFeatureName() string {
+func (c ClearChargingProfileResponse) GetFeatureName() string {
 	return ClearChargingProfileFeatureName
 }
 
@@ -78,9 +78,9 @@ func NewClearChargingProfileRequest() *ClearChargingProfileRequest {
 	return &ClearChargingProfileRequest{}
 }
 
-// Creates a new ClearChargingProfileConfirmation, containing all required fields. There are no optional fields for this message.
-func NewClearChargingProfileConfirmation(status ClearChargingProfileStatus) *ClearChargingProfileConfirmation {
-	return &ClearChargingProfileConfirmation{Status: status}
+// Creates a new ClearChargingProfileResponse, containing all required fields. There are no optional fields for this message.
+func NewClearChargingProfileResponse(status ClearChargingProfileStatus) *ClearChargingProfileResponse {
+	return &ClearChargingProfileResponse{Status: status}
 }
 
 func init() {

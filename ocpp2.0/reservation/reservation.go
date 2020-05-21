@@ -12,7 +12,7 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Reservation profile.
 type ChargingStationHandler interface {
 	// OnCancelReservation is called on a charging station whenever a CancelReservationRequest is received from the CSMS.
-	OnCancelReservation(request *CancelReservationRequest) (confirmation *CancelReservationConfirmation, err error)
+	OnCancelReservation(request *CancelReservationRequest) (confirmation *CancelReservationResponse, err error)
 }
 
 const ProfileName = "reservation"

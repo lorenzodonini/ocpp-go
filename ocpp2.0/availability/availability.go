@@ -11,7 +11,7 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Availability profile.
 type ChargingStationHandler interface {
 	// OnChangeAvailability is called on a charging station whenever a ChangeAvailabilityRequest is received from the CSMS.
-	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
+	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityResponse, err error)
 }
 
 const ProfileName = "availability"

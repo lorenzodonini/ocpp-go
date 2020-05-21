@@ -25,17 +25,17 @@ func (suite *OcppV2TestSuite) TestGet15118EVCertificateRequestValidation() {
 func (suite *OcppV2TestSuite) TestGet15118EVCertificateConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{iso15118.Get15118EVCertificateConfirmation{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, true},
-		{iso15118.Get15118EVCertificateConfirmation{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode", ChildCertificate: []string{"c1", "c2", "c3", "c4"}}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, true},
-		{iso15118.Get15118EVCertificateConfirmation{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}}, false},
-		{iso15118.Get15118EVCertificateConfirmation{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
-		{iso15118.Get15118EVCertificateConfirmation{Status: types.Certificate15188EVStatusAccepted, ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
-		{iso15118.Get15118EVCertificateConfirmation{ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
-		{iso15118.Get15118EVCertificateConfirmation{}, false},
-		{iso15118.Get15118EVCertificateConfirmation{Status: "invalidCertificateStatus", ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
-		{iso15118.Get15118EVCertificateConfirmation{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{}}, false},
-		{iso15118.Get15118EVCertificateConfirmation{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode", ChildCertificate: []string{"c1", "c2", "c3", "c4", "c5"}}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
-		{iso15118.Get15118EVCertificateConfirmation{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode", ChildCertificate: []string{"c1", "c2", "c3", ""}}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
+		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, true},
+		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode", ChildCertificate: []string{"c1", "c2", "c3", "c4"}}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, true},
+		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}}, false},
+		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
+		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
+		{iso15118.Get15118EVCertificateResponse{ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
+		{iso15118.Get15118EVCertificateResponse{}, false},
+		{iso15118.Get15118EVCertificateResponse{Status: "invalidCertificateStatus", ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
+		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode"}, SaProvisioningCertificateChain: iso15118.CertificateChain{}}, false},
+		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode", ChildCertificate: []string{"c1", "c2", "c3", "c4", "c5"}}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
+		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", ContractSignatureCertificateChain: iso15118.CertificateChain{Certificate: "deadcode", ChildCertificate: []string{"c1", "c2", "c3", ""}}, SaProvisioningCertificateChain: iso15118.CertificateChain{Certificate: "deadcode2"}}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -54,7 +54,7 @@ func (suite *OcppV2TestSuite) TestGet15118EVCertificateE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"15118SchemaVersion":"%v","exiRequest":"%v"}]`, messageId, iso15118.Get15118EVCertificateFeatureName, schemaVersion, exiRequest)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","exiResponse":"%v","contractSignatureCertificateChain":{"certificate":"%v"},"saProvisioningCertificateChain":{"certificate":"%v"}}]`,
 		messageId, status, exiResponse, contractSignatureCertificateChain.Certificate, saProvisioningCertificateChain.Certificate)
-	get15118EVCertificateConfirmation := iso15118.NewGet15118EVCertificateConfirmation(status, exiResponse, contractSignatureCertificateChain, saProvisioningCertificateChain)
+	get15118EVCertificateConfirmation := iso15118.NewGet15118EVCertificateResponse(status, exiResponse, contractSignatureCertificateChain, saProvisioningCertificateChain)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockCSMSIso15118Handler{}
@@ -64,8 +64,8 @@ func (suite *OcppV2TestSuite) TestGet15118EVCertificateE2EMocked() {
 		assert.Equal(t, schemaVersion, request.SchemaVersion)
 		assert.Equal(t, exiRequest, request.ExiRequest)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)

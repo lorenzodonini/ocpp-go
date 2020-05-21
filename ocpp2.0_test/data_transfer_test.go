@@ -25,12 +25,12 @@ func (suite *OcppV2TestSuite) TestDataTransferRequestValidation() {
 func (suite *OcppV2TestSuite) TestDataTransferConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{data.DataTransferConfirmation{Status: data.DataTransferStatusAccepted}, true},
-		{data.DataTransferConfirmation{Status: data.DataTransferStatusRejected}, true},
-		{data.DataTransferConfirmation{Status: data.DataTransferStatusUnknownMessageId}, true},
-		{data.DataTransferConfirmation{Status: data.DataTransferStatusUnknownVendorId}, true},
-		{data.DataTransferConfirmation{Status: "invalidDataTransferStatus"}, false},
-		{data.DataTransferConfirmation{Status: data.DataTransferStatusAccepted, Data: "mockData"}, true},
+		{data.DataTransferResponse{Status: data.DataTransferStatusAccepted}, true},
+		{data.DataTransferResponse{Status: data.DataTransferStatusRejected}, true},
+		{data.DataTransferResponse{Status: data.DataTransferStatusUnknownMessageId}, true},
+		{data.DataTransferResponse{Status: data.DataTransferStatusUnknownVendorId}, true},
+		{data.DataTransferResponse{Status: "invalidDataTransferStatus"}, false},
+		{data.DataTransferResponse{Status: data.DataTransferStatusAccepted, Data: "mockData"}, true},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -44,7 +44,7 @@ func (suite *OcppV2TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	status := data.DataTransferStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"vendorId":"%v"}]`, messageId, data.DataTransferFeatureName, vendorId)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	dataTransferConfirmation := data.NewDataTransferConfirmation(status)
+	dataTransferConfirmation := data.NewDataTransferResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockCSMSDataHandler{}
@@ -54,8 +54,8 @@ func (suite *OcppV2TestSuite) TestDataTransferFromChargePointE2EMocked() {
 		require.NotNil(t, request)
 		assert.Equal(t, vendorId, request.VendorId)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -75,7 +75,7 @@ func (suite *OcppV2TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	status := data.DataTransferStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"vendorId":"%v"}]`, messageId, data.DataTransferFeatureName, vendorId)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	dataTransferConfirmation := data.NewDataTransferConfirmation(status)
+	dataTransferConfirmation := data.NewDataTransferResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationDataHandler{}
@@ -85,14 +85,14 @@ func (suite *OcppV2TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 		require.NotNil(t, request)
 		assert.Equal(t, vendorId, request.VendorId)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.DataTransfer(wsId, func(confirmation *data.DataTransferConfirmation, err error) {
+	err = suite.csms.DataTransfer(wsId, func(confirmation *data.DataTransferResponse, err error) {
 		assert.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

@@ -25,7 +25,7 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationRequestValidation() 
 func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{firmware.FirmwareStatusNotificationConfirmation{}, true},
+		{firmware.FirmwareStatusNotificationResponse{}, true},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -39,7 +39,7 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	requestID := 42
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"status":"%v","requestId":%v}]`, messageId, firmware.FirmwareStatusNotificationFeatureName, status, requestID)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
-	firmwareStatusNotificationConfirmation := firmware.NewFirmwareStatusNotificationConfirmation()
+	firmwareStatusNotificationConfirmation := firmware.NewFirmwareStatusNotificationResponse()
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockCSMSFirmwareHandler{}
@@ -49,8 +49,8 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 		assert.Equal(t, status, request.Status)
 		assert.Equal(t, requestID, request.RequestID)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)

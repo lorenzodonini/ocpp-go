@@ -10,7 +10,7 @@ import (
 
 const DataTransferFeatureName = "DataTransfer"
 
-// Status in DataTransferConfirmation messages.
+// Status in DataTransferResponse messages.
 type DataTransferStatus string
 
 const (
@@ -37,9 +37,9 @@ type DataTransferRequest struct {
 	VendorId  string      `json:"vendorId" validate:"required,max=255"`
 }
 
-// This field definition of the DataTransfer confirmation payload, sent by an endpoint in response to a DataTransferRequest, coming from the other endpoint.
+// This field definition of the DataTransfer response payload, sent by an endpoint in response to a DataTransferRequest, coming from the other endpoint.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type DataTransferConfirmation struct {
+type DataTransferResponse struct {
 	Status DataTransferStatus `json:"status" validate:"required,dataTransferStatus"`
 	Data   interface{}        `json:"data,omitempty"`
 }
@@ -57,14 +57,14 @@ func (f DataTransferFeature) GetRequestType() reflect.Type {
 }
 
 func (f DataTransferFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(DataTransferConfirmation{})
+	return reflect.TypeOf(DataTransferResponse{})
 }
 
 func (r DataTransferRequest) GetFeatureName() string {
 	return DataTransferFeatureName
 }
 
-func (c DataTransferConfirmation) GetFeatureName() string {
+func (c DataTransferResponse) GetFeatureName() string {
 	return DataTransferFeatureName
 }
 
@@ -73,9 +73,9 @@ func NewDataTransferRequest(vendorId string) *DataTransferRequest {
 	return &DataTransferRequest{VendorId: vendorId}
 }
 
-// Creates a new DataTransferConfirmation. Optional fields may be set afterwards.
-func NewDataTransferConfirmation(status DataTransferStatus) *DataTransferConfirmation {
-	return &DataTransferConfirmation{Status: status}
+// Creates a new DataTransferResponse. Optional fields may be set afterwards.
+func NewDataTransferResponse(status DataTransferStatus) *DataTransferResponse {
+	return &DataTransferResponse{Status: status}
 }
 
 func init() {

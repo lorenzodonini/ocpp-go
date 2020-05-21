@@ -30,9 +30,9 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileRequestValidation() {
 func (suite *OcppV2TestSuite) TestClearChargingProfileConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{smartcharging.ClearChargingProfileConfirmation{Status: smartcharging.ClearChargingProfileStatusAccepted}, true},
-		{smartcharging.ClearChargingProfileConfirmation{Status: "invalidClearChargingProfileStatus"}, false},
-		{smartcharging.ClearChargingProfileConfirmation{}, false},
+		{smartcharging.ClearChargingProfileResponse{Status: smartcharging.ClearChargingProfileStatusAccepted}, true},
+		{smartcharging.ClearChargingProfileResponse{Status: "invalidClearChargingProfileStatus"}, false},
+		{smartcharging.ClearChargingProfileResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -50,7 +50,7 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"chargingProfile":{"id":%v,"chargingProfilePurpose":"%v","stackLevel":%v}}]`,
 		messageId, smartcharging.ClearChargingProfileFeatureName, evseID, chargingProfileId, chargingProfilePurpose, stackLevel)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	clearChargingProfileConfirmation := smartcharging.NewClearChargingProfileConfirmation(status)
+	clearChargingProfileConfirmation := smartcharging.NewClearChargingProfileResponse(status)
 	channel := NewMockWebSocket(wsId)
 
 	handler := MockChargingStationSmartChargingHandler{}
@@ -63,14 +63,14 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 		assert.Equal(t, chargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
 		assert.Equal(t, stackLevel, request.ChargingProfile.StackLevel)
 	})
-	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.ClearChargingProfile(wsId, func(confirmation *smartcharging.ClearChargingProfileConfirmation, err error) {
+	err = suite.csms.ClearChargingProfile(wsId, func(confirmation *smartcharging.ClearChargingProfileResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

@@ -12,9 +12,9 @@ const GetLocalListVersionFeatureName = "GetLocalListVersion"
 type GetLocalListVersionRequest struct {
 }
 
-// This field definition of the GetLocalListVersion confirmation payload, sent by the Charging Station to the CSMS in response to a GetLocalListVersionRequest.
+// This field definition of the GetLocalListVersion response payload, sent by the Charging Station to the CSMS in response to a GetLocalListVersionRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
-type GetLocalListVersionConfirmation struct {
+type GetLocalListVersionResponse struct {
 	VersionNumber int `json:"versionNumber" validate:"gte=0"`
 }
 
@@ -32,14 +32,14 @@ func (f GetLocalListVersionFeature) GetRequestType() reflect.Type {
 }
 
 func (f GetLocalListVersionFeature) GetResponseType() reflect.Type {
-	return reflect.TypeOf(GetLocalListVersionConfirmation{})
+	return reflect.TypeOf(GetLocalListVersionResponse{})
 }
 
 func (r GetLocalListVersionRequest) GetFeatureName() string {
 	return GetLocalListVersionFeatureName
 }
 
-func (c GetLocalListVersionConfirmation) GetFeatureName() string {
+func (c GetLocalListVersionResponse) GetFeatureName() string {
 	return GetLocalListVersionFeatureName
 }
 
@@ -48,7 +48,7 @@ func NewGetLocalListVersionRequest() *GetLocalListVersionRequest {
 	return &GetLocalListVersionRequest{}
 }
 
-// Creates a new GetLocalListVersionConfirmation, containing all required fields. There are no optional fields for this message.
-func NewGetLocalListVersionConfirmation(version int) *GetLocalListVersionConfirmation {
-	return &GetLocalListVersionConfirmation{VersionNumber: version}
+// Creates a new GetLocalListVersionResponse, containing all required fields. There are no optional fields for this message.
+func NewGetLocalListVersionResponse(version int) *GetLocalListVersionResponse {
+	return &GetLocalListVersionResponse{VersionNumber: version}
 }
