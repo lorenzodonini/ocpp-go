@@ -47,9 +47,8 @@ func (suite *OcppV2TestSuite) TestCancelReservationE2EMocked() {
 		require.True(t, ok)
 		assert.Equal(t, reservationId, request.ReservationId)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetReservationHandler(handler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -71,5 +70,5 @@ func (suite *OcppV2TestSuite) TestCancelReservationInvalidEndpoint() {
 	reservationId := 42
 	cancelReservationRequest := reservation.NewCancelReservationRequest(reservationId)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"reservationId":%v}]`, messageId, reservation.CancelReservationFeatureName, reservationId)
-	testUnsupportedRequestFromChargePoint(suite, cancelReservationRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargingStation(suite, cancelReservationRequest, requestJson, messageId)
 }

@@ -61,8 +61,8 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 	responseRaw := []byte(responseJson)
 	channel := NewMockWebSocket(wsId)
 
-	authHandler := MockCSMSAuthorizationHandler{}
-	authHandler.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(authorizeConfirmation, nil).Run(func(args mock.Arguments) {
+	handler := MockCSMSAuthorizationHandler{}
+	handler.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(authorizeConfirmation, nil).Run(func(args mock.Arguments) {
 		request := args.Get(1).(*authorization.AuthorizeRequest)
 		require.Len(t, request.EvseID, 2)
 		assert.Equal(t, evseIds[0], request.EvseID[0])
@@ -79,9 +79,8 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 		assert.Equal(t, certHashData.SerialNumber, request.CertificateHashData[0].SerialNumber)
 		assert.Equal(t, certHashData.ResponderURL, request.CertificateHashData[0].ResponderURL)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true})
-	suite.csms.SetAuthorizationHandler(authHandler)
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: requestRaw, forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: requestRaw, forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)

@@ -1,4 +1,4 @@
-package ocpp2
+package diagnostics
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Get Monitoring Report (CSMS -> CS) --------------------
+
+const GetMonitoringReportFeatureName = "GetMonitoringReport"
 
 // Monitoring criteria contained in GetMonitoringReportRequest.
 type MonitoringCriteriaType string

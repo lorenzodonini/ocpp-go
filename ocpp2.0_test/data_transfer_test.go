@@ -54,9 +54,8 @@ func (suite *OcppV2TestSuite) TestDataTransferFromChargePointE2EMocked() {
 		require.NotNil(t, request)
 		assert.Equal(t, vendorId, request.VendorId)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.csms.SetDataHandler(handler)
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -86,9 +85,8 @@ func (suite *OcppV2TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 		require.NotNil(t, request)
 		assert.Equal(t, vendorId, request.VendorId)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetDataHandler(handler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)

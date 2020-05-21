@@ -50,9 +50,8 @@ func (suite *OcppV2TestSuite) TestClearedChargingLimitE2EMocked() {
 		assert.Equal(t, chargingLimitSource, request.ChargingLimitSource)
 		assert.Equal(t, evseID, *request.EvseID)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.csms.SetSmartChargingHandler(handler)
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)

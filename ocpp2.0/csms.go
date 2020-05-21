@@ -254,14 +254,14 @@ func (cs *csms) GetBaseReport(clientId string, callback func(*provisioning.GetBa
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetChargingProfiles(clientId string, callback func(*GetChargingProfilesConfirmation, error), chargingProfile ChargingProfileCriterion, props ...func(*GetChargingProfilesRequest)) error {
-	request := NewGetChargingProfilesRequest(chargingProfile)
+func (cs *csms) GetChargingProfiles(clientId string, callback func(*smartcharging.GetChargingProfilesConfirmation, error), chargingProfile smartcharging.ChargingProfileCriterion, props ...func(*smartcharging.GetChargingProfilesRequest)) error {
+	request := smartcharging.NewGetChargingProfilesRequest(chargingProfile)
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetChargingProfilesConfirmation), protoError)
+			callback(confirmation.(*smartcharging.GetChargingProfilesConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -269,14 +269,14 @@ func (cs *csms) GetChargingProfiles(clientId string, callback func(*GetChargingP
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetCompositeSchedule(clientId string, callback func(*GetCompositeScheduleConfirmation, error), duration int, evseId int, props ...func(*GetCompositeScheduleRequest)) error {
-	request := NewGetCompositeScheduleRequest(duration, evseId)
+func (cs *csms) GetCompositeSchedule(clientId string, callback func(*smartcharging.GetCompositeScheduleConfirmation, error), duration int, evseId int, props ...func(*smartcharging.GetCompositeScheduleRequest)) error {
+	request := smartcharging.NewGetCompositeScheduleRequest(duration, evseId)
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetCompositeScheduleConfirmation), protoError)
+			callback(confirmation.(*smartcharging.GetCompositeScheduleConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -284,14 +284,14 @@ func (cs *csms) GetCompositeSchedule(clientId string, callback func(*GetComposit
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetDisplayMessages(clientId string, callback func(*GetDisplayMessagesConfirmation, error), requestId int, props ...func(*GetDisplayMessagesRequest)) error {
-	request := NewGetDisplayMessagesRequest(requestId)
+func (cs *csms) GetDisplayMessages(clientId string, callback func(*display.GetDisplayMessagesConfirmation, error), requestId int, props ...func(*display.GetDisplayMessagesRequest)) error {
+	request := display.NewGetDisplayMessagesRequest(requestId)
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetDisplayMessagesConfirmation), protoError)
+			callback(confirmation.(*display.GetDisplayMessagesConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -299,14 +299,14 @@ func (cs *csms) GetDisplayMessages(clientId string, callback func(*GetDisplayMes
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*GetInstalledCertificateIdsConfirmation, error), typeOfCertificate types.CertificateUse, props ...func(*GetInstalledCertificateIdsRequest)) error {
-	request := NewGetInstalledCertificateIdsRequest(typeOfCertificate)
+func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*iso15118.GetInstalledCertificateIdsConfirmation, error), typeOfCertificate types.CertificateUse, props ...func(*iso15118.GetInstalledCertificateIdsRequest)) error {
+	request := iso15118.NewGetInstalledCertificateIdsRequest(typeOfCertificate)
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetInstalledCertificateIdsConfirmation), protoError)
+			callback(confirmation.(*iso15118.GetInstalledCertificateIdsConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -314,14 +314,14 @@ func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*GetIn
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetLocalListVersion(clientId string, callback func(*GetLocalListVersionConfirmation, error), props ...func(*GetLocalListVersionRequest)) error {
-	request := NewGetLocalListVersionRequest()
+func (cs *csms) GetLocalListVersion(clientId string, callback func(*localauth.GetLocalListVersionConfirmation, error), props ...func(*localauth.GetLocalListVersionRequest)) error {
+	request := localauth.NewGetLocalListVersionRequest()
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetLocalListVersionConfirmation), protoError)
+			callback(confirmation.(*localauth.GetLocalListVersionConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -329,14 +329,14 @@ func (cs *csms) GetLocalListVersion(clientId string, callback func(*GetLocalList
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetLog(clientId string, callback func(*GetLogConfirmation, error), logType LogType, requestID int, logParameters LogParameters, props ...func(*GetLogRequest)) error {
-	request := NewGetLogRequest(logType, requestID, logParameters)
+func (cs *csms) GetLog(clientId string, callback func(*diagnostics.GetLogConfirmation, error), logType diagnostics.LogType, requestID int, logParameters diagnostics.LogParameters, props ...func(*diagnostics.GetLogRequest)) error {
+	request := diagnostics.NewGetLogRequest(logType, requestID, logParameters)
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetLogConfirmation), protoError)
+			callback(confirmation.(*diagnostics.GetLogConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -344,14 +344,14 @@ func (cs *csms) GetLog(clientId string, callback func(*GetLogConfirmation, error
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetMonitoringReport(clientId string, callback func(*GetMonitoringReportConfirmation, error), props ...func(*GetMonitoringReportRequest)) error {
-	request := NewGetMonitoringReportRequest()
+func (cs *csms) GetMonitoringReport(clientId string, callback func(*diagnostics.GetMonitoringReportConfirmation, error), props ...func(*diagnostics.GetMonitoringReportRequest)) error {
+	request := diagnostics.NewGetMonitoringReportRequest()
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
 		if confirmation != nil {
-			callback(confirmation.(*GetMonitoringReportConfirmation), protoError)
+			callback(confirmation.(*diagnostics.GetMonitoringReportConfirmation), protoError)
 		} else {
 			callback(nil, protoError)
 		}
@@ -672,7 +672,7 @@ func (cs *csms) SetChargingStationDisconnectedHandler(handler func(chargingStati
 
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	switch request.GetFeatureName() {
-	case reservation.CancelReservationFeatureName, security.CertificateSignedFeatureName, availability.ChangeAvailabilityFeatureName, authorization.ClearCacheFeatureName, smartcharging.ClearChargingProfileFeatureName, display.ClearDisplayFeatureName, diagnostics.ClearVariableMonitoringFeatureName, tariffcost.CostUpdatedFeatureName, diagnostics.CustomerInformationFeatureName, data.DataTransferFeatureName, iso15118.DeleteCertificateFeatureName, provisioning.GetBaseReportFeatureName, GetChargingProfilesFeatureName, GetCompositeScheduleFeatureName, GetDisplayMessagesFeatureName, GetInstalledCertificateIdsFeatureName, GetLocalListVersionFeatureName, GetLogFeatureName, GetMonitoringReportFeatureName:
+	case reservation.CancelReservationFeatureName, security.CertificateSignedFeatureName, availability.ChangeAvailabilityFeatureName, authorization.ClearCacheFeatureName, smartcharging.ClearChargingProfileFeatureName, display.ClearDisplayFeatureName, diagnostics.ClearVariableMonitoringFeatureName, tariffcost.CostUpdatedFeatureName, diagnostics.CustomerInformationFeatureName, data.DataTransferFeatureName, iso15118.DeleteCertificateFeatureName, provisioning.GetBaseReportFeatureName, smartcharging.GetChargingProfilesFeatureName, smartcharging.GetCompositeScheduleFeatureName, display.GetDisplayMessagesFeatureName, iso15118.GetInstalledCertificateIdsFeatureName, localauth.GetLocalListVersionFeatureName, diagnostics.GetLogFeatureName, diagnostics.GetMonitoringReportFeatureName:
 		break
 	//case ChangeConfigurationFeatureName, DataTransferFeatureName, GetConfigurationFeatureName, RemoteStartTransactionFeatureName, RemoteStopTransactionFeatureName, ResetFeatureName, UnlockConnectorFeatureName,
 	//	GetLocalListVersionFeatureName, SendLocalListFeatureName,
@@ -806,10 +806,10 @@ func (cs *csms) handleIncomingRequest(chargingStationID string, request ocpp.Req
 			confirmation, err = cs.dataHandler.OnDataTransfer(chargingStationID, request.(*data.DataTransferRequest))
 		case firmware.FirmwareStatusNotificationFeatureName:
 			confirmation, err = cs.firmwareHandler.OnFirmwareStatusNotification(chargingStationID, request.(*firmware.FirmwareStatusNotificationRequest))
-		case Get15118EVCertificateFeatureName:
-			confirmation, err = cs.coreListener.OnGet15118EVCertificate(chargingStationID, request.(*Get15118EVCertificateRequest))
-		case GetCertificateStatusFeatureName:
-			confirmation, err = cs.coreListener.OnGetCertificateStatus(chargingStationID, request.(*GetCertificateStatusRequest))
+		case iso15118.Get15118EVCertificateFeatureName:
+			confirmation, err = cs.iso15118Handler.OnGet15118EVCertificate(chargingStationID, request.(*iso15118.Get15118EVCertificateRequest))
+		case iso15118.GetCertificateStatusFeatureName:
+			confirmation, err = cs.iso15118Handler.OnGetCertificateStatus(chargingStationID, request.(*iso15118.GetCertificateStatusRequest))
 		//case HeartbeatFeatureName:
 		//	confirmation, err = cs.messageHandler.OnHeartbeat(chargingStationID, request.(*HeartbeatRequest))
 		//case MeterValuesFeatureName:

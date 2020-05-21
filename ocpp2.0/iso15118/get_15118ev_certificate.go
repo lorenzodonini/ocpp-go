@@ -1,4 +1,4 @@
-package ocpp2
+package iso15118
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -6,6 +6,8 @@ import (
 )
 
 // -------------------- Get 15118EV Certificate (CS -> CSMS) --------------------
+
+const Get15118EVCertificateFeatureName = "Get15118EVCertificate"
 
 // Contains an X.509 certificate chain, each first DER encoded into binary, and then base64 encoded.
 type CertificateChain struct {

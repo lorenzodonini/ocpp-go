@@ -1,4 +1,4 @@
-package ocpp2
+package iso15118
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Get Installed Certificate IDs (CSMS -> CS) --------------------
+
+const GetInstalledCertificateIdsFeatureName = "GetInstalledCertificateIds"
 
 // Status returned in response to GetInstalledCertificateIdsRequest, that indicates whether certificate signing has been accepted or rejected.
 type GetInstalledCertificateStatus string

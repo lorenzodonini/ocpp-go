@@ -56,9 +56,8 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringE2EMocked() {
 		assert.Equal(t, ids[0], request.ID[0])
 		assert.Equal(t, ids[1], request.ID[1])
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetDiagnosticsHandler(handler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -84,5 +83,5 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringInvalidEndpoint() {
 	ids := []int{1, 2}
 	clearVariableMonitoringRequest := diagnostics.NewClearVariableMonitoringRequest(ids)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":[%v,%v]}]`, messageId, diagnostics.ClearVariableMonitoringFeatureName, ids[0], ids[1])
-	testUnsupportedRequestFromChargePoint(suite, clearVariableMonitoringRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargingStation(suite, clearVariableMonitoringRequest, requestJson, messageId)
 }

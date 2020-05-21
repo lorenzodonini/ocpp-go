@@ -1,4 +1,4 @@
-package ocpp2
+package iso15118
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -6,6 +6,8 @@ import (
 )
 
 // -------------------- Get Certificate Status (CS -> CSMS) --------------------
+
+const GetCertificateStatusFeatureName = "GetCertificateStatus"
 
 // The field definition of the GetCertificateStatus request payload sent by the Charging Station to the CSMS.
 type GetCertificateStatusRequest struct {

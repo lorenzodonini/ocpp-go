@@ -69,9 +69,8 @@ func (suite *OcppV2TestSuite) TestCustomerInformationE2EMocked() {
 		require.NotNil(t, request.IdToken)
 		require.NotNil(t, request.CustomerCertificate)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetDiagnosticsHandler(handler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -100,5 +99,5 @@ func (suite *OcppV2TestSuite) TestCustomerInformationInvalidEndpoint() {
 	customerId := "0001"
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"report":%v,"clear":%v,"customerIdentifier":"%v"}]`, messageId, diagnostics.CustomerInformationFeatureName, requestId, report, clear, customerId)
 	customerInformationRequest := diagnostics.NewCustomerInformationRequest(requestId, report, clear)
-	testUnsupportedRequestFromChargePoint(suite, customerInformationRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargingStation(suite, customerInformationRequest, requestJson, messageId)
 }

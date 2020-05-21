@@ -1,4 +1,4 @@
-package ocpp2
+package display
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Get Display Messages (CSMS -> CS) --------------------
+
+const GetDisplayMessagesFeatureName = "GetDisplayMessages"
 
 // Priority with which a message should be displayed on a Charging Station.
 // Used within a GetDisplayMessagesRequest.

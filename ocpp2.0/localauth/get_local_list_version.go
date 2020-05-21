@@ -1,10 +1,12 @@
-package ocpp2
+package localauth
 
 import (
 	"reflect"
 )
 
 // -------------------- Get Local List Version (CSMS -> CS) --------------------
+
+const GetLocalListVersionFeatureName = "GetLocalListVersion"
 
 // The field definition of the GetLocalListVersion request payload sent by the CSMS to the Charging Station.
 type GetLocalListVersionRequest struct {

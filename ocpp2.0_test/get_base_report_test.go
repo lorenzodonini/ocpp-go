@@ -46,17 +46,16 @@ func (suite *OcppV2TestSuite) TestGetBaseReportE2EMocked() {
 	getBaseReportConfirmation := provisioning.NewGetBaseReportConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	csHandler := MockChargingStationProvisioningHandler{}
-	csHandler.On("OnGetBaseReport", mock.Anything).Return(getBaseReportConfirmation, nil).Run(func(args mock.Arguments) {
+	handler := MockChargingStationProvisioningHandler{}
+	handler.On("OnGetBaseReport", mock.Anything).Return(getBaseReportConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*provisioning.GetBaseReportRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
 		assert.Equal(t, requestID, request.RequestID)
 		assert.Equal(t, reportBase, request.ReportBase)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetProvisioningHandler(csHandler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -79,5 +78,5 @@ func (suite *OcppV2TestSuite) TestGetBaseReportInvalidEndpoint() {
 	reportBase := provisioning.ReportTypeConfigurationInventory
 	getBaseReportRequest := provisioning.NewGetBaseReportRequest(requestID, reportBase)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"reportBase":"%v"}]`, messageId, provisioning.GetBaseReportFeatureName, requestID, reportBase)
-	testUnsupportedRequestFromChargePoint(suite, getBaseReportRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargingStation(suite, getBaseReportRequest, requestJson, messageId)
 }

@@ -41,9 +41,8 @@ func (suite *OcppV2TestSuite) TestClearCacheE2EMocked() {
 
 	handler := MockChargingStationAuthorizationHandler{}
 	handler.On("OnClearCache", mock.Anything).Return(clearCacheConfirmation, nil)
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetAuthorizationHandler(handler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -64,5 +63,5 @@ func (suite *OcppV2TestSuite) TestClearCacheInvalidEndpoint() {
 	messageId := defaultMessageId
 	clearCacheRequest := authorization.NewClearCacheRequest()
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, authorization.ClearCacheFeatureName)
-	testUnsupportedRequestFromChargePoint(suite, clearCacheRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargingStation(suite, clearCacheRequest, requestJson, messageId)
 }

@@ -15,6 +15,10 @@ type CSMSHandler interface {
 type ChargingStationHandler interface {
 	// OnClearChargingProfile is called on a charging station whenever a ClearChargingProfileRequest is received from the CSMS.
 	OnClearChargingProfile(request *ClearChargingProfileRequest) (confirmation *ClearChargingProfileConfirmation, err error)
+	// OnGetChargingProfiles is called on a charging station whenever a GetChargingProfilesRequest is received from the CSMS.
+	OnGetChargingProfiles(request *GetChargingProfilesRequest) (confirmation *GetChargingProfilesConfirmation, err error)
+	// OnGetCompositeSchedule is called on a charging station whenever a GetCompositeScheduleRequest is received from the CSMS.
+	OnGetCompositeSchedule(request *GetCompositeScheduleRequest) (confirmation *GetCompositeScheduleConfirmation, err error)
 }
 
 const ProfileName = "smartCharging"
@@ -23,4 +27,6 @@ var Profile = ocpp.NewProfile(
 	ProfileName,
 	ClearChargingProfileFeature{},
 	ClearedChargingLimitFeature{},
+	GetChargingProfilesFeature{},
+	GetCompositeScheduleFeature{},
 	)

@@ -47,17 +47,16 @@ func (suite *OcppV2TestSuite) TestCertificateSignedE2EMocked() {
 	certificateSignedConfirmation := security.NewCertificateSignedConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
-	csHandler := MockChargingStationSecurityHandler{}
-	csHandler.On("OnCertificateSigned", mock.Anything).Return(certificateSignedConfirmation, nil).Run(func(args mock.Arguments) {
+	handler := MockChargingStationSecurityHandler{}
+	handler.On("OnCertificateSigned", mock.Anything).Return(certificateSignedConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*security.CertificateSignedRequest)
 		require.True(t, ok)
 		require.Len(t, request.Cert, 1)
 		assert.Equal(t, certificate, request.Cert[0])
 		assert.Equal(t, certificateType, request.TypeOfCertificate)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetSecurityHandler(csHandler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -83,5 +82,5 @@ func (suite *OcppV2TestSuite) TestCertificateSignedInvalidEndpoint() {
 	certificateSignedRequest := security.NewCertificateSignedRequest([]string{certificate})
 	certificateSignedRequest.TypeOfCertificate = certificateType
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"cert":["%v"],"typeOfCertificate":"%v"}]`, messageId, security.CertificateSignedFeatureName, certificate, certificateType)
-	testUnsupportedRequestFromChargePoint(suite, certificateSignedRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargingStation(suite, certificateSignedRequest, requestJson, messageId)
 }

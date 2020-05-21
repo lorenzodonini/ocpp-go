@@ -1,4 +1,4 @@
-package ocpp2
+package smartcharging
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Get Charging Profiles (CSMS -> Charging Station) --------------------
+
+const GetChargingProfilesFeatureName = "GetChargingProfiles"
 
 // Status reported in GetChargingProfilesConfirmation.
 type GetChargingProfileStatus string

@@ -1,4 +1,4 @@
-package ocpp2
+package diagnostics
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Get Log (CSMS -> CS) --------------------
+
+const GetLogFeatureName = "GetLog"
 
 // LogType represents the type of log file that the Charging Station should send. It is used in GetLogRequest.
 type LogType string

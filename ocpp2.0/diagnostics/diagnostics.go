@@ -13,6 +13,10 @@ type ChargingStationHandler interface {
 	OnClearVariableMonitoring(request *ClearVariableMonitoringRequest) (confirmation *ClearVariableMonitoringConfirmation, err error)
 	// OnCustomerInformation is called on a charging station whenever a CustomerInformationRequest is received from the CSMS.
 	OnCustomerInformation(request *CustomerInformationRequest) (confirmation *CustomerInformationConfirmation, err error)
+	// OnGetLog is called on a charging station whenever a GetLogRequest is received from the CSMS.
+	OnGetLog(request *GetLogRequest) (confirmation *GetLogConfirmation, err error)
+	// OnGetMonitoringReport is called on a charging station whenever a GetMonitoringReportRequest is received from the CSMS.
+	OnGetMonitoringReport(request *GetMonitoringReportRequest) (confirmation *GetMonitoringReportConfirmation, err error)
 }
 
 const ProfileName = "diagnostics"
@@ -21,4 +25,6 @@ var Profile = ocpp.NewProfile(
 	ProfileName,
 	ClearVariableMonitoringFeature{},
 	CustomerInformationFeature{},
+	GetLogFeature{},
+	GetMonitoringReportFeature{},
 	)

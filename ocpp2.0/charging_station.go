@@ -113,8 +113,8 @@ func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareSt
 	}
 }
 
-func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, exiRequest string, props ...func(request *Get15118EVCertificateRequest)) (*Get15118EVCertificateConfirmation, error) {
-	request := NewGet15118EVCertificateRequest(schemaVersion, exiRequest)
+func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateConfirmation, error) {
+	request := iso15118.NewGet15118EVCertificateRequest(schemaVersion, exiRequest)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -122,12 +122,12 @@ func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, exiReques
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*Get15118EVCertificateConfirmation), err
+		return confirmation.(*iso15118.Get15118EVCertificateConfirmation), err
 	}
 }
 
-func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPRequestDataType, props ...func(request *GetCertificateStatusRequest)) (*GetCertificateStatusConfirmation, error) {
-	request := NewGetCertificateStatusRequest(ocspRequestData)
+func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPRequestDataType, props ...func(request *iso15118.GetCertificateStatusRequest)) (*iso15118.GetCertificateStatusConfirmation, error) {
+	request := iso15118.NewGetCertificateStatusRequest(ocspRequestData)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -135,7 +135,7 @@ func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPReques
 	if err != nil {
 		return nil, err
 	} else {
-		return confirmation.(*GetCertificateStatusConfirmation), err
+		return confirmation.(*iso15118.GetCertificateStatusConfirmation), err
 	}
 }
 
@@ -348,7 +348,7 @@ func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, err
 
 func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	switch request.GetFeatureName() {
-	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, Get15118EVCertificateFeatureName, GetCertificateStatusFeatureName:
+	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, iso15118.Get15118EVCertificateFeatureName, iso15118.GetCertificateStatusFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
@@ -494,20 +494,20 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		confirmation, err = cs.iso15118Handler.OnDeleteCertificate(request.(*iso15118.DeleteCertificateRequest))
 	case provisioning.GetBaseReportFeatureName:
 		confirmation, err = cs.provisioningHandler.OnGetBaseReport(request.(*provisioning.GetBaseReportRequest))
-	case GetChargingProfilesFeatureName:
-		confirmation, err = cs.messageHandler.OnGetChargingProfiles(request.(*GetChargingProfilesRequest))
-	case GetCompositeScheduleFeatureName:
-		confirmation, err = cs.messageHandler.OnGetCompositeSchedule(request.(*GetCompositeScheduleRequest))
-	case GetDisplayMessagesFeatureName:
-		confirmation, err = cs.messageHandler.OnGetDisplayMessages(request.(*GetDisplayMessagesRequest))
-	case GetInstalledCertificateIdsFeatureName:
-		confirmation, err = cs.messageHandler.OnGetInstalledCertificateIds(request.(*GetInstalledCertificateIdsRequest))
-	case GetLocalListVersionFeatureName:
-		confirmation, err = cs.messageHandler.OnGetLocalListVersion(request.(*GetLocalListVersionRequest))
-	case GetLogFeatureName:
-		confirmation, err = cs.messageHandler.OnGetLog(request.(*GetLogRequest))
-	case GetMonitoringReportFeatureName:
-		confirmation, err = cs.messageHandler.OnGetMonitoringReport(request.(*GetMonitoringReportRequest))
+	case smartcharging.GetChargingProfilesFeatureName:
+		confirmation, err = cs.smartChargingHandler.OnGetChargingProfiles(request.(*smartcharging.GetChargingProfilesRequest))
+	case smartcharging.GetCompositeScheduleFeatureName:
+		confirmation, err = cs.smartChargingHandler.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
+	case display.GetDisplayMessagesFeatureName:
+		confirmation, err = cs.displayHandler.OnGetDisplayMessages(request.(*display.GetDisplayMessagesRequest))
+	case iso15118.GetInstalledCertificateIdsFeatureName:
+		confirmation, err = cs.iso15118Handler.OnGetInstalledCertificateIds(request.(*iso15118.GetInstalledCertificateIdsRequest))
+	case localauth.GetLocalListVersionFeatureName:
+		confirmation, err = cs.localAuthListHandler.OnGetLocalListVersion(request.(*localauth.GetLocalListVersionRequest))
+	case diagnostics.GetLogFeatureName:
+		confirmation, err = cs.diagnosticsHandler.OnGetLog(request.(*diagnostics.GetLogRequest))
+	case diagnostics.GetMonitoringReportFeatureName:
+		confirmation, err = cs.diagnosticsHandler.OnGetMonitoringReport(request.(*diagnostics.GetMonitoringReportRequest))
 	//case GetConfigurationFeatureName:
 	//	confirmation, err = cp.messageHandler.OnGetConfiguration(request.(*GetConfigurationRequest))
 	//case RemoteStartTransactionFeatureName:

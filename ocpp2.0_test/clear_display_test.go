@@ -49,9 +49,8 @@ func (suite *OcppV2TestSuite) TestClearDisplayE2EMocked() {
 		require.NotNil(t, request)
 		assert.Equal(t, displayMessageId, request.ID)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetDisplayHandler(handler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -73,5 +72,5 @@ func (suite *OcppV2TestSuite) TestClearDisplayInvalidEndpoint() {
 	displayMessageId := 42
 	clearDisplayRequest := display.NewClearDisplayRequest(displayMessageId)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v}]`, messageId, display.ClearDisplayFeatureName, displayMessageId)
-	testUnsupportedRequestFromChargePoint(suite, clearDisplayRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargingStation(suite, clearDisplayRequest, requestJson, messageId)
 }

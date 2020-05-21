@@ -2,7 +2,7 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/iso15118"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -12,14 +12,14 @@ import (
 func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsRequestValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{ocpp2.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.V2GRootCertificate}, true},
-		{ocpp2.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.MORootCertificate}, true},
-		{ocpp2.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.CSOSubCA1}, true},
-		{ocpp2.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.CSOSubCA2}, true},
-		{ocpp2.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.CSMSRootCertificate}, true},
-		{ocpp2.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.ManufacturerRootCertificate}, true},
-		{ocpp2.GetInstalledCertificateIdsRequest{}, false},
-		{ocpp2.GetInstalledCertificateIdsRequest{TypeOfCertificate: "invalidCertificateUse"}, false},
+		{iso15118.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.V2GRootCertificate}, true},
+		{iso15118.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.MORootCertificate}, true},
+		{iso15118.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.CSOSubCA1}, true},
+		{iso15118.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.CSOSubCA2}, true},
+		{iso15118.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.CSMSRootCertificate}, true},
+		{iso15118.GetInstalledCertificateIdsRequest{TypeOfCertificate: types.ManufacturerRootCertificate}, true},
+		{iso15118.GetInstalledCertificateIdsRequest{}, false},
+		{iso15118.GetInstalledCertificateIdsRequest{TypeOfCertificate: "invalidCertificateUse"}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -27,13 +27,13 @@ func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsRequestValidation() 
 func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsConfirmationValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{ocpp2.GetInstalledCertificateIdsConfirmation{Status: ocpp2.GetInstalledCertificateStatusAccepted, CertificateHashData: []types.CertificateHashData{{HashAlgorithm: types.SHA256, IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"}}}, true},
-		{ocpp2.GetInstalledCertificateIdsConfirmation{Status: ocpp2.GetInstalledCertificateStatusNotFound, CertificateHashData: []types.CertificateHashData{{HashAlgorithm: types.SHA256, IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"}}}, true},
-		{ocpp2.GetInstalledCertificateIdsConfirmation{Status: ocpp2.GetInstalledCertificateStatusAccepted, CertificateHashData: []types.CertificateHashData{}}, true},
-		{ocpp2.GetInstalledCertificateIdsConfirmation{Status: ocpp2.GetInstalledCertificateStatusAccepted}, true},
-		{ocpp2.GetInstalledCertificateIdsConfirmation{}, false},
-		{ocpp2.GetInstalledCertificateIdsConfirmation{Status: "invalidGetInstalledCertificateStatus"}, false},
-		{ocpp2.GetInstalledCertificateIdsConfirmation{Status: ocpp2.GetInstalledCertificateStatusAccepted, CertificateHashData: []types.CertificateHashData{{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"}}}, false},
+		{iso15118.GetInstalledCertificateIdsConfirmation{Status: iso15118.GetInstalledCertificateStatusAccepted, CertificateHashData: []types.CertificateHashData{{HashAlgorithm: types.SHA256, IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"}}}, true},
+		{iso15118.GetInstalledCertificateIdsConfirmation{Status: iso15118.GetInstalledCertificateStatusNotFound, CertificateHashData: []types.CertificateHashData{{HashAlgorithm: types.SHA256, IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"}}}, true},
+		{iso15118.GetInstalledCertificateIdsConfirmation{Status: iso15118.GetInstalledCertificateStatusAccepted, CertificateHashData: []types.CertificateHashData{}}, true},
+		{iso15118.GetInstalledCertificateIdsConfirmation{Status: iso15118.GetInstalledCertificateStatusAccepted}, true},
+		{iso15118.GetInstalledCertificateIdsConfirmation{}, false},
+		{iso15118.GetInstalledCertificateIdsConfirmation{Status: "invalidGetInstalledCertificateStatus"}, false},
+		{iso15118.GetInstalledCertificateIdsConfirmation{Status: iso15118.GetInstalledCertificateStatusAccepted, CertificateHashData: []types.CertificateHashData{{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"}}}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -45,32 +45,32 @@ func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	certificateType := types.CSMSRootCertificate
-	status := ocpp2.GetInstalledCertificateStatusAccepted
+	status := iso15118.GetInstalledCertificateStatusAccepted
 	certificateHashData := []types.CertificateHashData{
 		{HashAlgorithm: types.SHA256, IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"},
 	}
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"typeOfCertificate":"%v"}]`, messageId, ocpp2.GetInstalledCertificateIdsFeatureName, certificateType)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"typeOfCertificate":"%v"}]`, messageId, iso15118.GetInstalledCertificateIdsFeatureName, certificateType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","certificateHashData":[{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v"}]}]`,
 		messageId, status, certificateHashData[0].HashAlgorithm, certificateHashData[0].IssuerNameHash, certificateHashData[0].IssuerKeyHash, certificateHashData[0].SerialNumber)
-	getInstalledCertificateIdsConfirmation := ocpp2.NewGetInstalledCertificateIdsConfirmation(status)
+	getInstalledCertificateIdsConfirmation := iso15118.NewGetInstalledCertificateIdsConfirmation(status)
 	getInstalledCertificateIdsConfirmation.CertificateHashData = certificateHashData
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
-	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnGetInstalledCertificateIds", mock.Anything).Return(getInstalledCertificateIdsConfirmation, nil).Run(func(args mock.Arguments) {
-		request, ok := args.Get(0).(*ocpp2.GetInstalledCertificateIdsRequest)
+	handler := MockChargingStationIso15118Handler{}
+	handler.On("OnGetInstalledCertificateIds", mock.Anything).Return(getInstalledCertificateIdsConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(0).(*iso15118.GetInstalledCertificateIdsRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
 		assert.Equal(t, certificateType, request.TypeOfCertificate)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetInstalledCertificateIds(wsId, func(confirmation *ocpp2.GetInstalledCertificateIdsConfirmation, err error) {
+	err = suite.csms.GetInstalledCertificateIds(wsId, func(confirmation *iso15118.GetInstalledCertificateIdsConfirmation, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
@@ -89,7 +89,7 @@ func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsE2EMocked() {
 func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsInvalidEndpoint() {
 	messageId := defaultMessageId
 	certificateType := types.CSMSRootCertificate
-	GetInstalledCertificateIdsRequest := ocpp2.NewGetInstalledCertificateIdsRequest(certificateType)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"typeOfCertificate":"%v"}]`, messageId, ocpp2.GetInstalledCertificateIdsFeatureName, certificateType)
-	testUnsupportedRequestFromChargePoint(suite, GetInstalledCertificateIdsRequest, requestJson, messageId)
+	GetInstalledCertificateIdsRequest := iso15118.NewGetInstalledCertificateIdsRequest(certificateType)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"typeOfCertificate":"%v"}]`, messageId, iso15118.GetInstalledCertificateIdsFeatureName, certificateType)
+	testUnsupportedRequestFromChargingStation(suite, GetInstalledCertificateIdsRequest, requestJson, messageId)
 }

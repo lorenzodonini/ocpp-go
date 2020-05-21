@@ -1,4 +1,4 @@
-package ocpp2
+package smartcharging
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
@@ -7,6 +7,8 @@ import (
 )
 
 // -------------------- Get Composite Schedule (CSMS -> CS) --------------------
+
+const GetCompositeScheduleFeatureName = "GetCompositeSchedule"
 
 // Status reported in GetCompositeScheduleConfirmation.
 type GetCompositeScheduleStatus string

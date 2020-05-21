@@ -63,9 +63,8 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 		assert.Equal(t, chargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
 		assert.Equal(t, stackLevel, request.ChargingProfile.StackLevel)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetSmartChargingHandler(handler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -96,5 +95,5 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileInvalidEndpoint() {
 	clearChargingProfileRequest := smartcharging.NewClearChargingProfileRequest()
 	clearChargingProfileRequest.EvseID = &evseID
 	clearChargingProfileRequest.ChargingProfile = &smartcharging.ClearChargingProfileType{ID: chargingProfileId, ChargingProfilePurpose: chargingProfilePurpose, StackLevel: stackLevel}
-	testUnsupportedRequestFromChargePoint(suite, clearChargingProfileRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargingStation(suite, clearChargingProfileRequest, requestJson, messageId)
 }

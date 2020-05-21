@@ -55,9 +55,8 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 		assert.Equal(t, certificateHashData.IssuerKeyHash, request.CertificateHashData.IssuerKeyHash)
 		assert.Equal(t, certificateHashData.SerialNumber, request.CertificateHashData.SerialNumber)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargingStation.SetISO15118Handler(handler)
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
@@ -80,5 +79,5 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateInvalidEndpoint() {
 	deleteCertificateRequest := iso15118.NewDeleteCertificateRequest(certificateHashData)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateHashData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v"}}]`,
 		messageId, iso15118.DeleteCertificateFeatureName, certificateHashData.HashAlgorithm, certificateHashData.IssuerNameHash, certificateHashData.IssuerKeyHash, certificateHashData.SerialNumber)
-	testUnsupportedRequestFromChargePoint(suite, deleteCertificateRequest, requestJson, messageId)
+	testUnsupportedRequestFromChargingStation(suite, deleteCertificateRequest, requestJson, messageId)
 }

@@ -65,16 +65,15 @@ func (suite *OcppV2TestSuite) TestBootNotificationE2EMocked() {
 	bootNotificationConfirmation := provisioning.NewBootNotificationConfirmation(currentTime, interval, registrationStatus)
 	channel := NewMockWebSocket(wsId)
 
-	csmsHandler := MockCSMSProvisioningHandler{}
-	csmsHandler.On("OnBootNotification", mock.AnythingOfType("string"), mock.Anything).Return(bootNotificationConfirmation, nil).Run(func(args mock.Arguments) {
+	handler := MockCSMSProvisioningHandler{}
+	handler.On("OnBootNotification", mock.AnythingOfType("string"), mock.Anything).Return(bootNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request := args.Get(1).(*provisioning.BootNotificationRequest)
 		assert.Equal(t, reason, request.Reason)
 		assert.Equal(t, chargePointVendor, request.ChargingStation.VendorName)
 		assert.Equal(t, chargePointModel, request.ChargingStation.Model)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.csms.SetProvisioningHandler(csmsHandler)
-	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
+	setupDefaultChargingStationHandlers(suite, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
