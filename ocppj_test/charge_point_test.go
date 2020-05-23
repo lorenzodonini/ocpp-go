@@ -55,13 +55,13 @@ func (suite *OcppJTestSuite) TestChargePointSendRequestFailed() {
 	//TODO: assert that pending request was removed
 }
 
-// SendConfirmation
+// SendResponse
 func (suite *OcppJTestSuite) TestChargePointSendConfirmation() {
 	t := suite.T()
 	mockUniqueId := "1234"
 	suite.mockClient.On("Write", mock.Anything).Return(nil)
 	mockConfirmation := newMockConfirmation("mockValue")
-	err := suite.chargePoint.SendConfirmation(mockUniqueId, mockConfirmation)
+	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
 	assert.Nil(t, err)
 }
 
@@ -71,7 +71,7 @@ func (suite *OcppJTestSuite) TestChargePointSendInvalidConfirmation() {
 	suite.mockClient.On("Write", mock.Anything).Return(nil)
 	mockConfirmation := newMockConfirmation("")
 	// This is allowed. Endpoint doesn't keep track of incoming requests, but only outgoing ones
-	err := suite.chargePoint.SendConfirmation(mockUniqueId, mockConfirmation)
+	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
 }
 
@@ -80,7 +80,7 @@ func (suite *OcppJTestSuite) TestChargePointSendConfirmationFailed() {
 	mockUniqueId := "1234"
 	suite.mockClient.On("Write", mock.Anything).Return(errors.New("networkError"))
 	mockConfirmation := newMockConfirmation("mockValue")
-	err := suite.chargePoint.SendConfirmation(mockUniqueId, mockConfirmation)
+	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
 	assert.Equal(t, "networkError", err.Error())
 }
@@ -109,7 +109,7 @@ func (suite *OcppJTestSuite) TestChargePointSendErrorFailed() {
 	mockUniqueId := "1234"
 	suite.mockClient.On("Write", mock.Anything).Return(errors.New("networkError"))
 	mockConfirmation := newMockConfirmation("mockValue")
-	err := suite.chargePoint.SendConfirmation(mockUniqueId, mockConfirmation)
+	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
 	assert.Equal(t, "networkError", err.Error())
 }
@@ -140,7 +140,7 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.chargePoint.SetConfirmationHandler(func(confirmation ocpp.Confirmation, requestId string) {
+	suite.chargePoint.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
 		assert.Equal(t, mockUniqueId, requestId)
 		assert.NotNil(t, confirmation)
 	})

@@ -2,7 +2,8 @@ package ocpp16_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"time"
@@ -12,7 +13,7 @@ import (
 func (suite *OcppV16TestSuite) TestHeartbeatRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp16.HeartbeatRequest{}, true},
+		{core.HeartbeatRequest{}, true},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -20,8 +21,8 @@ func (suite *OcppV16TestSuite) TestHeartbeatRequestValidation() {
 func (suite *OcppV16TestSuite) TestHeartbeatConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp16.HeartbeatConfirmation{CurrentTime: ocpp16.NewDateTime(time.Now())}, true},
-		{ocpp16.HeartbeatConfirmation{}, false},
+		{core.HeartbeatConfirmation{CurrentTime: types.NewDateTime(time.Now())}, true},
+		{core.HeartbeatConfirmation{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -31,10 +32,10 @@ func (suite *OcppV16TestSuite) TestHeartbeatE2EMocked() {
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	currentTime := ocpp16.NewDateTime(time.Now())
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, ocpp16.HeartbeatFeatureName)
-	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v"}]`, messageId, currentTime.Time.Format(ocpp16.ISO8601))
-	heartbeatConfirmation := ocpp16.NewHeartbeatConfirmation(currentTime)
+	currentTime := types.NewDateTime(time.Now())
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, core.HeartbeatFeatureName)
+	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v"}]`, messageId, currentTime.FormatTimestamp())
+	heartbeatConfirmation := core.NewHeartbeatConfirmation(currentTime)
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockCentralSystemCoreListener{}
@@ -53,7 +54,7 @@ func (suite *OcppV16TestSuite) TestHeartbeatE2EMocked() {
 
 func (suite *OcppV16TestSuite) TestHeartbeatInvalidEndpoint() {
 	messageId := defaultMessageId
-	heartbeatRequest := ocpp16.NewHeartbeatRequest()
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, ocpp16.HeartbeatFeatureName)
+	heartbeatRequest := core.NewHeartbeatRequest()
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, core.HeartbeatFeatureName)
 	testUnsupportedRequestFromCentralSystem(suite, heartbeatRequest, requestJson, messageId)
 }

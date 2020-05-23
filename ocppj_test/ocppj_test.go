@@ -122,7 +122,7 @@ func (f MockFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(MockRequest{})
 }
 
-func (f MockFeature) GetConfirmationType() reflect.Type {
+func (f MockFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(MockConfirmation{})
 }
 
@@ -246,8 +246,8 @@ func init() {
 // ---------------------- TESTS ----------------------
 type OcppJTestSuite struct {
 	suite.Suite
-	chargePoint   *ocppj.ChargePoint
-	centralSystem *ocppj.CentralSystem
+	chargePoint   *ocppj.Client
+	centralSystem *ocppj.Server
 	mockServer    *MockWebsocketServer
 	mockClient    *MockWebsocketClient
 }
@@ -258,8 +258,8 @@ func (suite *OcppJTestSuite) SetupTest() {
 	mockServer := MockWebsocketServer{}
 	suite.mockClient = &mockClient
 	suite.mockServer = &mockServer
-	suite.chargePoint = ocppj.NewChargePoint("mock_id", suite.mockClient, mockProfile)
-	suite.centralSystem = ocppj.NewCentralSystem(suite.mockServer, mockProfile)
+	suite.chargePoint = ocppj.NewClient("mock_id", suite.mockClient, mockProfile)
+	suite.centralSystem = ocppj.NewServer(suite.mockServer, mockProfile)
 }
 
 // Protocol functions test
@@ -271,7 +271,7 @@ func (suite *OcppJTestSuite) TestGetProfile() {
 	feature := profile.GetFeature(MockFeatureName)
 	assert.NotNil(t, feature)
 	assert.Equal(t, reflect.TypeOf(MockRequest{}), feature.GetRequestType())
-	assert.Equal(t, reflect.TypeOf(MockConfirmation{}), feature.GetConfirmationType())
+	assert.Equal(t, reflect.TypeOf(MockConfirmation{}), feature.GetResponseType())
 }
 
 func (suite *OcppJTestSuite) TestGetProfileForFeature() {
@@ -457,7 +457,7 @@ func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, ocppj.MessageTypeNotSupported, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid message type ID %v", invalidTypeId), protoErr.Description)
 }
 

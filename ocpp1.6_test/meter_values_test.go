@@ -2,7 +2,8 @@ package ocpp16_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"time"
@@ -11,20 +12,20 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestMeterValuesRequestValidation() {
 	var requestTable = []GenericTestEntry{
-		{ocpp16.MeterValuesRequest{ConnectorId: 1, TransactionId: 1, MeterValue: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}}}, true},
-		{ocpp16.MeterValuesRequest{ConnectorId: 1, MeterValue: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}}}, true},
-		{ocpp16.MeterValuesRequest{MeterValue: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}}}, true},
-		{ocpp16.MeterValuesRequest{ConnectorId: -1, MeterValue: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}}}, false},
-		{ocpp16.MeterValuesRequest{ConnectorId: 1, MeterValue: []ocpp16.MeterValue{}}, false},
-		{ocpp16.MeterValuesRequest{ConnectorId: 1}, false},
-		{ocpp16.MeterValuesRequest{ConnectorId: 1, MeterValue: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{}}}}, false},
+		{core.MeterValuesRequest{ConnectorId: 1, TransactionId: 1, MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}}, true},
+		{core.MeterValuesRequest{ConnectorId: 1, MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}}, true},
+		{core.MeterValuesRequest{MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}}, true},
+		{core.MeterValuesRequest{ConnectorId: -1, MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}}, false},
+		{core.MeterValuesRequest{ConnectorId: 1, MeterValue: []types.MeterValue{}}, false},
+		{core.MeterValuesRequest{ConnectorId: 1}, false},
+		{core.MeterValuesRequest{ConnectorId: 1, MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{}}}}, false},
 	}
 	ExecuteGenericTestTable(suite.T(), requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestMeterValuesConfirmationValidation() {
 	var confirmationTable = []GenericTestEntry{
-		{ocpp16.MeterValuesConfirmation{}, true},
+		{core.MeterValuesConfirmation{}, true},
 	}
 	ExecuteGenericTestTable(suite.T(), confirmationTable)
 }
@@ -36,17 +37,17 @@ func (suite *OcppV16TestSuite) TestMeterValuesE2EMocked() {
 	wsUrl := "someUrl"
 	connectorId := 1
 	mockValue := "value"
-	mockUnit := ocpp16.UnitOfMeasureKW
-	meterValues := []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: mockValue, Unit: mockUnit}}}}
-	timestamp := ocpp16.DateTime{Time: time.Now()}
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"meterValue":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, ocpp16.MeterValuesFeatureName, connectorId, timestamp.Format(ocpp16.ISO8601), mockValue, mockUnit)
+	mockUnit := types.UnitOfMeasureKW
+	meterValues := []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: mockValue, Unit: mockUnit}}}}
+	timestamp := types.DateTime{Time: time.Now()}
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"meterValue":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.MeterValuesFeatureName, connectorId, timestamp.FormatTimestamp(), mockValue, mockUnit)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
-	meterValuesConfirmation := ocpp16.NewMeterValuesConfirmation()
+	meterValuesConfirmation := core.NewMeterValuesConfirmation()
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockCentralSystemCoreListener{}
 	coreListener.On("OnMeterValues", mock.AnythingOfType("string"), mock.Anything).Return(meterValuesConfirmation, nil).Run(func(args mock.Arguments) {
-		request := args.Get(1).(*ocpp16.MeterValuesRequest)
+		request := args.Get(1).(*core.MeterValuesRequest)
 		assert.Equal(t, connectorId, request.ConnectorId)
 		assert.Equal(t, 1, len(request.MeterValue))
 		mv := request.MeterValue[0]
@@ -71,10 +72,10 @@ func (suite *OcppV16TestSuite) TestMeterValuesInvalidEndpoint() {
 	messageId := defaultMessageId
 	connectorId := 1
 	mockValue := "value"
-	mockUnit := ocpp16.UnitOfMeasureKW
-	timestamp := ocpp16.DateTime{Time: time.Now()}
-	meterValues := []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: mockValue, Unit: mockUnit}}}}
-	meterValuesRequest := ocpp16.NewMeterValuesRequest(connectorId, meterValues)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"meterValue":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, ocpp16.MeterValuesFeatureName, connectorId, timestamp.Format(ocpp16.ISO8601), mockValue, mockUnit)
+	mockUnit := types.UnitOfMeasureKW
+	timestamp := types.DateTime{Time: time.Now()}
+	meterValues := []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: mockValue, Unit: mockUnit}}}}
+	meterValuesRequest := core.NewMeterValuesRequest(connectorId, meterValues)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"meterValue":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.MeterValuesFeatureName, connectorId, timestamp.FormatTimestamp(), mockValue, mockUnit)
 	testUnsupportedRequestFromCentralSystem(suite, meterValuesRequest, requestJson, messageId)
 }

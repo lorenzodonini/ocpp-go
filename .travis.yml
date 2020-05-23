@@ -20,16 +20,16 @@ jobs:
         - go test ./...
     - stage: publish_latest
       script:
-        - docker build -t ldonini/ocpp1.6-central-system:latest -f example/cs/Dockerfile .
-        - docker build -t ldonini/ocpp1.6-charge-point:latest -f example/cp/Dockerfile .
+        - docker build -t ldonini/ocpp1.6-central-system:latest -f example/cs1.6/Dockerfile .
+        - docker build -t ldonini/ocpp1.6-charge-point:latest -f example/cp1.6/Dockerfile .
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - docker push ldonini/ocpp1.6-central-system:latest
         - docker push ldonini/ocpp1.6-charge-point:latest
       if: branch == master
     - stage: release
       script:
-        - docker build -t "ldonini/ocpp1.6-central-system:$TRAVIS_TAG" -f example/cs/Dockerfile .
-        - docker build -t "ldonini/ocpp1.6-charge-point:$TRAVIS_TAG" -f example/cp/Dockerfile .
+        - docker build -t "ldonini/ocpp1.6-central-system:$TRAVIS_TAG" -f example/cs1.6/Dockerfile .
+        - docker build -t "ldonini/ocpp1.6-charge-point:$TRAVIS_TAG" -f example/cp1.6/Dockerfile .
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - docker push "ldonini/ocpp1.6-central-system:$TRAVIS_TAG"
         - docker push "ldonini/ocpp1.6-charge-point:$TRAVIS_TAG"

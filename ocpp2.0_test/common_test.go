@@ -1,44 +1,44 @@
 package ocpp2_test
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"time"
 )
 
 // Utility functions
-func newInt(i int) *int{
+func newInt(i int) *int {
 	return &i
 }
 
-func newFloat(f float64) *float64{
+func newFloat(f float64) *float64 {
 	return &f
 }
 
 // Test
 func (suite *OcppV2TestSuite) TestIdTokenInfoValidation() {
 	var testTable = []GenericTestEntry{
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Language: "en", Content: "random"}}, true},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Content: "random"}}, true},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}}, true},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2"}, true},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1"}, true},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1}, true},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now())}, true},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted}, true},
-		{ocpp2.IdTokenInfo{}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: "invalidFormat", Language: "en", Content: "random"}}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Language: "en", Content: ">512............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{Format: ocpp2.MessageFormatUTF8, Language: "en"}}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: ocpp2.IdTokenTypeCentral}, PersonalMessage: &ocpp2.MessageContent{}}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234", Type: "invalidTokenType"}}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{Type: ocpp2.IdTokenTypeCentral}}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{IdToken: "1234"}}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &ocpp2.GroupIdToken{}}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: ">8......."}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 1, Language1: ">8.......", Language2: "l2"}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: -10}, false},
-		{ocpp2.IdTokenInfo{Status: ocpp2.AuthorizationStatusAccepted, CacheExpiryDateTime: ocpp2.NewDateTime(time.Now()), ChargingPriority: 10}, false},
-		{ocpp2.IdTokenInfo{Status: "invalidAuthStatus"}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234", Type: types.IdTokenTypeCentral}, PersonalMessage: &types.MessageContent{Format: types.MessageFormatUTF8, Language: "en", Content: "random"}}, true},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234", Type: types.IdTokenTypeCentral}, PersonalMessage: &types.MessageContent{Format: types.MessageFormatUTF8, Content: "random"}}, true},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234", Type: types.IdTokenTypeCentral}}, true},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2"}, true},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1"}, true},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1}, true},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now())}, true},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted}, true},
+		{types.IdTokenInfo{}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234", Type: types.IdTokenTypeCentral}, PersonalMessage: &types.MessageContent{Format: "invalidFormat", Language: "en", Content: "random"}}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234", Type: types.IdTokenTypeCentral}, PersonalMessage: &types.MessageContent{Format: types.MessageFormatUTF8, Language: "en", Content: ">512............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234", Type: types.IdTokenTypeCentral}, PersonalMessage: &types.MessageContent{Format: types.MessageFormatUTF8, Language: "en"}}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234", Type: types.IdTokenTypeCentral}, PersonalMessage: &types.MessageContent{}}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234", Type: "invalidTokenType"}}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{Type: types.IdTokenTypeCentral}}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234"}}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{}}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: ">8......."}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: ">8.......", Language2: "l2"}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: -10}, false},
+		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 10}, false},
+		{types.IdTokenInfo{Status: "invalidAuthStatus"}, false},
 	}
 	ExecuteGenericTestTable(suite.T(), testTable)
 }
@@ -46,32 +46,32 @@ func (suite *OcppV2TestSuite) TestIdTokenInfoValidation() {
 func (suite *OcppV2TestSuite) TestChargingSchedulePeriodValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(3)}, true},
-		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0}, true},
-		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0}, true},
-		{ocpp2.ChargingSchedulePeriod{}, true},
-		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: -1.0}, false},
-		{ocpp2.ChargingSchedulePeriod{StartPeriod: -1, Limit: 10.0}, false},
-		{ocpp2.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(-1)}, false},
+		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(3)}, true},
+		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0}, true},
+		{types.ChargingSchedulePeriod{StartPeriod: 0}, true},
+		{types.ChargingSchedulePeriod{}, true},
+		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: -1.0}, false},
+		{types.ChargingSchedulePeriod{StartPeriod: -1, Limit: 10.0}, false},
+		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(-1)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestChargingScheduleValidation() {
 	t := suite.T()
-	chargingSchedulePeriods := make([]ocpp2.ChargingSchedulePeriod, 2)
-	chargingSchedulePeriods[0] = ocpp2.NewChargingSchedulePeriod(0, 10.0)
-	chargingSchedulePeriods[1] = ocpp2.NewChargingSchedulePeriod(100, 8.0)
+	chargingSchedulePeriods := make([]types.ChargingSchedulePeriod, 2)
+	chargingSchedulePeriods[0] = types.NewChargingSchedulePeriod(0, 10.0)
+	chargingSchedulePeriods[1] = types.NewChargingSchedulePeriod(100, 8.0)
 	var testTable = []GenericTestEntry{
-		{ocpp2.ChargingSchedule{Duration: newInt(0), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
-		{ocpp2.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
-		{ocpp2.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods}, true},
-		{ocpp2.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: ocpp2.ChargingRateUnitWatts}, false},
-		{ocpp2.ChargingSchedule{Duration: newInt(0), ChargingSchedulePeriod: chargingSchedulePeriods}, false},
-		{ocpp2.ChargingSchedule{Duration: newInt(-1), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, false},
-		{ocpp2.ChargingSchedule{Duration: newInt(0), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(-1.0)}, false},
-		{ocpp2.ChargingSchedule{Duration: newInt(0), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: ocpp2.ChargingRateUnitWatts, ChargingSchedulePeriod: make([]ocpp2.ChargingSchedulePeriod, 0), MinChargingRate: newFloat(1.0)}, false},
-		{ocpp2.ChargingSchedule{Duration: newInt(-1), StartSchedule: ocpp2.NewDateTime(time.Now()), ChargingRateUnit: "invalidChargeRateUnit", ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, false},
+		{types.ChargingSchedule{Duration: newInt(0), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
+		{types.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
+		{types.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods}, true},
+		{types.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: types.ChargingRateUnitWatts}, false},
+		{types.ChargingSchedule{Duration: newInt(0), ChargingSchedulePeriod: chargingSchedulePeriods}, false},
+		{types.ChargingSchedule{Duration: newInt(-1), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, false},
+		{types.ChargingSchedule{Duration: newInt(0), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(-1.0)}, false},
+		{types.ChargingSchedule{Duration: newInt(0), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: make([]types.ChargingSchedulePeriod, 0), MinChargingRate: newFloat(1.0)}, false},
+		{types.ChargingSchedule{Duration: newInt(-1), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: "invalidChargeRateUnit", ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -79,42 +79,42 @@ func (suite *OcppV2TestSuite) TestChargingScheduleValidation() {
 func (suite *OcppV2TestSuite) TestComponentVariableValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, true},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2}}, Variable:  ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, true},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", EVSE: &ocpp2.EVSE{ID: 2}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, true},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", EVSE: &ocpp2.EVSE{ID: 2}}, Variable: ocpp2.Variable{ Name: "variable1"}}, true},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", EVSE: &ocpp2.EVSE{}}, Variable: ocpp2.Variable{ Name: "variable1"}}, true},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1"}, Variable: ocpp2.Variable{ Name: "variable1"}}, true},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1"}, Variable: ocpp2.Variable{}}, false},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{}, Variable:  ocpp2.Variable{ Name: "variable1"}}, false},
-		{ocpp2.ComponentVariable{Variable:  ocpp2.Variable{ Name: "variable1"}}, false},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1"}}, false},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: ">50................................................", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, false},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: ">50................................................", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, false},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: ">50................................................", Instance: "instance1"}}, false},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: ">50................................................"}}, false},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: 2, ConnectorID: newInt(-2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, false},
-		{ocpp2.ComponentVariable{Component: ocpp2.Component{ Name: "component1", Instance: "instance1", EVSE: &ocpp2.EVSE{ID: -2, ConnectorID: newInt(2)}}, Variable: ocpp2.Variable{ Name: "variable1", Instance: "instance1"}}, false},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, true},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, true},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", EVSE: &types.EVSE{ID: 2}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, true},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", EVSE: &types.EVSE{ID: 2}}, Variable: types.Variable{Name: "variable1"}}, true},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", EVSE: &types.EVSE{}}, Variable: types.Variable{Name: "variable1"}}, true},
+		{types.ComponentVariable{Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, true},
+		{types.ComponentVariable{Component: types.Component{Name: "component1"}, Variable: types.Variable{}}, false},
+		{types.ComponentVariable{Component: types.Component{}, Variable: types.Variable{Name: "variable1"}}, false},
+		{types.ComponentVariable{Variable: types.Variable{Name: "variable1"}}, false},
+		{types.ComponentVariable{Component: types.Component{Name: "component1"}}, false},
+		{types.ComponentVariable{Component: types.Component{Name: ">50................................................", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, false},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: ">50................................................", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, false},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: types.Variable{Name: ">50................................................", Instance: "instance1"}}, false},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: types.Variable{Name: "variable1", Instance: ">50................................................"}}, false},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(-2)}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, false},
+		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: -2, ConnectorID: newInt(2)}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
 	t := suite.T()
-	chargingSchedule := ocpp2.NewChargingSchedule(ocpp2.ChargingRateUnitWatts, ocpp2.NewChargingSchedulePeriod(0, 10.0), ocpp2.NewChargingSchedulePeriod(100, 8.0))
+	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0), types.NewChargingSchedulePeriod(100, 8.0))
 	var testTable = []GenericTestEntry{
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, TransactionId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, RecurrencyKind: ocpp2.RecurrencyKindDaily, ValidFrom: ocpp2.NewDateTime(time.Now()), ValidTo: ocpp2.NewDateTime(time.Now().Add(8 * time.Hour)), ChargingSchedule: chargingSchedule}, true},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, true},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, true},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: "invalidChargingProfileKind", ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: "invalidChargingProfilePurpose", ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 0, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, RecurrencyKind: "invalidRecurrencyKind", ChargingSchedule: chargingSchedule}, false},
-		{ocpp2.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: ocpp2.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: ocpp2.ChargingProfileKindAbsolute, ChargingSchedule: ocpp2.NewChargingSchedule(ocpp2.ChargingRateUnitWatts)}, false},
+		{types.ChargingProfile{ChargingProfileId: 1, TransactionId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, RecurrencyKind: types.RecurrencyKindDaily, ValidFrom: types.NewDateTime(time.Now()), ValidTo: types.NewDateTime(time.Now().Add(8 * time.Hour)), ChargingSchedule: chargingSchedule}, true},
+		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, true},
+		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute}, false},
+		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingSchedule: chargingSchedule}, false},
+		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
+		{types.ChargingProfile{ChargingProfileId: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
+		{types.ChargingProfile{StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, true},
+		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: "invalidChargingProfileKind", ChargingSchedule: chargingSchedule}, false},
+		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: "invalidChargingProfilePurpose", ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
+		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 0, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, false},
+		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, RecurrencyKind: "invalidRecurrencyKind", ChargingSchedule: chargingSchedule}, false},
+		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: types.NewChargingSchedule(types.ChargingRateUnitWatts)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -122,30 +122,30 @@ func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
 func (suite *OcppV2TestSuite) TestSampledValueValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{ocpp2.SampledValue{Value: "value", Context: ocpp2.ReadingContextTransactionEnd, Format: ocpp2.ValueFormatRaw, Measurand: ocpp2.MeasurandPowerActiveExport, Phase: ocpp2.PhaseL2, Location: ocpp2.LocationBody, Unit: ocpp2.UnitOfMeasureKW}, true},
-		{ocpp2.SampledValue{Value: "value", Context: ocpp2.ReadingContextTransactionEnd, Format: ocpp2.ValueFormatRaw, Measurand: ocpp2.MeasurandPowerActiveExport, Phase: ocpp2.PhaseL2, Location: ocpp2.LocationBody}, true},
-		{ocpp2.SampledValue{Value: "value", Context: ocpp2.ReadingContextTransactionEnd, Format: ocpp2.ValueFormatRaw, Measurand: ocpp2.MeasurandPowerActiveExport, Phase: ocpp2.PhaseL2}, true},
-		{ocpp2.SampledValue{Value: "value", Context: ocpp2.ReadingContextTransactionEnd, Format: ocpp2.ValueFormatRaw, Measurand: ocpp2.MeasurandPowerActiveExport}, true},
-		{ocpp2.SampledValue{Value: "value", Context: ocpp2.ReadingContextTransactionEnd, Format: ocpp2.ValueFormatRaw}, true},
-		{ocpp2.SampledValue{Value: "value", Context: ocpp2.ReadingContextTransactionEnd}, true},
-		{ocpp2.SampledValue{Value: "value"}, true},
-		{ocpp2.SampledValue{Value: "value", Context: "invalidContext"}, false},
-		{ocpp2.SampledValue{Value: "value", Format: "invalidFormat"}, false},
-		{ocpp2.SampledValue{Value: "value", Measurand: "invalidMeasurand"}, false},
-		{ocpp2.SampledValue{Value: "value", Phase: "invalidPhase"}, false},
-		{ocpp2.SampledValue{Value: "value", Location: "invalidLocation"}, false},
-		{ocpp2.SampledValue{Value: "value", Unit: "invalidUnit"}, false},
+		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, Unit: types.UnitOfMeasureKW}, true},
+		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}, true},
+		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2}, true},
+		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport}, true},
+		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw}, true},
+		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd}, true},
+		{types.SampledValue{Value: "value"}, true},
+		{types.SampledValue{Value: "value", Context: "invalidContext"}, false},
+		{types.SampledValue{Value: "value", Format: "invalidFormat"}, false},
+		{types.SampledValue{Value: "value", Measurand: "invalidMeasurand"}, false},
+		{types.SampledValue{Value: "value", Phase: "invalidPhase"}, false},
+		{types.SampledValue{Value: "value", Location: "invalidLocation"}, false},
+		{types.SampledValue{Value: "value", Unit: "invalidUnit"}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestMeterValueValidation() {
 	var testTable = []GenericTestEntry{
-		{ocpp2.MeterValue{Timestamp: ocpp2.NewDateTime(time.Now()), SampledValue: []ocpp2.SampledValue{{Value: "value"}, {Value: "value2", Unit: ocpp2.UnitOfMeasureKW}}}, true},
-		{ocpp2.MeterValue{Timestamp: ocpp2.NewDateTime(time.Now()), SampledValue: []ocpp2.SampledValue{{Value: "value"}}}, true},
-		{ocpp2.MeterValue{Timestamp: ocpp2.NewDateTime(time.Now()), SampledValue: []ocpp2.SampledValue{}}, false},
-		{ocpp2.MeterValue{Timestamp: ocpp2.NewDateTime(time.Now())}, false},
-		{ocpp2.MeterValue{SampledValue: []ocpp2.SampledValue{{Value: "value"}}}, false},
+		{types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}, {Value: "value2", Unit: types.UnitOfMeasureKW}}}, true},
+		{types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}, true},
+		{types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{}}, false},
+		{types.MeterValue{Timestamp: types.NewDateTime(time.Now())}, false},
+		{types.MeterValue{SampledValue: []types.SampledValue{{Value: "value"}}}, false},
 	}
 	ExecuteGenericTestTable(suite.T(), testTable)
 }

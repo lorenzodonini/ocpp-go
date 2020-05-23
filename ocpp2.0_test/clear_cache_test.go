@@ -2,7 +2,7 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -12,7 +12,7 @@ import (
 func (suite *OcppV2TestSuite) TestClearCacheRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp2.ClearCacheRequest{}, true},
+		{authorization.ClearCacheRequest{}, true},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -20,10 +20,10 @@ func (suite *OcppV2TestSuite) TestClearCacheRequestValidation() {
 func (suite *OcppV2TestSuite) TestClearCacheConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp2.ClearCacheConfirmation{Status: ocpp2.ClearCacheStatusAccepted}, true},
-		{ocpp2.ClearCacheConfirmation{Status: ocpp2.ClearCacheStatusRejected}, true},
-		{ocpp2.ClearCacheConfirmation{Status: "invalidClearCacheStatus"}, false},
-		{ocpp2.ClearCacheConfirmation{}, false},
+		{authorization.ClearCacheResponse{Status: authorization.ClearCacheStatusAccepted}, true},
+		{authorization.ClearCacheResponse{Status: authorization.ClearCacheStatusRejected}, true},
+		{authorization.ClearCacheResponse{Status: "invalidClearCacheStatus"}, false},
+		{authorization.ClearCacheResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -33,22 +33,22 @@ func (suite *OcppV2TestSuite) TestClearCacheE2EMocked() {
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	status := ocpp2.ClearCacheStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, ocpp2.ClearCacheFeatureName)
+	status := authorization.ClearCacheStatusAccepted
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, authorization.ClearCacheFeatureName)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	clearCacheConfirmation := ocpp2.NewClearCacheConfirmation(status)
+	clearCacheConfirmation := authorization.NewClearCacheResponse(status)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnClearCache", mock.Anything).Return(clearCacheConfirmation, nil)
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
+	handler := MockChargingStationAuthorizationHandler{}
+	handler.On("OnClearCache", mock.Anything).Return(clearCacheConfirmation, nil)
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.ClearCache(wsId, func(confirmation *ocpp2.ClearCacheConfirmation, err error) {
+	err = suite.csms.ClearCache(wsId, func(confirmation *authorization.ClearCacheResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
@@ -61,7 +61,7 @@ func (suite *OcppV2TestSuite) TestClearCacheE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestClearCacheInvalidEndpoint() {
 	messageId := defaultMessageId
-	clearCacheRequest := ocpp2.NewClearCacheRequest()
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, ocpp2.ClearCacheFeatureName)
-	testUnsupportedRequestFromChargePoint(suite, clearCacheRequest, requestJson, messageId)
+	clearCacheRequest := authorization.NewClearCacheRequest()
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{}]`, messageId, authorization.ClearCacheFeatureName)
+	testUnsupportedRequestFromChargingStation(suite, clearCacheRequest, requestJson, messageId)
 }

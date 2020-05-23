@@ -2,7 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
-	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -11,12 +11,12 @@ import (
 func (suite *OcppV16TestSuite) TestDataTransferRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp16.DataTransferRequest{VendorId: "12345"}, true},
-		{ocpp16.DataTransferRequest{VendorId: "12345", MessageId: "6789"}, true},
-		{ocpp16.DataTransferRequest{VendorId: "12345", MessageId: "6789", Data: "mockData"}, true},
-		{ocpp16.DataTransferRequest{}, false},
-		{ocpp16.DataTransferRequest{VendorId: ">255............................................................................................................................................................................................................................................................"}, false},
-		{ocpp16.DataTransferRequest{VendorId: "12345", MessageId: ">50................................................"}, false},
+		{core.DataTransferRequest{VendorId: "12345"}, true},
+		{core.DataTransferRequest{VendorId: "12345", MessageId: "6789"}, true},
+		{core.DataTransferRequest{VendorId: "12345", MessageId: "6789", Data: "mockData"}, true},
+		{core.DataTransferRequest{}, false},
+		{core.DataTransferRequest{VendorId: ">255............................................................................................................................................................................................................................................................"}, false},
+		{core.DataTransferRequest{VendorId: "12345", MessageId: ">50................................................"}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -24,12 +24,12 @@ func (suite *OcppV16TestSuite) TestDataTransferRequestValidation() {
 func (suite *OcppV16TestSuite) TestDataTransferConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusAccepted}, true},
-		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusRejected}, true},
-		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusUnknownMessageId}, true},
-		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusUnknownVendorId}, true},
-		{ocpp16.DataTransferConfirmation{Status: "invalidDataTransferStatus"}, false},
-		{ocpp16.DataTransferConfirmation{Status: ocpp16.DataTransferStatusAccepted, Data: "mockData"}, true},
+		{core.DataTransferConfirmation{Status: core.DataTransferStatusAccepted}, true},
+		{core.DataTransferConfirmation{Status: core.DataTransferStatusRejected}, true},
+		{core.DataTransferConfirmation{Status: core.DataTransferStatusUnknownMessageId}, true},
+		{core.DataTransferConfirmation{Status: core.DataTransferStatusUnknownVendorId}, true},
+		{core.DataTransferConfirmation{Status: "invalidDataTransferStatus"}, false},
+		{core.DataTransferConfirmation{Status: core.DataTransferStatusAccepted, Data: "mockData"}, true},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -40,10 +40,10 @@ func (suite *OcppV16TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	vendorId := "vendor1"
-	status := ocpp16.DataTransferStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"vendorId":"%v"}]`, messageId, ocpp16.DataTransferFeatureName, vendorId)
+	status := core.DataTransferStatusAccepted
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"vendorId":"%v"}]`, messageId, core.DataTransferFeatureName, vendorId)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	dataTransferConfirmation := ocpp16.NewDataTransferConfirmation(status)
+	dataTransferConfirmation := core.NewDataTransferConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockCentralSystemCoreListener{}
@@ -66,10 +66,10 @@ func (suite *OcppV16TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	vendorId := "vendor1"
-	status := ocpp16.DataTransferStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"vendorId":"%v"}]`, messageId, ocpp16.DataTransferFeatureName, vendorId)
+	status := core.DataTransferStatusAccepted
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"vendorId":"%v"}]`, messageId, core.DataTransferFeatureName, vendorId)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	dataTransferConfirmation := ocpp16.NewDataTransferConfirmation(status)
+	dataTransferConfirmation := core.NewDataTransferConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockChargePointCoreListener{}
@@ -81,7 +81,7 @@ func (suite *OcppV16TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *ocpp16.DataTransferConfirmation, err error) {
+	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *core.DataTransferConfirmation, err error) {
 		assert.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

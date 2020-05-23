@@ -18,7 +18,7 @@ Planned milestones and features:
 
 **Note: The library is still a WIP, therefore expect some APIs to change.** 
 
-## Usage
+## OCPP 1.6 Usage
 
 Go version 1.11+ is required.
 

@@ -2,7 +2,7 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/display"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -12,17 +12,17 @@ import (
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp2.GetDisplayMessagesRequest{RequestID: 1, Priority: ocpp2.MessagePriorityAlwaysFront, State: ocpp2.MessageStateCharging, ID: []int{2, 3}}, true},
-		{ocpp2.GetDisplayMessagesRequest{RequestID: 1, Priority: ocpp2.MessagePriorityAlwaysFront, State: ocpp2.MessageStateCharging, ID: []int{}}, true},
-		{ocpp2.GetDisplayMessagesRequest{RequestID: 1, Priority: ocpp2.MessagePriorityAlwaysFront, State: ocpp2.MessageStateCharging}, true},
-		{ocpp2.GetDisplayMessagesRequest{RequestID: 1, Priority: ocpp2.MessagePriorityAlwaysFront}, true},
-		{ocpp2.GetDisplayMessagesRequest{RequestID: 1, State: ocpp2.MessageStateCharging}, true},
-		{ocpp2.GetDisplayMessagesRequest{RequestID: 1}, true},
-		{ocpp2.GetDisplayMessagesRequest{}, true},
-		{ocpp2.GetDisplayMessagesRequest{RequestID: -1}, false},
-		{ocpp2.GetDisplayMessagesRequest{RequestID: 1, Priority: "invalidMessagePriority", State: ocpp2.MessageStateCharging, ID: []int{2, 3}}, false},
-		{ocpp2.GetDisplayMessagesRequest{RequestID: 1, Priority: ocpp2.MessagePriorityAlwaysFront, State: "invalidMessageState", ID: []int{2, 3}}, false},
-		{ocpp2.GetDisplayMessagesRequest{RequestID: 1, Priority: ocpp2.MessagePriorityAlwaysFront, State: ocpp2.MessageStateCharging, ID: []int{-2, 3}}, false},
+		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging, ID: []int{2, 3}}, true},
+		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging, ID: []int{}}, true},
+		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging}, true},
+		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront}, true},
+		{display.GetDisplayMessagesRequest{RequestID: 1, State: display.MessageStateCharging}, true},
+		{display.GetDisplayMessagesRequest{RequestID: 1}, true},
+		{display.GetDisplayMessagesRequest{}, true},
+		{display.GetDisplayMessagesRequest{RequestID: -1}, false},
+		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: "invalidMessagePriority", State: display.MessageStateCharging, ID: []int{2, 3}}, false},
+		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: "invalidMessageState", ID: []int{2, 3}}, false},
+		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging, ID: []int{-2, 3}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -30,10 +30,10 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp2.GetDisplayMessagesConfirmation{Status: ocpp2.MessageStatusAccepted}, true},
-		{ocpp2.GetDisplayMessagesConfirmation{Status: ocpp2.MessageStatusUnknown}, true},
-		{ocpp2.GetDisplayMessagesConfirmation{Status: "invalidMessageStatus"}, false},
-		{ocpp2.GetDisplayMessagesConfirmation{}, false},
+		{display.GetDisplayMessagesResponse{Status: display.MessageStatusAccepted}, true},
+		{display.GetDisplayMessagesResponse{Status: display.MessageStatusUnknown}, true},
+		{display.GetDisplayMessagesResponse{Status: "invalidMessageStatus"}, false},
+		{display.GetDisplayMessagesResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -44,19 +44,19 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	requestId := 42
-	messageIds := []int{2,3}
-	priority := ocpp2.MessagePriorityInFront
-	state := ocpp2.MessageStateCharging
-	status := ocpp2.MessageStatusAccepted
+	messageIds := []int{2, 3}
+	priority := display.MessagePriorityInFront
+	state := display.MessageStateCharging
+	status := display.MessageStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"priority":"%v","state":"%v","id":[%v,%v]}]`,
-		messageId, ocpp2.GetDisplayMessagesFeatureName, requestId, priority, state, messageIds[0], messageIds[1])
+		messageId, display.GetDisplayMessagesFeatureName, requestId, priority, state, messageIds[0], messageIds[1])
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	getDisplayMessagesConfirmation := ocpp2.NewGetDisplayMessagesConfirmation(status)
+	getDisplayMessagesConfirmation := display.NewGetDisplayMessagesResponse(status)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnGetDisplayMessages", mock.Anything).Return(getDisplayMessagesConfirmation, nil).Run(func(args mock.Arguments) {
-		request, ok := args.Get(0).(*ocpp2.GetDisplayMessagesRequest)
+	handler := MockChargingStationDisplayHandler{}
+	handler.On("OnGetDisplayMessages", mock.Anything).Return(getDisplayMessagesConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(0).(*display.GetDisplayMessagesRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
 		assert.Equal(t, requestId, request.RequestID)
@@ -66,19 +66,19 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
 		assert.Equal(t, messageIds[0], request.ID[0])
 		assert.Equal(t, messageIds[1], request.ID[1])
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetDisplayMessages(wsId, func(confirmation *ocpp2.GetDisplayMessagesConfirmation, err error) {
+	err = suite.csms.GetDisplayMessages(wsId, func(confirmation *display.GetDisplayMessagesResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
-	}, requestId, func(request *ocpp2.GetDisplayMessagesRequest) {
+	}, requestId, func(request *display.GetDisplayMessagesRequest) {
 		request.Priority = priority
 		request.State = state
 		request.ID = messageIds
@@ -91,11 +91,11 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesInvalidEndpoint() {
 	messageId := defaultMessageId
 	requestId := 42
-	messageIds := []int{2,3}
-	priority := ocpp2.MessagePriorityInFront
-	state := ocpp2.MessageStateCharging
-	getDisplayMessagesRequest := ocpp2.NewGetDisplayMessagesRequest(requestId)
+	messageIds := []int{2, 3}
+	priority := display.MessagePriorityInFront
+	state := display.MessageStateCharging
+	getDisplayMessagesRequest := display.NewGetDisplayMessagesRequest(requestId)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"priority":"%v","state":"%v","id":[%v,%v]}]`,
-		messageId, ocpp2.GetDisplayMessagesFeatureName, requestId, priority, state, messageIds[0], messageIds[1])
-	testUnsupportedRequestFromChargePoint(suite, getDisplayMessagesRequest, requestJson, messageId)
+		messageId, display.GetDisplayMessagesFeatureName, requestId, priority, state, messageIds[0], messageIds[1])
+	testUnsupportedRequestFromChargingStation(suite, getDisplayMessagesRequest, requestJson, messageId)
 }

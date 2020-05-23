@@ -2,7 +2,8 @@ package ocpp16_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"time"
@@ -12,9 +13,9 @@ import (
 func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp16.AuthorizeRequest{IdTag: "12345"}, true},
-		{ocpp16.AuthorizeRequest{}, false},
-		{ocpp16.AuthorizeRequest{IdTag: ">20.................."}, false},
+		{core.AuthorizeRequest{IdTag: "12345"}, true},
+		{core.AuthorizeRequest{}, false},
+		{core.AuthorizeRequest{IdTag: ">20.................."}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -22,9 +23,9 @@ func (suite *OcppV16TestSuite) TestAuthorizeRequestValidation() {
 func (suite *OcppV16TestSuite) TestAuthorizeConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp16.AuthorizeConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
-		{ocpp16.AuthorizeConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: "invalidAuthorizationStatus"}}, false},
-		{ocpp16.AuthorizeConfirmation{}, false},
+		{core.AuthorizeConfirmation{IdTagInfo: &types.IdTagInfo{ExpiryDate: types.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: types.AuthorizationStatusAccepted}}, true},
+		{core.AuthorizeConfirmation{IdTagInfo: &types.IdTagInfo{Status: "invalidAuthorizationStatus"}}, false},
+		{core.AuthorizeConfirmation{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -36,11 +37,11 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	wsUrl := "someUrl"
 	idTag := "tag1"
 	parentIdTag := "parentTag1"
-	status := ocpp16.AuthorizationStatusAccepted
-	expiryDate := ocpp16.NewDateTime(time.Now().Add(time.Hour * 8))
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, ocpp16.AuthorizeFeatureName, idTag)
-	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.Time.Format(ocpp16.ISO8601), parentIdTag, status)
-	authorizeConfirmation := ocpp16.NewAuthorizationConfirmation(&ocpp16.IdTagInfo{ExpiryDate: expiryDate, ParentIdTag: parentIdTag, Status: status})
+	status := types.AuthorizationStatusAccepted
+	expiryDate := types.NewDateTime(time.Now().Add(time.Hour * 8))
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, core.AuthorizeFeatureName, idTag)
+	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.FormatTimestamp(), parentIdTag, status)
+	authorizeConfirmation := core.NewAuthorizationConfirmation(&types.IdTagInfo{ExpiryDate: expiryDate, ParentIdTag: parentIdTag, Status: status})
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
 	channel := NewMockWebSocket(wsId)
@@ -64,7 +65,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 func (suite *OcppV16TestSuite) TestAuthorizeInvalidEndpoint() {
 	messageId := defaultMessageId
 	idTag := "tag1"
-	authorizeRequest := ocpp16.NewAuthorizationRequest(idTag)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, ocpp16.AuthorizeFeatureName, idTag)
+	authorizeRequest := core.NewAuthorizationRequest(idTag)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v"}]`, messageId, core.AuthorizeFeatureName, idTag)
 	testUnsupportedRequestFromCentralSystem(suite, authorizeRequest, requestJson, messageId)
 }

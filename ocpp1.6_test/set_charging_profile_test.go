@@ -2,7 +2,8 @@ package ocpp16_test
 
 import (
 	"fmt"
-	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -10,14 +11,14 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestSetChargingProfileRequestValidation() {
 	t := suite.T()
-	chargingSchedule := ocpp16.NewChargingSchedule(ocpp16.ChargingRateUnitWatts, ocpp16.NewChargingSchedulePeriod(0, 10.0))
-	chargingProfile := ocpp16.NewChargingProfile(1, 1, ocpp16.ChargingProfilePurposeChargePointMaxProfile, ocpp16.ChargingProfileKindAbsolute, chargingSchedule)
+	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
+	chargingProfile := types.NewChargingProfile(1, 1, types.ChargingProfilePurposeChargePointMaxProfile, types.ChargingProfileKindAbsolute, chargingSchedule)
 	var requestTable = []GenericTestEntry{
-		{ocpp16.SetChargingProfileRequest{ConnectorId: 1, ChargingProfile: chargingProfile}, true},
-		{ocpp16.SetChargingProfileRequest{ChargingProfile: chargingProfile}, true},
-		{ocpp16.SetChargingProfileRequest{}, false},
-		{ocpp16.SetChargingProfileRequest{ConnectorId: 1}, false},
-		{ocpp16.SetChargingProfileRequest{ConnectorId: -1, ChargingProfile: chargingProfile}, false},
+		{smartcharging.SetChargingProfileRequest{ConnectorId: 1, ChargingProfile: chargingProfile}, true},
+		{smartcharging.SetChargingProfileRequest{ChargingProfile: chargingProfile}, true},
+		{smartcharging.SetChargingProfileRequest{}, false},
+		{smartcharging.SetChargingProfileRequest{ConnectorId: 1}, false},
+		{smartcharging.SetChargingProfileRequest{ConnectorId: -1, ChargingProfile: chargingProfile}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -25,9 +26,9 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileRequestValidation() {
 func (suite *OcppV16TestSuite) TestSetChargingProfileConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp16.SetChargingProfileConfirmation{Status: ocpp16.ChargingProfileStatusAccepted}, true},
-		{ocpp16.SetChargingProfileConfirmation{Status: "invalidChargingProfileStatus"}, false},
-		{ocpp16.SetChargingProfileConfirmation{}, false},
+		{smartcharging.SetChargingProfileConfirmation{Status: smartcharging.ChargingProfileStatusAccepted}, true},
+		{smartcharging.SetChargingProfileConfirmation{Status: "invalidChargingProfileStatus"}, false},
+		{smartcharging.SetChargingProfileConfirmation{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -40,17 +41,17 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 	connectorId := 1
 	chargingProfileId := 1
 	stackLevel := 1
-	chargingProfilePurpose := ocpp16.ChargingProfilePurposeChargePointMaxProfile
-	chargingProfileKind := ocpp16.ChargingProfileKindAbsolute
-	chargingRateUnit := ocpp16.ChargingRateUnitWatts
+	chargingProfilePurpose := types.ChargingProfilePurposeChargePointMaxProfile
+	chargingProfileKind := types.ChargingProfileKindAbsolute
+	chargingRateUnit := types.ChargingRateUnitWatts
 	startPeriod := 0
 	limit := 10.0
-	status := ocpp16.ChargingProfileStatusAccepted
-	chargingSchedule := ocpp16.NewChargingSchedule(chargingRateUnit, ocpp16.NewChargingSchedulePeriod(startPeriod, limit))
-	chargingProfile := ocpp16.NewChargingProfile(chargingProfileId, stackLevel, chargingProfilePurpose, chargingProfileKind, chargingSchedule)
+	status := smartcharging.ChargingProfileStatusAccepted
+	chargingSchedule := types.NewChargingSchedule(chargingRateUnit, types.NewChargingSchedulePeriod(startPeriod, limit))
+	chargingProfile := types.NewChargingProfile(chargingProfileId, stackLevel, chargingProfilePurpose, chargingProfileKind, chargingSchedule)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"chargingProfile":{"chargingProfileId":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}}]`,
 		messageId,
-		ocpp16.SetChargingProfileFeatureName,
+		smartcharging.SetChargingProfileFeatureName,
 		connectorId,
 		chargingProfileId,
 		stackLevel,
@@ -60,19 +61,19 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 		startPeriod,
 		limit)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	SetChargingProfileConfirmation := ocpp16.NewSetChargingProfileConfirmation(status)
+	SetChargingProfileConfirmation := smartcharging.NewSetChargingProfileConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
 	smartChargingListener := MockChargePointSmartChargingListener{}
 	smartChargingListener.On("OnSetChargingProfile", mock.Anything).Return(SetChargingProfileConfirmation, nil).Run(func(args mock.Arguments) {
-		request, ok := args.Get(0).(*ocpp16.SetChargingProfileRequest)
+		request, ok := args.Get(0).(*smartcharging.SetChargingProfileRequest)
 		assert.True(t, ok)
 		assert.NotNil(t, request)
 		assert.Equal(t, connectorId, request.ConnectorId)
 		assert.Equal(t, chargingProfileId, request.ChargingProfile.ChargingProfileId)
 		assert.Equal(t, chargingProfileKind, request.ChargingProfile.ChargingProfileKind)
 		assert.Equal(t, chargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
-		assert.Equal(t, ocpp16.RecurrencyKindType(""), request.ChargingProfile.RecurrencyKind)
+		assert.Equal(t, types.RecurrencyKindType(""), request.ChargingProfile.RecurrencyKind)
 		assert.Equal(t, stackLevel, request.ChargingProfile.StackLevel)
 		assert.Equal(t, 0, request.ChargingProfile.TransactionId)
 		assert.Nil(t, request.ChargingProfile.ValidFrom)
@@ -88,13 +89,13 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetSmartChargingListener(smartChargingListener)
+	suite.chargePoint.SetSmartChargingHandler(smartChargingListener)
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.SetChargingProfile(wsId, func(confirmation *ocpp16.SetChargingProfileConfirmation, err error) {
+	err = suite.centralSystem.SetChargingProfile(wsId, func(confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
 		assert.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
@@ -110,16 +111,16 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileInvalidEndpoint() {
 	connectorId := 1
 	chargingProfileId := 1
 	stackLevel := 1
-	chargingProfilePurpose := ocpp16.ChargingProfilePurposeChargePointMaxProfile
-	chargingProfileKind := ocpp16.ChargingProfileKindAbsolute
-	chargingRateUnit := ocpp16.ChargingRateUnitWatts
+	chargingProfilePurpose := types.ChargingProfilePurposeChargePointMaxProfile
+	chargingProfileKind := types.ChargingProfileKindAbsolute
+	chargingRateUnit := types.ChargingRateUnitWatts
 	startPeriod := 0
 	limit := 10.0
-	chargingSchedule := ocpp16.NewChargingSchedule(chargingRateUnit, ocpp16.NewChargingSchedulePeriod(startPeriod, limit))
-	chargingProfile := ocpp16.NewChargingProfile(chargingProfileId, stackLevel, chargingProfilePurpose, chargingProfileKind, chargingSchedule)
+	chargingSchedule := types.NewChargingSchedule(chargingRateUnit, types.NewChargingSchedulePeriod(startPeriod, limit))
+	chargingProfile := types.NewChargingProfile(chargingProfileId, stackLevel, chargingProfilePurpose, chargingProfileKind, chargingSchedule)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"chargingProfile":{"chargingProfileId":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}}]`,
 		messageId,
-		ocpp16.SetChargingProfileFeatureName,
+		smartcharging.SetChargingProfileFeatureName,
 		connectorId,
 		chargingProfileId,
 		stackLevel,
@@ -128,6 +129,6 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileInvalidEndpoint() {
 		chargingRateUnit,
 		startPeriod,
 		limit)
-	SetChargingProfileRequest := ocpp16.NewSetChargingProfileRequest(connectorId, chargingProfile)
+	SetChargingProfileRequest := smartcharging.NewSetChargingProfileRequest(connectorId, chargingProfile)
 	testUnsupportedRequestFromChargePoint(suite, SetChargingProfileRequest, requestJson, messageId)
 }

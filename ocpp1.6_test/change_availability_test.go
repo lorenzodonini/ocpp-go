@@ -2,7 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -10,12 +10,12 @@ import (
 func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0, Type: ocpp16.AvailabilityTypeOperative}, true},
-		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0, Type: ocpp16.AvailabilityTypeInoperative}, true},
-		{ocpp16.ChangeAvailabilityRequest{ConnectorId: 0}, false},
-		{ocpp16.ChangeAvailabilityRequest{Type: ocpp16.AvailabilityTypeOperative}, true},
-		{ocpp16.ChangeAvailabilityRequest{Type: "invalidAvailabilityType"}, false},
-		{ocpp16.ChangeAvailabilityRequest{ConnectorId: -1, Type: ocpp16.AvailabilityTypeOperative}, false},
+		{core.ChangeAvailabilityRequest{ConnectorId: 0, Type: core.AvailabilityTypeOperative}, true},
+		{core.ChangeAvailabilityRequest{ConnectorId: 0, Type: core.AvailabilityTypeInoperative}, true},
+		{core.ChangeAvailabilityRequest{ConnectorId: 0}, false},
+		{core.ChangeAvailabilityRequest{Type: core.AvailabilityTypeOperative}, true},
+		{core.ChangeAvailabilityRequest{Type: "invalidAvailabilityType"}, false},
+		{core.ChangeAvailabilityRequest{ConnectorId: -1, Type: core.AvailabilityTypeOperative}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -23,11 +23,11 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
 func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusAccepted}, true},
-		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusRejected}, true},
-		{ocpp16.ChangeAvailabilityConfirmation{Status: ocpp16.AvailabilityStatusScheduled}, true},
-		{ocpp16.ChangeAvailabilityConfirmation{Status: "invalidAvailabilityStatus"}, false},
-		{ocpp16.ChangeAvailabilityConfirmation{}, false},
+		{core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusAccepted}, true},
+		{core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusRejected}, true},
+		{core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusScheduled}, true},
+		{core.ChangeAvailabilityConfirmation{Status: "invalidAvailabilityStatus"}, false},
+		{core.ChangeAvailabilityConfirmation{}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -39,11 +39,11 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	connectorId := 1
-	availabilityType := ocpp16.AvailabilityTypeOperative
-	status := ocpp16.AvailabilityStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
+	availabilityType := core.AvailabilityTypeOperative
+	status := core.AvailabilityStatusAccepted
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, core.ChangeAvailabilityFeatureName, connectorId, availabilityType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
-	changeAvailabilityConfirmation := ocpp16.NewChangeAvailabilityConfirmation(status)
+	changeAvailabilityConfirmation := core.NewChangeAvailabilityConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
 	coreListener := MockChargePointCoreListener{}
@@ -55,7 +55,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.ChangeAvailability(wsId, func(confirmation *ocpp16.ChangeAvailabilityConfirmation, err error) {
+	err = suite.centralSystem.ChangeAvailability(wsId, func(confirmation *core.ChangeAvailabilityConfirmation, err error) {
 		assert.NotNil(t, confirmation)
 		assert.Nil(t, err)
 		assert.Equal(t, status, confirmation.Status)
@@ -69,8 +69,8 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 func (suite *OcppV16TestSuite) TestChangeAvailabilityInvalidEndpoint() {
 	messageId := defaultMessageId
 	connectorId := 1
-	availabilityType := ocpp16.AvailabilityTypeOperative
-	changeAvailabilityRequest := ocpp16.NewChangeAvailabilityRequest(connectorId, availabilityType)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, ocpp16.ChangeAvailabilityFeatureName, connectorId, availabilityType)
+	availabilityType := core.AvailabilityTypeOperative
+	changeAvailabilityRequest := core.NewChangeAvailabilityRequest(connectorId, availabilityType)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"type":"%v"}]`, messageId, core.ChangeAvailabilityFeatureName, connectorId, availabilityType)
 	testUnsupportedRequestFromChargePoint(suite, changeAvailabilityRequest, requestJson, messageId)
 }

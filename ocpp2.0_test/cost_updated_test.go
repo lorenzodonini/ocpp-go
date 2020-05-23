@@ -2,7 +2,7 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/tariffcost"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -12,11 +12,11 @@ import (
 func (suite *OcppV2TestSuite) TestCostUpdatedRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{ocpp2.CostUpdatedRequest{TotalCost: 24.6, TransactionID: "1234"}, true},
-		{ocpp2.CostUpdatedRequest{TotalCost: 24.6}, false},
-		{ocpp2.CostUpdatedRequest{TransactionID: "1234"}, false},
-		{ocpp2.CostUpdatedRequest{}, false},
-		{ocpp2.CostUpdatedRequest{TotalCost: 24.6, TransactionID: ">36.................................."}, false},
+		{tariffcost.CostUpdatedRequest{TotalCost: 24.6, TransactionID: "1234"}, true},
+		{tariffcost.CostUpdatedRequest{TotalCost: 24.6}, false},
+		{tariffcost.CostUpdatedRequest{TransactionID: "1234"}, false},
+		{tariffcost.CostUpdatedRequest{}, false},
+		{tariffcost.CostUpdatedRequest{TotalCost: 24.6, TransactionID: ">36.................................."}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -24,7 +24,7 @@ func (suite *OcppV2TestSuite) TestCostUpdatedRequestValidation() {
 func (suite *OcppV2TestSuite) TestCostUpdatedConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp2.CostUpdatedConfirmation{}, true},
+		{tariffcost.CostUpdatedResponse{}, true},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -36,27 +36,27 @@ func (suite *OcppV2TestSuite) TestCostUpdatedE2EMocked() {
 	wsUrl := "someUrl"
 	totalCost := 24.6
 	transactionId := "1234"
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"totalCost":%v,"transactionId":"%v"}]`, messageId, ocpp2.CostUpdatedFeatureName, totalCost, transactionId)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"totalCost":%v,"transactionId":"%v"}]`, messageId, tariffcost.CostUpdatedFeatureName, totalCost, transactionId)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
-	costUpdatedConfirmation := ocpp2.NewCostUpdatedConfirmation()
+	costUpdatedConfirmation := tariffcost.NewCostUpdatedResponse()
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnCostUpdated", mock.Anything).Return(costUpdatedConfirmation, nil).Run(func(args mock.Arguments) {
-		request, ok := args.Get(0).(*ocpp2.CostUpdatedRequest)
+	handler := MockChargingStationTariffCostHandler{}
+	handler.On("OnCostUpdated", mock.Anything).Return(costUpdatedConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(0).(*tariffcost.CostUpdatedRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
 		assert.Equal(t, totalCost, request.TotalCost)
 		assert.Equal(t, transactionId, request.TransactionID)
 	})
-	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
+	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
+	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
-	err := suite.chargePoint.Start(wsUrl)
+	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.CostUpdated(wsId, func(confirmation *ocpp2.CostUpdatedConfirmation, err error) {
+	err = suite.csms.CostUpdated(wsId, func(confirmation *tariffcost.CostUpdatedResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		resultChannel <- true
@@ -70,7 +70,7 @@ func (suite *OcppV2TestSuite) TestCostUpdatedInvalidEndpoint() {
 	messageId := defaultMessageId
 	totalCost := 24.6
 	transactionId := "1234"
-	costUpdatedRequest := ocpp2.NewCostUpdatedRequest(totalCost, transactionId)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"totalCost":%v,"transactionId":"%v"}]`, messageId, ocpp2.CostUpdatedFeatureName, totalCost, transactionId)
-	testUnsupportedRequestFromChargePoint(suite, costUpdatedRequest, requestJson, messageId)
+	costUpdatedRequest := tariffcost.NewCostUpdatedRequest(totalCost, transactionId)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"totalCost":%v,"transactionId":"%v"}]`, messageId, tariffcost.CostUpdatedFeatureName, totalCost, transactionId)
+	testUnsupportedRequestFromChargingStation(suite, costUpdatedRequest, requestJson, messageId)
 }

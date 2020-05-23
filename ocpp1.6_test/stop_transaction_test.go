@@ -2,7 +2,8 @@ package ocpp16_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"time"
@@ -11,20 +12,20 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestStopTransactionRequestValidation() {
 	t := suite.T()
-	transactionData := []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: "value"}}}}
+	transactionData := []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}
 	var requestTable = []GenericTestEntry{
-		{ocpp16.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1, Reason: ocpp16.ReasonEVDisconnected, TransactionData: transactionData}, true},
-		{ocpp16.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1, Reason: ocpp16.ReasonEVDisconnected, TransactionData: []ocpp16.MeterValue{}}, true},
-		{ocpp16.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1, Reason: ocpp16.ReasonEVDisconnected}, true},
-		{ocpp16.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1}, true},
-		{ocpp16.StopTransactionRequest{MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1}, true},
-		{ocpp16.StopTransactionRequest{MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now())}, true},
-		{ocpp16.StopTransactionRequest{Timestamp: ocpp16.NewDateTime(time.Now())}, true},
-		{ocpp16.StopTransactionRequest{MeterStop: 100}, false},
-		{ocpp16.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1, Reason: "invalidReason"}, false},
-		{ocpp16.StopTransactionRequest{IdTag: ">20..................", MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1}, false},
-		{ocpp16.StopTransactionRequest{MeterStop: -1, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1}, false},
-		{ocpp16.StopTransactionRequest{MeterStop: 100, Timestamp: ocpp16.NewDateTime(time.Now()), TransactionId: 1, TransactionData: []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{}}}}, false},
+		{core.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, Reason: core.ReasonEVDisconnected, TransactionData: transactionData}, true},
+		{core.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, Reason: core.ReasonEVDisconnected, TransactionData: []types.MeterValue{}}, true},
+		{core.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, Reason: core.ReasonEVDisconnected}, true},
+		{core.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1}, true},
+		{core.StopTransactionRequest{MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1}, true},
+		{core.StopTransactionRequest{MeterStop: 100, Timestamp: types.NewDateTime(time.Now())}, true},
+		{core.StopTransactionRequest{Timestamp: types.NewDateTime(time.Now())}, true},
+		{core.StopTransactionRequest{MeterStop: 100}, false},
+		{core.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, Reason: "invalidReason"}, false},
+		{core.StopTransactionRequest{IdTag: ">20..................", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1}, false},
+		{core.StopTransactionRequest{MeterStop: -1, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1}, false},
+		{core.StopTransactionRequest{MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, TransactionData: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{}}}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -32,9 +33,9 @@ func (suite *OcppV16TestSuite) TestStopTransactionRequestValidation() {
 func (suite *OcppV16TestSuite) TestStopTransactionConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{ExpiryDate: ocpp16.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: ocpp16.AuthorizationStatusAccepted}}, true},
-		{ocpp16.StopTransactionConfirmation{}, true},
-		{ocpp16.StopTransactionConfirmation{IdTagInfo: &ocpp16.IdTagInfo{Status: "invalidAuthorizationStatus"}}, false},
+		{core.StopTransactionConfirmation{IdTagInfo: &types.IdTagInfo{ExpiryDate: types.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: types.AuthorizationStatusAccepted}}, true},
+		{core.StopTransactionConfirmation{}, true},
+		{core.StopTransactionConfirmation{IdTagInfo: &types.IdTagInfo{Status: "invalidAuthorizationStatus"}}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -46,25 +47,25 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 	wsUrl := "someUrl"
 	idTag := "tag1"
 	mockValue := "value"
-	mockUnit := ocpp16.UnitOfMeasureKW
+	mockUnit := types.UnitOfMeasureKW
 	meterStop := 100
 	transactionId := 42
-	timestamp := ocpp16.NewDateTime(time.Now())
-	meterValues := []ocpp16.MeterValue{{Timestamp: ocpp16.NewDateTime(time.Now()), SampledValue: []ocpp16.SampledValue{{Value: mockValue, Unit: mockUnit}}}}
+	timestamp := types.NewDateTime(time.Now())
+	meterValues := []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: mockValue, Unit: mockUnit}}}}
 	parentIdTag := "parentTag1"
-	status := ocpp16.AuthorizationStatusAccepted
-	expiryDate := ocpp16.NewDateTime(time.Now().Add(time.Hour * 8))
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v","meterStop":%v,"timestamp":"%v","transactionId":%v,"transactionData":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, ocpp16.StopTransactionFeatureName, idTag, meterStop, timestamp.Format(ocpp16.ISO8601), transactionId, timestamp.Format(ocpp16.ISO8601), mockValue, mockUnit)
-	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.Format(ocpp16.ISO8601), parentIdTag, status)
-	stopTransactionConfirmation := ocpp16.NewStopTransactionConfirmation()
-	stopTransactionConfirmation.IdTagInfo = &ocpp16.IdTagInfo{ExpiryDate: expiryDate, ParentIdTag: parentIdTag, Status: status}
+	status := types.AuthorizationStatusAccepted
+	expiryDate := types.NewDateTime(time.Now().Add(time.Hour * 8))
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v","meterStop":%v,"timestamp":"%v","transactionId":%v,"transactionData":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.StopTransactionFeatureName, idTag, meterStop, timestamp.FormatTimestamp(), transactionId, timestamp.FormatTimestamp(), mockValue, mockUnit)
+	responseJson := fmt.Sprintf(`[3,"%v",{"idTagInfo":{"expiryDate":"%v","parentIdTag":"%v","status":"%v"}}]`, messageId, expiryDate.FormatTimestamp(), parentIdTag, status)
+	stopTransactionConfirmation := core.NewStopTransactionConfirmation()
+	stopTransactionConfirmation.IdTagInfo = &types.IdTagInfo{ExpiryDate: expiryDate, ParentIdTag: parentIdTag, Status: status}
 	requestRaw := []byte(requestJson)
 	responseRaw := []byte(responseJson)
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockCentralSystemCoreListener{}
 	coreListener.On("OnStopTransaction", mock.AnythingOfType("string"), mock.Anything).Return(stopTransactionConfirmation, nil).Run(func(args mock.Arguments) {
-		request := args.Get(1).(*ocpp16.StopTransactionRequest)
+		request := args.Get(1).(*core.StopTransactionRequest)
 		assert.Equal(t, meterStop, request.MeterStop)
 		assert.Equal(t, transactionId, request.TransactionId)
 		assert.Equal(t, idTag, request.IdTag)
@@ -83,7 +84,7 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
-	confirmation, err := suite.chargePoint.StopTransaction(meterStop, timestamp, transactionId, func(request *ocpp16.StopTransactionRequest) {
+	confirmation, err := suite.chargePoint.StopTransaction(meterStop, timestamp, transactionId, func(request *core.StopTransactionRequest) {
 		request.IdTag = idTag
 		request.TransactionData = meterValues
 	})
@@ -98,12 +99,12 @@ func (suite *OcppV16TestSuite) TestStopTransactionInvalidEndpoint() {
 	messageId := defaultMessageId
 	idTag := "tag1"
 	mockValue := "value"
-	mockUnit := ocpp16.UnitOfMeasureKW
+	mockUnit := types.UnitOfMeasureKW
 	meterStop := 100
 	transactionId := 42
-	timestamp := ocpp16.NewDateTime(time.Now())
-	stopTransactionRequest := ocpp16.NewStopTransactionRequest(meterStop, timestamp, transactionId)
+	timestamp := types.NewDateTime(time.Now())
+	stopTransactionRequest := core.NewStopTransactionRequest(meterStop, timestamp, transactionId)
 	stopTransactionRequest.IdTag = idTag
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v","meterStop":%v,"timestamp":"%v","transactionId":%v,"transactionData":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, ocpp16.StopTransactionFeatureName, idTag, meterStop, timestamp.Format(ocpp16.ISO8601), transactionId, timestamp.Format(ocpp16.ISO8601), mockValue, mockUnit)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"idTag":"%v","meterStop":%v,"timestamp":"%v","transactionId":%v,"transactionData":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.StopTransactionFeatureName, idTag, meterStop, timestamp.FormatTimestamp(), transactionId, timestamp.FormatTimestamp(), mockValue, mockUnit)
 	testUnsupportedRequestFromCentralSystem(suite, stopTransactionRequest, requestJson, messageId)
 }
