@@ -135,6 +135,7 @@ const (
 	NotImplemented                ocpp.ErrorCode = "NotImplemented"                // Requested Action is not known by receiver.
 	NotSupported                  ocpp.ErrorCode = "NotSupported"                  // Requested Action is recognized but not supported by the receiver.
 	InternalError                 ocpp.ErrorCode = "InternalError"                 // An internal error occurred and the receiver was not able to process the requested Action successfully.
+	MessageTypeNotSupported       ocpp.ErrorCode = "MessageTypeNotSupported"       // A message with an Message Type Number received that is not supported by this implementation.
 	ProtocolError                 ocpp.ErrorCode = "ProtocolError"                 // Payload for Action is incomplete.
 	SecurityError                 ocpp.ErrorCode = "SecurityError"                 // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully.
 	FormationViolation            ocpp.ErrorCode = "FormationViolation"            // Payload for Action is syntactically incorrect or not conform the PDU structure for Action.
@@ -147,7 +148,7 @@ const (
 func IsErrorCodeValid(fl validator.FieldLevel) bool {
 	code := ocpp.ErrorCode(fl.Field().String())
 	switch code {
-	case NotImplemented, NotSupported, InternalError, ProtocolError, SecurityError, FormationViolation, PropertyConstraintViolation, OccurrenceConstraintViolation, TypeConstraintViolation, GenericError:
+	case NotImplemented, NotSupported, InternalError, MessageTypeNotSupported, ProtocolError, SecurityError, FormationViolation, PropertyConstraintViolation, OccurrenceConstraintViolation, TypeConstraintViolation, GenericError:
 		return true
 	}
 	return false
@@ -391,7 +392,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 		}
 		return &callError, nil
 	} else {
-		return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid message type ID %v", typeId), uniqueId)
+		return nil, ocpp.NewError(MessageTypeNotSupported, fmt.Sprintf("Invalid message type ID %v", typeId), uniqueId)
 	}
 }
 

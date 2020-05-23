@@ -457,7 +457,7 @@ func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, ocppj.MessageTypeNotSupported, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid message type ID %v", invalidTypeId), protoErr.Description)
 }
 
