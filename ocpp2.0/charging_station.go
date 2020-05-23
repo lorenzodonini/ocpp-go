@@ -204,7 +204,7 @@ func (cs *chargingStation) SetDataHandler(handler data.ChargingStationHandler) {
 func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, error) {
 	featureName := request.GetFeatureName()
 	if _, found := cs.client.GetProfileForFeature(featureName); !found {
-		return nil, fmt.Errorf("feature %v is unsupported on CSMS (missing profile), cannot send request", featureName)
+		return nil, fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send request", featureName)
 	}
 	err := cs.client.SendRequest(request)
 	if err != nil {
@@ -222,7 +222,7 @@ func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, err
 func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(response ocpp.Response, err error)) error {
 	featureName := request.GetFeatureName()
 	if _, found := cs.client.GetProfileForFeature(featureName); !found {
-		return fmt.Errorf("feature %v is unsupported on CSMS (missing profile), cannot send request", featureName)
+		return fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send request", featureName)
 	}
 	switch featureName {
 	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, iso15118.Get15118EVCertificateFeatureName, iso15118.GetCertificateStatusFeatureName:

@@ -343,7 +343,11 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePo
 }
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
-	switch request.GetFeatureName() {
+	featureName := request.GetFeatureName()
+	if _, found := cs.server.GetProfileForFeature(featureName); !found {
+		return fmt.Errorf("feature %v is unsupported on central system (missing profile), cannot send request", featureName)
+	}
+	switch featureName {
 	case core.ChangeAvailabilityFeatureName, core.ChangeConfigurationFeatureName, core.ClearCacheFeatureName, core.DataTransferFeatureName, core.GetConfigurationFeatureName, core.RemoteStartTransactionFeatureName, core.RemoteStopTransactionFeatureName, core.ResetFeatureName, core.UnlockConnectorFeatureName,
 		localauth.GetLocalListVersionFeatureName, localauth.SendLocalListFeatureName,
 		firmware.GetDiagnosticsFeatureName, firmware.UpdateFirmwareFeatureName,
@@ -351,7 +355,7 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 		remotetrigger.TriggerMessageFeatureName,
 		smartcharging.SetChargingProfileFeatureName, smartcharging.ClearChargingProfileFeatureName, smartcharging.GetCompositeScheduleFeatureName:
 	default:
-		return fmt.Errorf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
+		return fmt.Errorf("unsupported action %v on central system, cannot send request", featureName)
 	}
 	cs.callbacks[clientId] = callback
 	err := cs.server.SendRequest(clientId, request)

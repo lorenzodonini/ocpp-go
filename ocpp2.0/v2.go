@@ -136,12 +136,12 @@ type ChargingStation interface {
 //	if !ok {
 //		log.Fatal("couldn't parse PEM certificate")
 //	}
-//	cp := NewChargingStation("someUniqueId", nil, ws.NewTLSClient(&tls.Config{
+//	cs := NewChargingStation("someUniqueId", nil, ws.NewTLSClient(&tls.Config{
 //		RootCAs: certPool,
 //	})
 //
 // For more advanced options, or if a custom networking/occpj layer is required,
-// please refer to ocppj.ChargingStation and ws.WsClient.
+// please refer to ocppj.Client and ws.WsClient.
 func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient) ChargingStation {
 	if client == nil {
 		client = ws.NewClient()
@@ -301,13 +301,13 @@ type CSMS interface {
 // Creates a new OCPP 2.0 CSMS.
 //
 // The dispatcher and client parameters may be omitted, in order to use a default configuration:
-//   chargingStation := NewCSMS(nil, nil)
+//   csms := NewCSMS(nil, nil)
 //
 // It is recommended to use the default configuration, unless a custom networking / ocppj layer is required.
-// The default dispatcher supports all OCPP 2.0 features out-of-the-box.
+// The default dispatcher supports all implemented OCPP 2.0 features out-of-the-box.
 //
 // If you need a TLS server, you may use the following:
-//	cs := NewCSMS(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
+//	csms := NewCSMS(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
 func NewCSMS(dispatcher *ocppj.Server, server ws.WsServer) CSMS {
 	if server == nil {
 		server = ws.NewServer()

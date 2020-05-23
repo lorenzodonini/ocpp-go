@@ -3,7 +3,7 @@ services:
   central_system:
     build:
       context: .
-      dockerfile: ./example/cs/Dockerfile
+      dockerfile: example/cs1.6/Dockerfile
     image: ldonini/ocpp1.6-central-system:latest
     container_name: central-system
     ports:
@@ -16,7 +16,7 @@ services:
       - CENTRAL_SYSTEM_URL=ws://central_system:8887
     build:
       context: .
-      dockerfile: ./example/cp/Dockerfile
+      dockerfile: example/cp1.6/Dockerfile
     image: ldonini/ocpp1.6-charge-point:latest
     container_name: charge-point
     networks:

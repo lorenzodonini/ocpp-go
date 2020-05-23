@@ -181,7 +181,10 @@ func (cp *chargePoint) SetSmartChargingHandler(listener smartcharging.ChargePoin
 }
 
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) {
-	// TODO: check for supported feature
+	featureName := request.GetFeatureName()
+	if _, found := cp.client.GetProfileForFeature(featureName); !found {
+		return nil, fmt.Errorf("feature %v is unsupported on charge point (missing profile), cannot send request", featureName)
+	}
 	err := cp.client.SendRequest(request)
 	if err != nil {
 		return nil, err
@@ -196,12 +199,16 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) 
 }
 
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
-	switch request.GetFeatureName() {
+	featureName := request.GetFeatureName()
+	if _, found := cp.client.GetProfileForFeature(featureName); !found {
+		return fmt.Errorf("feature %v is unsupported on charge point (missing profile), cannot send request", featureName)
+	}
+	switch featureName {
 	case core.AuthorizeFeatureName, core.BootNotificationFeatureName, core.DataTransferFeatureName, core.HeartbeatFeatureName, core.MeterValuesFeatureName, core.StartTransactionFeatureName, core.StopTransactionFeatureName, core.StatusNotificationFeatureName,
 		firmware.DiagnosticsStatusNotificationFeatureName, firmware.FirmwareStatusNotificationFeatureName:
 		break
 	default:
-		return fmt.Errorf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
+		return fmt.Errorf("unsupported action %v on charge point, cannot send request", featureName)
 	}
 	err := cp.client.SendRequest(request)
 	if err == nil {
@@ -243,7 +250,7 @@ func (cp *chargePoint) Stop() {
 }
 
 func (cp *chargePoint) notImplementedError(requestId string, action string) {
-	log.WithField("request", requestId).Errorf("cannot handle call from central system. Sending CallError instead")
+	log.WithField("request", requestId).Errorf("cannot handle Call from central system. Sending CallError instead")
 	err := cp.client.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
 		log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
