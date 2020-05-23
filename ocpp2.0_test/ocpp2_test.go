@@ -696,8 +696,8 @@ func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request o
 	t := suite.T()
 	wsId := "test_id"
 	wsUrl := "someUrl"
-	expectedError := fmt.Sprintf("unsupported action %v on charge point, cannot send request", request.GetFeatureName())
-	errorDescription := fmt.Sprintf("unsupported action %v on central system", request.GetFeatureName())
+	expectedError := fmt.Sprintf("unsupported action %v on charging station, cannot send request", request.GetFeatureName())
+	errorDescription := fmt.Sprintf("unsupported action %v on CSMS", request.GetFeatureName())
 	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
 	channel := NewMockWebSocket(wsId)
 
@@ -733,8 +733,8 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 	t := suite.T()
 	wsId := "test_id"
 	wsUrl := "someUrl"
-	expectedError := fmt.Sprintf("unsupported action %v on central system, cannot send request", request.GetFeatureName())
-	errorDescription := fmt.Sprintf("unsupported action %v on charge point", request.GetFeatureName())
+	expectedError := fmt.Sprintf("unsupported action %v on CSMS, cannot send request", request.GetFeatureName())
+	errorDescription := fmt.Sprintf("unsupported action %v on charging station", request.GetFeatureName())
 	errorJson := fmt.Sprintf(`[4,"%v","%v","%v",null]`, messageId, ocppj.NotSupported, errorDescription)
 	channel := NewMockWebSocket(wsId)
 
