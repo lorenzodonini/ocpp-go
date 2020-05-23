@@ -31,10 +31,14 @@ import (
 // A Charging Station represents the physical system where an EV can be charged.
 // You can instantiate a default Charging Station struct by calling NewChargingStation.
 //
-// The logic for incoming messages needs to be implemented, and the message handler has to be registered with the charging station:
-//	handler := &ChargingStationHandler{}
-//	centralStation.SetMessageHandler(handler)
-// Refer to the ChargingStationHandler interface for the implementation requirements.
+// The logic for incoming messages needs to be implemented, and message handlers need to be registered with the charging station:
+//	handler := &ChargingStationHandler{} 				// Custom struct
+//  chargingStation.SetAuthorizationHandler(handler)
+//  chargingStation.SetProvisioningHandler(handler)
+//  // set more handlers...
+// Refer to the ChargingStationHandler interface of each profile for the implementation requirements.
+//
+// If a handler for a profile is not set, the OCPP library will reply to incoming messages for that profile with a NotImplemented error.
 //
 // A charging station can be started and stopped using the Start and Stop functions.
 // While running, messages can be sent to the CSMS by calling the Charging Station's functions, e.g.
@@ -49,7 +53,7 @@ type ChargingStation interface {
 	Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *authorization.AuthorizeRequest)) (*authorization.AuthorizeResponse, error)
 	// Notifies the CSMS, that a previously set charging limit was cleared.
 	ClearedChargingLimit(chargingLimitSource types.ChargingLimitSourceType, props ...func(request *smartcharging.ClearedChargingLimitRequest)) (*smartcharging.ClearedChargingLimitResponse, error)
-	// Performs a custom data transfer to the CSMS. The message payload is not pre-defined and must be supported by the CSMS.
+	// Performs a custom data transfer to the CSMS. The message payload is not pre-defined and must be supported by the CSMS. Every vendor may implement their own proprietary logic for this message.
 	DataTransfer(vendorId string, props ...func(request *data.DataTransferRequest)) (*data.DataTransferResponse, error)
 	// Notifies the CSMS of a status change during a firmware update procedure (download, installation).
 	FirmwareStatusNotification(status firmware.FirmwareStatus, requestID int, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationResponse, error)
@@ -57,17 +61,7 @@ type ChargingStation interface {
 	Get15118EVCertificate(schemaVersion string, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateResponse, error)
 	// Requests the CSMS to provide OCSP certificate status for the charging station's 15118 certificates.
 	GetCertificateStatus(ocspRequestData types.OCSPRequestDataType, props ...func(request *iso15118.GetCertificateStatusRequest)) (*iso15118.GetCertificateStatusResponse, error)
-	//Heartbeat(props ...func(request *HeartbeatRequest)) (*HeartbeatConfirmation, error)
-	//MeterValues(connectorId int, meterValues []MeterValue, props ...func(request *MeterValuesRequest)) (*MeterValuesConfirmation, error)
-	//StartTransaction(connectorId int, idTag string, meterStart int, timestamp *DateTime, props ...func(request *StartTransactionRequest)) (*StartTransactionConfirmation, error)
-	//StopTransaction(meterStop int, timestamp *DateTime, transactionId int, props ...func(request *StopTransactionRequest)) (*StopTransactionConfirmation, error)
-	//StatusNotification(connectorId int, errorCode ChargePointErrorCode, status ChargePointStatus, props ...func(request *StatusNotificationRequest)) (*StatusNotificationConfirmation, error)
-	//DiagnosticsStatusNotification(status DiagnosticsStatus, props ...func(request *DiagnosticsStatusNotificationRequest)) (*DiagnosticsStatusNotificationConfirmation, error)
-	//FirmwareStatusNotification(status FirmwareStatus, props ...func(request *FirmwareStatusNotificationRequest)) (*FirmwareStatusNotificationResponse, error)
 
-	// SetMessageHandler sets a handler for incoming messages from the CSMS.
-	// Refer to ChargingStationHandler for info on how to handle the callbacks.
-	SetMessageHandler(handler ChargingStationHandler)
 	// Registers a handler for incoming security profile messages
 	SetSecurityHandler(handler security.ChargingStationHandler)
 	// Registers a handler for incoming provisioning profile messages
@@ -168,9 +162,9 @@ func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient)
 	if dispatcher == nil {
 		dispatcher = ocppj.NewClient(id, client, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
-	cs := chargingStation{client: dispatcher, confirmationHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
+	cs := chargingStation{client: dispatcher, responseHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
 	cs.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
-		cs.confirmationHandler <- confirmation
+		cs.responseHandler <- confirmation
 	})
 	cs.client.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
 		cs.errorHandler <- err
@@ -184,10 +178,14 @@ func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient)
 // A Charging Station Management System (CSMS) manages Charging Stations and has the information for authorizing Management Users for using its Charging Stations.
 // You can instantiate a default CSMS struct by calling the NewCSMS function.
 //
-// The logic for handling incoming messages needs to be implemented, and the message handler has to be registered with the CSMS:
-//	handler := &CSMSHandler{}
-//	csms.SetMessageHandler(handler)
-// Refer to the CSMSHandler interface for the implementation requirements.
+// The logic for handling incoming messages needs to be implemented, and message handlers need to be registered with the CSMS:
+//	handler := &CSMSHandler{} 				// Custom struct
+//  csms.SetAuthorizationHandler(handler)
+//  csms.SetProvisioningHandler(handler)
+//  // set more handlers...
+// Refer to the CSMSHandler interface of each profile for the implementation requirements.
+//
+// If a handler for a profile is not set, the OCPP library will reply to incoming messages for that profile with a NotImplemented error.
 //
 // A CSMS can be started by using the Start function.
 // To be notified of incoming (dis)connections from charging stations refer to the SetNewChargingStationHandler and SetChargingStationDisconnectedHandler functions.
@@ -201,7 +199,7 @@ func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient)
 type CSMS interface {
 	// Cancel a pending reservation, provided the reservationId, on a charging station.
 	CancelReservation(clientId string, callback func(*reservation.CancelReservationResponse, error), reservationId int, props ...func(*reservation.CancelReservationRequest)) error
-	// The CSMS installs a new certificate, signed by the CA, on the charging station. This typically follows a SignCertificate message, initiated by the charging station.
+	// The CSMS installs a new certificate (chain), signed by the CA, on the charging station. This typically follows a SignCertificate message, initiated by the charging station.
 	CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), certificate []string, props ...func(*security.CertificateSignedRequest)) error
 	// Instructs a charging station to change its availability to the desired operational status.
 	ChangeAvailability(clientId string, callback func(*availability.ChangeAvailabilityResponse, error), evseID int, operationalStatus availability.OperationalStatus, props ...func(*availability.ChangeAvailabilityRequest)) error
@@ -217,7 +215,7 @@ type CSMS interface {
 	CostUpdated(clientId string, callback func(*tariffcost.CostUpdatedResponse, error), totalCost float64, transactionId string, props ...func(*tariffcost.CostUpdatedRequest)) error
 	// Instructs a charging station to send one or more reports, containing raw customer information.
 	CustomerInformation(clientId string, callback func(*diagnostics.CustomerInformationResponse, error), requestId int, report bool, clear bool, props ...func(*diagnostics.CustomerInformationRequest)) error
-	// Performs a custom data transfer to a charging station. The message payload is not pre-defined and must be supported by the charging station.
+	// Performs a custom data transfer to a charging station. The message payload is not pre-defined and must be supported by the charging station. Every vendor may implement their own proprietary logic for this message.
 	DataTransfer(clientId string, callback func(*data.DataTransferResponse, error), vendorId string, props ...func(*data.DataTransferRequest)) error
 	// Deletes a previously installed certificate on a charging station.
 	DeleteCertificate(clientId string, callback func(*iso15118.DeleteCertificateResponse, error), data types.CertificateHashData, props ...func(*iso15118.DeleteCertificateRequest)) error
@@ -252,9 +250,6 @@ type CSMS interface {
 	//SetChargingProfile(clientId string, callback func(*SetChargingProfileConfirmation, error), connectorId int, chargingProfile *ChargingProfile, props ...func(request *SetChargingProfileRequest)) error
 	//GetCompositeSchedule(clientId string, callback func(*GetCompositeScheduleResponse, error), connectorId int, duration int, props ...func(request *GetCompositeScheduleRequest)) error
 
-	// SetMessageHandler sets a handler for incoming messages from the Charging station.
-	// Refer to CSMSHandler for info on how to handle the callbacks.
-	SetMessageHandler(handler CSMSHandler)
 	// Registers a handler for incoming security profile messages.
 	SetSecurityHandler(handler security.CSMSHandler)
 	// Registers a handler for incoming provisioning profile messages.
@@ -325,7 +320,7 @@ func NewCSMS(dispatcher *ocppj.Server, server ws.WsServer) CSMS {
 		server:    dispatcher,
 		callbacks: map[string]func(confirmation ocpp.Response, err error){}}
 	cs.server.SetRequestHandler(cs.handleIncomingRequest)
-	cs.server.SetResponseHandler(cs.handleIncomingConfirmation)
+	cs.server.SetResponseHandler(cs.handleIncomingResponse)
 	cs.server.SetErrorHandler(cs.handleIncomingError)
 	return &cs
 }

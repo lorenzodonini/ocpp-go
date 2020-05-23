@@ -804,7 +804,6 @@ func (testGenerator *TestRandomIdGenerator) generateId() string {
 var defaultMessageId = "1234"
 
 func (suite *OcppV2TestSuite) SetupTest() {
-	coreProfile := ocpp2.CoreProfile
 	securityProfile := security.Profile
 	provisioningProfile := provisioning.Profile
 	authProfile := authorization.Profile
@@ -826,8 +825,8 @@ func (suite *OcppV2TestSuite) SetupTest() {
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
-	suite.ocppjClient = ocppj.NewClient("test_id", suite.mockWsClient, coreProfile, securityProfile, provisioningProfile, authProfile, availabilityProfile, reservationProfile, diagnosticsProfile, dataProfile, displayProfile, firmwareProfile, isoProfile, localAuthProfile, meterProfile, remoteProfile, smartChargingProfile, tariffProfile, transactionsProfile)
-	suite.ocppjServer = ocppj.NewServer(suite.mockWsServer, coreProfile, securityProfile, provisioningProfile, authProfile, availabilityProfile, reservationProfile, diagnosticsProfile, dataProfile, displayProfile, firmwareProfile, isoProfile, localAuthProfile, meterProfile, remoteProfile, smartChargingProfile, tariffProfile, transactionsProfile)
+	suite.ocppjClient = ocppj.NewClient("test_id", suite.mockWsClient, securityProfile, provisioningProfile, authProfile, availabilityProfile, reservationProfile, diagnosticsProfile, dataProfile, displayProfile, firmwareProfile, isoProfile, localAuthProfile, meterProfile, remoteProfile, smartChargingProfile, tariffProfile, transactionsProfile)
+	suite.ocppjServer = ocppj.NewServer(suite.mockWsServer, securityProfile, provisioningProfile, authProfile, availabilityProfile, reservationProfile, diagnosticsProfile, dataProfile, displayProfile, firmwareProfile, isoProfile, localAuthProfile, meterProfile, remoteProfile, smartChargingProfile, tariffProfile, transactionsProfile)
 	suite.chargingStation = ocpp2.NewChargingStation("test_id", suite.ocppjClient, suite.mockWsClient)
 	suite.csms = ocpp2.NewCSMS(suite.ocppjServer, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
