@@ -6,7 +6,7 @@ import (
 )
 
 // Needs to be implemented by Central systems for handling messages part of the OCPP 1.6 Core profile.
-type CentralSystemCoreHandler interface {
+type CentralSystemHandler interface {
 	OnAuthorize(chargePointId string, request *AuthorizeRequest) (confirmation *AuthorizeConfirmation, err error)
 	OnBootNotification(chargePointId string, request *BootNotificationRequest) (confirmation *BootNotificationConfirmation, err error)
 	OnDataTransfer(chargePointId string, request *DataTransferRequest) (confirmation *DataTransferConfirmation, err error)
@@ -18,7 +18,7 @@ type CentralSystemCoreHandler interface {
 }
 
 // Needs to be implemented by Charge points for handling messages part of the OCPP 1.6 Core profile.
-type ChargePointCoreHandler interface {
+type ChargePointHandler interface {
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (confirmation *ChangeAvailabilityConfirmation, err error)
 	OnChangeConfiguration(request *ChangeConfigurationRequest) (confirmation *ChangeConfigurationConfirmation, err error)
 	OnClearCache(request *ClearCacheRequest) (confirmation *ClearCacheConfirmation, err error)
