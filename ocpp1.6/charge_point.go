@@ -156,7 +156,7 @@ func (cp *chargePoint) FirmwareStatusNotification(status firmware.FirmwareStatus
 	}
 }
 
-func (cp *chargePoint) SetChargePointCoreHandler(handler core.ChargePointHandler) {
+func (cp *chargePoint) SetCoreHandler(handler core.ChargePointHandler) {
 	cp.coreHandler = handler
 }
 

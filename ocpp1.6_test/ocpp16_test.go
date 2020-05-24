@@ -465,7 +465,7 @@ func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener cor
 
 func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener core.ChargePointHandler, options expectedChargePointOptions) {
 	t := suite.T()
-	suite.chargePoint.SetChargePointCoreHandler(coreListener)
+	suite.chargePoint.SetCoreHandler(coreListener)
 	suite.mockWsClient.On("Start", mock.AnythingOfType("string")).Return(options.startReturnArgument).Run(func(args mock.Arguments) {
 		u := args.String(0)
 		assert.Equal(t, fmt.Sprintf("%s/%s", options.serverUrl, options.clientId), u)

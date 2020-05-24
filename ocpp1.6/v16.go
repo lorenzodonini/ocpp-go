@@ -23,7 +23,7 @@ import (
 //
 // The logic for incoming messages needs to be implemented, and the message handlers need to be registered with the charge point:
 // 	handler := &ChargePointHandler{}
-//	client.SetChargePointCoreHandler(handler)
+//	client.SetCoreHandler(handler)
 // Refer to the ChargePointHandler interfaces in the respective core, firmware, localauth, remotetrigger, reservation and smartcharging profiles for the implementation requirements.
 //
 // A charge point can be started and stopped using the Start and Stop functions.
@@ -55,7 +55,7 @@ type ChargePoint interface {
 	FirmwareStatusNotification(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationConfirmation, error)
 
 	// Registers a handler for incoming core profile messages
-	SetChargePointCoreHandler(listener core.ChargePointHandler)
+	SetCoreHandler(listener core.ChargePointHandler)
 	// Registers a handler for incoming local authorization profile messages
 	SetLocalAuthListHandler(listener localauth.ChargePointHandler)
 	// Registers a handler for incoming firmware management profile messages
