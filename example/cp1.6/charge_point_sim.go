@@ -34,7 +34,8 @@ type ChargePointHandler struct {
 
 var chargePoint ocpp16.ChargePoint
 
-// Core profile callbacks
+// ------------- Core profile callbacks -------------
+
 func (handler *ChargePointHandler) OnChangeAvailability(request *core.ChangeAvailabilityRequest) (confirmation *core.ChangeAvailabilityConfirmation, err error) {
 	handler.connectors[request.ConnectorId].availability = request.Type
 	return core.NewChangeAvailabilityConfirmation(core.AvailabilityStatusAccepted), nil
@@ -115,7 +116,8 @@ func (handler *ChargePointHandler) OnUnlockConnector(request *core.UnlockConnect
 	return core.NewUnlockConnectorConfirmation(core.UnlockStatusUnlocked), nil
 }
 
-// Local authorization list profile callbacks
+// ------------- Local authorization list profile callbacks -------------
+
 func (handler *ChargePointHandler) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionConfirmation, err error) {
 	return localauth.NewGetLocalListVersionConfirmation(handler.localAuthListVersion), nil
 }
@@ -134,7 +136,8 @@ func (handler *ChargePointHandler) OnSendLocalList(request *localauth.SendLocalL
 	return localauth.NewSendLocalListConfirmation(localauth.UpdateStatusAccepted), nil
 }
 
-// Firmware management profile callbacks
+// ------------- Firmware management profile callbacks -------------
+
 func (handler *ChargePointHandler) OnGetDiagnostics(request *firmware.GetDiagnosticsRequest) (confirmation *firmware.GetDiagnosticsConfirmation, err error) {
 	return firmware.NewGetDiagnosticsConfirmation(), nil
 	//TODO: perform diagnostics upload out-of-band
@@ -145,7 +148,8 @@ func (handler *ChargePointHandler) OnUpdateFirmware(request *firmware.UpdateFirm
 	//TODO: download new firmware out-of-band
 }
 
-// Remote trigger profile callbacks
+// ------------- Remote trigger profile callbacks -------------
+
 func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.TriggerMessageRequest) (confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
 	switch request.RequestedMessage {
 	case core.BootNotificationFeatureName:
@@ -172,7 +176,8 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 	return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusAccepted), nil
 }
 
-// Reservation profile callbacks
+// ------------- Reservation profile callbacks -------------
+
 func (handler *ChargePointHandler) OnReserveNow(request *reservation.ReserveNowRequest) (confirmation *reservation.ReserveNowConfirmation, err error) {
 	connector := handler.connectors[request.ConnectorId]
 	if connector == nil {
@@ -199,7 +204,8 @@ func (handler *ChargePointHandler) OnCancelReservation(request *reservation.Canc
 	return reservation.NewCancelReservationConfirmation(reservation.CancelReservationStatusRejected), nil
 }
 
-// Smart charging profile callbacks
+// ------------- Smart charging profile callbacks -------------
+
 func (handler *ChargePointHandler) OnSetChargingProfile(request *smartcharging.SetChargingProfileRequest) (confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
 	//TODO: handle logic
 	return smartcharging.NewSetChargingProfileConfirmation(smartcharging.ChargingProfileStatusNotImplemented), nil
@@ -318,7 +324,13 @@ func main() {
 		errorCode:            core.NoError,
 		localAuthList:        []localauth.AuthorizationData{},
 		localAuthListVersion: 0}
-	chargePoint.SetChargePointCoreHandler(handler)
+	// Support callbacks for all OCPP 1.6 profiles
+	chargePoint.SetCoreHandler(handler)
+	chargePoint.SetFirmwareManagementHandler(handler)
+	chargePoint.SetLocalAuthListHandler(handler)
+	chargePoint.SetReservationHandler(handler)
+	chargePoint.SetRemoteTriggerHandler(handler)
+	chargePoint.SetSmartChargingHandler(handler)
 	// Connects to central system
 	err := chargePoint.Start(csUrl)
 	if err != nil {
