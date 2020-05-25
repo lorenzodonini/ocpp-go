@@ -19,4 +19,4 @@ const ProfileName = "availability"
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	ChangeAvailabilityFeature{},
-	)
+)

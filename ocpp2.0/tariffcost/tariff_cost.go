@@ -18,4 +18,4 @@ const ProfileName = "tariffCost"
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	CostUpdatedFeature{},
-	)
+)

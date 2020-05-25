@@ -27,4 +27,4 @@ var Profile = ocpp.NewProfile(
 	CustomerInformationFeature{},
 	GetLogFeature{},
 	GetMonitoringReportFeature{},
-	)
+)

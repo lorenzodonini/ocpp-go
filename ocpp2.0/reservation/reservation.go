@@ -20,4 +20,4 @@ const ProfileName = "reservation"
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	CancelReservationFeature{},
-	)
+)

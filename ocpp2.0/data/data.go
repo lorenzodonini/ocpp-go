@@ -20,4 +20,4 @@ const ProfileName = "data"
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	DataTransferFeature{},
-	)
+)
