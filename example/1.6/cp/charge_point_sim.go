@@ -130,7 +130,7 @@ func main() {
 	// Check if TLS enabled
 	t, _ := os.LookupEnv(envVarTls)
 	tlsEnabled, _ := strconv.ParseBool(t)
-	// Prepare OCPP 1.6 charge point (defined in handler.go)
+	// Prepare OCPP 1.6 charge point (chargePoint variable is defined in handler.go)
 	if tlsEnabled {
 		chargePoint = setupTlsChargePoint(id)
 	} else {
