@@ -5,11 +5,11 @@ FROM golang:alpine AS builder
 
 ENV GO111MODULE on
 WORKDIR $GOPATH/src/github.com/lorenzodonini/ocpp-go
-COPY ../../cp1.6 .
+COPY . .
 # Fetch dependencies.
 RUN go mod download
 # Build the binary.
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/charge_point example/cp1.6/*.go
+RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/charge_point example/1.6/cp/*.go
 
 ############################
 # STEP 2 build a small image

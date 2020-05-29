@@ -2,8 +2,8 @@ version: '3'
 services:
   central-system:
     build:
-      context: .
-      dockerfile: example/cs1.6/Dockerfile
+      context: ../..
+      dockerfile: cs/Dockerfile
     image: ldonini/ocpp1.6-central-system:latest
     container_name: central-system
     environment:
@@ -14,8 +14,8 @@ services:
       - sim
   charge-point:
     build:
-      context: .
-      dockerfile: example/cp1.6/Dockerfile
+      context: ../..
+      dockerfile: cp/Dockerfile
     image: ldonini/ocpp1.6-charge-point:latest
     container_name: charge-point
     environment:
