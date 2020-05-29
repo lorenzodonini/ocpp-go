@@ -9,7 +9,7 @@ COPY . .
 # Fetch dependencies.
 RUN go mod download
 # Build the binary.
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/central_system example/cs1.6/central_system_sim.go
+RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/central_system example/cs1.6/*.go
 
 ############################
 # STEP 2 build a small image
@@ -20,5 +20,6 @@ COPY --from=builder /go/bin/central_system /bin/central_system
 
 # Port on which the service will be exposed.
 EXPOSE 8887
+EXPOSE 443
 
 CMD [ "central_system" ]
