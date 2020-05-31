@@ -30,7 +30,14 @@ type ChargePointHandler struct {
 	localAuthListVersion int
 }
 
+var asyncRequestChan chan func()
+
 var chargePoint ocpp16.ChargePoint
+
+func (handler *ChargePointHandler) isValidConnectorID(ID int) bool {
+	_, ok := handler.connectors[ID]
+	return ok || ID == 0
+}
 
 // ------------- Core profile callbacks -------------
 
@@ -117,6 +124,7 @@ func (handler *ChargePointHandler) OnUnlockConnector(request *core.UnlockConnect
 // ------------- Local authorization list profile callbacks -------------
 
 func (handler *ChargePointHandler) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionConfirmation, err error) {
+	logDefault(request.GetFeatureName()).Infof("returning current local list version: %v", handler.localAuthListVersion)
 	return localauth.NewGetLocalListVersionConfirmation(handler.localAuthListVersion), nil
 }
 
@@ -149,29 +157,59 @@ func (handler *ChargePointHandler) OnUpdateFirmware(request *firmware.UpdateFirm
 // ------------- Remote trigger profile callbacks -------------
 
 func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.TriggerMessageRequest) (confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
+	logDefault(request.GetFeatureName()).Infof("received trigger for %v", request.RequestedMessage)
+	status := remotetrigger.TriggerMessageStatusRejected
 	switch request.RequestedMessage {
 	case core.BootNotificationFeatureName:
 		//TODO: schedule boot notification message
 		break
 	case firmware.DiagnosticsStatusNotificationFeatureName:
-		//TODO: schedule diagnostics status notification message
-		break
+		// Schedule diagnostics status notification request
+		fn := func() {
+			_, e := chargePoint.DiagnosticsStatusNotification(firmware.DiagnosticsStatusIdle)
+			checkError(e)
+			logDefault(core.HeartbeatFeatureName).Info("diagnostics status notified")
+		}
+		scheduleAsyncRequest(fn)
+		status = remotetrigger.TriggerMessageStatusAccepted
 	case firmware.FirmwareStatusNotificationFeatureName:
 		//TODO: schedule firmware status notification message
 		break
 	case core.HeartbeatFeatureName:
-		//TODO: schedule heartbeat message
-		break
+		// Schedule heartbeat request
+		fn := func() {
+			conf, e := chargePoint.Heartbeat()
+			checkError(e)
+			logDefault(core.HeartbeatFeatureName).Infof("clock synchronized: %v", conf.CurrentTime.FormatTimestamp())
+		}
+		scheduleAsyncRequest(fn)
+		status = remotetrigger.TriggerMessageStatusAccepted
 	case core.MeterValuesFeatureName:
 		//TODO: schedule meter values message
 		break
-		//TODO: schedule status notification message
 	case core.StatusNotificationFeatureName:
-		break
+		connectorID := request.ConnectorId
+		// Check if requested connector is valid and status can be retrieved
+		if !handler.isValidConnectorID(connectorID) {
+			logDefault(request.GetFeatureName()).Errorf("cannot trigger %v: requested invalid connector %v", request.RequestedMessage, request.ConnectorId)
+			return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusRejected), nil
+		}
+		// Schedule status notification request
+		fn := func() {
+			status := handler.status
+			if c, ok := handler.connectors[request.ConnectorId]; ok {
+				status = c.status
+			}
+			statusConfirmation, err := chargePoint.StatusNotification(connectorID, handler.errorCode, status)
+			checkError(err)
+			logDefault(statusConfirmation.GetFeatureName()).Infof("status for connector %v sent: %v", connectorID, status)
+		}
+		scheduleAsyncRequest(fn)
+		status = remotetrigger.TriggerMessageStatusAccepted
 	default:
 		return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusNotImplemented), nil
 	}
-	return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusAccepted), nil
+	return remotetrigger.NewTriggerMessageConfirmation(status), nil
 }
 
 // ------------- Reservation profile callbacks -------------
@@ -184,6 +222,7 @@ func (handler *ChargePointHandler) OnReserveNow(request *reservation.ReserveNowR
 		return reservation.NewReserveNowConfirmation(reservation.ReservationStatusOccupied), nil
 	}
 	connector.currentReservation = request.ReservationId
+	logDefault(request.GetFeatureName()).Infof("reservation %v for connector %v accepted", request.ReservationId, request.ConnectorId)
 	go updateStatus(handler, request.ConnectorId, core.ChargePointStatusReserved)
 	// TODO: automatically remove reservation after expiryDate
 	return reservation.NewReserveNowConfirmation(reservation.ReservationStatusAccepted), nil
@@ -196,9 +235,11 @@ func (handler *ChargePointHandler) OnCancelReservation(request *reservation.Canc
 			if v.status == core.ChargePointStatusReserved {
 				go updateStatus(handler, k, core.ChargePointStatusAvailable)
 			}
+			logDefault(request.GetFeatureName()).Infof("reservation %v for connector %v canceled", request.ReservationId, k)
 			return reservation.NewCancelReservationConfirmation(reservation.CancelReservationStatusAccepted), nil
 		}
 	}
+	logDefault(request.GetFeatureName()).Infof("couldn't cancel reservation %v for connector %v: reservation not found!")
 	return reservation.NewCancelReservationConfirmation(reservation.CancelReservationStatusRejected), nil
 }
 
@@ -238,7 +279,7 @@ func updateStatus(stateHandler *ChargePointHandler, connector int, status core.C
 	} else {
 		stateHandler.connectors[connector].status = status
 	}
-	statusConfirmation, err := chargePoint.StatusNotification(connector, core.NoError, status)
+	statusConfirmation, err := chargePoint.StatusNotification(connector, stateHandler.errorCode, status)
 	checkError(err)
 	if connector == 0 {
 		logDefault(statusConfirmation.GetFeatureName()).Infof("status for all connectors updated to %v", status)

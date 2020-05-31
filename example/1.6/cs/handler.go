@@ -13,8 +13,6 @@ var (
 	nextTransactionId = 0
 )
 
-//TODO: cache authorization
-
 // Charge Point state
 type TransactionInfo struct {
 	id          int
@@ -79,6 +77,7 @@ func (handler *CentralSystemHandler) OnDataTransfer(chargePointId string, reques
 }
 
 func (handler *CentralSystemHandler) OnHeartbeat(chargePointId string, request *core.HeartbeatRequest) (confirmation *core.HeartbeatConfirmation, err error) {
+	logDefault(chargePointId, request.GetFeatureName()).Infof("heartbeat handled")
 	return core.NewHeartbeatConfirmation(types.NewDateTime(time.Now())), nil
 }
 
@@ -141,9 +140,9 @@ func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, req
 		connector.currentTransaction = -1
 		transaction.endTime = request.Timestamp
 		transaction.endMeter = request.MeterStop
-		//TODO: meter data
+		//TODO: bill charging period to client
 	}
-	logDefault(chargePointId, request.GetFeatureName()).Infof("stopped transaction %v - %v. Meter values:", request.TransactionId, request.Reason)
+	logDefault(chargePointId, request.GetFeatureName()).Infof("stopped transaction %v - %v", request.TransactionId, request.Reason)
 	for _, mv := range request.TransactionData {
 		logDefault(chargePointId, request.GetFeatureName()).Printf("%v", mv)
 	}
