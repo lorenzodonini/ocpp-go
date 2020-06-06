@@ -18,4 +18,4 @@ const ProfileName = "firmware"
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	FirmwareStatusNotificationFeature{},
-	)
+)

@@ -16,12 +16,12 @@ import (
 
 type chargePoint struct {
 	client               *ocppj.Client
-	coreHandler          core.ChargePointCoreHandler
-	localAuthListHandler localauth.ChargePointLocalAuthListHandler
-	firmwareHandler      firmware.ChargePointFirmwareManagementHandler
-	reservationHandler   reservation.ChargePointReservationHandler
-	remoteTriggerHandler remotetrigger.ChargePointRemoteTriggerHandler
-	smartChargingHandler smartcharging.ChargePointSmartChargingHandler
+	coreHandler          core.ChargePointHandler
+	localAuthListHandler localauth.ChargePointHandler
+	firmwareHandler      firmware.ChargePointHandler
+	reservationHandler   reservation.ChargePointHandler
+	remoteTriggerHandler remotetrigger.ChargePointHandler
+	smartChargingHandler smartcharging.ChargePointHandler
 	confirmationHandler  chan ocpp.Response
 	errorHandler         chan error
 }
@@ -156,28 +156,28 @@ func (cp *chargePoint) FirmwareStatusNotification(status firmware.FirmwareStatus
 	}
 }
 
-func (cp *chargePoint) SetChargePointCoreHandler(listener core.ChargePointCoreHandler) {
-	cp.coreHandler = listener
+func (cp *chargePoint) SetCoreHandler(handler core.ChargePointHandler) {
+	cp.coreHandler = handler
 }
 
-func (cp *chargePoint) SetLocalAuthListHandler(listener localauth.ChargePointLocalAuthListHandler) {
-	cp.localAuthListHandler = listener
+func (cp *chargePoint) SetLocalAuthListHandler(handler localauth.ChargePointHandler) {
+	cp.localAuthListHandler = handler
 }
 
-func (cp *chargePoint) SetFirmwareManagementHandler(listener firmware.ChargePointFirmwareManagementHandler) {
-	cp.firmwareHandler = listener
+func (cp *chargePoint) SetFirmwareManagementHandler(handler firmware.ChargePointHandler) {
+	cp.firmwareHandler = handler
 }
 
-func (cp *chargePoint) SetReservationHandler(listener reservation.ChargePointReservationHandler) {
-	cp.reservationHandler = listener
+func (cp *chargePoint) SetReservationHandler(handler reservation.ChargePointHandler) {
+	cp.reservationHandler = handler
 }
 
-func (cp *chargePoint) SetRemoteTriggerHandler(listener remotetrigger.ChargePointRemoteTriggerHandler) {
-	cp.remoteTriggerHandler = listener
+func (cp *chargePoint) SetRemoteTriggerHandler(handler remotetrigger.ChargePointHandler) {
+	cp.remoteTriggerHandler = handler
 }
 
-func (cp *chargePoint) SetSmartChargingHandler(listener smartcharging.ChargePointSmartChargingHandler) {
-	cp.smartChargingHandler = listener
+func (cp *chargePoint) SetSmartChargingHandler(handler smartcharging.ChargePointHandler) {
+	cp.smartChargingHandler = handler
 }
 
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) {
@@ -267,7 +267,7 @@ func (cp *chargePoint) notSupportedError(requestId string, action string) {
 
 func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
 	profile, found := cp.client.GetProfileForFeature(action)
-	// Check whether action is supported and a listener for it exists
+	// Check whether action is supported and a handler for it exists
 	if !found {
 		cp.notImplementedError(requestId, action)
 		return

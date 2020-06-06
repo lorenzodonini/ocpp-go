@@ -1,0 +1,42 @@
+version: '3'
+services:
+  central-system:
+    build:
+      context: ../..
+      dockerfile: cs/Dockerfile
+    image: ldonini/ocpp1.6-central-system:latest
+    container_name: central-system
+    volumes:
+      - ./certs/cs:/usr/local/share/certs
+      - ./certs/ca.crt:/usr/local/share/certs/ca.crt
+    environment:
+      - SERVER_LISTEN_PORT=443
+      - TLS_ENABLED=true
+      - SERVER_CERTIFICATE_PATH=/usr/local/share/certs/central-system.crt
+      - SERVER_CERTIFICATE_KEY_PATH=/usr/local/share/certs/central-system.key
+    ports:
+      - "443:443"
+    networks:
+      - sim
+  charge-point:
+    build:
+      context: ../..
+      dockerfile: cp/Dockerfile
+    image: ldonini/ocpp1.6-charge-point:latest
+    container_name: charge-point
+    volumes:
+      - ./certs/cp:/usr/local/share/certs
+      - ./certs/ca.crt:/usr/local/share/certs/ca.crt
+    environment:
+      - CLIENT_ID=chargePointSim
+      - CENTRAL_SYSTEM_URL=wss://central-system:443
+      - TLS_ENABLED=true
+      - CA_CERTIFICATE_PATH=/usr/local/share/certs/ca.crt
+      - CLIENT_CERTIFICATE_PATH=/usr/local/share/certs/charge-point.crt
+      - CLIENT_CERTIFICATE_KEY_PATH=/usr/local/share/certs/charge-point.key
+    networks:
+      - sim
+
+networks:
+  sim:
+    driver: bridge

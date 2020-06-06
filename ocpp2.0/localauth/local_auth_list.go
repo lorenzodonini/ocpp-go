@@ -19,4 +19,4 @@ const ProfileName = "localAuthList"
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	GetLocalListVersionFeature{},
-	)
+)

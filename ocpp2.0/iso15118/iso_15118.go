@@ -31,4 +31,4 @@ var Profile = ocpp.NewProfile(
 	Get15118EVCertificateFeature{},
 	GetCertificateStatusFeature{},
 	GetInstalledCertificateIdsFeature{},
-	)
+)

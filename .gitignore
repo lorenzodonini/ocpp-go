@@ -13,3 +13,6 @@
 
 # Idea
 .idea/*
+
+# Project-specific
+certs/

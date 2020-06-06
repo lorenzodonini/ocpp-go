@@ -17,19 +17,26 @@ jobs:
     - stage: test
       script:
         - go build ./...
-        - go test ./...
+        - go get golang.org/x/tools/cmd/cover
+        - go get github.com/mattn/goveralls
+        - go test ./ws ./ocppj -v -covermode=count -coverprofile=coverage.out
+        - go test -v -covermode=count -coverprofile=ocpp16.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp1.6/... github.com/lorenzodonini/ocpp-go/ocpp1.6_test
+        - go test -v -covermode=count -coverprofile=ocpp20.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp2.0/... github.com/lorenzodonini/ocpp-go/ocpp2.0_test
+        - sed '1d;$d' ocpp16.out >> coverage.out
+        - sed '1d;$d' ocpp20.out >> coverage.out
+        - goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
     - stage: publish_latest
       script:
-        - docker build -t ldonini/ocpp1.6-central-system:latest -f example/cs1.6/Dockerfile .
-        - docker build -t ldonini/ocpp1.6-charge-point:latest -f example/cp1.6/Dockerfile .
+        - docker build -t ldonini/ocpp1.6-central-system:latest -f example/1.6/cs/Dockerfile .
+        - docker build -t ldonini/ocpp1.6-charge-point:latest -f example/1.6/cp/Dockerfile .
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - docker push ldonini/ocpp1.6-central-system:latest
         - docker push ldonini/ocpp1.6-charge-point:latest
       if: branch == master
     - stage: release
       script:
-        - docker build -t "ldonini/ocpp1.6-central-system:$TRAVIS_TAG" -f example/cs1.6/Dockerfile .
-        - docker build -t "ldonini/ocpp1.6-charge-point:$TRAVIS_TAG" -f example/cp1.6/Dockerfile .
+        - docker build -t "ldonini/ocpp1.6-central-system:$TRAVIS_TAG" -f example/1.6/cs/Dockerfile .
+        - docker build -t "ldonini/ocpp1.6-charge-point:$TRAVIS_TAG" -f example/1.6/cp/Dockerfile .
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - docker push "ldonini/ocpp1.6-central-system:$TRAVIS_TAG"
         - docker push "ldonini/ocpp1.6-charge-point:$TRAVIS_TAG"

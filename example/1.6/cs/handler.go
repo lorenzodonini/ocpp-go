@@ -2,28 +2,18 @@ package main
 
 import (
 	"fmt"
-	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"strconv"
 	"time"
-)
-
-const (
-	defaultListenPort        = 8887
-	defaultHeartbeatInterval = 600
 )
 
 var (
 	nextTransactionId = 0
 )
 
-//TODO: cache authorization
-
-// Charge Point state
+// TransactionInfo contains info about a transaction
 type TransactionInfo struct {
 	id          int
 	startTime   *types.DateTime
@@ -38,6 +28,7 @@ func (ti *TransactionInfo) hasTransactionEnded() bool {
 	return ti.endTime != nil && !ti.endTime.IsZero()
 }
 
+// ConnectorInfo contains status and ongoing transaction ID for a connector
 type ConnectorInfo struct {
 	status             core.ChargePointStatus
 	currentTransaction int
@@ -47,6 +38,7 @@ func (ci *ConnectorInfo) hasTransactionInProgress() bool {
 	return ci.currentTransaction >= 0
 }
 
+// ChargePointState contains some simple state for a connected charge point
 type ChargePointState struct {
 	status            core.ChargePointStatus
 	diagnosticsStatus firmware.DiagnosticsStatus
@@ -65,11 +57,14 @@ func (cps *ChargePointState) getConnector(id int) *ConnectorInfo {
 	return ci
 }
 
+// CentralSystemHandler contains some simple state that a central system may want to keep.
+// In production this will typically be replaced by database/API calls.
 type CentralSystemHandler struct {
 	chargePoints map[string]*ChargePointState
 }
 
-// Core profile callbacks
+// ------------- Core profile callbacks -------------
+
 func (handler *CentralSystemHandler) OnAuthorize(chargePointId string, request *core.AuthorizeRequest) (confirmation *core.AuthorizeConfirmation, err error) {
 	logDefault(chargePointId, request.GetFeatureName()).Infof("client authorized")
 	return core.NewAuthorizationConfirmation(types.NewIdTagInfo(types.AuthorizationStatusAccepted)), nil
@@ -86,13 +81,14 @@ func (handler *CentralSystemHandler) OnDataTransfer(chargePointId string, reques
 }
 
 func (handler *CentralSystemHandler) OnHeartbeat(chargePointId string, request *core.HeartbeatRequest) (confirmation *core.HeartbeatConfirmation, err error) {
+	logDefault(chargePointId, request.GetFeatureName()).Infof("heartbeat handled")
 	return core.NewHeartbeatConfirmation(types.NewDateTime(time.Now())), nil
 }
 
 func (handler *CentralSystemHandler) OnMeterValues(chargePointId string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, err error) {
 	logDefault(chargePointId, request.GetFeatureName()).Infof("received meter values for connector %v, transaction %v. Meter values:\n", request.ConnectorId, request.TransactionId)
 	for _, mv := range request.MeterValue {
-		logDefault(chargePointId, request.GetFeatureName()).Printf("\t %v", mv)
+		logDefault(chargePointId, request.GetFeatureName()).Printf("%v", mv)
 	}
 	return core.NewMeterValuesConfirmation(), nil
 }
@@ -148,16 +144,17 @@ func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, req
 		connector.currentTransaction = -1
 		transaction.endTime = request.Timestamp
 		transaction.endMeter = request.MeterStop
-		//TODO: meter data
+		//TODO: bill charging period to client
 	}
-	logDefault(chargePointId, request.GetFeatureName()).Infof("stopped transaction %v - %v. Meter values:", request.TransactionId, request.Reason)
+	logDefault(chargePointId, request.GetFeatureName()).Infof("stopped transaction %v - %v", request.TransactionId, request.Reason)
 	for _, mv := range request.TransactionData {
-		logDefault(chargePointId, request.GetFeatureName()).Printf("\t %v", mv)
+		logDefault(chargePointId, request.GetFeatureName()).Printf("%v", mv)
 	}
 	return core.NewStopTransactionConfirmation(), nil
 }
 
-// Firmware management callbacks
+// ------------- Firmware management profile callbacks -------------
+
 func (handler *CentralSystemHandler) OnDiagnosticsStatusNotification(chargePointId string, request *firmware.DiagnosticsStatusNotificationRequest) (confirmation *firmware.DiagnosticsStatusNotificationConfirmation, err error) {
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
@@ -180,37 +177,8 @@ func (handler *CentralSystemHandler) OnFirmwareStatusNotification(chargePointId 
 
 // No callbacks for Local Auth management, Reservation, Remote trigger or Smart Charging profile on central system
 
-// Start function
-func main() {
-	args := os.Args[1:]
-	centralSystem := ocpp16.NewCentralSystem(nil, nil)
-	handler := &CentralSystemHandler{chargePoints: map[string]*ChargePointState{}}
-	centralSystem.SetNewChargePointHandler(func(chargePointId string) {
-		handler.chargePoints[chargePointId] = &ChargePointState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
-		log.WithField("client", chargePointId).Info("new charge point connected")
-	})
-	centralSystem.SetChargePointDisconnectedHandler(func(chargePointId string) {
-		log.WithField("client", chargePointId).Info("charge point disconnected")
-		delete(handler.chargePoints, chargePointId)
-	})
-	centralSystem.SetCentralSystemCoreHandler(handler)
-	var listenPort = defaultListenPort
-	if len(args) > 0 {
-		port, err := strconv.Atoi(args[0])
-		if err != nil {
-			listenPort = port
-		}
-	}
-	log.Infof("starting central system on port %v", listenPort)
-	centralSystem.Start(listenPort, "/{ws}")
-	log.Info("stopped central system")
-}
-
 // Utility functions
+
 func logDefault(chargePointId string, feature string) *log.Entry {
 	return log.WithFields(log.Fields{"client": chargePointId, "message": feature})
-}
-
-func init() {
-	log.SetLevel(log.InfoLevel)
 }

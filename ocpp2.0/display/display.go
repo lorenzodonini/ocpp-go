@@ -21,4 +21,4 @@ var Profile = ocpp.NewProfile(
 	ProfileName,
 	ClearDisplayFeature{},
 	GetDisplayMessagesFeature{},
-	)
+)

@@ -16,12 +16,12 @@ import (
 
 type centralSystem struct {
 	server               *ocppj.Server
-	coreHandler          core.CentralSystemCoreHandler
-	localAuthListHandler localauth.CentralSystemLocalAuthListHandler
-	firmwareHandler      firmware.CentralSystemFirmwareManagementHandler
-	reservationHandler   reservation.CentralSystemReservationHandler
-	remoteTriggerHandler remotetrigger.CentralSystemRemoteTriggerHandler
-	smartChargingHandler smartcharging.CentralSystemSmartChargingHandler
+	coreHandler          core.CentralSystemHandler
+	localAuthListHandler localauth.CentralSystemHandler
+	firmwareHandler      firmware.CentralSystemHandler
+	reservationHandler   reservation.CentralSystemHandler
+	remoteTriggerHandler remotetrigger.CentralSystemHandler
+	smartChargingHandler smartcharging.CentralSystemHandler
 	callbacks            map[string]func(confirmation ocpp.Response, err error)
 }
 
@@ -310,28 +310,28 @@ func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*sm
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) SetCentralSystemCoreHandler(listener core.CentralSystemCoreHandler) {
-	cs.coreHandler = listener
+func (cs *centralSystem) SetCoreHandler(handler core.CentralSystemHandler) {
+	cs.coreHandler = handler
 }
 
-func (cs *centralSystem) SetLocalAuthListHandler(listener localauth.CentralSystemLocalAuthListHandler) {
-	cs.localAuthListHandler = listener
+func (cs *centralSystem) SetLocalAuthListHandler(handler localauth.CentralSystemHandler) {
+	cs.localAuthListHandler = handler
 }
 
-func (cs *centralSystem) SetFirmwareManagementHandler(listener firmware.CentralSystemFirmwareManagementHandler) {
-	cs.firmwareHandler = listener
+func (cs *centralSystem) SetFirmwareManagementHandler(handler firmware.CentralSystemHandler) {
+	cs.firmwareHandler = handler
 }
 
-func (cs *centralSystem) SetReservationHandler(listener reservation.CentralSystemReservationHandler) {
-	cs.reservationHandler = listener
+func (cs *centralSystem) SetReservationHandler(handler reservation.CentralSystemHandler) {
+	cs.reservationHandler = handler
 }
 
-func (cs *centralSystem) SetRemoteTriggerHandler(listener remotetrigger.CentralSystemRemoteTriggerHandler) {
-	cs.remoteTriggerHandler = listener
+func (cs *centralSystem) SetRemoteTriggerHandler(handler remotetrigger.CentralSystemHandler) {
+	cs.remoteTriggerHandler = handler
 }
 
-func (cs *centralSystem) SetSmartChargingHandler(listener smartcharging.CentralSystemSmartChargingHandler) {
-	cs.smartChargingHandler = listener
+func (cs *centralSystem) SetSmartChargingHandler(handler smartcharging.CentralSystemHandler) {
+	cs.smartChargingHandler = handler
 }
 
 func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId string)) {
@@ -412,7 +412,7 @@ func (cs *centralSystem) notSupportedError(chargePointId string, requestId strin
 
 func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocpp.Request, requestId string, action string) {
 	profile, found := cs.server.GetProfileForFeature(action)
-	// Check whether action is supported and a listener for it exists
+	// Check whether action is supported and a handler for it exists
 	if !found {
 		cs.notImplementedError(chargePointId, requestId, action)
 		return

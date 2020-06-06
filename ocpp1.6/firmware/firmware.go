@@ -6,13 +6,13 @@ import (
 )
 
 // Needs to be implemented by Central systems for handling messages part of the OCPP 1.6 FirmwareManagement profile.
-type CentralSystemFirmwareManagementHandler interface {
+type CentralSystemHandler interface {
 	OnDiagnosticsStatusNotification(chargePointId string, request *DiagnosticsStatusNotificationRequest) (confirmation *DiagnosticsStatusNotificationConfirmation, err error)
 	OnFirmwareStatusNotification(chargePointId string, request *FirmwareStatusNotificationRequest) (confirmation *FirmwareStatusNotificationConfirmation, err error)
 }
 
 // Needs to be implemented by Charge points for handling messages part of the OCPP 1.6 FirmwareManagement profile.
-type ChargePointFirmwareManagementHandler interface {
+type ChargePointHandler interface {
 	OnGetDiagnostics(request *GetDiagnosticsRequest) (confirmation *GetDiagnosticsConfirmation, err error)
 	OnUpdateFirmware(request *UpdateFirmwareRequest) (confirmation *UpdateFirmwareConfirmation, err error)
 }

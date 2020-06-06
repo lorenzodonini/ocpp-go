@@ -9,16 +9,17 @@ COPY . .
 # Fetch dependencies.
 RUN go mod download
 # Build the binary.
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/central_system example/cs1.6/central_system_sim.go
+RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/central_system example/1.6/cs/*.go
 
 ############################
 # STEP 2 build a small image
 ############################
-FROM scratch
+FROM alpine
 
 COPY --from=builder /go/bin/central_system /bin/central_system
 
-# Port on which the service will be exposed.
+# Ports on which the service may be exposed.
 EXPOSE 8887
+EXPOSE 443
 
 CMD [ "central_system" ]

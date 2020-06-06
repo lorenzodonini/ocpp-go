@@ -11,10 +11,9 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"time"
 )
 
+// ConnectorInfo contains some simple state about a single connector.
 type ConnectorInfo struct {
 	status             core.ChargePointStatus
 	availability       core.AvailabilityType
@@ -22,19 +21,29 @@ type ConnectorInfo struct {
 	currentReservation int
 }
 
+// ChargePointHandler contains some simple state that a charge point needs to keep.
+// In production this will typically be replaced by database/API calls.
 type ChargePointHandler struct {
 	status               core.ChargePointStatus
 	connectors           map[int]*ConnectorInfo
 	errorCode            core.ChargePointErrorCode
-	configuration        map[string]core.ConfigurationKey
+	configuration        ConfigMap
 	meterValue           int
 	localAuthList        []localauth.AuthorizationData
 	localAuthListVersion int
 }
 
+var asyncRequestChan chan func()
+
 var chargePoint ocpp16.ChargePoint
 
-// Core profile callbacks
+func (handler *ChargePointHandler) isValidConnectorID(ID int) bool {
+	_, ok := handler.connectors[ID]
+	return ok || ID == 0
+}
+
+// ------------- Core profile callbacks -------------
+
 func (handler *ChargePointHandler) OnChangeAvailability(request *core.ChangeAvailabilityRequest) (confirmation *core.ChangeAvailabilityConfirmation, err error) {
 	handler.connectors[request.ConnectorId].availability = request.Type
 	return core.NewChangeAvailabilityConfirmation(core.AvailabilityStatusAccepted), nil
@@ -43,12 +52,15 @@ func (handler *ChargePointHandler) OnChangeAvailability(request *core.ChangeAvai
 func (handler *ChargePointHandler) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
 	configKey, ok := handler.configuration[request.Key]
 	if !ok {
+		logDefault(request.GetFeatureName()).Infof("couldn't change configuration for unsupported parameter %v", configKey.Key)
 		return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusNotSupported), nil
 	} else if configKey.Readonly {
+		logDefault(request.GetFeatureName()).Infof("couldn't change configuration for readonly parameter %v", configKey.Key)
 		return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusRejected), nil
 	}
 	configKey.Value = request.Value
 	handler.configuration[request.Key] = configKey
+	logDefault(request.GetFeatureName()).Infof("changed configuration for parameter %v to %v", configKey.Key, configKey.Value)
 	return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusAccepted), nil
 }
 
@@ -115,8 +127,10 @@ func (handler *ChargePointHandler) OnUnlockConnector(request *core.UnlockConnect
 	return core.NewUnlockConnectorConfirmation(core.UnlockStatusUnlocked), nil
 }
 
-// Local authorization list profile callbacks
+// ------------- Local authorization list profile callbacks -------------
+
 func (handler *ChargePointHandler) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionConfirmation, err error) {
+	logDefault(request.GetFeatureName()).Infof("returning current local list version: %v", handler.localAuthListVersion)
 	return localauth.NewGetLocalListVersionConfirmation(handler.localAuthListVersion), nil
 }
 
@@ -134,7 +148,8 @@ func (handler *ChargePointHandler) OnSendLocalList(request *localauth.SendLocalL
 	return localauth.NewSendLocalListConfirmation(localauth.UpdateStatusAccepted), nil
 }
 
-// Firmware management profile callbacks
+// ------------- Firmware management profile callbacks -------------
+
 func (handler *ChargePointHandler) OnGetDiagnostics(request *firmware.GetDiagnosticsRequest) (confirmation *firmware.GetDiagnosticsConfirmation, err error) {
 	return firmware.NewGetDiagnosticsConfirmation(), nil
 	//TODO: perform diagnostics upload out-of-band
@@ -145,34 +160,66 @@ func (handler *ChargePointHandler) OnUpdateFirmware(request *firmware.UpdateFirm
 	//TODO: download new firmware out-of-band
 }
 
-// Remote trigger profile callbacks
+// ------------- Remote trigger profile callbacks -------------
+
 func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.TriggerMessageRequest) (confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
+	logDefault(request.GetFeatureName()).Infof("received trigger for %v", request.RequestedMessage)
+	status := remotetrigger.TriggerMessageStatusRejected
 	switch request.RequestedMessage {
 	case core.BootNotificationFeatureName:
 		//TODO: schedule boot notification message
 		break
 	case firmware.DiagnosticsStatusNotificationFeatureName:
-		//TODO: schedule diagnostics status notification message
-		break
+		// Schedule diagnostics status notification request
+		fn := func() {
+			_, e := chargePoint.DiagnosticsStatusNotification(firmware.DiagnosticsStatusIdle)
+			checkError(e)
+			logDefault(firmware.DiagnosticsStatusNotificationFeatureName).Info("diagnostics status notified")
+		}
+		scheduleAsyncRequest(fn)
+		status = remotetrigger.TriggerMessageStatusAccepted
 	case firmware.FirmwareStatusNotificationFeatureName:
 		//TODO: schedule firmware status notification message
 		break
 	case core.HeartbeatFeatureName:
-		//TODO: schedule heartbeat message
-		break
+		// Schedule heartbeat request
+		fn := func() {
+			conf, e := chargePoint.Heartbeat()
+			checkError(e)
+			logDefault(core.HeartbeatFeatureName).Infof("clock synchronized: %v", conf.CurrentTime.FormatTimestamp())
+		}
+		scheduleAsyncRequest(fn)
+		status = remotetrigger.TriggerMessageStatusAccepted
 	case core.MeterValuesFeatureName:
 		//TODO: schedule meter values message
 		break
-		//TODO: schedule status notification message
 	case core.StatusNotificationFeatureName:
-		break
+		connectorID := request.ConnectorId
+		// Check if requested connector is valid and status can be retrieved
+		if !handler.isValidConnectorID(connectorID) {
+			logDefault(request.GetFeatureName()).Errorf("cannot trigger %v: requested invalid connector %v", request.RequestedMessage, request.ConnectorId)
+			return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusRejected), nil
+		}
+		// Schedule status notification request
+		fn := func() {
+			status := handler.status
+			if c, ok := handler.connectors[request.ConnectorId]; ok {
+				status = c.status
+			}
+			statusConfirmation, err := chargePoint.StatusNotification(connectorID, handler.errorCode, status)
+			checkError(err)
+			logDefault(statusConfirmation.GetFeatureName()).Infof("status for connector %v sent: %v", connectorID, status)
+		}
+		scheduleAsyncRequest(fn)
+		status = remotetrigger.TriggerMessageStatusAccepted
 	default:
 		return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusNotImplemented), nil
 	}
-	return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusAccepted), nil
+	return remotetrigger.NewTriggerMessageConfirmation(status), nil
 }
 
-// Reservation profile callbacks
+// ------------- Reservation profile callbacks -------------
+
 func (handler *ChargePointHandler) OnReserveNow(request *reservation.ReserveNowRequest) (confirmation *reservation.ReserveNowConfirmation, err error) {
 	connector := handler.connectors[request.ConnectorId]
 	if connector == nil {
@@ -181,6 +228,7 @@ func (handler *ChargePointHandler) OnReserveNow(request *reservation.ReserveNowR
 		return reservation.NewReserveNowConfirmation(reservation.ReservationStatusOccupied), nil
 	}
 	connector.currentReservation = request.ReservationId
+	logDefault(request.GetFeatureName()).Infof("reservation %v for connector %v accepted", request.ReservationId, request.ConnectorId)
 	go updateStatus(handler, request.ConnectorId, core.ChargePointStatusReserved)
 	// TODO: automatically remove reservation after expiryDate
 	return reservation.NewReserveNowConfirmation(reservation.ReservationStatusAccepted), nil
@@ -193,13 +241,16 @@ func (handler *ChargePointHandler) OnCancelReservation(request *reservation.Canc
 			if v.status == core.ChargePointStatusReserved {
 				go updateStatus(handler, k, core.ChargePointStatusAvailable)
 			}
+			logDefault(request.GetFeatureName()).Infof("reservation %v for connector %v canceled", request.ReservationId, k)
 			return reservation.NewCancelReservationConfirmation(reservation.CancelReservationStatusAccepted), nil
 		}
 	}
+	logDefault(request.GetFeatureName()).Infof("couldn't cancel reservation %v: reservation not found!", request.ReservationId)
 	return reservation.NewCancelReservationConfirmation(reservation.CancelReservationStatusRejected), nil
 }
 
-// Smart charging profile callbacks
+// ------------- Smart charging profile callbacks -------------
+
 func (handler *ChargePointHandler) OnSetChargingProfile(request *smartcharging.SetChargingProfileRequest) (confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
 	//TODO: handle logic
 	return smartcharging.NewSetChargingProfileConfirmation(smartcharging.ChargingProfileStatusNotImplemented), nil
@@ -234,109 +285,11 @@ func updateStatus(stateHandler *ChargePointHandler, connector int, status core.C
 	} else {
 		stateHandler.connectors[connector].status = status
 	}
-	statusConfirmation, err := chargePoint.StatusNotification(connector, core.NoError, status)
+	statusConfirmation, err := chargePoint.StatusNotification(connector, stateHandler.errorCode, status)
 	checkError(err)
 	if connector == 0 {
 		logDefault(statusConfirmation.GetFeatureName()).Infof("status for all connectors updated to %v", status)
 	} else {
 		logDefault(statusConfirmation.GetFeatureName()).Infof("status for connector %v updated to %v", connector, status)
 	}
-}
-
-func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHandler) {
-	dummyClientIdTag := "12345"
-	chargingConnector := 1
-	// Boot
-	bootConf, err := chargePoint.BootNotification("model1", "vendor1")
-	checkError(err)
-	logDefault(bootConf.GetFeatureName()).Infof("status: %v, interval: %v, current time: %v", bootConf.Status, bootConf.Interval, bootConf.CurrentTime.String())
-	// Notify connector status
-	updateStatus(stateHandler, 0, core.ChargePointStatusAvailable)
-	// Wait for some time ...
-	time.Sleep(5 * time.Second)
-	// Simulate charging for connector 1
-	authConf, err := chargePoint.Authorize(dummyClientIdTag)
-	checkError(err)
-	logDefault(authConf.GetFeatureName()).Infof("status: %v %v", authConf.IdTagInfo.Status, getExpiryDate(authConf.IdTagInfo))
-	// Update connector status
-	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusPreparing)
-	// Start transaction
-	startConf, err := chargePoint.StartTransaction(chargingConnector, dummyClientIdTag, stateHandler.meterValue, types.NewDateTime(time.Now()))
-	checkError(err)
-	logDefault(startConf.GetFeatureName()).Infof("status: %v, transaction %v %v", startConf.IdTagInfo.Status, startConf.TransactionId, getExpiryDate(startConf.IdTagInfo))
-	stateHandler.connectors[chargingConnector].currentTransaction = startConf.TransactionId
-	// Update connector status
-	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusCharging)
-	// Periodically send meter values
-	for i := 0; i < 5; i++ {
-		time.Sleep(5 * time.Second)
-		stateHandler.meterValue += 10
-		sampledValue := types.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit: types.UnitOfMeasureWh, Format: types.ValueFormatRaw, Measurand: types.MeasurandEnergyActiveExportRegister, Context: types.ReadingContextSamplePeriodic, Location: types.LocationOutlet}
-		meterValue := types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{sampledValue}}
-		meterConf, err := chargePoint.MeterValues(chargingConnector, []types.MeterValue{meterValue})
-		checkError(err)
-		logDefault(meterConf.GetFeatureName()).Infof("sent updated %v", sampledValue.Measurand)
-	}
-	stateHandler.meterValue += 2
-	// Stop charging for connector 1
-	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusFinishing)
-	stopConf, err := chargePoint.StopTransaction(stateHandler.meterValue, types.NewDateTime(time.Now()), startConf.TransactionId, func(request *core.StopTransactionRequest) {
-		sampledValue := types.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit: types.UnitOfMeasureWh, Format: types.ValueFormatRaw, Measurand: types.MeasurandEnergyActiveExportRegister, Context: types.ReadingContextSamplePeriodic, Location: types.LocationOutlet}
-		meterValue := types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{sampledValue}}
-		request.TransactionData = []types.MeterValue{meterValue}
-		request.Reason = core.ReasonEVDisconnected
-	})
-	checkError(err)
-	logDefault(stopConf.GetFeatureName()).Infof("transaction %v stopped", startConf.TransactionId)
-	// Update connector status
-	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusAvailable)
-}
-
-// Start function
-func main() {
-	// Parse arguments from env variables
-	id, ok := os.LookupEnv("CLIENT_ID")
-	if !ok {
-		log.Print("Usage:\n\tocppClientId\n\tocppServerUrl")
-		return
-	}
-	csUrl, ok := os.LookupEnv("CENTRAL_SYSTEM_URL")
-	if !ok {
-		log.Print("Usage:\n\tocppClientId\n\tocppServerUrl")
-		return
-	}
-	// Create a default OCPP 1.6 charge point
-	chargePoint = ocpp16.NewChargePoint(id, nil, nil)
-	// Set a handler for all callback functions
-	connectors := map[int]*ConnectorInfo{
-		1: {status: core.ChargePointStatusAvailable, availability: core.AvailabilityTypeOperative, currentTransaction: 0},
-	}
-	handler := &ChargePointHandler{
-		status:               core.ChargePointStatusAvailable,
-		connectors:           connectors,
-		configuration:        map[string]core.ConfigurationKey{},
-		errorCode:            core.NoError,
-		localAuthList:        []localauth.AuthorizationData{},
-		localAuthListVersion: 0}
-	chargePoint.SetChargePointCoreHandler(handler)
-	// Connects to central system
-	err := chargePoint.Start(csUrl)
-	if err != nil {
-		log.Println(err)
-	} else {
-		log.Infof("connected to central system at %v", csUrl)
-		exampleRoutine(chargePoint, handler)
-		// Disconnect
-		chargePoint.Stop()
-		log.Infof("disconnected from central system")
-	}
-}
-
-func init() {
-	log.SetLevel(log.InfoLevel)
-}
-
-// Utility functions
-func logDefault(feature string) *log.Entry {
-	return log.WithField("message", feature)
 }

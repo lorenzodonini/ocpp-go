@@ -23,8 +23,8 @@ import (
 //
 // The logic for incoming messages needs to be implemented, and the message handlers need to be registered with the charge point:
 // 	handler := &ChargePointHandler{}
-//	client.SetChargePointCoreHandler(handler)
-// Refer to the ChargePointCoreHandler, ChargePointFirmwareHandler, ChargePointLocalAuthListHandler, ChargePointReservationHandler, ChargePointRemoteTriggerHandler and ChargePointSmartChargingHandlers interfaces for the implementation requirements.
+//	client.SetCoreHandler(handler)
+// Refer to the ChargePointHandler interfaces in the respective core, firmware, localauth, remotetrigger, reservation and smartcharging profiles for the implementation requirements.
 //
 // A charge point can be started and stopped using the Start and Stop functions.
 // While running, messages can be sent to the Central system by calling the Charge point's functions, e.g.
@@ -55,17 +55,17 @@ type ChargePoint interface {
 	FirmwareStatusNotification(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationConfirmation, error)
 
 	// Registers a handler for incoming core profile messages
-	SetChargePointCoreHandler(listener core.ChargePointCoreHandler)
+	SetCoreHandler(listener core.ChargePointHandler)
 	// Registers a handler for incoming local authorization profile messages
-	SetLocalAuthListHandler(listener localauth.ChargePointLocalAuthListHandler)
+	SetLocalAuthListHandler(listener localauth.ChargePointHandler)
 	// Registers a handler for incoming firmware management profile messages
-	SetFirmwareManagementHandler(listener firmware.ChargePointFirmwareManagementHandler)
+	SetFirmwareManagementHandler(listener firmware.ChargePointHandler)
 	// Registers a handler for incoming reservation profile messages
-	SetReservationHandler(listener reservation.ChargePointReservationHandler)
+	SetReservationHandler(listener reservation.ChargePointHandler)
 	// Registers a handler for incoming remote trigger profile messages
-	SetRemoteTriggerHandler(listener remotetrigger.ChargePointRemoteTriggerHandler)
+	SetRemoteTriggerHandler(listener remotetrigger.ChargePointHandler)
 	// Registers a handler for incoming smart charging profile messages
-	SetSmartChargingHandler(listener smartcharging.ChargePointSmartChargingHandler)
+	SetSmartChargingHandler(listener smartcharging.ChargePointHandler)
 	// Sends a request to the central system.
 	// The central system will respond with a confirmation, or with an error if the request was invalid or could not be processed.
 	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
@@ -151,8 +151,8 @@ func NewChargePoint(id string, dispatcher *ocppj.Client, client ws.WsClient) Cha
 //
 // The logic for handling incoming messages needs to be implemented, and the message handlers need to be registered with the central system:
 //	handler := &CentralSystemHandler{}
-//	server.SetCentralSystemCoreHandler(handler)
-// // Refer to the CentralSystemCoreHandler, CentralSystemFirmwareHandler, CentralSystemLocalAuthListHandler, CentralSystemReservationHandler, CentralSystemRemoteTriggerHandler and CentralSystemSmartChargingHandlers interfaces for the implementation requirements.
+//	server.SetCoreHandler(handler)
+// Refer to the CentralSystemHandler interfaces in the respective core, firmware, localauth, remotetrigger, reservation and smartcharging profiles for the implementation requirements.
 //
 // A Central system can be started by using the Start function.
 // To be notified of incoming (dis)connections from charge points refer to the SetNewClientHandler and SetChargePointDisconnectedHandler functions.
@@ -206,17 +206,17 @@ type CentralSystem interface {
 	GetCompositeSchedule(clientId string, callback func(*smartcharging.GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *smartcharging.GetCompositeScheduleRequest)) error
 
 	// Registers a handler for incoming core profile messages.
-	SetCentralSystemCoreHandler(listener core.CentralSystemCoreHandler)
+	SetCoreHandler(handler core.CentralSystemHandler)
 	// Registers a handler for incoming local authorization profile messages.
-	SetLocalAuthListHandler(listener localauth.CentralSystemLocalAuthListHandler)
+	SetLocalAuthListHandler(handler localauth.CentralSystemHandler)
 	// Registers a handler for incoming firmware management profile messages.
-	SetFirmwareManagementHandler(listener firmware.CentralSystemFirmwareManagementHandler)
+	SetFirmwareManagementHandler(handler firmware.CentralSystemHandler)
 	// Registers a handler for incoming reservation profile messages.
-	SetReservationHandler(listener reservation.CentralSystemReservationHandler)
+	SetReservationHandler(handler reservation.CentralSystemHandler)
 	// Registers a handler for incoming remote trigger profile messages.
-	SetRemoteTriggerHandler(listener remotetrigger.CentralSystemRemoteTriggerHandler)
+	SetRemoteTriggerHandler(handler remotetrigger.CentralSystemHandler)
 	// Registers a handler for incoming smart charging profile messages.
-	SetSmartChargingHandler(listener smartcharging.CentralSystemSmartChargingHandler)
+	SetSmartChargingHandler(handler smartcharging.CentralSystemHandler)
 	// Registers a handler for new incoming charge point connections.
 	SetNewChargePointHandler(handler func(chargePointId string))
 	// Registers a handler for charge point disconnections.

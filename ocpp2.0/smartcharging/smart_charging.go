@@ -29,4 +29,4 @@ var Profile = ocpp.NewProfile(
 	ClearedChargingLimitFeature{},
 	GetChargingProfilesFeature{},
 	GetCompositeScheduleFeature{},
-	)
+)
