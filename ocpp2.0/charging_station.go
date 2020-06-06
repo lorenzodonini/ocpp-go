@@ -470,6 +470,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.diagnosticsHandler.OnGetLog(request.(*diagnostics.GetLogRequest))
 	case diagnostics.GetMonitoringReportFeatureName:
 		response, err = cs.diagnosticsHandler.OnGetMonitoringReport(request.(*diagnostics.GetMonitoringReportRequest))
+	case provisioning.GetReportFeatureName:
+		response, err = cs.provisioningHandler.OnGetReport(request.(*provisioning.GetReportRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return

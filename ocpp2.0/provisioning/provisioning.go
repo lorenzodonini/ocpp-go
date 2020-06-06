@@ -13,7 +13,9 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Provisioning profile.
 type ChargingStationHandler interface {
 	// OnGetBaseReport is called on a charging station whenever a GetBaseReportRequest is received from the CSMS.
-	OnGetBaseReport(request *GetBaseReportRequest) (confirmation *GetBaseReportResponse, err error)
+	OnGetBaseReport(request *GetBaseReportRequest) (response *GetBaseReportResponse, err error)
+	// OnGetReport is called on a charging station whenever a GetReportRequest is received from the CSMS.
+	OnGetReport(request *GetReportRequest) (response *GetReportResponse, err error)
 }
 
 const ProfileName = "provisioning"
@@ -22,5 +24,6 @@ var Profile = ocpp.NewProfile(
 	ProfileName,
 	BootNotificationFeature{},
 	GetBaseReportFeature{},
+	GetReportFeature{},
 	// SetVariables
 )
