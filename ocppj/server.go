@@ -73,6 +73,7 @@ func (s *Server) Start(listenPort int, listenPath string) {
 		}
 	})
 	s.server.SetDisconnectedClientHandler(func(ws ws.Channel) {
+		delete(s.clientPendingMessages, ws.GetID())
 		if s.disconnectedClientHandler != nil {
 			s.disconnectedClientHandler(ws.GetID())
 		}
