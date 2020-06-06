@@ -239,6 +239,12 @@ func (handler MockChargingStationProvisioningHandler) OnGetBaseReport(request *p
 	return conf, args.Error(1)
 }
 
+func (handler MockChargingStationProvisioningHandler) OnGetReport(request *provisioning.GetReportRequest) (response *provisioning.GetReportResponse, err error) {
+	args := handler.MethodCalled("OnGetReport", request)
+	conf := args.Get(0).(*provisioning.GetReportResponse)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS AUTHORIZATION HANDLER ----------------------
 
 type MockCSMSAuthorizationHandler struct {
