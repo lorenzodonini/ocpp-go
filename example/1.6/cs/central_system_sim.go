@@ -98,11 +98,32 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 		logDefault(chargePointID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
 		return
 	}
+	// Wait for some time
+	time.Sleep(5 * time.Second)
+	configKey := "MeterValueSampleInterval"
+	configValue := "10"
+	// Change meter sampling values time
+	cb4 := func(confirmation *core.ChangeConfigurationConfirmation, err error) {
+		if err != nil {
+			logDefault(chargePointID, confirmation.GetFeatureName()).Errorf("error while sending request: %v", err)
+		} else if confirmation.Status == core.ConfigurationStatusNotSupported {
+			logDefault(chargePointID, confirmation.GetFeatureName()).Warnf("couldn't update configuration for unsupported key: %v", configKey)
+		} else if confirmation.Status == core.ConfigurationStatusRejected {
+			logDefault(chargePointID, confirmation.GetFeatureName()).Warnf("couldn't update configuration for readonly key: %v", configKey)
+		} else {
+			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("updated configuration for key %v to: %v", configKey, configValue)
+		}
+	}
+	e = centralSystem.ChangeConfiguration(chargePointID, cb4, configKey, configValue)
+	if e != nil {
+		logDefault(chargePointID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
+		return
+	}
 
 	// Wait for some time
 	time.Sleep(5 * time.Second)
 	// Trigger a heartbeat message
-	cb4 := func(confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
+	cb5 := func(confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
 		if err != nil {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Errorf("error while sending request: %v", err)
 		} else if confirmation.Status == remotetrigger.TriggerMessageStatusAccepted {
@@ -111,7 +132,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v trigger was rejected", core.HeartbeatFeatureName)
 		}
 	}
-	e = centralSystem.TriggerMessage(chargePointID, cb4, core.HeartbeatFeatureName)
+	e = centralSystem.TriggerMessage(chargePointID, cb5, core.HeartbeatFeatureName)
 	if e != nil {
 		logDefault(chargePointID, remotetrigger.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -120,7 +141,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 	// Wait for some time
 	time.Sleep(5 * time.Second)
 	// Trigger a diagnostics status notification
-	cb5 := func(confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
+	cb6 := func(confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
 		if err != nil {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Errorf("error while sending request: %v", err)
 		} else if confirmation.Status == remotetrigger.TriggerMessageStatusAccepted {
@@ -129,7 +150,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v trigger was rejected", firmware.GetDiagnosticsFeatureName)
 		}
 	}
-	e = centralSystem.TriggerMessage(chargePointID, cb5, firmware.DiagnosticsStatusNotificationFeatureName)
+	e = centralSystem.TriggerMessage(chargePointID, cb6, firmware.DiagnosticsStatusNotificationFeatureName)
 	if e != nil {
 		logDefault(chargePointID, remotetrigger.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return

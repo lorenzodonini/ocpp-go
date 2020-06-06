@@ -13,7 +13,7 @@ var (
 	nextTransactionId = 0
 )
 
-// Charge Point state
+// TransactionInfo contains info about a transaction
 type TransactionInfo struct {
 	id          int
 	startTime   *types.DateTime
@@ -28,6 +28,7 @@ func (ti *TransactionInfo) hasTransactionEnded() bool {
 	return ti.endTime != nil && !ti.endTime.IsZero()
 }
 
+// ConnectorInfo contains status and ongoing transaction ID for a connector
 type ConnectorInfo struct {
 	status             core.ChargePointStatus
 	currentTransaction int
@@ -37,6 +38,7 @@ func (ci *ConnectorInfo) hasTransactionInProgress() bool {
 	return ci.currentTransaction >= 0
 }
 
+// ChargePointState contains some simple state for a connected charge point
 type ChargePointState struct {
 	status            core.ChargePointStatus
 	diagnosticsStatus firmware.DiagnosticsStatus
@@ -55,6 +57,8 @@ func (cps *ChargePointState) getConnector(id int) *ConnectorInfo {
 	return ci
 }
 
+// CentralSystemHandler contains some simple state that a central system may want to keep.
+// In production this will typically be replaced by database/API calls.
 type CentralSystemHandler struct {
 	chargePoints map[string]*ChargePointState
 }

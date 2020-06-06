@@ -120,7 +120,11 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusCharging)
 	// Periodically send meter values
 	for i := 0; i < 5; i++ {
-		wait(5 * time.Second)
+		sampleInterval, ok := stateHandler.configuration.getInt(MeterValueSampleInterval)
+		if !ok {
+			sampleInterval = 5
+		}
+		wait(time.Second * time.Duration(sampleInterval))
 		stateHandler.meterValue += 10
 		sampledValue := types.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit: types.UnitOfMeasureWh, Format: types.ValueFormatRaw, Measurand: types.MeasurandEnergyActiveExportRegister, Context: types.ReadingContextSamplePeriodic, Location: types.LocationOutlet}
 		meterValue := types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{sampledValue}}
@@ -172,7 +176,7 @@ func main() {
 	handler := &ChargePointHandler{
 		status:               core.ChargePointStatusAvailable,
 		connectors:           connectors,
-		configuration:        map[string]core.ConfigurationKey{},
+		configuration:        getDefaultConfig(),
 		errorCode:            core.NoError,
 		localAuthList:        []localauth.AuthorizationData{},
 		localAuthListVersion: 0}

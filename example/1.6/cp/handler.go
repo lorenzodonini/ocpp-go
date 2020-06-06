@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ConnectorInfo contains some simple state about a single connector.
 type ConnectorInfo struct {
 	status             core.ChargePointStatus
 	availability       core.AvailabilityType
@@ -20,11 +21,13 @@ type ConnectorInfo struct {
 	currentReservation int
 }
 
+// ChargePointHandler contains some simple state that a charge point needs to keep.
+// In production this will typically be replaced by database/API calls.
 type ChargePointHandler struct {
 	status               core.ChargePointStatus
 	connectors           map[int]*ConnectorInfo
 	errorCode            core.ChargePointErrorCode
-	configuration        map[string]core.ConfigurationKey
+	configuration        ConfigMap
 	meterValue           int
 	localAuthList        []localauth.AuthorizationData
 	localAuthListVersion int
@@ -49,12 +52,15 @@ func (handler *ChargePointHandler) OnChangeAvailability(request *core.ChangeAvai
 func (handler *ChargePointHandler) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
 	configKey, ok := handler.configuration[request.Key]
 	if !ok {
+		logDefault(request.GetFeatureName()).Infof("couldn't change configuration for unsupported parameter %v", configKey.Key)
 		return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusNotSupported), nil
 	} else if configKey.Readonly {
+		logDefault(request.GetFeatureName()).Infof("couldn't change configuration for readonly parameter %v", configKey.Key)
 		return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusRejected), nil
 	}
 	configKey.Value = request.Value
 	handler.configuration[request.Key] = configKey
+	logDefault(request.GetFeatureName()).Infof("changed configuration for parameter %v to %v", configKey.Key, configKey.Value)
 	return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusAccepted), nil
 }
 
@@ -168,7 +174,7 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 		fn := func() {
 			_, e := chargePoint.DiagnosticsStatusNotification(firmware.DiagnosticsStatusIdle)
 			checkError(e)
-			logDefault(core.HeartbeatFeatureName).Info("diagnostics status notified")
+			logDefault(firmware.DiagnosticsStatusNotificationFeatureName).Info("diagnostics status notified")
 		}
 		scheduleAsyncRequest(fn)
 		status = remotetrigger.TriggerMessageStatusAccepted
@@ -239,7 +245,7 @@ func (handler *ChargePointHandler) OnCancelReservation(request *reservation.Canc
 			return reservation.NewCancelReservationConfirmation(reservation.CancelReservationStatusAccepted), nil
 		}
 	}
-	logDefault(request.GetFeatureName()).Infof("couldn't cancel reservation %v for connector %v: reservation not found!")
+	logDefault(request.GetFeatureName()).Infof("couldn't cancel reservation %v: reservation not found!", request.ReservationId)
 	return reservation.NewCancelReservationConfirmation(reservation.CancelReservationStatusRejected), nil
 }
 
