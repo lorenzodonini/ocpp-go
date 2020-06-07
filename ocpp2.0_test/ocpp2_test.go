@@ -545,6 +545,12 @@ type MockChargingStationTransactionHandler struct {
 	mock.Mock
 }
 
+func (handler MockChargingStationTransactionHandler) OnGetTransactionStatus(request *transactions.GetTransactionStatusRequest) (response *transactions.GetTransactionStatusResponse, err error) {
+	args := handler.MethodCalled("OnGetTransactionStatus", request)
+	conf := args.Get(0).(*transactions.GetTransactionStatusResponse)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS TRANSACTIONS HANDLER ----------------------
 
 type MockCSMSTransactionsHandler struct {
