@@ -14,6 +14,10 @@ func newFloat(f float64) *float64 {
 	return &f
 }
 
+func newBool(b bool) *bool {
+	return &b
+}
+
 // Test
 func (suite *OcppV2TestSuite) TestIdTokenInfoValidation() {
 	var testTable = []GenericTestEntry{
