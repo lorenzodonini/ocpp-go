@@ -474,6 +474,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.provisioningHandler.OnGetReport(request.(*provisioning.GetReportRequest))
 	case transactions.GetTransactionStatusFeatureName:
 		response, err = cs.transactionsHandler.OnGetTransactionStatus(request.(*transactions.GetTransactionStatusRequest))
+	case provisioning.GetVariablesFeatureName:
+		response, err = cs.provisioningHandler.OnGetVariables(request.(*provisioning.GetVariablesRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return

@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Get Base Report (CSMS -> CS) --------------------
+// -------------------- Get Report (CSMS -> CS) --------------------
 
 const GetReportFeatureName = "GetReport"
 
@@ -44,7 +44,7 @@ type GetReportResponse struct {
 }
 
 // The CSO may trigger the CSMS to request a report from a Charging Station.
-// The CSMS shall then request a Charging Station to send a report of all Components and Variables limited to those that match ComponentCriteria and/or the list of ComponentVariables.
+// The CSMS shall then request a Charging Station to send a report of all Components and Variable limited to those that match ComponentCriteria and/or the list of ComponentVariables.
 // The Charging Station responds with GetReportResponse.
 // The result will be returned asynchronously in one or more NotifyReportRequest messages (one for each report part).
 type GetReportFeature struct{}

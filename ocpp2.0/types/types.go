@@ -306,7 +306,28 @@ type ComponentVariable struct {
 	Variable  Variable  `json:"variable" validate:"required"`  // Variable for which report is requested.
 }
 
+// Attribute is an enumeration type used when requesting a variable value.
+type Attribute string
+
+const (
+	AttributeActual Attribute = "Actual" // The actual value of the variable.
+	AttributeTarget Attribute = "Target" // The target value for this variable.
+	AttributeMinSet Attribute = "MinSet" // The minimal allowed value for this variable.
+	AttributeMaxSet Attribute = "MaxSet" // The maximum allowed value for this variable
+)
+
+func isValidAttribute(fl validator.FieldLevel) bool {
+	purposeType := Attribute(fl.Field().String())
+	switch purposeType {
+	case AttributeActual, AttributeTarget, AttributeMinSet, AttributeMaxSet:
+		return true
+	default:
+		return false
+	}
+}
+
 // Charging Profiles
+
 type ChargingProfilePurposeType string
 type ChargingProfileKindType string
 type RecurrencyKindType string
@@ -438,6 +459,7 @@ func isValidRemoteStartStopStatus(fl validator.FieldLevel) bool {
 }
 
 // Meter Value
+
 type ReadingContext string
 type ValueFormat string
 type Measurand string
@@ -598,6 +620,7 @@ func init() {
 	_ = Validate.RegisterValidation("certificateStatus", isValidCertificateStatus)
 	_ = Validate.RegisterValidation("messageFormat", isValidMessageFormatType)
 	_ = Validate.RegisterValidation("authorizationStatus", isValidAuthorizationStatus)
+	_ = Validate.RegisterValidation("attribute", isValidAttribute)
 	_ = Validate.RegisterValidation("chargingProfilePurpose", isValidChargingProfilePurpose)
 	_ = Validate.RegisterValidation("chargingProfileKind", isValidChargingProfileKind)
 	_ = Validate.RegisterValidation("recurrencyKind", isValidRecurrencyKind)

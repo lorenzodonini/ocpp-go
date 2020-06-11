@@ -16,6 +16,8 @@ type ChargingStationHandler interface {
 	OnGetBaseReport(request *GetBaseReportRequest) (response *GetBaseReportResponse, err error)
 	// OnGetReport is called on a charging station whenever a GetReportRequest is received from the CSMS.
 	OnGetReport(request *GetReportRequest) (response *GetReportResponse, err error)
+	// OnGetVariables is called on a charging station whenever a GetVariablesRequest is received from the CSMS.
+	OnGetVariables(request *GetVariablesRequest) (response *GetVariablesResponse, err error)
 }
 
 const ProfileName = "provisioning"
@@ -25,5 +27,6 @@ var Profile = ocpp.NewProfile(
 	BootNotificationFeature{},
 	GetBaseReportFeature{},
 	GetReportFeature{},
+	GetVariablesFeature{},
 	// SetVariables
 )
