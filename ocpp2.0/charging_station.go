@@ -162,6 +162,19 @@ func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPReques
 	}
 }
 
+func (cs *chargingStation) Heartbeat(props ...func(request *availability.HeartbeatRequest)) (*availability.HeartbeatResponse, error) {
+	request := availability.NewHeartbeatRequest()
+	for _, fn := range props {
+		fn(request)
+	}
+	response, err := cs.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return response.(*availability.HeartbeatResponse), err
+	}
+}
+
 func (cs *chargingStation) SetSecurityHandler(handler security.ChargingStationHandler) {
 	cs.securityHandler = handler
 }
@@ -261,7 +274,7 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 		return fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send request", featureName)
 	}
 	switch featureName {
-	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, iso15118.Get15118EVCertificateFeatureName, iso15118.GetCertificateStatusFeatureName:
+	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, iso15118.Get15118EVCertificateFeatureName, iso15118.GetCertificateStatusFeatureName, availability.HeartbeatFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charging station, cannot send request", featureName)

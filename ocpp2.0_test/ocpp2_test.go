@@ -311,6 +311,12 @@ type MockCSMSAvailabilityHandler struct {
 	mock.Mock
 }
 
+func (handler MockCSMSAvailabilityHandler) OnHeartbeat(chargingStationID string, request *availability.HeartbeatRequest) (response *availability.HeartbeatResponse, err error) {
+	args := handler.MethodCalled("OnHeartbeat", chargingStationID, request)
+	resp := args.Get(0).(*availability.HeartbeatResponse)
+	return resp, args.Error(1)
+}
+
 // ---------------------- MOCK CS DATA HANDLER ----------------------
 
 type MockChargingStationDataHandler struct {
