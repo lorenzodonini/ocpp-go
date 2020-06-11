@@ -62,7 +62,7 @@ func FormatTimestamp(t time.Time) string {
 
 // DateTime Validation
 
-func dateTimeIsNull(dateTime *DateTime) bool {
+func DateTimeIsNull(dateTime *DateTime) bool {
 	return dateTime != nil && dateTime.IsZero()
 }
 
