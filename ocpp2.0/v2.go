@@ -259,6 +259,8 @@ type CSMS interface {
 	GetReport(clientId string, callback func(*provisioning.GetReportResponse, error), props ...func(*provisioning.GetReportRequest)) error
 	// Asks a Charging Station whether it has transaction-related messages waiting to be delivered to the CSMS. When a transactionId is provided, only messages for a specific transaction are asked for.
 	GetTransactionStatus(clientId string, callback func(*transactions.GetTransactionStatusResponse, error), props ...func(*transactions.GetTransactionStatusRequest)) error
+	// Retrieves from a Charging Station the value of an attribute for one or more Variable of one or more Components.
+	GetVariables(clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.VariableData, props ...func(*provisioning.GetVariablesRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
 	//RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error

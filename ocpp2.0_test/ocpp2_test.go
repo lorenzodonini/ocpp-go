@@ -245,6 +245,12 @@ func (handler MockChargingStationProvisioningHandler) OnGetReport(request *provi
 	return conf, args.Error(1)
 }
 
+func (handler MockChargingStationProvisioningHandler) OnGetVariables(request *provisioning.GetVariablesRequest) (response *provisioning.GetVariablesResponse, err error) {
+	args := handler.MethodCalled("OnGetVariables", request)
+	conf := args.Get(0).(*provisioning.GetVariablesResponse)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS AUTHORIZATION HANDLER ----------------------
 
 type MockCSMSAuthorizationHandler struct {

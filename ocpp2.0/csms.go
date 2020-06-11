@@ -386,6 +386,21 @@ func (cs *csms) GetTransactionStatus(clientId string, callback func(*transaction
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) GetVariables(clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.VariableData, props ...func(*provisioning.GetVariablesRequest)) error {
+	request := provisioning.NewGetVariablesRequest(variableData)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*provisioning.GetVariablesResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -468,7 +483,7 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		return fmt.Errorf("feature %v is unsupported on CSMS (missing profile), cannot send request", featureName)
 	}
 	switch featureName {
-	case reservation.CancelReservationFeatureName, security.CertificateSignedFeatureName, availability.ChangeAvailabilityFeatureName, authorization.ClearCacheFeatureName, smartcharging.ClearChargingProfileFeatureName, display.ClearDisplayFeatureName, diagnostics.ClearVariableMonitoringFeatureName, tariffcost.CostUpdatedFeatureName, diagnostics.CustomerInformationFeatureName, data.DataTransferFeatureName, iso15118.DeleteCertificateFeatureName, provisioning.GetBaseReportFeatureName, smartcharging.GetChargingProfilesFeatureName, smartcharging.GetCompositeScheduleFeatureName, display.GetDisplayMessagesFeatureName, iso15118.GetInstalledCertificateIdsFeatureName, localauth.GetLocalListVersionFeatureName, diagnostics.GetLogFeatureName, diagnostics.GetMonitoringReportFeatureName, provisioning.GetReportFeatureName, transactions.GetTransactionStatusFeatureName:
+	case reservation.CancelReservationFeatureName, security.CertificateSignedFeatureName, availability.ChangeAvailabilityFeatureName, authorization.ClearCacheFeatureName, smartcharging.ClearChargingProfileFeatureName, display.ClearDisplayFeatureName, diagnostics.ClearVariableMonitoringFeatureName, tariffcost.CostUpdatedFeatureName, diagnostics.CustomerInformationFeatureName, data.DataTransferFeatureName, iso15118.DeleteCertificateFeatureName, provisioning.GetBaseReportFeatureName, smartcharging.GetChargingProfilesFeatureName, smartcharging.GetCompositeScheduleFeatureName, display.GetDisplayMessagesFeatureName, iso15118.GetInstalledCertificateIdsFeatureName, localauth.GetLocalListVersionFeatureName, diagnostics.GetLogFeatureName, diagnostics.GetMonitoringReportFeatureName, provisioning.GetReportFeatureName, transactions.GetTransactionStatusFeatureName, provisioning.GetVariablesFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)
