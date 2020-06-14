@@ -425,16 +425,22 @@ type MockChargingStationIso15118Handler struct {
 	mock.Mock
 }
 
-func (handler MockChargingStationIso15118Handler) OnDeleteCertificate(request *iso15118.DeleteCertificateRequest) (confirmation *iso15118.DeleteCertificateResponse, err error) {
+func (handler MockChargingStationIso15118Handler) OnDeleteCertificate(request *iso15118.DeleteCertificateRequest) (response *iso15118.DeleteCertificateResponse, err error) {
 	args := handler.MethodCalled("OnDeleteCertificate", request)
-	conf := args.Get(0).(*iso15118.DeleteCertificateResponse)
-	return conf, args.Error(1)
+	resp := args.Get(0).(*iso15118.DeleteCertificateResponse)
+	return resp, args.Error(1)
 }
 
-func (handler MockChargingStationIso15118Handler) OnGetInstalledCertificateIds(request *iso15118.GetInstalledCertificateIdsRequest) (confirmation *iso15118.GetInstalledCertificateIdsResponse, err error) {
+func (handler MockChargingStationIso15118Handler) OnGetInstalledCertificateIds(request *iso15118.GetInstalledCertificateIdsRequest) (response *iso15118.GetInstalledCertificateIdsResponse, err error) {
 	args := handler.MethodCalled("OnGetInstalledCertificateIds", request)
-	conf := args.Get(0).(*iso15118.GetInstalledCertificateIdsResponse)
-	return conf, args.Error(1)
+	resp := args.Get(0).(*iso15118.GetInstalledCertificateIdsResponse)
+	return resp, args.Error(1)
+}
+
+func (handler MockChargingStationIso15118Handler) OnInstallCertificate(request *iso15118.InstallCertificateRequest) (response *iso15118.InstallCertificateResponse, err error) {
+	args := handler.MethodCalled("OnInstallCertificate", request)
+	resp := args.Get(0).(*iso15118.InstallCertificateResponse)
+	return resp, args.Error(1)
 }
 
 // ---------------------- MOCK CSMS ISO15118 HANDLER ----------------------
