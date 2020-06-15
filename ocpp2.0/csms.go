@@ -652,6 +652,8 @@ func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection,
 			response, err = cs.iso15118Handler.OnGetCertificateStatus(chargingStation.ID(), request.(*iso15118.GetCertificateStatusRequest))
 		case availability.HeartbeatFeatureName:
 			response, err = cs.availabilityHandler.OnHeartbeat(chargingStation.ID(), request.(*availability.HeartbeatRequest))
+		case diagnostics.LogStatusNotificationFeatureName:
+			response, err = cs.diagnosticsHandler.OnLogStatusNotification(chargingStation.ID(), request.(*diagnostics.LogStatusNotificationRequest))
 		default:
 			cs.notSupportedError(chargingStation.ID(), requestId, action)
 			return

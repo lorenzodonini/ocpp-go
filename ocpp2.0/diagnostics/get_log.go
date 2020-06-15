@@ -67,10 +67,10 @@ type GetLogResponse struct {
 	Filename string    `json:"filename,omitempty" validate:"omitempty,max=256"` // This contains the name of the log file that will be uploaded. This field is not present when no logging information is available.
 }
 
-// The CSO may trigger the CSMS to request a report from a Charging Station.
-// The CSMS shall then request a Charging Station to send a predefined report as defined in ReportBase.
+// The CSMS can request a Charging Station to upload a file with log information to a given location (URL).
+// The format of this log file is not prescribed.
 // The Charging Station responds with GetLogResponse.
-// The result will be returned asynchronously in one or more NotifyReportRequest messages (one for each report part).
+// It then attempts to upload a log file asynchronously and gives information about the status of the upload by sending status notifications to the CSMS.
 type GetLogFeature struct{}
 
 func (f GetLogFeature) GetFeatureName() string {

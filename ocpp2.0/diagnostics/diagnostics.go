@@ -5,18 +5,20 @@ import "github.com/lorenzodonini/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Diagnostics profile.
 type CSMSHandler interface {
+	// OnLogStatusNotification is called on the CSMS whenever a LogStatusNotificationRequest is received from a Charging Station.
+	OnLogStatusNotification(chargingStationID string, request *LogStatusNotificationRequest) (response *LogStatusNotificationResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Diagnostics profile.
 type ChargingStationHandler interface {
 	// OnClearVariableMonitoring is called on a charging station whenever a ClearVariableMonitoringRequest is received from the CSMS.
-	OnClearVariableMonitoring(request *ClearVariableMonitoringRequest) (confirmation *ClearVariableMonitoringResponse, err error)
+	OnClearVariableMonitoring(request *ClearVariableMonitoringRequest) (response *ClearVariableMonitoringResponse, err error)
 	// OnCustomerInformation is called on a charging station whenever a CustomerInformationRequest is received from the CSMS.
-	OnCustomerInformation(request *CustomerInformationRequest) (confirmation *CustomerInformationResponse, err error)
+	OnCustomerInformation(request *CustomerInformationRequest) (response *CustomerInformationResponse, err error)
 	// OnGetLog is called on a charging station whenever a GetLogRequest is received from the CSMS.
-	OnGetLog(request *GetLogRequest) (confirmation *GetLogResponse, err error)
+	OnGetLog(request *GetLogRequest) (response *GetLogResponse, err error)
 	// OnGetMonitoringReport is called on a charging station whenever a GetMonitoringReportRequest is received from the CSMS.
-	OnGetMonitoringReport(request *GetMonitoringReportRequest) (confirmation *GetMonitoringReportResponse, err error)
+	OnGetMonitoringReport(request *GetMonitoringReportRequest) (response *GetMonitoringReportResponse, err error)
 }
 
 const ProfileName = "diagnostics"
@@ -27,4 +29,5 @@ var Profile = ocpp.NewProfile(
 	CustomerInformationFeature{},
 	GetLogFeature{},
 	GetMonitoringReportFeature{},
+	LogStatusNotificationFeature{},
 )
