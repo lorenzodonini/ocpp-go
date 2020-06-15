@@ -377,6 +377,12 @@ type MockCSMSDiagnosticsHandler struct {
 	mock.Mock
 }
 
+func (handler MockCSMSDiagnosticsHandler) OnLogStatusNotification(chargingStationID string, request *diagnostics.LogStatusNotificationRequest) (response *diagnostics.LogStatusNotificationResponse, err error) {
+	args := handler.MethodCalled("OnLogStatusNotification", chargingStationID, request)
+	resp := args.Get(0).(*diagnostics.LogStatusNotificationResponse)
+	return resp, args.Error(1)
+}
+
 // ---------------------- MOCK CS DISPLAY HANDLER ----------------------
 
 type MockChargingStationDisplayHandler struct {

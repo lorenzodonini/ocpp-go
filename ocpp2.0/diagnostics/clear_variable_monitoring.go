@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-// -------------------- Clear Variable Monitoring (CSMS -> CP) --------------------
+// -------------------- Clear Variable Monitoring (CSMS -> CS) --------------------
 
 const ClearVariableMonitoringFeatureName = "ClearVariableMonitoring"
 
