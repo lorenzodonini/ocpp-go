@@ -141,15 +141,15 @@ func (suite *OcppV2TestSuite) TestSignedMeterValue() {
 
 func (suite *OcppV2TestSuite) TestSampledValueValidation() {
 	t := suite.T()
-	signedMeterValues := types.SignedMeterValue{
+	signedMeterValue := types.SignedMeterValue{
 		SignedMeterData: "0xdeadbeef",
 		SigningMethod:   "ECDSAP256SHA256",
 		EncodingMethod:  "DLMS Message",
 		PublicKey:       "0xd34dc0de",
 	}
 	var testTable = []GenericTestEntry{
-		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, SignedMeterValue: &signedMeterValues, UnitOfMeasure: &types.UnitOfMeasure{Unit: "kW", Multiplier: newInt(0)}}, true},
-		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, SignedMeterValue: &signedMeterValues}, true},
+		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, SignedMeterValue: &signedMeterValue, UnitOfMeasure: &types.UnitOfMeasure{Unit: "kW", Multiplier: newInt(0)}}, true},
+		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, SignedMeterValue: &signedMeterValue}, true},
 		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}, true},
 		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2}, true},
 		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport}, true},
