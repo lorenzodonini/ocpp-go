@@ -547,8 +547,14 @@ type MockCSMSSmartChargingHandler struct {
 
 func (handler MockCSMSSmartChargingHandler) OnClearedChargingLimit(chargingStationID string, request *smartcharging.ClearedChargingLimitRequest) (confirmation *smartcharging.ClearedChargingLimitResponse, err error) {
 	args := handler.MethodCalled("OnClearedChargingLimit", chargingStationID, request)
-	conf := args.Get(0).(*smartcharging.ClearedChargingLimitResponse)
-	return conf, args.Error(1)
+	r := args.Get(0).(*smartcharging.ClearedChargingLimitResponse)
+	return r, args.Error(1)
+}
+
+func (handler MockCSMSSmartChargingHandler) OnNotifyChargingLimit(chargingStationID string, request *smartcharging.NotifyChargingLimitRequest) (response *smartcharging.NotifyChargingLimitResponse, err error) {
+	args := handler.MethodCalled("OnNotifyChargingLimit", chargingStationID, request)
+	r := args.Get(0).(*smartcharging.NotifyChargingLimitResponse)
+	return r, args.Error(1)
 }
 
 // ---------------------- MOCK CS TARIFF COST HANDLER ----------------------

@@ -201,6 +201,19 @@ func (cs *chargingStation) MeterValues(evseID int, meterValues []types.MeterValu
 	}
 }
 
+func (cs *chargingStation) NotifyChargingLimit(chargingLimit smartcharging.ChargingLimit, props ...func(request *smartcharging.NotifyChargingLimitRequest)) (*smartcharging.NotifyChargingLimitResponse, error) {
+	request := smartcharging.NewNotifyChargingLimitRequest(chargingLimit)
+	for _, fn := range props {
+		fn(request)
+	}
+	response, err := cs.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return response.(*smartcharging.NotifyChargingLimitResponse), err
+	}
+}
+
 func (cs *chargingStation) SetSecurityHandler(handler security.ChargingStationHandler) {
 	cs.securityHandler = handler
 }
@@ -300,7 +313,7 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 		return fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send request", featureName)
 	}
 	switch featureName {
-	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, iso15118.Get15118EVCertificateFeatureName, iso15118.GetCertificateStatusFeatureName, availability.HeartbeatFeatureName, diagnostics.LogStatusNotificationFeatureName, meter.MeterValuesFeatureName:
+	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, iso15118.Get15118EVCertificateFeatureName, iso15118.GetCertificateStatusFeatureName, availability.HeartbeatFeatureName, diagnostics.LogStatusNotificationFeatureName, meter.MeterValuesFeatureName, smartcharging.NotifyChargingLimitFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charging station, cannot send request", featureName)
