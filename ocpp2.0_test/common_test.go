@@ -123,33 +123,57 @@ func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
 	ExecuteGenericTestTable(t, testTable)
 }
 
-func (suite *OcppV2TestSuite) TestSampledValueValidation() {
+func (suite *OcppV2TestSuite) TestSignedMeterValue() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, Unit: types.UnitOfMeasureKW}, true},
-		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}, true},
-		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2}, true},
-		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport}, true},
-		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw}, true},
-		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd}, true},
-		{types.SampledValue{Value: "value"}, true},
-		{types.SampledValue{Value: "value", Context: "invalidContext"}, false},
-		{types.SampledValue{Value: "value", Format: "invalidFormat"}, false},
-		{types.SampledValue{Value: "value", Measurand: "invalidMeasurand"}, false},
-		{types.SampledValue{Value: "value", Phase: "invalidPhase"}, false},
-		{types.SampledValue{Value: "value", Location: "invalidLocation"}, false},
-		{types.SampledValue{Value: "value", Unit: "invalidUnit"}, false},
+		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message", PublicKey: "0xd34dc0de"}, true},
+		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message"}, false},
+		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", PublicKey: "0xd34dc0de"}, false},
+		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", EncodingMethod: "DLMS Message", PublicKey: "0xd34dc0de"}, false},
+		{types.SignedMeterValue{SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message", PublicKey: "0xd34dc0de"}, false},
+		{types.SignedMeterValue{SignedMeterData: ">2500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message", PublicKey: "0xd34dc0de"}, false},
+		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: ">50................................................", EncodingMethod: "DLMS Message", PublicKey: "0xd34dc0de"}, false},
+		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: ">50................................................", PublicKey: "0xd34dc0de"}, false},
+		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message", PublicKey: ">2500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................"}, false},
+	}
+	ExecuteGenericTestTable(t, testTable)
+}
+
+func (suite *OcppV2TestSuite) TestSampledValueValidation() {
+	t := suite.T()
+	signedMeterValues := types.SignedMeterValue{
+		SignedMeterData: "0xdeadbeef",
+		SigningMethod:   "ECDSAP256SHA256",
+		EncodingMethod:  "DLMS Message",
+		PublicKey:       "0xd34dc0de",
+	}
+	var testTable = []GenericTestEntry{
+		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, SignedMeterValue: &signedMeterValues, UnitOfMeasure: &types.UnitOfMeasure{Unit: "kW", Multiplier: newInt(0)}}, true},
+		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, SignedMeterValue: &signedMeterValues}, true},
+		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}, true},
+		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2}, true},
+		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport}, true},
+		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd}, true},
+		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd}, true},
+		{types.SampledValue{Value: 3.14}, true},
+		{types.SampledValue{Value: -3.14}, true},
+		{types.SampledValue{Value: 3.14, Context: "invalidContext"}, false},
+		{types.SampledValue{Value: 3.14, Measurand: "invalidMeasurand"}, false},
+		{types.SampledValue{Value: 3.14, Phase: "invalidPhase"}, false},
+		{types.SampledValue{Value: 3.14, Location: "invalidLocation"}, false},
+		{types.SampledValue{Value: 3.14, SignedMeterValue: &types.SignedMeterValue{}}, false},
+		{types.SampledValue{Value: 3.14, UnitOfMeasure: &types.UnitOfMeasure{Unit: "invalidUnit>20......."}}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestMeterValueValidation() {
 	var testTable = []GenericTestEntry{
-		{types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}, {Value: "value2", Unit: types.UnitOfMeasureKW}}}, true},
-		{types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}, true},
-		{types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{}}, false},
-		{types.MeterValue{Timestamp: types.NewDateTime(time.Now())}, false},
-		{types.MeterValue{SampledValue: []types.SampledValue{{Value: "value"}}}, false},
+		{types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{ {Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, true},
+		{types.MeterValue{SampledValue: []types.SampledValue{ {Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, true},
+		{types.MeterValue{SampledValue: []types.SampledValue{}}, false},
+		{types.MeterValue{}, false},
+		{types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{ {Value: 3.14, Context: "invalidContext", Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, false},
 	}
 	ExecuteGenericTestTable(suite.T(), testTable)
 }

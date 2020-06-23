@@ -465,7 +465,6 @@ type ValueFormat string
 type Measurand string
 type Phase string
 type Location string
-type UnitOfMeasure string
 
 const (
 	ReadingContextInterruptionBegin       ReadingContext = "Interruption.Begin"
@@ -476,8 +475,6 @@ const (
 	ReadingContextTransactionBegin        ReadingContext = "Transaction.Begin"
 	ReadingContextTransactionEnd          ReadingContext = "Transaction.End"
 	ReadingContextTrigger                 ReadingContext = "Trigger"
-	ValueFormatRaw                        ValueFormat    = "Raw"
-	ValueFormatSignedData                 ValueFormat    = "SignedData"
 	MeasurandCurrentExport                Measurand      = "Current.Export"
 	MeasurandCurrentImport                Measurand      = "Current.Import"
 	MeasurandCurrentOffered               Measurand      = "Current.Offered"
@@ -487,8 +484,13 @@ const (
 	MeasurandEnergyReactiveImportRegister Measurand      = "Energy.Reactive.Import.Register"
 	MeasurandEnergyActiveExportInterval   Measurand      = "Energy.Active.Export.Interval"
 	MeasurandEnergyActiveImportInterval   Measurand      = "Energy.Active.Import.Interval"
+	MeasurandEnergyActiveNet              Measurand      = "Energy.Active.Net"
 	MeasurandEnergyReactiveExportInterval Measurand      = "Energy.Reactive.Export.Interval"
 	MeasurandEnergyReactiveImportInterval Measurand      = "Energy.Reactive.Import.Interval"
+	MeasurandEnergyReactiveNet            Measurand      = "Energy.Reactive.Net"
+	MeasurandEnergyApparentNet            Measurand      = "Energy.Apparent.Net"
+	MeasurandEnergyApparentImport         Measurand      = "Energy.Apparent.Import"
+	MeasurandEnergyApparentExport         Measurand      = "Energy.Apparent.Export"
 	MeasurandFrequency                    Measurand      = "Frequency"
 	MeasurandPowerActiveExport            Measurand      = "Power.Active.Export"
 	MeasurandPowerActiveImport            Measurand      = "Power.Active.Import"
@@ -496,7 +498,6 @@ const (
 	MeasurandPowerOffered                 Measurand      = "Power.Offered"
 	MeasurandPowerReactiveExport          Measurand      = "Power.Reactive.Export"
 	MeasurandPowerReactiveImport          Measurand      = "Power.Reactive.Import"
-	MeasurandRPM                          Measurand      = "RPM"
 	MeasueandSoC                          Measurand      = "SoC"
 	MeasurandTemperature                  Measurand      = "Temperature"
 	MeasurandVoltage                      Measurand      = "Voltage"
@@ -515,22 +516,6 @@ const (
 	LocationEV                            Location       = "EV"
 	LocationInlet                         Location       = "Inlet"
 	LocationOutlet                        Location       = "Outlet"
-	UnitOfMeasureWh                       UnitOfMeasure  = "Wh"
-	UnitOfMeasureKWh                      UnitOfMeasure  = "kWh"
-	UnitOfMeasureVarh                     UnitOfMeasure  = "varh"
-	UnitOfMeasureKvarh                    UnitOfMeasure  = "kvarh"
-	UnitOfMeasureW                        UnitOfMeasure  = "W"
-	UnitOfMeasureKW                       UnitOfMeasure  = "kW"
-	UnitOfMeasureVA                       UnitOfMeasure  = "VA"
-	UnitOfMeasureKVA                      UnitOfMeasure  = "kVA"
-	UnitOfMeasureVar                      UnitOfMeasure  = "var"
-	UnitOfMeasureKvar                     UnitOfMeasure  = "kvar"
-	UnitOfMeasureA                        UnitOfMeasure  = "A"
-	UnitOfMeasureV                        UnitOfMeasure  = "V"
-	UnitOfMeasureCelsius                  UnitOfMeasure  = "Celsius"
-	UnitOfMeasureFahrenheit               UnitOfMeasure  = "Fahrenheit"
-	UnitOfMeasureK                        UnitOfMeasure  = "K"
-	UnitOfMeasurePercent                  UnitOfMeasure  = "Percent"
 )
 
 func isValidReadingContext(fl validator.FieldLevel) bool {
@@ -543,20 +528,10 @@ func isValidReadingContext(fl validator.FieldLevel) bool {
 	}
 }
 
-func isValidValueFormat(fl validator.FieldLevel) bool {
-	valueFormat := ValueFormat(fl.Field().String())
-	switch valueFormat {
-	case ValueFormatRaw, ValueFormatSignedData:
-		return true
-	default:
-		return false
-	}
-}
-
 func isValidMeasurand(fl validator.FieldLevel) bool {
 	measurand := Measurand(fl.Field().String())
 	switch measurand {
-	case MeasueandSoC, MeasurandCurrentExport, MeasurandCurrentImport, MeasurandCurrentOffered, MeasurandEnergyActiveExportInterval, MeasurandEnergyActiveExportRegister, MeasurandEnergyReactiveExportInterval, MeasurandEnergyReactiveExportRegister, MeasurandEnergyReactiveImportRegister, MeasurandEnergyReactiveImportInterval, MeasurandEnergyActiveImportInterval, MeasurandEnergyActiveImportRegister, MeasurandFrequency, MeasurandPowerActiveExport, MeasurandPowerActiveImport, MeasurandPowerReactiveImport, MeasurandPowerReactiveExport, MeasurandPowerOffered, MeasurandPowerFactor, MeasurandVoltage, MeasurandTemperature, MeasurandRPM:
+	case MeasueandSoC, MeasurandCurrentExport, MeasurandCurrentImport, MeasurandCurrentOffered, MeasurandEnergyActiveExportInterval, MeasurandEnergyActiveExportRegister, MeasurandEnergyReactiveExportInterval, MeasurandEnergyReactiveExportRegister, MeasurandEnergyReactiveImportRegister, MeasurandEnergyReactiveImportInterval, MeasurandEnergyActiveImportInterval, MeasurandEnergyActiveImportRegister, MeasurandFrequency, MeasurandPowerActiveExport, MeasurandPowerActiveImport, MeasurandPowerReactiveImport, MeasurandPowerReactiveExport, MeasurandPowerOffered, MeasurandPowerFactor, MeasurandVoltage, MeasurandTemperature, MeasurandEnergyActiveNet, MeasurandEnergyApparentNet, MeasurandEnergyReactiveNet, MeasurandEnergyApparentImport, MeasurandEnergyApparentExport:
 		return true
 	default:
 		return false
@@ -583,28 +558,75 @@ func isValidLocation(fl validator.FieldLevel) bool {
 	}
 }
 
-func isValidUnitOfMeasure(fl validator.FieldLevel) bool {
-	unitOfMeasure := UnitOfMeasure(fl.Field().String())
-	switch unitOfMeasure {
-	case UnitOfMeasureA, UnitOfMeasureWh, UnitOfMeasureKWh, UnitOfMeasureVarh, UnitOfMeasureKvarh, UnitOfMeasureW, UnitOfMeasureKW, UnitOfMeasureVA, UnitOfMeasureKVA, UnitOfMeasureVar, UnitOfMeasureKvar, UnitOfMeasureV, UnitOfMeasureCelsius, UnitOfMeasureFahrenheit, UnitOfMeasureK, UnitOfMeasurePercent:
+type UnitOfMeasure struct {
+	Unit       string `json:"unit,omitempty" validate:"omitempty,max=20"`
+	Multiplier *int   `json:"multiplier,omitempty" validate:"omitempty,gte=0"`
+}
+
+//TODO: remove SignatureMethod (obsolete from 2.0.1 onwards)
+
+// Enumeration of the cryptographic method used to create the digital signature.
+// The list is expected to grow in future OCPP releases to allow other signature methods used by Smart Meters.
+type SignatureMethod string
+
+const (
+	SignatureECDSAP256SHA256 SignatureMethod = "ECDSAP256SHA256" // The encoded data is hashed with the SHA-256 hash function, and the hash value is then signed with the ECDSA algorithm using the NIST P-256 elliptic curve.
+	SignatureECDSAP384SHA384 SignatureMethod = "ECDSAP384SHA384" // The encoded data is hashed with the SHA-384 hash function, and the hash value is then signed with the ECDSA algorithm using the NIST P-384 elliptic curve.
+	SignatureECDSA192SHA256  SignatureMethod = "ECDSA192SHA256"  // The encoded data is hashed with the SHA-256 hash function, and the hash value is then signed with the ECDSA algorithm using a 192-bit elliptic curve.
+)
+
+func isValidSignatureMethod(fl validator.FieldLevel) bool {
+	signature := SignatureMethod(fl.Field().String())
+	switch signature {
+	case SignatureECDSA192SHA256, SignatureECDSAP256SHA256, SignatureECDSAP384SHA384:
 		return true
 	default:
 		return false
 	}
 }
 
+//TODO: remove EncodingMethod (obsolete from 2.0.1 onwards)
+
+// Enumeration of the method used to encode the meter value into binary data before applying the digital signature algorithm.
+// If the EncodingMethod is set to Other, the CSMS MAY try to determine the encoding method from the encodedMeterValue field.
+type EncodingMethod string
+
+const (
+	EncodingOther              EncodingMethod = "Other"                // Encoding method is not included in the enumeration.
+	EncodingDLMSMessage        EncodingMethod = "DLMS Message"         // The data is encoded in a digitally signed DLMS message, as described in the DLMS Green Book 8.
+	EncodingCOSEMProtectedData EncodingMethod = "COSEM Protected Data" // The data is encoded according to the COSEM data protection methods, as described in the DLMS Blue Book 12.
+	EncodingEDL                EncodingMethod = "EDL"                  // The data is encoded in the format used by EDL meters.
+)
+
+func isValidEncodingMethod(fl validator.FieldLevel) bool {
+	encoding := EncodingMethod(fl.Field().String())
+	switch encoding {
+	case EncodingCOSEMProtectedData, EncodingEDL, EncodingDLMSMessage, EncodingOther:
+		return true
+	default:
+		return false
+	}
+}
+
+type SignedMeterValue struct {
+	SignedMeterData string `json:"signedMeterData" validate:"required,max=2500"` // Base64 encoded, contains the signed data which might contain more then just the meter value. It can contain information like timestamps, reference to a customer etc.
+	SigningMethod   string `json:"signingMethod" validate:"required,max=50"`     // Method used to create the digital signature.
+	EncodingMethod  string `json:"encodingMethod" validate:"required,max=50"`    // Method used to encode the meter values before applying the digital signature algorithm.
+	PublicKey       string `json:"publicKey" validate:"required,max=2500"`       // Base64 encoded, sending depends on configuration variable PublicKeyWithSignedMeterValue.
+}
+
 type SampledValue struct {
-	Value     string         `json:"value" validate:"required"`
-	Context   ReadingContext `json:"context,omitempty" validate:"omitempty,readingContext"`
-	Format    ValueFormat    `json:"format,omitempty" validate:"omitempty,valueFormat"`
-	Measurand Measurand      `json:"measurand,omitempty" validate:"omitempty,measurand"`
-	Phase     Phase          `json:"phase,omitempty" validate:"omitempty,phase"`
-	Location  Location       `json:"location,omitempty" validate:"omitempty,location"`
-	Unit      UnitOfMeasure  `json:"unit,omitempty" validate:"omitempty,unitOfMeasure"`
+	Value            float64           `json:"value" validate:"required"`                             // Indicates the measured value.
+	Context          ReadingContext    `json:"context,omitempty" validate:"omitempty,readingContext"` // Type of detail value: start, end or sample. Default = "Sample.Periodic"
+	Measurand        Measurand         `json:"measurand,omitempty" validate:"omitempty,measurand"`    // Type of measurement. Default = "Energy.Active.Import.Register"
+	Phase            Phase             `json:"phase,omitempty" validate:"omitempty,phase"`            // Indicates how the measured value is to be interpreted. For instance between L1 and neutral (L1-N) Please note that not all values of phase are applicable to all Measurands. When phase is absent, the measured value is interpreted as an overall value.
+	Location         Location          `json:"location,omitempty" validate:"omitempty,location"`      // Indicates where the measured value has been sampled.
+	SignedMeterValue *SignedMeterValue `json:"signedMeterValue,omitempty" validate:"omitempty"`       // Contains the MeterValueSignature with sign/encoding method information.
+	UnitOfMeasure    *UnitOfMeasure    `json:"unitOfMeasure,omitempty" validate:"omitempty"`          // Represents a UnitOfMeasure including a multiplier.
 }
 
 type MeterValue struct {
-	Timestamp    *DateTime      `json:"timestamp" validate:"required"`
+	Timestamp    DateTime       `json:"timestamp" validate:"required"`
 	SampledValue []SampledValue `json:"sampledValue" validate:"required,min=1,dive"`
 }
 
@@ -628,11 +650,11 @@ func init() {
 	_ = Validate.RegisterValidation("chargingLimitSource", isValidChargingLimitSource)
 	_ = Validate.RegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
 	_ = Validate.RegisterValidation("readingContext", isValidReadingContext)
-	_ = Validate.RegisterValidation("valueFormat", isValidValueFormat)
 	_ = Validate.RegisterValidation("measurand", isValidMeasurand)
 	_ = Validate.RegisterValidation("phase", isValidPhase)
 	_ = Validate.RegisterValidation("location", isValidLocation)
-	_ = Validate.RegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
+	_ = Validate.RegisterValidation("signatureMethod", isValidSignatureMethod)
+	_ = Validate.RegisterValidation("encodingMethod", isValidEncodingMethod)
 	_ = Validate.RegisterValidation("certificateSigningUse", isValidCertificateSigningUse)
 	_ = Validate.RegisterValidation("certificateUse", isValidCertificateUse)
 	_ = Validate.RegisterValidation("15118EVCertificate", isValidCertificate15118EVStatus)
