@@ -412,12 +412,13 @@ func NewChargingSchedulePeriod(startPeriod int, limit float64) ChargingScheduleP
 	return ChargingSchedulePeriod{StartPeriod: startPeriod, Limit: limit}
 }
 
+//TODO: add ID field to charging schedule
 type ChargingSchedule struct {
 	StartSchedule          *DateTime                `json:"startSchedule,omitempty" validate:"omitempty"`
 	Duration               *int                     `json:"duration,omitempty" validate:"omitempty,gte=0"`
 	ChargingRateUnit       ChargingRateUnitType     `json:"chargingRateUnit" validate:"required,chargingRateUnit"`
 	MinChargingRate        *float64                 `json:"minChargingRate,omitempty" validate:"omitempty,gte=0"`
-	ChargingSchedulePeriod []ChargingSchedulePeriod `json:"chargingSchedulePeriod" validate:"required,min=1"`
+	ChargingSchedulePeriod []ChargingSchedulePeriod `json:"chargingSchedulePeriod" validate:"required,min=1,max=1024"`
 }
 
 func NewChargingSchedule(chargingRateUnit ChargingRateUnitType, schedulePeriod ...ChargingSchedulePeriod) *ChargingSchedule {
