@@ -75,6 +75,8 @@ type ChargingStation interface {
 	Heartbeat(props ...func(request *availability.HeartbeatRequest)) (*availability.HeartbeatResponse, error)
 	// Updates the CSMS with the current log upload status.
 	LogStatusNotification(status diagnostics.UploadLogStatus, requestID int, props ...func(request *diagnostics.LogStatusNotificationRequest)) (*diagnostics.LogStatusNotificationResponse, error)
+	// Sends electrical meter values, not related to a transaction, to the CSMS. This message is deprecated and will be replaced by Device Management Monitoring events.
+	MeterValues(evseID int, meterValues []types.MeterValue, props ...func(request *meter.MeterValuesRequest)) (*meter.MeterValuesResponse, error)
 
 	// Registers a handler for incoming security profile messages
 	SetSecurityHandler(handler security.ChargingStationHandler)

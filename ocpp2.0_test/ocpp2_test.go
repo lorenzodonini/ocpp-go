@@ -485,6 +485,12 @@ type MockCSMSLocalAuthHandler struct {
 	mock.Mock
 }
 
+func (handler MockCSMSMeterHandler) OnMeterValues(chargingStationID string, request *meter.MeterValuesRequest) (response *meter.MeterValuesResponse, err error) {
+	args := handler.MethodCalled("OnMeterValues", chargingStationID, request)
+	r := args.Get(0).(*meter.MeterValuesResponse)
+	return r, args.Error(1)
+}
+
 // ---------------------- MOCK CS METER HANDLER ----------------------
 
 type MockChargingStationMeterHandler struct {
