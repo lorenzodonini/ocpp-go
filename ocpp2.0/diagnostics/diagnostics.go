@@ -7,6 +7,8 @@ import "github.com/lorenzodonini/ocpp-go/ocpp"
 type CSMSHandler interface {
 	// OnLogStatusNotification is called on the CSMS whenever a LogStatusNotificationRequest is received from a Charging Station.
 	OnLogStatusNotification(chargingStationID string, request *LogStatusNotificationRequest) (response *LogStatusNotificationResponse, err error)
+	// OnNotifyCustomerInformation is called on the CSMS whenever a NotifyCustomerInformationRequest is received from a Charging Station.
+	OnNotifyCustomerInformation(chargingStationID string, request *NotifyCustomerInformationRequest) (response *NotifyCustomerInformationResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Diagnostics profile.
@@ -30,4 +32,5 @@ var Profile = ocpp.NewProfile(
 	GetLogFeature{},
 	GetMonitoringReportFeature{},
 	LogStatusNotificationFeature{},
+	NotifyCustomerInformationFeature{},
 )

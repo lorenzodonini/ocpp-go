@@ -383,6 +383,12 @@ func (handler MockCSMSDiagnosticsHandler) OnLogStatusNotification(chargingStatio
 	return resp, args.Error(1)
 }
 
+func (handler MockCSMSDiagnosticsHandler) OnNotifyCustomerInformation(chargingStationID string, request *diagnostics.NotifyCustomerInformationRequest) (response *diagnostics.NotifyCustomerInformationResponse, err error) {
+	args := handler.MethodCalled("OnNotifyCustomerInformation", chargingStationID, request)
+	resp := args.Get(0).(*diagnostics.NotifyCustomerInformationResponse)
+	return resp, args.Error(1)
+}
+
 // ---------------------- MOCK CS DISPLAY HANDLER ----------------------
 
 type MockChargingStationDisplayHandler struct {
