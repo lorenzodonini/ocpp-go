@@ -1,67 +1,12 @@
 package display
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )
 
 // -------------------- Get Display Messages (CSMS -> CS) --------------------
 
 const GetDisplayMessagesFeatureName = "GetDisplayMessages"
-
-// Priority with which a message should be displayed on a Charging Station.
-// Used within a GetDisplayMessagesRequest.
-type MessagePriority string
-
-// State of the Charging Station during which a message SHALL be displayed.
-// Used within a GetDisplayMessagesRequest.
-type MessageState string
-
-// MessageStatus represents the status of the request, used in a GetDisplayMessagesResponse.
-type MessageStatus string
-
-const (
-	MessagePriorityAlwaysFront MessagePriority = "AlwaysFront"
-	MessagePriorityInFront     MessagePriority = "InFront"
-	MessagePriorityNormalCycle MessagePriority = "NormalCycle"
-	MessageStateCharging       MessageState    = "Charging"
-	MessageStateFaulted        MessageState    = "Faulted"
-	MessageStateIdle           MessageState    = "Idle"
-	MessageStateUnavailable    MessageState    = "Unavailable"
-	MessageStatusAccepted      MessageStatus   = "Accepted"
-	MessageStatusUnknown       MessageStatus   = "Unknown"
-)
-
-func isValidMessagePriority(fl validator.FieldLevel) bool {
-	priority := MessagePriority(fl.Field().String())
-	switch priority {
-	case MessagePriorityAlwaysFront, MessagePriorityInFront, MessagePriorityNormalCycle:
-		return true
-	default:
-		return false
-	}
-}
-
-func isValidMessageState(fl validator.FieldLevel) bool {
-	priority := MessageState(fl.Field().String())
-	switch priority {
-	case MessageStateCharging, MessageStateFaulted, MessageStateIdle, MessageStateUnavailable:
-		return true
-	default:
-		return false
-	}
-}
-
-func isValidMessageStatus(fl validator.FieldLevel) bool {
-	priority := MessageStatus(fl.Field().String())
-	switch priority {
-	case MessageStatusAccepted, MessageStatusUnknown:
-		return true
-	default:
-		return false
-	}
-}
 
 // The field definition of the GetDisplayMessages request payload sent by the CSMS to the Charging Station.
 type GetDisplayMessagesRequest struct {
@@ -115,10 +60,4 @@ func NewGetDisplayMessagesRequest(requestId int) *GetDisplayMessagesRequest {
 // Creates a new GetDisplayMessagesResponse, containing all required fields. There are no optional fields for this message.
 func NewGetDisplayMessagesResponse(status MessageStatus) *GetDisplayMessagesResponse {
 	return &GetDisplayMessagesResponse{Status: status}
-}
-
-func init() {
-	_ = types.Validate.RegisterValidation("messagePriority", isValidMessagePriority)
-	_ = types.Validate.RegisterValidation("messageState", isValidMessageState)
-	_ = types.Validate.RegisterValidation("messageStatus", isValidMessageStatus)
 }
