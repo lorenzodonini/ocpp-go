@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/display"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"time"
 )
@@ -174,6 +175,26 @@ func (suite *OcppV2TestSuite) TestMeterValueValidation() {
 		{types.MeterValue{SampledValue: []types.SampledValue{}}, false},
 		{types.MeterValue{}, false},
 		{types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{ {Value: 3.14, Context: "invalidContext", Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, false},
+	}
+	ExecuteGenericTestTable(suite.T(), testTable)
+}
+
+func (suite *OcppV2TestSuite) TestMessageInfoValidation() {
+	var testTable = []GenericTestEntry{
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1*time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}, Display: &types.Component{Name: "name1"}}, true},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1*time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle}, false},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8}}, false},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: "invalidState", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, false},
+		{display.MessageInfo{ID: 42, State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, false},
+		{display.MessageInfo{ID: 42, Priority: "invalidPriority", State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, false},
+		{display.MessageInfo{ID: -1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, false},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, TransactionID: ">36..................................", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, false},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1*time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}, Display: &types.Component{}}, false},
 	}
 	ExecuteGenericTestTable(suite.T(), testTable)
 }
