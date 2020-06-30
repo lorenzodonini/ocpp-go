@@ -413,6 +413,12 @@ type MockCSMSDisplayHandler struct {
 	mock.Mock
 }
 
+func (handler MockCSMSDisplayHandler) OnNotifyDisplayMessages(chargingStationID string, request *display.NotifyDisplayMessagesRequest) (response *display.NotifyDisplayMessagesResponse, err error) {
+	args := handler.MethodCalled("OnNotifyDisplayMessages", chargingStationID, request)
+	conf := args.Get(0).(*display.NotifyDisplayMessagesResponse)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CS FIRMWARE HANDLER ----------------------
 
 type MockChargingStationFirmwareHandler struct {
