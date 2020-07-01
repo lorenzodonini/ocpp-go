@@ -13,7 +13,7 @@ import (
 func (suite *OcppV16TestSuite) TestStatusNotificationRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{core.StatusNotificationRequest{ConnectorId: 0, ErrorCode: core.NoError, Info: "mockInfo", Status: core.ChargePointStatusAvailable, Timestamp: types.DateTime{Time: time.Now().Add(-1 * time.Hour)}, VendorId: "mockId", VendorErrorCode: "mockErrorCode"}, true},
+		{core.StatusNotificationRequest{ConnectorId: 0, ErrorCode: core.NoError, Info: "mockInfo", Status: core.ChargePointStatusAvailable, Timestamp: types.NewDateTime(time.Now()), VendorId: "mockId", VendorErrorCode: "mockErrorCode"}, true},
 		{core.StatusNotificationRequest{ConnectorId: 0, ErrorCode: core.NoError, Status: core.ChargePointStatusAvailable}, true},
 		{core.StatusNotificationRequest{ErrorCode: core.NoError, Status: core.ChargePointStatusAvailable}, true},
 		{core.StatusNotificationRequest{ConnectorId: -1, ErrorCode: core.NoError, Status: core.ChargePointStatusAvailable}, false},
@@ -43,7 +43,7 @@ func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	connectorId := 1
-	timestamp := types.DateTime{Time: time.Now().Add(-1 * time.Hour)}
+	timestamp := types.NewDateTime(time.Now())
 	status := core.ChargePointStatusAvailable
 	cpErrorCode := core.NoError
 	info := "mockInfo"
@@ -64,7 +64,7 @@ func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
 		assert.Equal(t, info, request.Info)
 		assert.Equal(t, vendorId, request.VendorId)
 		assert.Equal(t, vendorErrorCode, request.VendorErrorCode)
-		assertDateTimeEquality(t, timestamp, request.Timestamp)
+		assertDateTimeEquality(t, *timestamp, *request.Timestamp)
 	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
@@ -85,7 +85,7 @@ func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
 func (suite *OcppV16TestSuite) TestStatusNotificationInvalidEndpoint() {
 	messageId := defaultMessageId
 	connectorId := 1
-	timestamp := types.DateTime{Time: time.Now().Add(-1 * time.Hour)}
+	timestamp := types.NewDateTime(time.Now())
 	status := core.ChargePointStatusAvailable
 	cpErrorCode := core.NoError
 	info := "mockInfo"

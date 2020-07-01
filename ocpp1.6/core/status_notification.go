@@ -72,7 +72,7 @@ type StatusNotificationRequest struct {
 	ErrorCode       ChargePointErrorCode `json:"errorCode" validate:"required,chargePointErrorCode"`
 	Info            string               `json:"info,omitempty" validate:"max=50"`
 	Status          ChargePointStatus    `json:"status" validate:"required,chargePointStatus"`
-	Timestamp       types.DateTime       `json:"timestamp,omitempty"`
+	Timestamp       *types.DateTime      `json:"timestamp,omitempty" validate:"omitempty"`
 	VendorId        string               `json:"vendorId,omitempty" validate:"max=255"`
 	VendorErrorCode string               `json:"vendorErrorCode,omitempty" validate:"max=50"`
 }
