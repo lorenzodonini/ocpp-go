@@ -279,13 +279,13 @@ func getExpiryDate(info *types.IdTagInfo) string {
 	return ""
 }
 
-func updateStatus(stateHandler *ChargePointHandler, connector int, status core.ChargePointStatus) {
+func updateStatus(stateHandler *ChargePointHandler, connector int, status core.ChargePointStatus, props ...func(request *core.StatusNotificationRequest)) {
 	if connector == 0 {
 		stateHandler.status = status
 	} else {
 		stateHandler.connectors[connector].status = status
 	}
-	statusConfirmation, err := chargePoint.StatusNotification(connector, stateHandler.errorCode, status)
+	statusConfirmation, err := chargePoint.StatusNotification(connector, stateHandler.errorCode, status, props...)
 	checkError(err)
 	if connector == 0 {
 		logDefault(statusConfirmation.GetFeatureName()).Infof("status for all connectors updated to %v", status)
