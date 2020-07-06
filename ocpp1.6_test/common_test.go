@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+// Utility functions
+func newInt(i int) *int {
+	return &i
+}
+
 // Test
 func (suite *OcppV16TestSuite) TestIdTagInfoValidation() {
 	var testTable = []GenericTestEntry{

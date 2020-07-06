@@ -30,10 +30,10 @@ func isValidClearChargingProfileStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the ClearChargingProfile request payload sent by the Central System to the Charge Point.
 type ClearChargingProfileRequest struct {
-	Id                     int                              `json:"id,omitempty" validate:"gte=0"`
-	ConnectorId            int                              `json:"connectorId,omitempty" validate:"gte=0"` //TODO: handle 0 case with pointer?
+	Id                     *int                             `json:"id,omitempty" validate:"omitempty,gte=0"`
+	ConnectorId            *int                             `json:"connectorId,omitempty" validate:"omitempty,gte=0"`
 	ChargingProfilePurpose types.ChargingProfilePurposeType `json:"chargingProfilePurpose,omitempty" validate:"omitempty,chargingProfilePurpose"`
-	StackLevel             int                              `json:"stackLevel,omitempty" validate:"omitempty,gt=0"`
+	StackLevel             *int                             `json:"stackLevel,omitempty" validate:"omitempty,gt=0"`
 }
 
 // This field definition of the ClearChargingProfile confirmation payload, sent by the Charge Point to the Central System in response to a ClearChargingProfileRequest.

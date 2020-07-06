@@ -6,6 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"time"
 )
 
@@ -61,16 +62,22 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockCentralSystemCoreListener{}
-	coreListener.On("OnBootNotification", mock.AnythingOfType("string"), mock.Anything).Return(bootNotificationConfirmation, nil)
+	coreListener.On("OnBootNotification", mock.AnythingOfType("string"), mock.Anything).Return(bootNotificationConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(1).(*core.BootNotificationRequest)
+		require.True(t, ok)
+		require.NotNil(t, request)
+		assert.Equal(t, chargePointModel, request.ChargePointModel)
+		assert.Equal(t, chargePointVendor, request.ChargePointVendor)
+	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	confirmation, err := suite.chargePoint.BootNotification(chargePointModel, chargePointVendor)
-	assert.Nil(t, err)
-	assert.NotNil(t, confirmation)
+	require.Nil(t, err)
+	require.NotNil(t, confirmation)
 	assert.Equal(t, registrationStatus, confirmation.Status)
 	assert.Equal(t, interval, confirmation.Interval)
 	assertDateTimeEquality(t, *currentTime, *confirmation.CurrentTime)
