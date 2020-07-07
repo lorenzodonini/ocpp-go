@@ -79,12 +79,12 @@ func (suite *OcppV16TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	confirmation, err := suite.chargePoint.DataTransfer(vendorId, func(request *core.DataTransferRequest) {
 		request.Data = data
 	})
-	assert.Nil(t, err)
-	assert.NotNil(t, confirmation)
+	require.Nil(t, err)
+	require.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.Status)
 }
 
@@ -119,17 +119,17 @@ func (suite *OcppV16TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *core.DataTransferConfirmation, err error) {
-		assert.Nil(t, err)
-		assert.NotNil(t, confirmation)
+		require.Nil(t, err)
+		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
 	}, vendorId, func(request *core.DataTransferRequest) {
 		request.Data = data
 	})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
 }

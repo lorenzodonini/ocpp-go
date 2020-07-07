@@ -17,7 +17,7 @@ type ConfigurationKey struct {
 
 // The field definition of the GetConfiguration request payload sent by the Central System to the Charge Point.
 type GetConfigurationRequest struct {
-	Key []string `json:"key" validate:"required,min=1,unique,dive,max=50"`
+	Key []string `json:"key,omitempty" validate:"omitempty,unique,dive,max=50"`
 }
 
 // TODO: validation of cardinalities for the two fields should be handled somewhere (#configurationKey + #unknownKey > 0)
@@ -25,8 +25,8 @@ type GetConfigurationRequest struct {
 // This field definition of the GetConfiguration confirmation payload, sent by the Charge Point to the Central System in response to a GetConfigurationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetConfigurationConfirmation struct {
-	ConfigurationKey []ConfigurationKey `json:"configurationKey,omitempty" validate:"dive"`
-	UnknownKey       []string           `json:"unknownKey,omitempty" validate:"dive,max=50"`
+	ConfigurationKey []ConfigurationKey `json:"configurationKey,omitempty" validate:"omitempty,dive"`
+	UnknownKey       []string           `json:"unknownKey,omitempty" validate:"omitempty,dive,max=50"`
 }
 
 // To retrieve the value of configuration settings, the Central System SHALL send a GetConfigurationRequest to the Charge Point.

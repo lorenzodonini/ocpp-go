@@ -5,6 +5,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // Test
@@ -45,15 +46,15 @@ func (suite *OcppV16TestSuite) TestClearCacheE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.ClearCache(wsId, func(confirmation *core.ClearCacheConfirmation, err error) {
-		assert.Nil(t, err)
-		assert.NotNil(t, confirmation)
+		require.Nil(t, err)
+		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
 	})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
 }

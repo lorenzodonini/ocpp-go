@@ -60,7 +60,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.ChangeAvailability(wsId, func(confirmation *core.ChangeAvailabilityConfirmation, err error) {
 		require.NotNil(t, confirmation)

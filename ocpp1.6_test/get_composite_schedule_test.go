@@ -6,6 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"time"
 )
 
@@ -28,14 +29,14 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleConfirmationValidation() 
 	t := suite.T()
 	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
 	var confirmationTable = []GenericTestEntry{
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: 1, ScheduleStart: types.NewDateTime(time.Now()), ChargingSchedule: chargingSchedule}, true},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: 1, ScheduleStart: types.NewDateTime(time.Now())}, true},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: 1}, true},
+		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1), ScheduleStart: types.NewDateTime(time.Now()), ChargingSchedule: chargingSchedule}, true},
+		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1), ScheduleStart: types.NewDateTime(time.Now())}, true},
+		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1)}, true},
 		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted}, true},
 		{smartcharging.GetCompositeScheduleConfirmation{}, false},
 		{smartcharging.GetCompositeScheduleConfirmation{Status: "invalidGetCompositeScheduleStatus"}, false},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: -1}, false},
-		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: 1, ChargingSchedule: types.NewChargingSchedule(types.ChargingRateUnitWatts)}, false},
+		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(-1)}, false},
+		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1), ChargingSchedule: types.NewChargingSchedule(types.ChargingRateUnitWatts)}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -60,14 +61,14 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleE2EMocked() {
 	getCompositeScheduleConfirmation := smartcharging.NewGetCompositeScheduleConfirmation(status)
 	getCompositeScheduleConfirmation.ChargingSchedule = chargingSchedule
 	getCompositeScheduleConfirmation.ScheduleStart = scheduleStart
-	getCompositeScheduleConfirmation.ConnectorId = connectorId
+	getCompositeScheduleConfirmation.ConnectorId = &connectorId
 	channel := NewMockWebSocket(wsId)
 
 	smartChargingListener := MockChargePointSmartChargingListener{}
 	smartChargingListener.On("OnGetCompositeSchedule", mock.Anything).Return(getCompositeScheduleConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*smartcharging.GetCompositeScheduleRequest)
-		assert.True(t, ok)
-		assert.NotNil(t, request)
+		require.True(t, ok)
+		require.NotNil(t, request)
 		assert.Equal(t, connectorId, request.ConnectorId)
 		assert.Equal(t, duration, request.Duration)
 		assert.Equal(t, chargingRateUnit, request.ChargingRateUnit)
@@ -78,29 +79,28 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.GetCompositeSchedule(wsId, func(confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
-		if !assert.Nil(t, err) || !assert.NotNil(t, confirmation) {
-			resultChannel <- false
-		} else {
-			assert.Equal(t, status, confirmation.Status)
-			assert.Equal(t, connectorId, confirmation.ConnectorId)
-			assert.Equal(t, scheduleStart.FormatTimestamp(), confirmation.ScheduleStart.FormatTimestamp())
-			assert.Equal(t, chargingSchedule.ChargingRateUnit, confirmation.ChargingSchedule.ChargingRateUnit)
-			assert.Equal(t, chargingSchedule.Duration, confirmation.ChargingSchedule.Duration)
-			assert.Equal(t, chargingSchedule.MinChargingRate, confirmation.ChargingSchedule.MinChargingRate)
-			assert.Equal(t, chargingSchedule.StartSchedule, confirmation.ChargingSchedule.StartSchedule)
-			assert.Equal(t, 1, len(confirmation.ChargingSchedule.ChargingSchedulePeriod))
-			assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, confirmation.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
-			assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].Limit, confirmation.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
-			assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].NumberPhases, confirmation.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
-			resultChannel <- true
-		}
+		require.Nil(t, err)
+		require.NotNil(t, confirmation)
+		assert.Equal(t, status, confirmation.Status)
+		require.NotNil(t, confirmation.ConnectorId)
+		assert.Equal(t, connectorId, *confirmation.ConnectorId)
+		assert.Equal(t, scheduleStart.FormatTimestamp(), confirmation.ScheduleStart.FormatTimestamp())
+		assert.Equal(t, chargingSchedule.ChargingRateUnit, confirmation.ChargingSchedule.ChargingRateUnit)
+		assert.Equal(t, chargingSchedule.Duration, confirmation.ChargingSchedule.Duration)
+		assert.Equal(t, chargingSchedule.MinChargingRate, confirmation.ChargingSchedule.MinChargingRate)
+		assert.Equal(t, chargingSchedule.StartSchedule, confirmation.ChargingSchedule.StartSchedule)
+		assert.Equal(t, 1, len(confirmation.ChargingSchedule.ChargingSchedulePeriod))
+		assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, confirmation.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
+		assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].Limit, confirmation.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
+		assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].NumberPhases, confirmation.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
+		resultChannel <- true
 	}, connectorId, duration, func(request *smartcharging.GetCompositeScheduleRequest) {
 		request.ChargingRateUnit = chargingRateUnit
 	})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
 }

@@ -54,7 +54,7 @@ func (suite *OcppV16TestSuite) TestCancelReservationE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.CancelReservation(wsId, func(confirmation *reservation.CancelReservationConfirmation, err error) {
 		require.Nil(t, err)
