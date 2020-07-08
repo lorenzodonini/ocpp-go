@@ -6,6 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // Test
@@ -14,12 +15,12 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionRequestValidation() {
 	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
 	chargingProfile := types.NewChargingProfile(1, 1, types.ChargingProfilePurposeChargePointMaxProfile, types.ChargingProfileKindAbsolute, chargingSchedule)
 	var requestTable = []GenericTestEntry{
-		{core.RemoteStartTransactionRequest{IdTag: "12345", ConnectorId: 1, ChargingProfile: chargingProfile}, true},
-		{core.RemoteStartTransactionRequest{IdTag: "12345", ConnectorId: 1}, true},
+		{core.RemoteStartTransactionRequest{IdTag: "12345", ConnectorId: newInt(1), ChargingProfile: chargingProfile}, true},
+		{core.RemoteStartTransactionRequest{IdTag: "12345", ConnectorId: newInt(1)}, true},
 		{core.RemoteStartTransactionRequest{IdTag: "12345"}, true},
-		{core.RemoteStartTransactionRequest{IdTag: "12345", ConnectorId: -1}, false},
+		{core.RemoteStartTransactionRequest{IdTag: "12345", ConnectorId: newInt(-1)}, false},
 		{core.RemoteStartTransactionRequest{}, false},
-		{core.RemoteStartTransactionRequest{IdTag: ">20..................", ConnectorId: 1}, false},
+		{core.RemoteStartTransactionRequest{IdTag: ">20..................", ConnectorId: newInt(1)}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -41,7 +42,7 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	idTag := "12345"
-	connectorId := 1
+	connectorId := newInt(1)
 	chargingProfileId := 1
 	stackLevel := 1
 	chargingProfilePurpose := types.ChargingProfilePurposeChargePointMaxProfile
@@ -55,7 +56,7 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"idTag":"%v","chargingProfile":{"chargingProfileId":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}}]`,
 		messageId,
 		core.RemoteStartTransactionFeatureName,
-		connectorId,
+		*connectorId,
 		idTag,
 		chargingProfileId,
 		stackLevel,
@@ -69,7 +70,27 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionE2EMocked() {
 	channel := NewMockWebSocket(wsId)
 
 	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnRemoteStartTransaction", mock.Anything).Return(RemoteStartTransactionConfirmation, nil)
+	coreListener.On("OnRemoteStartTransaction", mock.Anything).Return(RemoteStartTransactionConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(0).(*core.RemoteStartTransactionRequest)
+		require.NotNil(t, request)
+		require.True(t, ok)
+		assert.Equal(t, *connectorId, *request.ConnectorId)
+		assert.Equal(t, idTag, request.IdTag)
+		require.NotNil(t, request.ChargingProfile)
+		assert.Equal(t, chargingProfileId, request.ChargingProfile.ChargingProfileId)
+		assert.Equal(t, stackLevel, request.ChargingProfile.StackLevel)
+		assert.Equal(t, chargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
+		assert.Equal(t, chargingProfileKind, request.ChargingProfile.ChargingProfileKind)
+		assert.Equal(t, types.RecurrencyKindType(""), request.ChargingProfile.RecurrencyKind)
+		assert.Nil(t, request.ChargingProfile.ValidFrom)
+		assert.Nil(t, request.ChargingProfile.ValidTo)
+		require.NotNil(t, request.ChargingProfile.ChargingSchedule)
+		assert.Equal(t, chargingRateUnit, request.ChargingProfile.ChargingSchedule.ChargingRateUnit)
+		require.Len(t, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod, 1)
+		assert.Equal(t, startPeriod, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
+		assert.Equal(t, limit, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
+		assert.Nil(t, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
+	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test

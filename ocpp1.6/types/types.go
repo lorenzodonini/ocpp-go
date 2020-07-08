@@ -111,7 +111,7 @@ func isValidChargingRateUnit(fl validator.FieldLevel) bool {
 type ChargingSchedulePeriod struct {
 	StartPeriod  int     `json:"startPeriod" validate:"gte=0"`
 	Limit        float64 `json:"limit" validate:"gte=0"`
-	NumberPhases int     `json:"numberPhases,omitempty" validate:"gte=0"`
+	NumberPhases *int    `json:"numberPhases,omitempty" validate:"omitempty,gte=0"`
 }
 
 func NewChargingSchedulePeriod(startPeriod int, limit float64) ChargingSchedulePeriod {
@@ -119,11 +119,11 @@ func NewChargingSchedulePeriod(startPeriod int, limit float64) ChargingScheduleP
 }
 
 type ChargingSchedule struct {
-	Duration               int                      `json:"duration,omitempty" validate:"gte=0"`
+	Duration               *int                     `json:"duration,omitempty" validate:"omitempty,gte=0"`
 	StartSchedule          *DateTime                `json:"startSchedule,omitempty"`
 	ChargingRateUnit       ChargingRateUnitType     `json:"chargingRateUnit" validate:"required,chargingRateUnit"`
 	ChargingSchedulePeriod []ChargingSchedulePeriod `json:"chargingSchedulePeriod" validate:"required,min=1"`
-	MinChargingRate        float64                  `json:"minChargingRate,omitempty" validate:"gte=0"`
+	MinChargingRate        *float64                 `json:"minChargingRate,omitempty" validate:"omitempty,gte=0"`
 }
 
 func NewChargingSchedule(chargingRateUnit ChargingRateUnitType, schedulePeriod ...ChargingSchedulePeriod) *ChargingSchedule {

@@ -90,15 +90,18 @@ func (handler *ChargePointHandler) OnGetConfiguration(request *core.GetConfigura
 }
 
 func (handler *ChargePointHandler) OnRemoteStartTransaction(request *core.RemoteStartTransactionRequest) (confirmation *core.RemoteStartTransactionConfirmation, err error) {
-	connector, ok := handler.connectors[request.ConnectorId]
-	if !ok {
-		return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
-	} else if connector.availability != core.AvailabilityTypeOperative || connector.status != core.ChargePointStatusAvailable || connector.currentTransaction > 0 {
-		return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
+	if request.ConnectorId != nil {
+		connector, ok := handler.connectors[*request.ConnectorId]
+		if !ok {
+			return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
+		} else if connector.availability != core.AvailabilityTypeOperative || connector.status != core.ChargePointStatusAvailable || connector.currentTransaction > 0 {
+			return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
+		}
+		logDefault(request.GetFeatureName()).Infof("started transaction %v on connector %v", connector.currentTransaction, request.ConnectorId)
+		connector.currentTransaction = *request.ConnectorId
+		return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusAccepted), nil
 	}
-	logDefault(request.GetFeatureName()).Infof("started transaction %v on connector %v", connector.currentTransaction, request.ConnectorId)
-	connector.currentTransaction = request.ConnectorId
-	return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusAccepted), nil
+	return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
 }
 
 func (handler *ChargePointHandler) OnRemoteStopTransaction(request *core.RemoteStopTransactionRequest) (confirmation *core.RemoteStopTransactionConfirmation, err error) {
