@@ -197,16 +197,16 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 		//TODO: schedule meter values message
 		break
 	case core.StatusNotificationFeatureName:
-		connectorID := request.ConnectorId
+		connectorID := *request.ConnectorId
 		// Check if requested connector is valid and status can be retrieved
 		if !handler.isValidConnectorID(connectorID) {
-			logDefault(request.GetFeatureName()).Errorf("cannot trigger %v: requested invalid connector %v", request.RequestedMessage, request.ConnectorId)
+			logDefault(request.GetFeatureName()).Errorf("cannot trigger %v: requested invalid connector %v", request.RequestedMessage, connectorID)
 			return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusRejected), nil
 		}
 		// Schedule status notification request
 		fn := func() {
 			status := handler.status
-			if c, ok := handler.connectors[request.ConnectorId]; ok {
+			if c, ok := handler.connectors[connectorID]; ok {
 				status = c.status
 			}
 			statusConfirmation, err := chargePoint.StatusNotification(connectorID, handler.errorCode, status)

@@ -5,6 +5,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func (suite *OcppV16TestSuite) TestUnlockConnectorRequestValidation() {
@@ -41,21 +42,26 @@ func (suite *OcppV16TestSuite) TestUnlockConnectorE2EMocked() {
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
 	coreListener := MockChargePointCoreListener{}
-	coreListener.On("OnUnlockConnector", mock.Anything).Return(unlockConnectorConfirmation, nil)
+	coreListener.On("OnUnlockConnector", mock.Anything).Return(unlockConnectorConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(0).(*core.UnlockConnectorRequest)
+		require.NotNil(t, request)
+		require.True(t, ok)
+		assert.Equal(t, connectorId, request.ConnectorId)
+	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.UnlockConnector(wsId, func(confirmation *core.UnlockConnectorConfirmation, err error) {
-		assert.NotNil(t, confirmation)
-		assert.Nil(t, err)
+		require.NotNil(t, confirmation)
+		require.Nil(t, err)
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
 	}, connectorId)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
 }
