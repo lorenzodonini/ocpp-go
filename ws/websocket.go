@@ -3,6 +3,7 @@ package ws
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -330,6 +331,7 @@ type Client struct {
 	webSocket      WebSocket
 	messageHandler func(data []byte) error
 	dialOptions    []func(*websocket.Dialer)
+	authHeader     http.Header
 }
 
 // Creates a new simple websocket client (the channel is not secured).
@@ -358,6 +360,12 @@ func (client *Client) AddOption(option interface{}) {
 	dialOption, ok := option.(func(*websocket.Dialer))
 	if ok {
 		client.dialOptions = append(client.dialOptions, dialOption)
+	}
+}
+
+func (client *Client) SetBasicAuth(username string, password string) {
+	client.authHeader = http.Header{
+		"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte(username+":"+password))},
 	}
 }
 
@@ -459,7 +467,7 @@ func (client *Client) Start(url string) error {
 	for _, option := range client.dialOptions {
 		option(&dialer)
 	}
-	ws, _, err := dialer.Dial(url, nil)
+	ws, _, err := dialer.Dial(url, client.authHeader)
 	if err != nil {
 		log.Errorf("couldn't connect to server: %v", err)
 		return err
