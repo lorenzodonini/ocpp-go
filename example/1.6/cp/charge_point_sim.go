@@ -36,8 +36,15 @@ func setupTlsChargePoint(chargePointID string) ocpp16.ChargePoint {
 	}
 	// Load CA cert
 	caPath, ok := os.LookupEnv(envVarCACertificate)
-	if !ok {
-		log.Fatalf("no required %v found", envVarCACertificate)
+	if ok {
+		caCert, err := ioutil.ReadFile(caPath)
+		if err != nil {
+			log.Warn(err)
+		} else if !certPool.AppendCertsFromPEM(caCert) {
+			log.Info("no ca.cert file found, will use system CA certificates")
+		}
+	} else {
+		log.Info("no ca.cert file found, will use system CA certificates")
 	}
 	caCert, err := ioutil.ReadFile(caPath)
 	if err != nil {
