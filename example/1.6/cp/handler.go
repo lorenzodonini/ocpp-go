@@ -159,6 +159,16 @@ func (handler *ChargePointHandler) OnGetDiagnostics(request *firmware.GetDiagnos
 }
 
 func (handler *ChargePointHandler) OnUpdateFirmware(request *firmware.UpdateFirmwareRequest) (confirmation *firmware.UpdateFirmwareConfirmation, err error) {
+	retries := 0
+	retryInterval := 30
+	if request.Retries != nil {
+		retries = *request.Retries
+	}
+	if request.RetryInterval != nil {
+		retryInterval = *request.RetryInterval
+	}
+	logDefault(request.GetFeatureName()).Infof("starting update firmware procedure")
+	go updateFirmware(request.Location, request.RetrieveDate, retries, retryInterval)
 	return firmware.NewUpdateFirmwareConfirmation(), nil
 	//TODO: download new firmware out-of-band
 }
@@ -295,4 +305,48 @@ func updateStatus(stateHandler *ChargePointHandler, connector int, status core.C
 	} else {
 		logDefault(statusConfirmation.GetFeatureName()).Infof("status for connector %v updated to %v", connector, status)
 	}
+}
+
+func updateFirmwareStatus(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) {
+	statusConfirmation, err := chargePoint.FirmwareStatusNotification(status, props...)
+	checkError(err)
+	logDefault(statusConfirmation.GetFeatureName()).Infof("firmware status updated to %v", status)
+}
+
+func updateFirmware(location string, retrieveDate *types.DateTime, retries int, retryInterval int) {
+	fn := func(status firmware.FirmwareStatus) func() {
+		return func() {
+			updateFirmwareStatus(status)
+		}
+	}
+	scheduleAsyncRequest(fn(firmware.FirmwareStatusDownloading))
+	err := downloadFile("/tmp/out.bin", location)
+	if err != nil {
+		logDefault(firmware.UpdateFirmwareFeatureName).Errorf("error while downloading file %v", err)
+		scheduleAsyncRequest(fn(firmware.FirmwareStatusDownloadFailed))
+		return
+	}
+	scheduleAsyncRequest(fn(firmware.FirmwareStatusDownloaded))
+	// Simulate installation
+	scheduleAsyncRequest(fn(firmware.FirmwareStatusInstalling))
+	time.Sleep(time.Second * 5)
+	// Notify completion
+	scheduleAsyncRequest(fn(firmware.FirmwareStatusInstalled))
+}
+
+func downloadFile(filepath string, url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }
