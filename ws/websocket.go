@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -56,6 +57,18 @@ type WebSocket struct {
 // Retrieves the unique Identifier of the websocket (typically, the URL suffix).
 func (websocket *WebSocket) GetID() string {
 	return websocket.id
+}
+
+// ConnectionError is a websocket
+type HttpConnectionError struct {
+	Message    string
+	HttpStatus string
+	HttpCode   int
+	Details    string
+}
+
+func (e HttpConnectionError) Error() string {
+	return fmt.Sprintf("%v, http status: %v", e.Message, e.HttpStatus)
 }
 
 // ---------------------- SERVER ----------------------
@@ -244,12 +257,12 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		ok = server.basicAuthHandler(username, password)
 		if !ok {
-			log.Errorf("required basic auth credentials not found")
+			log.Errorf("required basic auth credentials invalid")
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		log.Infof("basic authentication for user %v was successful", username)
+		log.Debugf("basic authentication for user %v was successful", username)
 	}
 	// Upgrade websocket
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -535,11 +548,22 @@ func (client *Client) Start(url string) error {
 	for _, option := range client.dialOptions {
 		option(&dialer)
 	}
-	ws, _, err := dialer.Dial(url, client.authHeader)
+	ws, resp, err := dialer.Dial(url, client.authHeader)
 	if err != nil {
+		if resp != nil {
+			httpError := HttpConnectionError{Message: err.Error(), HttpStatus: resp.Status, HttpCode: resp.StatusCode}
+			// Parse http response details
+			defer resp.Body.Close()
+			body, _ := ioutil.ReadAll(resp.Body)
+			if body != nil {
+				httpError.Details = string(body)
+			}
+			err = httpError
+		}
 		log.Errorf("couldn't connect to server: %v", err)
 		return err
 	}
+
 	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte), closeSignal: make(chan bool, 1)}
 	//Start reader and write routine
 	go client.writePump()
