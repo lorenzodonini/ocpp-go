@@ -1,3 +1,7 @@
+// The package is a wrapper around gorilla websockets,
+// aimed at simplifying the creation and usage of a websocket client/server.
+//
+// Check the Client and Server structure to get started.
 package ws
 
 import (
@@ -17,22 +21,16 @@ import (
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
-
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
-
 	// Time allowed to wait for a ping on the server, before closing a connection due to inactivity.
 	pingWait = pongWait
-
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
-
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
-
 	// Time allowed for the initial handshake to complete.
 	handshakeTimeout = 30 * time.Second
-
 	// Default sub-protocol to send to peer upon connection.
 	defaultSubProtocol = "ocpp1.6"
 )
@@ -64,13 +62,63 @@ func (websocket *WebSocket) GetID() string {
 
 // A Websocket server, which passively listens for incoming connections on ws or wss protocol.
 // The offered API are of asynchronous nature, and each incoming connection/message is handled using callbacks.
+//
+// To create a new ws server, use:
+//	server := NewServer()
+//
+// If you need a TLS ws server instead, use:
+//	server := NewTLSServer("cert.pem", "privateKey.pem")
+//
+// To support client basic authentication, use:
+//	server.SetBasicAuthHandler(func (user, pass) bool {
+//		ok := authenticate(user, pass) // ... check for user and pass correctness
+//		return ok
+//	})
+//
+// To specify supported sub-protocols, use:
+//	server.AddSupportedSubprotocol("ocpp1.6")
+//
+// Using Start and Stop you can respectively start and stop listening for incoming client websocket connections.
+//
+// To be notified of new and terminated connections,
+// refer to SetNewClientHandler and SetDisconnectedClientHandler functions.
+//
+// To receive incoming messages, you will need to set your own handler using SetMessageHandler.
+// To write data on the open socket, simply call the Write function.
 type WsServer interface {
+	// Starts and runs the websocket server on a specific port and URL.
+	// After start, incoming connections and messages are handled automatically, so no explicit read operation is required.
+	//
+	// The functions blocks forever, hence it is suggested to invoke it in a goroutine, if the caller thread needs to perform other work, e.g.:
+	//	go server.Start(8887, "/ws/{id}")
+	//	doStuffOnMainThread()
+	//	...
+	//
+	// To stop a running server, call the Stop function.
 	Start(port int, listenPath string)
+	// Shuts down a running websocket server.
+	// All open channels will be forcefully closed, and the previously called Start function will return.
 	Stop()
+	// Sets a callback function for all incoming messages.
+	// The callbacks accept a Channel and the received data.
+	// It is up to the callback receiver, to check the identifier of the channel, to determine the source of the message.
 	SetMessageHandler(handler func(ws Channel, data []byte) error)
+	// Sets a callback function for all new incoming client connections.
+	// It is recommended to store a reference to the Channel in the received entity, so that the Channel may be recognized later on.
 	SetNewClientHandler(handler func(ws Channel))
+	// Sets a callback function for all client disconnection events.
+	// Once a client is disconnected, it is not possible to read/write on the respective Channel any longer.
 	SetDisconnectedClientHandler(handler func(ws Channel))
+	// Sends a message on a specific Channel, identifier by the webSocketId parameter.
+	// If the passed ID is invalid, an error is returned.
+	//
+	// The data is queued and will be sent asynchronously in the background.
 	Write(webSocketId string, data []byte) error
+	// Adds support for a specified subprotocol.
+	// This is recommended in order to communicate the capabilities to the client during the handshake.
+	// If left empty, any subprotocol will be accepted.
+	//
+	// Duplicates will be removed automatically.
 	AddSupportedSubprotocol(subProto string)
 	// SetBasicAuthHandler enables HTTP Basic Authentication and requires clients to pass credentials.
 	// The handler function is called whenever a new client attempts to connect, to check for credentials correctness.
@@ -80,11 +128,7 @@ type WsServer interface {
 
 // Default implementation of a Websocket server.
 //
-// To create a new ws server, use:
-//	server := NewServer()
-//
-// If you need a TLS ws server instead, use:
-//	server := NewTLSServer("cert.pem", "privateKey.pem")
+// Use the NewServer or NewTLSServer functions to create a new server.
 type Server struct {
 	connections         map[string]*WebSocket
 	httpServer          *http.Server
@@ -106,29 +150,18 @@ func NewTLSServer(certificatePath string, certificateKey string) *Server {
 	return &Server{tlsCertificatePath: certificatePath, tlsCertificateKey: certificateKey}
 }
 
-// Sets a callback function for all incoming messages.
-// The callbacks accepts a Channel and the received data.
-// It is up to the callback receiver, to check the identifier of the channel, to determine the source of the message.
 func (server *Server) SetMessageHandler(handler func(ws Channel, data []byte) error) {
 	server.messageHandler = handler
 }
 
-// Sets a callback function for all new incoming client connections.
-// It is recommended to store a reference to the Channel in the received entity, so that the Channel may be recognized later on.
 func (server *Server) SetNewClientHandler(handler func(ws Channel)) {
 	server.newClientHandler = handler
 }
 
-// Sets a callback function for all client disconnection events.
-// Once a client is disconnected, it is not possible to read/write on the respective Channel any longer.
 func (server *Server) SetDisconnectedClientHandler(handler func(ws Channel)) {
 	server.disconnectedHandler = handler
 }
 
-// Adds support for a specified subprotocol.
-// This is recommended in order to communicate the capabilities to the client during the handshake.
-// If left empty, any subprotocol will be accepted.
-// Duplicates will be removed automatically.
 func (server *Server) AddSupportedSubprotocol(subProto string) {
 	for _, sub := range upgrader.Subprotocols {
 		if sub == subProto {
@@ -143,15 +176,6 @@ func (server *Server) SetBasicAuthHandler(handler func(username string, password
 	server.basicAuthHandler = handler
 }
 
-// Starts and runs the websocket server on a specific port and URL.
-// After start, incoming connections and messages are handled automatically, so no explicit read operation is required.
-//
-// The functions blocks forever, hence it is suggested to invoke it in a goroutine, if the caller thread needs to perform other work, e.g.:
-//	go server.Start(8887, "/ws/{id}")
-//	doStuffOnMainThread()
-//	...
-//
-// To stop a running server, call the Stop function.
 func (server *Server) Start(port int, listenPath string) {
 	router := mux.NewRouter()
 	router.HandleFunc(listenPath, func(w http.ResponseWriter, r *http.Request) {
@@ -171,8 +195,6 @@ func (server *Server) Start(port int, listenPath string) {
 	}
 }
 
-// Shuts down a running websocket server.
-// All open channels will be forcefully closed, and the previously called Start function will return.
 func (server *Server) Stop() {
 	err := server.httpServer.Shutdown(context.TODO())
 	if err != nil {
@@ -180,10 +202,6 @@ func (server *Server) Stop() {
 	}
 }
 
-// Sends a message on a specific Channel, identifier by the webSocketId parameter.
-// If the passed ID is invalid, an error is returned.
-//
-// The data is queued and will be sent asynchronously in the background.
 func (server *Server) Write(webSocketId string, data []byte) error {
 	ws, ok := server.connections[webSocketId]
 	if !ok {
@@ -332,15 +350,6 @@ func (server *Server) writePump(ws *WebSocket) {
 
 // A Websocket client, needed to connect to a websocket server.
 // The offered API are of asynchronous nature, and each incoming message is handled using callbacks.
-type WsClient interface {
-	Start(url string) error
-	Stop()
-	SetMessageHandler(handler func(data []byte) error)
-	Write(data []byte) error
-	AddOption(option interface{})
-}
-
-// Default implementation of a Websocket client.
 //
 // To create a new ws client, use:
 //	client := NewClient()
@@ -354,6 +363,49 @@ type WsClient interface {
 //	client := NewTLSClient(&tls.Config{
 //		RootCAs: certPool,
 //	})
+//
+// To add additional dial options, use:
+//	client.AddOption(func(*websocket.Dialer) {
+//		// Your option ...
+//	)}
+//
+// To add basic HTTP authentication, use:
+//	client.SetBasicAuth("username","password")
+//
+// Using Start and Stop you can respectively open/close a websocket to a websocket server.
+//
+// To receive incoming messages, you will need to set your own handler using SetMessageHandler.
+// To write data on the open socket, simply call the Write function.
+type WsClient interface {
+	// Starts the client and attempts to connect to the server on a specified URL.
+	// If the connection fails, an error is returned.
+	//
+	// For example:
+	//	err := client.Start("ws://localhost:8887/ws/1234")
+	//
+	// The function returns immediately, after the connection has been established.
+	// Incoming messages are passed automatically to the callback function, so no explicit read operation is required.
+	//
+	// To stop a running client, call the Stop function.
+	Start(url string) error
+	// Closes the output of the websocket Channel, effectively closing the connection to the server with a normal closure.
+	Stop()
+	// Sets a callback function for all incoming messages.
+	SetMessageHandler(handler func(data []byte) error)
+	// Sends a message to the server over the websocket.
+	//
+	// The data is queued and will be sent asynchronously in the background.
+	Write(data []byte) error
+	// Adds a websocket option to the client.
+	AddOption(option interface{})
+	// SetBasicAuth adds basic authentication credentials, to use when connecting to the server.
+	// The credentials are automatically encoded in base64.
+	SetBasicAuth(username string, password string)
+}
+
+// Client is the the default implementation of a Websocket client.
+//
+// Use the NewClient or NewTLSClient functions to create a new client.
 type Client struct {
 	webSocket      WebSocket
 	messageHandler func(data []byte) error
@@ -362,13 +414,17 @@ type Client struct {
 }
 
 // Creates a new simple websocket client (the channel is not secured).
+//
 // Additional options may be added using the AddOption function.
+// Basic authentication can be set using the SetBasicAuth function.
 func NewClient() *Client {
 	return &Client{dialOptions: []func(*websocket.Dialer){}}
 }
 
 // Creates a new secure websocket client. If supported by the server, the websocket channel will use TLS.
-// Additional options may be passed.
+//
+// Additional options may be added using the AddOption function.
+// Basic authentication can be set using the SetBasicAuth function.
 func NewTLSClient(tlsConfig *tls.Config) *Client {
 	cli := &Client{dialOptions: []func(*websocket.Dialer){}}
 	cli.dialOptions = append(cli.dialOptions, func(dialer *websocket.Dialer) {
@@ -377,12 +433,10 @@ func NewTLSClient(tlsConfig *tls.Config) *Client {
 	return cli
 }
 
-// Sets a callback function for all incoming messages.
 func (client *Client) SetMessageHandler(handler func(data []byte) error) {
 	client.messageHandler = handler
 }
 
-// Adds a websocket option to the
 func (client *Client) AddOption(option interface{}) {
 	dialOption, ok := option.(func(*websocket.Dialer))
 	if ok {
@@ -466,24 +520,11 @@ func (client *Client) readPump() {
 	}
 }
 
-// Sends a message to the server over the websocket.
-//
-// The data is queued and will be sent asynchronously in the background.
 func (client *Client) Write(data []byte) error {
 	client.webSocket.outQueue <- data
 	return nil
 }
 
-// Starts the client and attempts to connect to the server on a sepcified URL.
-// If the connection fails, an error is returned.
-//
-// For example:
-//	err := client.Start("ws://localhost:8887/ws/1234")
-//
-// The function returns immediately, after the connection has been established.
-// Incoming messages are passed automatically to the callback function, so no explicit read operation is required.
-//
-// To stop a running client, call the Stop function.
 func (client *Client) Start(url string) error {
 	dialer := websocket.Dialer{
 		ReadBufferSize:   1024,
@@ -506,7 +547,6 @@ func (client *Client) Start(url string) error {
 	return nil
 }
 
-// Closes the output of the websocket Channel, effectively closing the connection to the server with a normal closure.
 func (client *Client) Stop() {
 	close(client.webSocket.outQueue)
 }
