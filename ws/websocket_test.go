@@ -10,8 +10,10 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"math/big"
+	"net/http"
 	"net/url"
 	"os"
 	"testing"
@@ -226,6 +228,109 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 	assert.Nil(t, err)
 	result := <-disconnected
 	assert.True(t, result)
+	// Cleanup
+	wsServer.Stop()
+}
+
+func TestValidBasicAuth(t *testing.T) {
+	authUsername := "testUsername"
+	authPassword := "testPassword"
+	var wsServer *Server
+	// Create self-signed TLS certificate
+	certFilename := "/tmp/cert.pem"
+	keyFilename := "/tmp/key.pem"
+	err := createTLSCertificate(certFilename, keyFilename)
+	require.Nil(t, err)
+	defer os.Remove(certFilename)
+	defer os.Remove(keyFilename)
+
+	// Create TLS server with self-signed certificate
+	wsServer = NewTLSServer(certFilename, keyFilename)
+	// Add basic auth handler
+	wsServer.SetBasicAuthHandler(func(username string, password string) bool {
+		require.Equal(t, authUsername, username)
+		require.Equal(t, authPassword, password)
+		return true
+	})
+	connected := make(chan bool)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		connected <- true
+	})
+	// Run server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
+
+	// Create TLS client
+	certPool := x509.NewCertPool()
+	data, err := ioutil.ReadFile(certFilename)
+	require.Nil(t, err)
+	ok := certPool.AppendCertsFromPEM(data)
+	require.True(t, ok)
+	wsClient := NewTLSClient(&tls.Config{
+		RootCAs: certPool,
+	})
+	// Add basic auth
+	wsClient.SetBasicAuth(authUsername, authPassword)
+	// Test connection
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
+	err = wsClient.Start(u.String())
+	require.Nil(t, err)
+	result := <-connected
+	assert.True(t, result)
+	// Cleanup
+	wsClient.Stop()
+	wsServer.Stop()
+}
+
+func TestInvalidBasicAuth(t *testing.T) {
+	authUsername := "testUsername"
+	authPassword := "testPassword"
+	var wsServer *Server
+	// Create self-signed TLS certificate
+	certFilename := "/tmp/cert.pem"
+	keyFilename := "/tmp/key.pem"
+	err := createTLSCertificate(certFilename, keyFilename)
+	require.Nil(t, err)
+	defer os.Remove(certFilename)
+	defer os.Remove(keyFilename)
+
+	// Create TLS server with self-signed certificate
+	wsServer = NewTLSServer(certFilename, keyFilename)
+	// Add basic auth handler
+	wsServer.SetBasicAuthHandler(func(username string, password string) bool {
+		validCredentials := authUsername == username && authPassword == password
+		require.False(t, validCredentials)
+		return validCredentials
+	})
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		// Should never reach this
+		t.Fail()
+	})
+	// Run server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
+
+	// Create TLS client
+	certPool := x509.NewCertPool()
+	data, err := ioutil.ReadFile(certFilename)
+	require.Nil(t, err)
+	ok := certPool.AppendCertsFromPEM(data)
+	require.True(t, ok)
+	wsClient := NewTLSClient(&tls.Config{
+		RootCAs: certPool,
+	})
+	// Add basic auth
+	wsClient.SetBasicAuth(authUsername, "invalidPassword")
+	// Test connection
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
+	err = wsClient.Start(u.String())
+	assert.NotNil(t, err)
+	httpError, ok := err.(HttpConnectionError)
+	require.True(t, ok)
+	require.NotNil(t, httpError)
+	assert.Equal(t, http.StatusUnauthorized, httpError.HttpCode)
 	// Cleanup
 	wsServer.Stop()
 }
