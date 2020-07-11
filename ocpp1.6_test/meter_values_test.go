@@ -6,13 +6,14 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"time"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestMeterValuesRequestValidation() {
 	var requestTable = []GenericTestEntry{
-		{core.MeterValuesRequest{ConnectorId: 1, TransactionId: 1, MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}}, true},
+		{core.MeterValuesRequest{ConnectorId: 1, TransactionId: newInt(1), MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}}, true},
 		{core.MeterValuesRequest{ConnectorId: 1, MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}}, true},
 		{core.MeterValuesRequest{MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}}, true},
 		{core.MeterValuesRequest{ConnectorId: -1, MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}}, false},
@@ -47,12 +48,14 @@ func (suite *OcppV16TestSuite) TestMeterValuesE2EMocked() {
 
 	coreListener := MockCentralSystemCoreListener{}
 	coreListener.On("OnMeterValues", mock.AnythingOfType("string"), mock.Anything).Return(meterValuesConfirmation, nil).Run(func(args mock.Arguments) {
-		request := args.Get(1).(*core.MeterValuesRequest)
+		request, ok := args.Get(1).(*core.MeterValuesRequest)
+		require.NotNil(t, request)
+		require.True(t, ok)
 		assert.Equal(t, connectorId, request.ConnectorId)
-		assert.Equal(t, 1, len(request.MeterValue))
+		require.Equal(t, 1, len(request.MeterValue))
 		mv := request.MeterValue[0]
 		assertDateTimeEquality(t, timestamp, *mv.Timestamp)
-		assert.Equal(t, 1, len(mv.SampledValue))
+		require.Equal(t, 1, len(mv.SampledValue))
 		sv := mv.SampledValue[0]
 		assert.Equal(t, mockValue, sv.Value)
 		assert.Equal(t, mockUnit, sv.Unit)
@@ -62,10 +65,10 @@ func (suite *OcppV16TestSuite) TestMeterValuesE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	confirmation, err := suite.chargePoint.MeterValues(connectorId, meterValues)
-	assert.Nil(t, err)
-	assert.NotNil(t, confirmation)
+	require.Nil(t, err)
+	require.NotNil(t, confirmation)
 }
 
 func (suite *OcppV16TestSuite) TestMeterValuesInvalidEndpoint() {

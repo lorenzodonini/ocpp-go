@@ -49,11 +49,12 @@ type AuthorizationData struct {
 
 // The field definition of the SendLocalList request payload sent by the Central System to the Charge Point.
 // If no (empty) localAuthorizationList is given and the updateType is Full, all identifications are removed from the list.
+//
 // Requesting a Differential update without (empty) localAuthorizationList will have no effect on the list.
 // All idTags in the localAuthorizationList MUST be unique, no duplicate values are allowed.
 type SendLocalListRequest struct {
-	ListVersion            int                 `json:"listVersion" validate:"gt=-1"`
-	LocalAuthorizationList []AuthorizationData `json:"localAuthorizationList" validate:"dive"`
+	ListVersion            int                 `json:"listVersion" validate:"gte=0"`
+	LocalAuthorizationList []AuthorizationData `json:"localAuthorizationList,omitempty" validate:"omitempty,dive"`
 	UpdateType             UpdateType          `json:"updateType" validate:"required,updateType"`
 }
 

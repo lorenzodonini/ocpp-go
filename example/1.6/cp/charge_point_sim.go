@@ -36,14 +36,15 @@ func setupTlsChargePoint(chargePointID string) ocpp16.ChargePoint {
 	}
 	// Load CA cert
 	caPath, ok := os.LookupEnv(envVarCACertificate)
-	if !ok {
-		log.Fatalf("no required %v found", envVarCACertificate)
-	}
-	caCert, err := ioutil.ReadFile(caPath)
-	if err != nil {
-		log.Warn(err)
-	} else if !certPool.AppendCertsFromPEM(caCert) {
-		log.Warn("no ca.cert file found, will use system CA certificates")
+	if ok {
+		caCert, err := ioutil.ReadFile(caPath)
+		if err != nil {
+			log.Warn(err)
+		} else if !certPool.AppendCertsFromPEM(caCert) {
+			log.Info("no ca.cert file found, will use system CA certificates")
+		}
+	} else {
+		log.Info("no ca.cert file found, will use system CA certificates")
 	}
 	// Load client certificate
 	clientCertPath, ok1 := os.LookupEnv(envVarClientCertificate)
@@ -59,7 +60,7 @@ func setupTlsChargePoint(chargePointID string) ocpp16.ChargePoint {
 	}
 	// Create client with TLS config
 	client := ws.NewTLSClient(&tls.Config{
-		RootCAs: certPool,
+		RootCAs:      certPool,
 		Certificates: clientCertificates,
 	})
 	return ocpp16.NewChargePoint(chargePointID, nil, client)
@@ -145,6 +146,8 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 	logDefault(stopConf.GetFeatureName()).Infof("transaction %v stopped", startConf.TransactionId)
 	// Update connector status
 	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusAvailable)
+	// Wait for some time ...
+	wait(5 * time.Minute)
 }
 
 // Start function

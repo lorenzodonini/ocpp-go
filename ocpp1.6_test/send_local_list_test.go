@@ -6,6 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"time"
 )
 
@@ -67,32 +68,38 @@ func (suite *OcppV16TestSuite) TestSendLocalListE2EMocked() {
 	channel := NewMockWebSocket(wsId)
 
 	localAuthListListener := MockChargePointLocalAuthListListener{}
-	localAuthListListener.On("OnSendLocalList", mock.Anything).Return(sendLocalListConfirmation, nil)
+	localAuthListListener.On("OnSendLocalList", mock.Anything).Return(sendLocalListConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(0).(*localauth.SendLocalListRequest)
+		require.NotNil(t, request)
+		require.True(t, ok)
+		assert.Equal(t, listVersion, request.ListVersion)
+		assert.Equal(t, updateType, request.UpdateType)
+		require.Len(t, request.LocalAuthorizationList, 1)
+		assert.Equal(t, localAuthEntry.IdTag, request.LocalAuthorizationList[0].IdTag)
+		require.NotNil(t, request.LocalAuthorizationList[0].IdTagInfo)
+		assert.Equal(t, localAuthEntry.IdTagInfo.Status, request.LocalAuthorizationList[0].IdTagInfo.Status)
+		assert.Equal(t, localAuthEntry.IdTagInfo.ParentIdTag, request.LocalAuthorizationList[0].IdTagInfo.ParentIdTag)
+		assertDateTimeEquality(t, *localAuthEntry.IdTagInfo.ExpiryDate, *request.LocalAuthorizationList[0].IdTagInfo.ExpiryDate)
+	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	suite.chargePoint.SetLocalAuthListHandler(localAuthListListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.SendLocalList(wsId, func(confirmation *localauth.SendLocalListConfirmation, err error) {
-		assert.Nil(t, err)
-		assert.NotNil(t, confirmation)
-		if confirmation != nil {
-			assert.Equal(t, status, confirmation.Status)
-			resultChannel <- true
-		} else {
-			resultChannel <- false
-		}
+		require.Nil(t, err)
+		require.NotNil(t, confirmation)
+		assert.Equal(t, status, confirmation.Status)
+		resultChannel <- true
 	}, listVersion, updateType, func(request *localauth.SendLocalListRequest) {
 		request.LocalAuthorizationList = []localauth.AuthorizationData{localAuthEntry}
 	})
-	assert.Nil(t, err)
-	if err == nil {
-		result := <-resultChannel
-		assert.True(t, result)
-	}
+	require.Nil(t, err)
+	result := <-resultChannel
+	assert.True(t, result)
 }
 
 func (suite *OcppV16TestSuite) TestSendLocalListInvalidEndpoint() {

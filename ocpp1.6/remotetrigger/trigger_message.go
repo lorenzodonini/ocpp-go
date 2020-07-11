@@ -47,7 +47,7 @@ func isValidMessageTrigger(fl validator.FieldLevel) bool {
 // The field definition of the TriggerMessage request payload sent by the Central System to the Charge Point.
 type TriggerMessageRequest struct {
 	RequestedMessage MessageTrigger `json:"requestedMessage" validate:"required,messageTrigger"`
-	ConnectorId      int            `json:"connectorId,omitempty" validate:"omitempty,gt=0"`
+	ConnectorId      *int           `json:"connectorId,omitempty" validate:"omitempty,gt=0"`
 }
 
 // This field definition of the TriggerMessage confirmation payload, sent by the Charge Point to the Central System in response to a TriggerMessageRequest.

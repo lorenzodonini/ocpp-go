@@ -5,6 +5,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // Test
@@ -40,7 +41,8 @@ func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	firmwareListener := MockCentralSystemFirmwareManagementListener{}
 	firmwareListener.On("OnFirmwareStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(firmwareStatusNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*firmware.FirmwareStatusNotificationRequest)
-		assert.True(t, ok)
+		require.True(t, ok)
+		require.NotNil(t, request)
 		assert.Equal(t, status, request.Status)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
@@ -49,10 +51,10 @@ func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	confirmation, err := suite.chargePoint.FirmwareStatusNotification(status)
-	assert.Nil(t, err)
-	assert.NotNil(t, confirmation)
+	require.Nil(t, err)
+	require.NotNil(t, confirmation)
 }
 
 func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationInvalidEndpoint() {

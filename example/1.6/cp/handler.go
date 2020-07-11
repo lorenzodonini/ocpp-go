@@ -11,6 +11,10 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	log "github.com/sirupsen/logrus"
+	"io"
+	"net/http"
+	"os"
+	"time"
 )
 
 // ConnectorInfo contains some simple state about a single connector.
@@ -45,17 +49,29 @@ func (handler *ChargePointHandler) isValidConnectorID(ID int) bool {
 // ------------- Core profile callbacks -------------
 
 func (handler *ChargePointHandler) OnChangeAvailability(request *core.ChangeAvailabilityRequest) (confirmation *core.ChangeAvailabilityConfirmation, err error) {
+	if _, ok := handler.connectors[request.ConnectorId]; !ok {
+		logDefault(request.GetFeatureName()).Errorf("cannot change availability for invalid connector %v", request.ConnectorId)
+		return core.NewChangeAvailabilityConfirmation(core.AvailabilityStatusRejected), nil
+	}
 	handler.connectors[request.ConnectorId].availability = request.Type
+	if request.Type == core.AvailabilityTypeInoperative {
+		// TODO: stop ongoing transactions
+		handler.connectors[request.ConnectorId].status = core.ChargePointStatusUnavailable
+	} else {
+		handler.connectors[request.ConnectorId].status = core.ChargePointStatusAvailable
+	}
+	logDefault(request.GetFeatureName()).Infof("change availability for connector %v", request.ConnectorId)
+	go updateStatus(handler, request.ConnectorId, handler.connectors[request.ConnectorId].status)
 	return core.NewChangeAvailabilityConfirmation(core.AvailabilityStatusAccepted), nil
 }
 
 func (handler *ChargePointHandler) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
 	configKey, ok := handler.configuration[request.Key]
 	if !ok {
-		logDefault(request.GetFeatureName()).Infof("couldn't change configuration for unsupported parameter %v", configKey.Key)
+		logDefault(request.GetFeatureName()).Errorf("couldn't change configuration for unsupported parameter %v", configKey.Key)
 		return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusNotSupported), nil
 	} else if configKey.Readonly {
-		logDefault(request.GetFeatureName()).Infof("couldn't change configuration for readonly parameter %v", configKey.Key)
+		logDefault(request.GetFeatureName()).Errorf("couldn't change configuration for readonly parameter %v", configKey.Key)
 		return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusRejected), nil
 	}
 	configKey.Value = request.Value
@@ -65,6 +81,7 @@ func (handler *ChargePointHandler) OnChangeConfiguration(request *core.ChangeCon
 }
 
 func (handler *ChargePointHandler) OnClearCache(request *core.ClearCacheRequest) (confirmation *core.ClearCacheConfirmation, err error) {
+	logDefault(request.GetFeatureName()).Infof("cleared mocked cache")
 	return core.NewClearCacheConfirmation(core.ClearCacheStatusAccepted), nil
 }
 
@@ -84,21 +101,32 @@ func (handler *ChargePointHandler) OnGetConfiguration(request *core.GetConfigura
 			resultKeys = append(resultKeys, configKey)
 		}
 	}
+	if len(request.Key) == 0 {
+		// Return config for all keys
+		for _, v := range handler.configuration {
+			resultKeys = append(resultKeys, v)
+		}
+	}
+	logDefault(request.GetFeatureName()).Infof("returning configuration for requested keys: %v", request.Key)
 	conf := core.NewGetConfigurationConfirmation(resultKeys)
 	conf.UnknownKey = unknownKeys
 	return conf, nil
 }
 
 func (handler *ChargePointHandler) OnRemoteStartTransaction(request *core.RemoteStartTransactionRequest) (confirmation *core.RemoteStartTransactionConfirmation, err error) {
-	connector, ok := handler.connectors[request.ConnectorId]
-	if !ok {
-		return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
-	} else if connector.availability != core.AvailabilityTypeOperative || connector.status != core.ChargePointStatusAvailable || connector.currentTransaction > 0 {
-		return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
+	if request.ConnectorId != nil {
+		connector, ok := handler.connectors[*request.ConnectorId]
+		if !ok {
+			return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
+		} else if connector.availability != core.AvailabilityTypeOperative || connector.status != core.ChargePointStatusAvailable || connector.currentTransaction > 0 {
+			return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
+		}
+		logDefault(request.GetFeatureName()).Infof("started transaction %v on connector %v", connector.currentTransaction, request.ConnectorId)
+		connector.currentTransaction = *request.ConnectorId
+		return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusAccepted), nil
 	}
-	logDefault(request.GetFeatureName()).Infof("started transaction %v on connector %v", connector.currentTransaction, request.ConnectorId)
-	connector.currentTransaction = request.ConnectorId
-	return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusAccepted), nil
+	logDefault(request.GetFeatureName()).Errorf("couldn't start a transaction for %v without a connectorID", request.IdTag)
+	return core.NewRemoteStartTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
 }
 
 func (handler *ChargePointHandler) OnRemoteStopTransaction(request *core.RemoteStopTransactionRequest) (confirmation *core.RemoteStopTransactionConfirmation, err error) {
@@ -111,19 +139,23 @@ func (handler *ChargePointHandler) OnRemoteStopTransaction(request *core.RemoteS
 			return core.NewRemoteStopTransactionConfirmation(types.RemoteStartStopStatusAccepted), nil
 		}
 	}
+	logDefault(request.GetFeatureName()).Errorf("couldn't stop transaction %v, no such transaction is ongoing", request.TransactionId)
 	return core.NewRemoteStopTransactionConfirmation(types.RemoteStartStopStatusRejected), nil
 }
 
 func (handler *ChargePointHandler) OnReset(request *core.ResetRequest) (confirmation *core.ResetConfirmation, err error) {
 	//TODO: stop all ongoing transactions
+	logDefault(request.GetFeatureName()).Warn("no reset logic implemented yet")
 	return core.NewResetConfirmation(core.ResetStatusAccepted), nil
 }
 
 func (handler *ChargePointHandler) OnUnlockConnector(request *core.UnlockConnectorRequest) (confirmation *core.UnlockConnectorConfirmation, err error) {
 	_, ok := handler.connectors[request.ConnectorId]
 	if !ok {
+		logDefault(request.GetFeatureName()).Errorf("couldn't unlock invalid connector %v", request.ConnectorId)
 		return core.NewUnlockConnectorConfirmation(core.UnlockStatusNotSupported), nil
 	}
+	logDefault(request.GetFeatureName()).Infof("unlocked connector %v", request.ConnectorId)
 	return core.NewUnlockConnectorConfirmation(core.UnlockStatusUnlocked), nil
 }
 
@@ -136,6 +168,7 @@ func (handler *ChargePointHandler) OnGetLocalListVersion(request *localauth.GetL
 
 func (handler *ChargePointHandler) OnSendLocalList(request *localauth.SendLocalListRequest) (confirmation *localauth.SendLocalListConfirmation, err error) {
 	if request.ListVersion <= handler.localAuthListVersion {
+		logDefault(request.GetFeatureName()).Errorf("requested listVersion %v is lower/equal than the current list version %v", request.ListVersion, handler.localAuthListVersion)
 		return localauth.NewSendLocalListConfirmation(localauth.UpdateStatusVersionMismatch), nil
 	}
 	if request.UpdateType == localauth.UpdateTypeFull {
@@ -145,19 +178,30 @@ func (handler *ChargePointHandler) OnSendLocalList(request *localauth.SendLocalL
 		handler.localAuthList = append(handler.localAuthList, request.LocalAuthorizationList...)
 		handler.localAuthListVersion = request.ListVersion
 	}
+	logDefault(request.GetFeatureName()).Errorf("accepted new local authorization list %v, %v", request.ListVersion, request.UpdateType)
 	return localauth.NewSendLocalListConfirmation(localauth.UpdateStatusAccepted), nil
 }
 
 // ------------- Firmware management profile callbacks -------------
 
 func (handler *ChargePointHandler) OnGetDiagnostics(request *firmware.GetDiagnosticsRequest) (confirmation *firmware.GetDiagnosticsConfirmation, err error) {
-	return firmware.NewGetDiagnosticsConfirmation(), nil
 	//TODO: perform diagnostics upload out-of-band
+	logDefault(request.GetFeatureName()).Warn("no diagnostics upload logic implemented yet")
+	return firmware.NewGetDiagnosticsConfirmation(), nil
 }
 
 func (handler *ChargePointHandler) OnUpdateFirmware(request *firmware.UpdateFirmwareRequest) (confirmation *firmware.UpdateFirmwareConfirmation, err error) {
+	retries := 0
+	retryInterval := 30
+	if request.Retries != nil {
+		retries = *request.Retries
+	}
+	if request.RetryInterval != nil {
+		retryInterval = *request.RetryInterval
+	}
+	logDefault(request.GetFeatureName()).Infof("starting update firmware procedure")
+	go updateFirmware(request.Location, request.RetrieveDate, retries, retryInterval)
 	return firmware.NewUpdateFirmwareConfirmation(), nil
-	//TODO: download new firmware out-of-band
 }
 
 // ------------- Remote trigger profile callbacks -------------
@@ -194,16 +238,16 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 		//TODO: schedule meter values message
 		break
 	case core.StatusNotificationFeatureName:
-		connectorID := request.ConnectorId
+		connectorID := *request.ConnectorId
 		// Check if requested connector is valid and status can be retrieved
 		if !handler.isValidConnectorID(connectorID) {
-			logDefault(request.GetFeatureName()).Errorf("cannot trigger %v: requested invalid connector %v", request.RequestedMessage, request.ConnectorId)
+			logDefault(request.GetFeatureName()).Errorf("cannot trigger %v: requested invalid connector %v", request.RequestedMessage, connectorID)
 			return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusRejected), nil
 		}
 		// Schedule status notification request
 		fn := func() {
 			status := handler.status
-			if c, ok := handler.connectors[request.ConnectorId]; ok {
+			if c, ok := handler.connectors[connectorID]; ok {
 				status = c.status
 			}
 			statusConfirmation, err := chargePoint.StatusNotification(connectorID, handler.errorCode, status)
@@ -253,16 +297,19 @@ func (handler *ChargePointHandler) OnCancelReservation(request *reservation.Canc
 
 func (handler *ChargePointHandler) OnSetChargingProfile(request *smartcharging.SetChargingProfileRequest) (confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
 	//TODO: handle logic
+	logDefault(request.GetFeatureName()).Warn("no set charging profile logic implemented yet")
 	return smartcharging.NewSetChargingProfileConfirmation(smartcharging.ChargingProfileStatusNotImplemented), nil
 }
 
 func (handler *ChargePointHandler) OnClearChargingProfile(request *smartcharging.ClearChargingProfileRequest) (confirmation *smartcharging.ClearChargingProfileConfirmation, err error) {
 	//TODO: handle logic
+	logDefault(request.GetFeatureName()).Warn("no clear charging profile logic implemented yet")
 	return smartcharging.NewClearChargingProfileConfirmation(smartcharging.ClearChargingProfileStatusUnknown), nil
 }
 
 func (handler *ChargePointHandler) OnGetCompositeSchedule(request *smartcharging.GetCompositeScheduleRequest) (confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
 	//TODO: handle logic
+	logDefault(request.GetFeatureName()).Warn("no get composite schedule logic implemented yet")
 	return smartcharging.NewGetCompositeScheduleConfirmation(smartcharging.GetCompositeScheduleStatusRejected), nil
 }
 
@@ -292,4 +339,48 @@ func updateStatus(stateHandler *ChargePointHandler, connector int, status core.C
 	} else {
 		logDefault(statusConfirmation.GetFeatureName()).Infof("status for connector %v updated to %v", connector, status)
 	}
+}
+
+func updateFirmwareStatus(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) {
+	statusConfirmation, err := chargePoint.FirmwareStatusNotification(status, props...)
+	checkError(err)
+	logDefault(statusConfirmation.GetFeatureName()).Infof("firmware status updated to %v", status)
+}
+
+func updateFirmware(location string, retrieveDate *types.DateTime, retries int, retryInterval int) {
+	fn := func(status firmware.FirmwareStatus) func() {
+		return func() {
+			updateFirmwareStatus(status)
+		}
+	}
+	scheduleAsyncRequest(fn(firmware.FirmwareStatusDownloading))
+	err := downloadFile("/tmp/out.bin", location)
+	if err != nil {
+		logDefault(firmware.UpdateFirmwareFeatureName).Errorf("error while downloading file %v", err)
+		scheduleAsyncRequest(fn(firmware.FirmwareStatusDownloadFailed))
+		return
+	}
+	scheduleAsyncRequest(fn(firmware.FirmwareStatusDownloaded))
+	// Simulate installation
+	scheduleAsyncRequest(fn(firmware.FirmwareStatusInstalling))
+	time.Sleep(time.Second * 5)
+	// Notify completion
+	scheduleAsyncRequest(fn(firmware.FirmwareStatusInstalled))
+}
+
+func downloadFile(filepath string, url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"time"
 )
 
@@ -65,16 +66,17 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 
 	coreListener := MockCentralSystemCoreListener{}
 	coreListener.On("OnStopTransaction", mock.AnythingOfType("string"), mock.Anything).Return(stopTransactionConfirmation, nil).Run(func(args mock.Arguments) {
-		request := args.Get(1).(*core.StopTransactionRequest)
+		request, ok := args.Get(1).(*core.StopTransactionRequest)
+		require.True(t, ok)
+		require.NotNil(t, request)
 		assert.Equal(t, meterStop, request.MeterStop)
 		assert.Equal(t, transactionId, request.TransactionId)
 		assert.Equal(t, idTag, request.IdTag)
 		assertDateTimeEquality(t, *timestamp, *request.Timestamp)
-		assert.Equal(t, 1, len(request.TransactionData))
-		mv := request.TransactionData[0]
-		assertDateTimeEquality(t, *timestamp, *mv.Timestamp)
-		assert.Equal(t, 1, len(mv.SampledValue))
-		sv := mv.SampledValue[0]
+		require.Len(t, request.TransactionData, 1)
+		assertDateTimeEquality(t, *timestamp, *request.TransactionData[0].Timestamp)
+		require.Len(t, request.TransactionData[0].SampledValue, 1)
+		sv := request.TransactionData[0].SampledValue[0]
 		assert.Equal(t, mockValue, sv.Value)
 		assert.Equal(t, mockUnit, sv.Unit)
 	})
@@ -83,13 +85,13 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	confirmation, err := suite.chargePoint.StopTransaction(meterStop, timestamp, transactionId, func(request *core.StopTransactionRequest) {
 		request.IdTag = idTag
 		request.TransactionData = meterValues
 	})
-	assert.Nil(t, err)
-	assert.NotNil(t, confirmation)
+	require.Nil(t, err)
+	require.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.IdTagInfo.Status)
 	assert.Equal(t, parentIdTag, confirmation.IdTagInfo.ParentIdTag)
 	assertDateTimeEquality(t, *expiryDate, *confirmation.IdTagInfo.ExpiryDate)

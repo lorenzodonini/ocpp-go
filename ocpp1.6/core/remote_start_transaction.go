@@ -11,7 +11,7 @@ const RemoteStartTransactionFeatureName = "RemoteStartTransaction"
 
 // The field definition of the RemoteStartTransaction request payload sent by the Central System to the Charge Point.
 type RemoteStartTransactionRequest struct {
-	ConnectorId     int                    `json:"connectorId,omitempty" validate:"omitempty,gt=0"`
+	ConnectorId     *int                   `json:"connectorId,omitempty" validate:"omitempty,gt=0"`
 	IdTag           string                 `json:"idTag" validate:"required,max=20"`
 	ChargingProfile *types.ChargingProfile `json:"chargingProfile,omitempty"`
 }

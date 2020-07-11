@@ -12,8 +12,8 @@ const GetDiagnosticsFeatureName = "GetDiagnostics"
 // The field definition of the GetDiagnostics request payload sent by the Central System to the Charge Point.
 type GetDiagnosticsRequest struct {
 	Location      string          `json:"location" validate:"required,uri"`
-	Retries       int             `json:"retries" validate:"gte=0"`       //TODO: pointer?
-	RetryInterval int             `json:"retryInterval" validate:"gte=0"` //TODO: pointer?
+	Retries       *int            `json:"retries,omitempty" validate:"omitempty,gte=0"`
+	RetryInterval *int            `json:"retryInterval,omitempty" validate:"omitempty,gte=0"`
 	StartTime     *types.DateTime `json:"startTime,omitempty"`
 	EndTime       *types.DateTime `json:"endTime,omitempty"`
 }

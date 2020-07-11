@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+// Utility functions
+func newInt(i int) *int {
+	return &i
+}
+
+func newFloat(f float64) *float64 {
+	return &f
+}
+
 // Test
 func (suite *OcppV16TestSuite) TestIdTagInfoValidation() {
 	var testTable = []GenericTestEntry{
@@ -25,13 +34,13 @@ func (suite *OcppV16TestSuite) TestIdTagInfoValidation() {
 func (suite *OcppV16TestSuite) TestChargingSchedulePeriodValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: 3}, true},
+		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(3)}, true},
 		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0}, true},
 		{types.ChargingSchedulePeriod{StartPeriod: 0}, true},
 		{types.ChargingSchedulePeriod{}, true},
 		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: -1.0}, false},
 		{types.ChargingSchedulePeriod{StartPeriod: -1, Limit: 10.0}, false},
-		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: -1}, false},
+		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(-1)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -42,15 +51,15 @@ func (suite *OcppV16TestSuite) TestChargingScheduleValidation() {
 	chargingSchedulePeriods[0] = types.NewChargingSchedulePeriod(0, 10.0)
 	chargingSchedulePeriods[1] = types.NewChargingSchedulePeriod(100, 8.0)
 	var testTable = []GenericTestEntry{
-		{types.ChargingSchedule{Duration: 0, StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: 1.0}, true},
-		{types.ChargingSchedule{Duration: 0, ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: 1.0}, true},
-		{types.ChargingSchedule{Duration: 0, ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods}, true},
-		{types.ChargingSchedule{Duration: 0, ChargingRateUnit: types.ChargingRateUnitWatts}, false},
-		{types.ChargingSchedule{Duration: 0, ChargingSchedulePeriod: chargingSchedulePeriods}, false},
-		{types.ChargingSchedule{Duration: -1, StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: 1.0}, false},
-		{types.ChargingSchedule{Duration: 0, StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: -1.0}, false},
-		{types.ChargingSchedule{Duration: 0, StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: make([]types.ChargingSchedulePeriod, 0), MinChargingRate: 1.0}, false},
-		{types.ChargingSchedule{Duration: -1, StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: "invalidChargeRateUnit", ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: 1.0}, false},
+		{types.ChargingSchedule{Duration: newInt(0), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
+		{types.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
+		{types.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods}, true},
+		{types.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: types.ChargingRateUnitWatts}, false},
+		{types.ChargingSchedule{Duration: newInt(0), ChargingSchedulePeriod: chargingSchedulePeriods}, false},
+		{types.ChargingSchedule{Duration: newInt(-1), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, false},
+		{types.ChargingSchedule{Duration: newInt(0), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(-1.0)}, false},
+		{types.ChargingSchedule{Duration: newInt(0), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: make([]types.ChargingSchedulePeriod, 0), MinChargingRate: newFloat(1.0)}, false},
+		{types.ChargingSchedule{Duration: newInt(0), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: "invalidChargeRateUnit", ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }

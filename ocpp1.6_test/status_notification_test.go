@@ -6,6 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"time"
 )
 
@@ -57,7 +58,8 @@ func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
 	coreListener := MockCentralSystemCoreListener{}
 	coreListener.On("OnStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(statusNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.StatusNotificationRequest)
-		assert.True(t, ok)
+		require.True(t, ok)
+		require.NotNil(t, request)
 		assert.Equal(t, connectorId, request.ConnectorId)
 		assert.Equal(t, cpErrorCode, request.ErrorCode)
 		assert.Equal(t, status, request.Status)
@@ -71,15 +73,15 @@ func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	confirmation, err := suite.chargePoint.StatusNotification(connectorId, cpErrorCode, status, func(request *core.StatusNotificationRequest) {
 		request.Timestamp = timestamp
 		request.Info = info
 		request.VendorId = vendorId
 		request.VendorErrorCode = vendorErrorCode
 	})
-	assert.Nil(t, err)
-	assert.NotNil(t, confirmation)
+	require.Nil(t, err)
+	require.NotNil(t, confirmation)
 }
 
 func (suite *OcppV16TestSuite) TestStatusNotificationInvalidEndpoint() {

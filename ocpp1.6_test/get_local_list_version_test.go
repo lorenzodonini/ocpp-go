@@ -5,6 +5,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // Test
@@ -40,30 +41,28 @@ func (suite *OcppV16TestSuite) TestGetLocalListVersionE2EMocked() {
 	channel := NewMockWebSocket(wsId)
 
 	localAuthListListener := MockChargePointLocalAuthListListener{}
-	localAuthListListener.On("OnGetLocalListVersion", mock.Anything).Return(localListVersionConfirmation, nil)
+	localAuthListListener.On("OnGetLocalListVersion", mock.Anything).Return(localListVersionConfirmation, nil).Run(func(args mock.Arguments) {
+		request, ok := args.Get(0).(*localauth.GetLocalListVersionRequest)
+		require.NotNil(t, request)
+		require.True(t, ok)
+	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	suite.chargePoint.SetLocalAuthListHandler(localAuthListListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.GetLocalListVersion(wsId, func(confirmation *localauth.GetLocalListVersionConfirmation, err error) {
-		assert.Nil(t, err)
-		assert.NotNil(t, confirmation)
-		if confirmation != nil {
-			assert.Equal(t, listVersion, confirmation.ListVersion)
-			resultChannel <- true
-		} else {
-			resultChannel <- false
-		}
+		require.Nil(t, err)
+		require.NotNil(t, confirmation)
+		assert.Equal(t, listVersion, confirmation.ListVersion)
+		resultChannel <- true
 	})
-	assert.Nil(t, err)
-	if err == nil {
-		result := <-resultChannel
-		assert.True(t, result)
-	}
+	require.Nil(t, err)
+	result := <-resultChannel
+	assert.True(t, result)
 }
 
 func (suite *OcppV16TestSuite) TestGetLocalListVersionInvalidEndpoint() {

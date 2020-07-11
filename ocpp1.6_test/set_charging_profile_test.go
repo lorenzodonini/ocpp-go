@@ -6,6 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // Test
@@ -67,8 +68,8 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 	smartChargingListener := MockChargePointSmartChargingListener{}
 	smartChargingListener.On("OnSetChargingProfile", mock.Anything).Return(SetChargingProfileConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*smartcharging.SetChargingProfileRequest)
-		assert.True(t, ok)
-		assert.NotNil(t, request)
+		require.True(t, ok)
+		require.NotNil(t, request)
 		assert.Equal(t, connectorId, request.ConnectorId)
 		assert.Equal(t, chargingProfileId, request.ChargingProfile.ChargingProfileId)
 		assert.Equal(t, chargingProfileKind, request.ChargingProfile.ChargingProfileKind)
@@ -79,13 +80,13 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 		assert.Nil(t, request.ChargingProfile.ValidFrom)
 		assert.Nil(t, request.ChargingProfile.ValidTo)
 		assert.Equal(t, chargingRateUnit, request.ChargingProfile.ChargingSchedule.ChargingRateUnit)
-		assert.Equal(t, 0.0, request.ChargingProfile.ChargingSchedule.MinChargingRate)
-		assert.Equal(t, 0, request.ChargingProfile.ChargingSchedule.Duration)
+		assert.Nil(t, request.ChargingProfile.ChargingSchedule.MinChargingRate)
+		assert.Nil(t, request.ChargingProfile.ChargingSchedule.Duration)
 		assert.Nil(t, request.ChargingProfile.ChargingSchedule.StartSchedule)
-		assert.Equal(t, 1, len(request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod))
+		require.Len(t, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod, 1)
 		assert.Equal(t, limit, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
 		assert.Equal(t, startPeriod, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
-		assert.Equal(t, 0, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
+		assert.Nil(t, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
@@ -93,15 +94,15 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.SetChargingProfile(wsId, func(confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
-		assert.Nil(t, err)
-		assert.NotNil(t, confirmation)
+		require.Nil(t, err)
+		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
 	}, connectorId, chargingProfile)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
 }

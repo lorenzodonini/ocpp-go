@@ -6,6 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"time"
 )
 
@@ -57,9 +58,11 @@ func (suite *OcppV16TestSuite) TestReserveNowE2EMocked() {
 	reservationListener := MockChargePointReservationListener{}
 	reservationListener.On("OnReserveNow", mock.Anything).Return(ReserveNowConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*reservation.ReserveNowRequest)
-		assert.True(t, ok)
+		require.True(t, ok)
+		require.NotNil(t, request)
 		assert.Equal(t, connectorId, request.ConnectorId)
-		assert.Equal(t, expiryDate.FormatTimestamp(), request.ExpiryDate.FormatTimestamp())
+		require.NotNil(t, request.ExpiryDate)
+		assertDateTimeEquality(t, *expiryDate, *request.ExpiryDate)
 		assert.Equal(t, idTag, request.IdTag)
 		assert.Equal(t, parentIdTag, request.ParentIdTag)
 		assert.Equal(t, reservationId, request.ReservationId)
@@ -70,17 +73,17 @@ func (suite *OcppV16TestSuite) TestReserveNowE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.ReserveNow(wsId, func(confirmation *reservation.ReserveNowConfirmation, err error) {
-		assert.Nil(t, err)
-		assert.NotNil(t, confirmation)
+		require.Nil(t, err)
+		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
 	}, connectorId, expiryDate, idTag, reservationId, func(request *reservation.ReserveNowRequest) {
 		request.ParentIdTag = parentIdTag
 	})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
 }

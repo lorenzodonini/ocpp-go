@@ -12,9 +12,9 @@ const UpdateFirmwareFeatureName = "UpdateFirmware"
 // The field definition of the UpdateFirmware request payload sent by the Central System to the Charge Point.
 type UpdateFirmwareRequest struct {
 	Location      string          `json:"location" validate:"required,uri"`
-	Retries       int             `json:"retries" validate:"gte=0"` //TODO: pointer?
+	Retries       *int            `json:"retries,omitempty" validate:"omitempty,gte=0"`
 	RetrieveDate  *types.DateTime `json:"retrieveDate" validate:"required"`
-	RetryInterval int             `json:"retryInterval" validate:"gte=0"` //TODO: pointer?
+	RetryInterval *int            `json:"retryInterval,omitempty" validate:"omitempty,gte=0"`
 }
 
 // This field definition of the UpdateFirmware confirmation payload, sent by the Charge Point to the Central System in response to a UpdateFirmwareRequest.
