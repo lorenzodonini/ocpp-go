@@ -72,6 +72,10 @@ type WsServer interface {
 	SetDisconnectedClientHandler(handler func(ws Channel))
 	Write(webSocketId string, data []byte) error
 	AddSupportedSubprotocol(subProto string)
+	// SetBasicAuthHandler enables HTTP Basic Authentication and requires clients to pass credentials.
+	// The handler function is called whenever a new client attempts to connect, to check for credentials correctness.
+	// The handler must return true if the credentials were correct, false otherwise.
+	SetBasicAuthHandler(handler func(username string, password string) bool)
 }
 
 // Default implementation of a Websocket server.
@@ -87,6 +91,7 @@ type Server struct {
 	messageHandler      func(ws Channel, data []byte) error
 	newClientHandler    func(ws Channel)
 	disconnectedHandler func(ws Channel)
+	basicAuthHandler    func(username string, password string) bool
 	tlsCertificatePath  string
 	tlsCertificateKey   string
 }
@@ -132,6 +137,10 @@ func (server *Server) AddSupportedSubprotocol(subProto string) {
 		}
 	}
 	upgrader.Subprotocols = append(upgrader.Subprotocols, subProto)
+}
+
+func (server *Server) SetBasicAuthHandler(handler func(username string, password string) bool) {
+	server.basicAuthHandler = handler
 }
 
 // Starts and runs the websocket server on a specific port and URL.
@@ -205,6 +214,24 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Warnf("client on %v requested unsupported subprotocols %v, closing socket", url.String(), clientSubprotocols)
 		http.Error(w, "unsupported subprotocol", http.StatusBadRequest)
 		return
+	}
+	// Handle client authentication
+	if server.basicAuthHandler != nil {
+		username, password, ok := r.BasicAuth()
+		if !ok {
+			log.Errorf("required basic auth credentials not found")
+			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		ok = server.basicAuthHandler(username, password)
+		if !ok {
+			log.Errorf("required basic auth credentials not found")
+			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		log.Infof("basic authentication for user %v was successful", username)
 	}
 	// Upgrade websocket
 	conn, err := upgrader.Upgrade(w, r, nil)
