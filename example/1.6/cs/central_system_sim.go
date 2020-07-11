@@ -57,7 +57,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Warn(err)
 		} else if confirmation.Status == reservation.ReservationStatusAccepted {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("connector %v reserved for client %v until %v (reservation ID %d)", connectorID, clientIdTag, expiryDate.FormatTimestamp(), reservationID)
-		} else  {
+		} else {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("couldn't reserve connector %v: %v", connectorID, confirmation.Status)
 		}
 	}
@@ -74,7 +74,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Warn(err)
 		} else if confirmation.Status == reservation.CancelReservationStatusAccepted {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("reservation %v canceled successfully", reservationID)
-		} else  {
+		} else {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("couldn't cancel reservation %v", reservationID)
 		}
 	}
