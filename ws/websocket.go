@@ -213,6 +213,9 @@ func (server *Server) Start(port int, listenPath string) {
 		server.wsHandler(w, r)
 	})
 	server.connections = make(map[string]*WebSocket)
+	if server.httpServer == nil {
+		server.httpServer = &http.Server{}
+	}
 	addr := fmt.Sprintf(":%v", port)
 	server.httpServer.Addr = addr
 	server.httpServer.Handler = router

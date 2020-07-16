@@ -31,7 +31,7 @@ const (
 )
 
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *Server {
-	wsServer := Server{}
+	wsServer := Server{httpServer: &http.Server{}}
 	wsServer.SetMessageHandler(func(ws Channel, data []byte) error {
 		assert.NotNil(t, ws)
 		assert.NotNil(t, data)
