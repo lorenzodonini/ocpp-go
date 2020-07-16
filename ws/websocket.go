@@ -159,8 +159,26 @@ func NewServer() *Server {
 }
 
 // Creates a new secure websocket server. All created websocket channels will use TLS.
-func NewTLSServer(certificatePath string, certificateKey string) *Server {
-	return &Server{tlsCertificatePath: certificatePath, tlsCertificateKey: certificateKey}
+//
+// You need to pass a filepath to the server TLS certificate and key.
+//
+// It is recommended to pass a valid TLSConfig for the server to use.
+// For example to require client certificate verification:
+//	tlsConfig := &tls.Config{
+//		ClientAuth: tls.RequireAndVerifyClientCert,
+//		ClientCAs: clientCAs,
+//	}
+//
+// If no tlsConfig parameter is passed, the server will by default
+// not perform any client certificate verification.
+func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.Config) *Server {
+	return &Server{
+		tlsCertificatePath: certificatePath,
+		tlsCertificateKey:  certificateKey,
+		httpServer: &http.Server{
+			TLSConfig: tlsConfig,
+		},
+	}
 }
 
 func (server *Server) SetMessageHandler(handler func(ws Channel, data []byte) error) {
@@ -196,7 +214,8 @@ func (server *Server) Start(port int, listenPath string) {
 	})
 	server.connections = make(map[string]*WebSocket)
 	addr := fmt.Sprintf(":%v", port)
-	server.httpServer = &http.Server{Addr: addr, Handler: router}
+	server.httpServer.Addr = addr
+	server.httpServer.Handler = router
 	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
 		if err := server.httpServer.ListenAndServeTLS(server.tlsCertificatePath, server.tlsCertificateKey); err != http.ErrServerClosed {
 			log.Errorf("websocket server error: %v", err)
@@ -438,6 +457,19 @@ func NewClient() *Client {
 //
 // Additional options may be added using the AddOption function.
 // Basic authentication can be set using the SetBasicAuth function.
+//
+// To set a client certificate, you may do:
+//	certificate, _ := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
+//	clientCertificates := []tls.Certificate{certificate}
+//	client := ws.NewTLSClient(&tls.Config{
+//		RootCAs:      certPool,
+//		Certificates: clientCertificates,
+//	})
+//
+// You can set any other TLS option within the same constructor as well.
+// For example, if you wish to test connecting to a server having a
+// self-signed certificate (do not use in production!), pass:
+//	InsecureSkipVerify: true
 func NewTLSClient(tlsConfig *tls.Config) *Client {
 	cli := &Client{dialOptions: []func(*websocket.Dialer){}}
 	cli.dialOptions = append(cli.dialOptions, func(dialer *websocket.Dialer) {
