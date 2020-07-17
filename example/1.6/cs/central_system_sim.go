@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -10,6 +12,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ws"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"time"
@@ -20,6 +23,7 @@ const (
 	defaultHeartbeatInterval   = 600
 	envVarServerPort           = "SERVER_LISTEN_PORT"
 	envVarTls                  = "TLS_ENABLED"
+	envVarCaCertificate        = "CA_CERTIFICATE_PATH"
 	envVarServerCertificate    = "SERVER_CERTIFICATE_PATH"
 	envVarServerCertificateKey = "SERVER_CERTIFICATE_KEY_PATH"
 )
@@ -31,6 +35,27 @@ func setupCentralSystem() ocpp16.CentralSystem {
 }
 
 func setupTlsCentralSystem() ocpp16.CentralSystem {
+	var certPool *x509.CertPool
+	// Load CA certificates
+	caCertificate, ok := os.LookupEnv(envVarCaCertificate)
+	if !ok {
+		log.Infof("no %v found, using system CA pool", envVarCaCertificate)
+		systemPool, err := x509.SystemCertPool()
+		if err != nil {
+			log.Fatalf("couldn't get system CA pool: %v", err)
+		}
+		certPool = systemPool
+	} else {
+		certPool = x509.NewCertPool()
+		data, err := ioutil.ReadFile(caCertificate)
+		if err != nil {
+			log.Fatalf("couldn't read CA certificate from %v: %v", caCertificate, err)
+		}
+		ok = certPool.AppendCertsFromPEM(data)
+		if !ok {
+			log.Fatalf("couldn't read CA certificate from %v", caCertificate)
+		}
+	}
 	certificate, ok := os.LookupEnv(envVarServerCertificate)
 	if !ok {
 		log.Fatalf("no required %v found", envVarServerCertificate)
@@ -39,7 +64,10 @@ func setupTlsCentralSystem() ocpp16.CentralSystem {
 	if !ok {
 		log.Fatalf("no required %v found", envVarServerCertificateKey)
 	}
-	server := ws.NewTLSServer(certificate, key)
+	server := ws.NewTLSServer(certificate, key, &tls.Config{
+		ClientAuth: tls.RequireAndVerifyClientCert,
+		ClientCAs:  certPool,
+	})
 	return ocpp16.NewCentralSystem(nil, server)
 }
 
@@ -57,7 +85,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Warn(err)
 		} else if confirmation.Status == reservation.ReservationStatusAccepted {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("connector %v reserved for client %v until %v (reservation ID %d)", connectorID, clientIdTag, expiryDate.FormatTimestamp(), reservationID)
-		} else  {
+		} else {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("couldn't reserve connector %v: %v", connectorID, confirmation.Status)
 		}
 	}
@@ -74,7 +102,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Warn(err)
 		} else if confirmation.Status == reservation.CancelReservationStatusAccepted {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("reservation %v canceled successfully", reservationID)
-		} else  {
+		} else {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("couldn't cancel reservation %v", reservationID)
 		}
 	}

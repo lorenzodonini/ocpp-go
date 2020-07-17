@@ -12,6 +12,7 @@ services:
     environment:
       - SERVER_LISTEN_PORT=443
       - TLS_ENABLED=true
+      - CA_CERTIFICATE_PATH=/usr/local/share/certs/ca.crt
       - SERVER_CERTIFICATE_PATH=/usr/local/share/certs/central-system.crt
       - SERVER_CERTIFICATE_KEY_PATH=/usr/local/share/certs/central-system.key
     ports:

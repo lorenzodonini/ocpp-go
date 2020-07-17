@@ -10,8 +10,11 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"math/big"
+	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"testing"
@@ -28,7 +31,7 @@ const (
 )
 
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *Server {
-	wsServer := Server{}
+	wsServer := Server{httpServer: &http.Server{}}
 	wsServer.SetMessageHandler(func(ws Channel, data []byte) error {
 		assert.NotNil(t, ws)
 		assert.NotNil(t, data)
@@ -113,8 +116,8 @@ func TestTLSWebsocketEcho(t *testing.T) {
 	// Create self-signed TLS certificate
 	certFilename := "/tmp/cert.pem"
 	keyFilename := "/tmp/key.pem"
-	err := createTLSCertificate(certFilename, keyFilename)
-	assert.Nil(t, err)
+	err := createTLSCertificate(certFilename, keyFilename, "localhost", nil, nil)
+	require.Nil(t, err)
 	defer os.Remove(certFilename)
 	defer os.Remove(keyFilename)
 
@@ -230,6 +233,226 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 	wsServer.Stop()
 }
 
+func TestValidBasicAuth(t *testing.T) {
+	authUsername := "testUsername"
+	authPassword := "testPassword"
+	var wsServer *Server
+	// Create self-signed TLS certificate
+	certFilename := "/tmp/cert.pem"
+	keyFilename := "/tmp/key.pem"
+	err := createTLSCertificate(certFilename, keyFilename, "localhost", nil, nil)
+	require.Nil(t, err)
+	defer os.Remove(certFilename)
+	defer os.Remove(keyFilename)
+
+	// Create TLS server with self-signed certificate
+	wsServer = NewTLSServer(certFilename, keyFilename, nil)
+	// Add basic auth handler
+	wsServer.SetBasicAuthHandler(func(username string, password string) bool {
+		require.Equal(t, authUsername, username)
+		require.Equal(t, authPassword, password)
+		return true
+	})
+	connected := make(chan bool)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		connected <- true
+	})
+	// Run server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
+
+	// Create TLS client
+	certPool := x509.NewCertPool()
+	data, err := ioutil.ReadFile(certFilename)
+	require.Nil(t, err)
+	ok := certPool.AppendCertsFromPEM(data)
+	require.True(t, ok)
+	wsClient := NewTLSClient(&tls.Config{
+		RootCAs: certPool,
+	})
+	// Add basic auth
+	wsClient.SetBasicAuth(authUsername, authPassword)
+	// Test connection
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
+	err = wsClient.Start(u.String())
+	require.Nil(t, err)
+	result := <-connected
+	assert.True(t, result)
+	// Cleanup
+	wsClient.Stop()
+	wsServer.Stop()
+}
+
+func TestInvalidBasicAuth(t *testing.T) {
+	authUsername := "testUsername"
+	authPassword := "testPassword"
+	var wsServer *Server
+	// Create self-signed TLS certificate
+	certFilename := "/tmp/cert.pem"
+	keyFilename := "/tmp/key.pem"
+	err := createTLSCertificate(certFilename, keyFilename, "localhost", nil, nil)
+	require.Nil(t, err)
+	defer os.Remove(certFilename)
+	defer os.Remove(keyFilename)
+
+	// Create TLS server with self-signed certificate
+	wsServer = NewTLSServer(certFilename, keyFilename, nil)
+	// Add basic auth handler
+	wsServer.SetBasicAuthHandler(func(username string, password string) bool {
+		validCredentials := authUsername == username && authPassword == password
+		require.False(t, validCredentials)
+		return validCredentials
+	})
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		// Should never reach this
+		t.Fail()
+	})
+	// Run server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
+
+	// Create TLS client
+	certPool := x509.NewCertPool()
+	data, err := ioutil.ReadFile(certFilename)
+	require.Nil(t, err)
+	ok := certPool.AppendCertsFromPEM(data)
+	require.True(t, ok)
+	wsClient := NewTLSClient(&tls.Config{
+		RootCAs: certPool,
+	})
+	// Add basic auth
+	wsClient.SetBasicAuth(authUsername, "invalidPassword")
+	// Test connection
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
+	err = wsClient.Start(u.String())
+	assert.NotNil(t, err)
+	httpError, ok := err.(HttpConnectionError)
+	require.True(t, ok)
+	require.NotNil(t, httpError)
+	assert.Equal(t, http.StatusUnauthorized, httpError.HttpCode)
+	// Cleanup
+	wsServer.Stop()
+}
+
+func TestValidClientTLSCertificate(t *testing.T) {
+	var wsServer *Server
+	// Create self-signed TLS certificate
+	clientCertFilename := "/tmp/client.pem"
+	clientKeyFilename := "/tmp/client_key.pem"
+	err := createTLSCertificate(clientCertFilename, clientKeyFilename, "localhost", nil, nil)
+	defer os.Remove(clientCertFilename)
+	defer os.Remove(clientKeyFilename)
+	require.Nil(t, err)
+	serverCertFilename := "/tmp/cert.pem"
+	serverKeyFilename := "/tmp/key.pem"
+	err = createTLSCertificate(serverCertFilename, serverKeyFilename, "localhost", nil, nil)
+	require.Nil(t, err)
+	defer os.Remove(serverCertFilename)
+	defer os.Remove(serverKeyFilename)
+
+	// Create TLS server with self-signed certificate
+	certPool := x509.NewCertPool()
+	data, err := ioutil.ReadFile(clientCertFilename)
+	require.Nil(t, err)
+	ok := certPool.AppendCertsFromPEM(data)
+	require.True(t, ok)
+	wsServer = NewTLSServer(serverCertFilename, serverKeyFilename, &tls.Config{
+		ClientCAs:  certPool,
+		ClientAuth: tls.RequireAndVerifyClientCert,
+	})
+	// Add basic auth handler
+	connected := make(chan bool)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		connected <- true
+	})
+	// Run server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
+
+	// Create TLS client
+	certPool = x509.NewCertPool()
+	data, err = ioutil.ReadFile(serverCertFilename)
+	require.Nil(t, err)
+	ok = certPool.AppendCertsFromPEM(data)
+	require.True(t, ok)
+	loadedCert, err := tls.LoadX509KeyPair(clientCertFilename, clientKeyFilename)
+	require.Nil(t, err)
+	wsClient := NewTLSClient(&tls.Config{
+		RootCAs:      certPool,
+		Certificates: []tls.Certificate{loadedCert},
+	})
+	// Test connection
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
+	err = wsClient.Start(u.String())
+	assert.Nil(t, err)
+	result := <-connected
+	assert.True(t, result)
+	// Cleanup
+	wsServer.Stop()
+}
+
+func TestInvalidClientTLSCertificate(t *testing.T) {
+	var wsServer *Server
+	// Create self-signed TLS certificate
+	clientCertFilename := "/tmp/client.pem"
+	clientKeyFilename := "/tmp/client_key.pem"
+	err := createTLSCertificate(clientCertFilename, clientKeyFilename, "localhost", nil, nil)
+	defer os.Remove(clientCertFilename)
+	defer os.Remove(clientKeyFilename)
+	require.Nil(t, err)
+	serverCertFilename := "/tmp/cert.pem"
+	serverKeyFilename := "/tmp/key.pem"
+	err = createTLSCertificate(serverCertFilename, serverKeyFilename, "localhost", nil, nil)
+	require.Nil(t, err)
+	defer os.Remove(serverCertFilename)
+	defer os.Remove(serverKeyFilename)
+
+	// Create TLS server with self-signed certificate
+	certPool := x509.NewCertPool()
+	data, err := ioutil.ReadFile(serverCertFilename)
+	require.Nil(t, err)
+	ok := certPool.AppendCertsFromPEM(data)
+	require.True(t, ok)
+	wsServer = NewTLSServer(serverCertFilename, serverKeyFilename, &tls.Config{
+		ClientCAs:  certPool,                       // Contains server certificate as allowed client CA
+		ClientAuth: tls.RequireAndVerifyClientCert, // Requires client certificate signed by allowed CA (server)
+	})
+	// Add basic auth handler
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		// Should never reach this
+		t.Fail()
+	})
+	// Run server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(1 * time.Second)
+
+	// Create TLS client
+	certPool = x509.NewCertPool()
+	data, err = ioutil.ReadFile(serverCertFilename)
+	require.Nil(t, err)
+	ok = certPool.AppendCertsFromPEM(data)
+	require.True(t, ok)
+	loadedCert, err := tls.LoadX509KeyPair(clientCertFilename, clientKeyFilename)
+	require.Nil(t, err)
+	wsClient := NewTLSClient(&tls.Config{
+		RootCAs:      certPool,                      // Contains server certificate as allowed server CA
+		Certificates: []tls.Certificate{loadedCert}, // Contains self-signed client certificate. Will be rejected by server
+	})
+	// Test connection
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
+	err = wsClient.Start(u.String())
+	assert.NotNil(t, err)
+	netError, ok := err.(*net.OpError)
+	require.True(t, ok)
+	assert.Equal(t, "tls: bad certificate", netError.Err.Error()) // tls.alertBadCertificate = 42
+	// Cleanup
+	wsServer.Stop()
+}
+
 func TestUnsupportedSubprotocol(t *testing.T) {
 	var wsServer *Server
 	disconnected := make(chan bool)
@@ -259,8 +482,67 @@ func TestUnsupportedSubprotocol(t *testing.T) {
 	wsServer.Stop()
 }
 
-// Utility function
-func createTLSCertificate(certificateFilename string, keyFilename string) error {
+// Utility functions
+
+func createCACertificate(certificateFilename string, keyFilename string) (*x509.Certificate, *ecdsa.PrivateKey, error) {
+	// Generate ed25519 key-pair
+	privateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
+	// Create CA
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return nil, nil, err
+	}
+	notBefore := time.Now()
+	notAfter := notBefore.Add(time.Hour * 24)
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{"ocpp-go"},
+			CommonName:   "ocpp-go-CA",
+		},
+		NotBefore:             notBefore,
+		NotAfter:              notAfter,
+		IsCA:                  true,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	// Save certificate to disk
+	certOut, err := os.Create(certificateFilename)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer certOut.Close()
+	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	if err != nil {
+		return nil, nil, err
+	}
+	// Save key to disk
+	keyOut, err := os.Create(keyFilename)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer keyOut.Close()
+	privateBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	err = pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateBytes})
+	if err != nil {
+		return nil, nil, err
+	}
+	return &template, privateKey, nil
+}
+
+func createTLSCertificate(certificateFilename string, keyFilename string, cn string, ca *x509.Certificate, caKey *ecdsa.PrivateKey) error {
 	// Generate ed25519 key-pair
 	privateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
@@ -274,20 +556,28 @@ func createTLSCertificate(certificateFilename string, keyFilename string) error 
 	}
 	notBefore := time.Now()
 	notAfter := notBefore.Add(time.Hour * 24)
+	keyUsage := x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
+	extKeyUsage := []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth}
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{"ocpp-go"},
-			CommonName:   "localhost",
+			CommonName:   cn,
 		},
-		NotBefore: notBefore,
-		NotAfter:  notAfter,
-
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		NotBefore:             notBefore,
+		NotAfter:              notAfter,
+		KeyUsage:              keyUsage,
+		ExtKeyUsage:           extKeyUsage,
 		BasicConstraintsValid: true,
 	}
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	var derBytes []byte
+	if ca != nil && caKey != nil {
+		// Certificate signed by CA
+		derBytes, err = x509.CreateCertificate(rand.Reader, &template, ca, &privateKey.PublicKey, caKey)
+	} else {
+		// Self-signed certificate
+		derBytes, err = x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	}
 	if err != nil {
 		return err
 	}
