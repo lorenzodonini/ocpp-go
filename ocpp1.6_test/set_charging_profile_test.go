@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
@@ -50,7 +51,7 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 	status := smartcharging.ChargingProfileStatusAccepted
 	chargingSchedule := types.NewChargingSchedule(chargingRateUnit, types.NewChargingSchedulePeriod(startPeriod, limit))
 	chargingProfile := types.NewChargingProfile(chargingProfileId, stackLevel, chargingProfilePurpose, chargingProfileKind, chargingSchedule)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"chargingProfile":{"chargingProfileId":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}}]`,
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"csChargingProfiles":{"chargingProfileId":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}}]`,
 		messageId,
 		smartcharging.SetChargingProfileFeatureName,
 		connectorId,
@@ -119,7 +120,7 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileInvalidEndpoint() {
 	limit := 10.0
 	chargingSchedule := types.NewChargingSchedule(chargingRateUnit, types.NewChargingSchedulePeriod(startPeriod, limit))
 	chargingProfile := types.NewChargingProfile(chargingProfileId, stackLevel, chargingProfilePurpose, chargingProfileKind, chargingSchedule)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"chargingProfile":{"chargingProfileId":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}}]`,
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"csChargingProfiles":{"chargingProfileId":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}}]`,
 		messageId,
 		smartcharging.SetChargingProfileFeatureName,
 		connectorId,
