@@ -1,9 +1,10 @@
 package smartcharging
 
 import (
+	"reflect"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
 )
 
 // -------------------- Set Charging Profile (CS -> CP) --------------------
@@ -32,7 +33,7 @@ func isValidChargingProfileStatus(fl validator.FieldLevel) bool {
 // The field definition of the SetChargingProfile request payload sent by the Central System to the Charge Point.
 type SetChargingProfileRequest struct {
 	ConnectorId     int                    `json:"connectorId" validate:"gte=0"`
-	ChargingProfile *types.ChargingProfile `json:"chargingProfile" validate:"required"`
+	ChargingProfile *types.ChargingProfile `json:"csChargingProfiles" validate:"required"`
 }
 
 // This field definition of the SetChargingProfile confirmation payload, sent by the Charge Point to the Central System in response to a SetChargingProfileRequest.
