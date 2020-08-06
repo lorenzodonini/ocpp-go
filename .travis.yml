@@ -24,7 +24,7 @@ jobs:
         - go test -v -covermode=count -coverprofile=ocpp20.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp2.0/... github.com/lorenzodonini/ocpp-go/ocpp2.0_test
         - sed '1d;$d' ocpp16.out >> coverage.out
         - sed '1d;$d' ocpp20.out >> coverage.out
-        - goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+        - goveralls -coverprofile=coverage.out -service=travis-ci
     - stage: publish_latest
       script:
         - docker build -t ldonini/ocpp1.6-central-system:latest -f example/1.6/cs/Dockerfile .
