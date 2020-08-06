@@ -24,7 +24,7 @@ jobs:
         - go test -v -covermode=count -coverprofile=ocpp20.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp2.0/... github.com/lorenzodonini/ocpp-go/ocpp2.0_test
         - sed '1d;$d' ocpp16.out >> coverage.out
         - sed '1d;$d' ocpp20.out >> coverage.out
-        - goveralls -coverprofile=coverage.out -service=travis-ci
+        - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then bash goveralls -coverprofile=coverage.out -service=travis-ci; fi'
     - stage: publish_latest
       script:
         - docker build -t ldonini/ocpp1.6-central-system:latest -f example/1.6/cs/Dockerfile .
@@ -32,7 +32,7 @@ jobs:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - docker push ldonini/ocpp1.6-central-system:latest
         - docker push ldonini/ocpp1.6-charge-point:latest
-      if: branch == master
+      if: branch == master AND $TRAVIS_PULL_REQUEST != false
     - stage: release
       script:
         - docker build -t "ldonini/ocpp1.6-central-system:$TRAVIS_TAG" -f example/1.6/cs/Dockerfile .
@@ -40,4 +40,4 @@ jobs:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - docker push "ldonini/ocpp1.6-central-system:$TRAVIS_TAG"
         - docker push "ldonini/ocpp1.6-charge-point:$TRAVIS_TAG"
-      if: tag IS present
+      if: tag IS present AND $TRAVIS_PULL_REQUEST != false
