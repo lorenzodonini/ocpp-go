@@ -1,18 +1,19 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
-// -------------------- Heartbeat (CP -> CS) --------------------
+// -------------------- MeterValues (CP -> CS) --------------------
 
 const MeterValuesFeatureName = "MeterValues"
 
 // The field definition of the MeterValues request payload sent by the Charge Point to the Central System.
 type MeterValuesRequest struct {
 	ConnectorId   int                `json:"connectorId" validate:"gte=0"`
-	TransactionId *int               `json:"reservationId,omitempty"`
+	TransactionId *int               `json:"transactionId,omitempty"`
 	MeterValue    []types.MeterValue `json:"meterValue" validate:"required,min=1,dive"`
 }
 
