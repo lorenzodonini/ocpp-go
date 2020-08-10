@@ -6,7 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
-// -------------------- Heartbeat (CP -> CS) --------------------
+// -------------------- MeterValues (CP -> CS) --------------------
 
 const MeterValuesFeatureName = "MeterValues"
 
