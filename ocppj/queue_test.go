@@ -94,3 +94,27 @@ func (suite *ClientQueueTestSuite) TestPopElement() {
 	assert.True(t, suite.queue.IsEmpty())
 	assert.False(t, suite.queue.IsFull())
 }
+
+func (suite *ClientQueueTestSuite) TestQueueNoCapacity() {
+	t := suite.T()
+	suite.queue = ocppj.NewFIFOClientQueue(0)
+	for i := 0; i < 50; i++ {
+		req := newMockRequest("somevalue")
+		err := suite.queue.Push(req)
+		require.Nil(t, err)
+	}
+	assert.False(t, suite.queue.IsFull())
+}
+
+func (suite *ClientQueueTestSuite) TestQueueClear() {
+	t := suite.T()
+	for i := 0; i < clientQueueCapacity; i++ {
+		req := newMockRequest("somevalue")
+		err := suite.queue.Push(req)
+		require.Nil(t, err)
+	}
+	assert.True(t, suite.queue.IsFull())
+	suite.queue.Init()
+	assert.True(t, suite.queue.IsEmpty())
+	assert.Equal(t, 0, suite.queue.Size())
+}

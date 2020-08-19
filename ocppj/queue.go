@@ -49,7 +49,7 @@ func (q *FIFOClientQueue) Init() {
 func (q *FIFOClientQueue) Push(element interface{}) error {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
-	if q.requestQueue.Len() >= q.capacity {
+	if q.requestQueue.Len() >= q.capacity && q.capacity > 0 {
 		return errors.New("request queue is full, cannot push new element")
 	}
 	q.requestQueue.PushBack(element)
@@ -85,7 +85,7 @@ func (q *FIFOClientQueue) Size() int {
 func (q *FIFOClientQueue) IsFull() bool {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
-	return q.requestQueue.Len() >= q.capacity
+	return q.requestQueue.Len() >= q.capacity && q.capacity > 0
 }
 
 func (q *FIFOClientQueue) IsEmpty() bool {
@@ -97,6 +97,7 @@ func (q *FIFOClientQueue) IsEmpty() bool {
 // NewFIFOClientQueue creates a new FIFOClientQueue with the given capacity.
 //
 // A FIFOQueue is backed by a linked list, and the capacity represents the maximum capacity of the queue.
+// Passing capacity = 0 will create a queue without a maximum capacity.
 // The capacity cannot change after creation.
 func NewFIFOClientQueue(capacity int) *FIFOClientQueue {
 	return &FIFOClientQueue{
