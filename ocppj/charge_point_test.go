@@ -393,6 +393,7 @@ func (suite *OcppJTestSuite) TestRequestFlow() {
 	// Wait for processing to complete
 	time.Sleep(2000 * time.Millisecond)
 	close(sendResponseTrigger)
+	assert.True(t, suite.clientRequestQueue.IsEmpty())
 }
 
 //TODO: test retransmission

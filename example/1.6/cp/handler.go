@@ -37,8 +37,6 @@ type ChargePointHandler struct {
 	localAuthListVersion int
 }
 
-var asyncRequestChan chan func()
-
 var chargePoint ocpp16.ChargePoint
 
 func (handler *ChargePointHandler) isValidConnectorID(ID int) bool {
@@ -215,24 +213,22 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 		break
 	case firmware.DiagnosticsStatusNotificationFeatureName:
 		// Schedule diagnostics status notification request
-		fn := func() {
+		go func() {
 			_, e := chargePoint.DiagnosticsStatusNotification(firmware.DiagnosticsStatusIdle)
 			checkError(e)
 			logDefault(firmware.DiagnosticsStatusNotificationFeatureName).Info("diagnostics status notified")
-		}
-		scheduleAsyncRequest(fn)
+		}()
 		status = remotetrigger.TriggerMessageStatusAccepted
 	case firmware.FirmwareStatusNotificationFeatureName:
 		//TODO: schedule firmware status notification message
 		break
 	case core.HeartbeatFeatureName:
 		// Schedule heartbeat request
-		fn := func() {
+		go func() {
 			conf, e := chargePoint.Heartbeat()
 			checkError(e)
 			logDefault(core.HeartbeatFeatureName).Infof("clock synchronized: %v", conf.CurrentTime.FormatTimestamp())
-		}
-		scheduleAsyncRequest(fn)
+		}()
 		status = remotetrigger.TriggerMessageStatusAccepted
 	case core.MeterValuesFeatureName:
 		//TODO: schedule meter values message
@@ -245,7 +241,7 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 			return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusRejected), nil
 		}
 		// Schedule status notification request
-		fn := func() {
+		go func() {
 			status := handler.status
 			if c, ok := handler.connectors[connectorID]; ok {
 				status = c.status
@@ -253,8 +249,7 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 			statusConfirmation, err := chargePoint.StatusNotification(connectorID, handler.errorCode, status)
 			checkError(err)
 			logDefault(statusConfirmation.GetFeatureName()).Infof("status for connector %v sent: %v", connectorID, status)
-		}
-		scheduleAsyncRequest(fn)
+		}()
 		status = remotetrigger.TriggerMessageStatusAccepted
 	default:
 		return remotetrigger.NewTriggerMessageConfirmation(remotetrigger.TriggerMessageStatusNotImplemented), nil
@@ -348,24 +343,19 @@ func updateFirmwareStatus(status firmware.FirmwareStatus, props ...func(request 
 }
 
 func updateFirmware(location string, retrieveDate *types.DateTime, retries int, retryInterval int) {
-	fn := func(status firmware.FirmwareStatus) func() {
-		return func() {
-			updateFirmwareStatus(status)
-		}
-	}
-	scheduleAsyncRequest(fn(firmware.FirmwareStatusDownloading))
+	updateFirmwareStatus(firmware.FirmwareStatusDownloading)
 	err := downloadFile("/tmp/out.bin", location)
 	if err != nil {
 		logDefault(firmware.UpdateFirmwareFeatureName).Errorf("error while downloading file %v", err)
-		scheduleAsyncRequest(fn(firmware.FirmwareStatusDownloadFailed))
+		updateFirmwareStatus(firmware.FirmwareStatusDownloadFailed)
 		return
 	}
-	scheduleAsyncRequest(fn(firmware.FirmwareStatusDownloaded))
+	updateFirmwareStatus(firmware.FirmwareStatusDownloaded)
 	// Simulate installation
-	scheduleAsyncRequest(fn(firmware.FirmwareStatusInstalling))
+	updateFirmwareStatus(firmware.FirmwareStatusInstalling)
 	time.Sleep(time.Second * 5)
 	// Notify completion
-	scheduleAsyncRequest(fn(firmware.FirmwareStatusInstalled))
+	updateFirmwareStatus(firmware.FirmwareStatusInstalled)
 }
 
 func downloadFile(filepath string, url string) error {

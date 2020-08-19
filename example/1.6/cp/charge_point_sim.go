@@ -66,34 +66,6 @@ func setupTlsChargePoint(chargePointID string) ocpp16.ChargePoint {
 	return ocpp16.NewChargePoint(chargePointID, nil, client)
 }
 
-// Used for scheduling requests that are not generated from the main thread.
-// OCPP is a request-response protocol and doesn't support multiple simultaneous requests.
-//
-// By scheduling a request, it can later on be sent safely from the main thread.
-func scheduleAsyncRequest(asyncRequest func()) {
-	asyncRequestChan <- asyncRequest
-}
-
-// Wait is used for simulating idle time, while being able to process trigger requests.
-//
-// If trigger requests (or other asynchronous requests) are fired while waiting, the request will be sent.
-// This mechanism prevents errors when attempting to send a request while another one is still pending.
-func wait(d time.Duration) {
-	t := time.NewTimer(d)
-	for {
-		select {
-		case req, ok := <-asyncRequestChan:
-			if !ok {
-				return
-			}
-			req()
-		case <-t.C:
-			log.Debugf("finished simulated wait")
-			return
-		}
-	}
-}
-
 // exampleRoutine simulates a charge point flow, where
 func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHandler) {
 	dummyClientIdTag := "12345"
@@ -105,7 +77,7 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 	// Notify connector status
 	updateStatus(stateHandler, 0, core.ChargePointStatusAvailable)
 	// Wait for some time ...
-	wait(5 * time.Second)
+	time.Sleep(5 * time.Second)
 	// Simulate charging for connector 1
 	authConf, err := chargePoint.Authorize(dummyClientIdTag)
 	checkError(err)
@@ -125,7 +97,7 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 		if !ok {
 			sampleInterval = 5
 		}
-		wait(time.Second * time.Duration(sampleInterval))
+		time.Sleep(time.Second * time.Duration(sampleInterval))
 		stateHandler.meterValue += 10
 		sampledValue := types.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit: types.UnitOfMeasureWh, Format: types.ValueFormatRaw, Measurand: types.MeasurandEnergyActiveExportRegister, Context: types.ReadingContextSamplePeriodic, Location: types.LocationOutlet}
 		meterValue := types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{sampledValue}}
@@ -147,7 +119,7 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 	// Update connector status
 	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusAvailable)
 	// Wait for some time ...
-	wait(5 * time.Minute)
+	time.Sleep(5 * time.Minute)
 }
 
 // Start function
@@ -193,13 +165,10 @@ func main() {
 	// Connects to central system
 	err := chargePoint.Start(csUrl)
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	} else {
 		log.Infof("connected to central system at %v", csUrl)
-		// Setup channel for asynchronous requests (e.g. triggers)
-		asyncRequestChan = make(chan func(), 5)
 		exampleRoutine(chargePoint, handler)
-		close(asyncRequestChan)
 		// Disconnect
 		chargePoint.Stop()
 		log.Infof("disconnected from central system")

@@ -150,7 +150,7 @@ docker run -it -p 8887:8887 --rm --name central-system ldonini/ocpp1.6-central-s
 
 You can also run it directly using docker-compose:
 ```sh
-docker-compose -f example/1.6/docker-compose.yml up central_system
+docker-compose -f example/1.6/docker-compose.yml up central-system
 ```
 
 #### TLS
@@ -293,7 +293,7 @@ You need to specify the host, on which the central system is running, in order f
 
 You can also run it directly using docker-compose:
 ```sh
-docker-compose -f example/1.6/docker-compose.yml up charge_point
+docker-compose -f example/1.6/docker-compose.yml up charge-point
 ```
 
 #### TLS
@@ -304,7 +304,7 @@ Feel free to use the utility script `cd example/1.6 && ./create-test-certificate
 
 Then run the following:
 ```
-docker-compose -f example/1.6/docker-compose.tls.yml up charge_point
+docker-compose -f example/1.6/docker-compose.tls.yml up charge-point
 ```
 
 ## OCPP 2.0 Usage
