@@ -105,3 +105,56 @@ func NewFIFOClientQueue(capacity int) *FIFOClientQueue {
 		capacity:     capacity,
 	}
 }
+
+// ServerQueueMap defines the interface for managing client request queues.
+//
+// An OCPP-J server may serve multiple clients at the same time, so it will need to provide a queue for each client.
+type ServerQueueMap interface {
+	// Get retrieves the queue associated to a specific clientID.
+	// If no such element exists, the returned flag will be false.
+	Get(clientID string) (RequestQueue, bool)
+	// GetOrCreate retrieves the queue associated to a specific clientID.
+	// If no such element exists, it is created, added to the map and returned.
+	GetOrCreate(clientID string) RequestQueue
+	// Remove deletes the queue associated to a specific clientID.
+	// If no such element exists, nothing happens.
+	Remove(clientID string)
+}
+
+// FIFOQueueMap is a default implementation of ServerQueueMap for OCPP-J servers.
+//
+// A FIFOQueueMap is backed by a map[string]RequestQueue.
+// When calling the GetOrCreate function, if no entry for a key was found in the map,
+// a new RequestQueue with the given capacity will be created.
+type FIFOQueueMap struct {
+	data          map[string]RequestQueue
+	queueCapacity int
+}
+
+func (f *FIFOQueueMap) Get(clientID string) (RequestQueue, bool) {
+	q, ok := f.data[clientID]
+	return q, ok
+}
+
+func (f *FIFOQueueMap) GetOrCreate(clientID string) RequestQueue {
+	var q RequestQueue
+	var ok bool
+	q, ok = f.data[clientID]
+	if !ok {
+		q = NewFIFOClientQueue(f.queueCapacity)
+		f.data[clientID] = q
+	}
+	return q
+}
+
+func (f *FIFOQueueMap) Remove(clientID string) {
+	delete(f.data, clientID)
+}
+
+// NewFIFOQueueMap creates a new FIFOQueueMap, which will automatically create queues with the specified capacity.
+//
+// Passing capacity = 0 will generate queues without a maximum capacity.
+// The capacity cannot change after creation.
+func NewFIFOQueueMap(clientQueueCapacity int) *FIFOQueueMap {
+	return &FIFOQueueMap{data: map[string]RequestQueue{}, queueCapacity: clientQueueCapacity}
+}
