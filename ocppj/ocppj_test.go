@@ -255,6 +255,7 @@ type OcppJTestSuite struct {
 	mockServer         *MockWebsocketServer
 	mockClient         *MockWebsocketClient
 	clientRequestQueue ocppj.RequestQueue
+	serverRequestMap   ocppj.ServerQueueMap
 }
 
 func (suite *OcppJTestSuite) SetupTest() {
@@ -265,7 +266,8 @@ func (suite *OcppJTestSuite) SetupTest() {
 	suite.mockServer = &mockServer
 	suite.clientRequestQueue = ocppj.NewFIFOClientQueue(clientQueueCapacity)
 	suite.chargePoint = ocppj.NewClient("mock_id", suite.mockClient, suite.clientRequestQueue, mockProfile)
-	suite.centralSystem = ocppj.NewServer(suite.mockServer, mockProfile)
+	suite.serverRequestMap = ocppj.NewFIFOQueueMap(clientQueueCapacity)
+	suite.centralSystem = ocppj.NewServer(suite.mockServer, suite.serverRequestMap, mockProfile)
 }
 
 func (suite *OcppJTestSuite) TestGetProfile() {
