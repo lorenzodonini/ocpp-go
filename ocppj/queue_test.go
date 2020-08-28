@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const clientQueueCapacity = 10
+const queueCapacity = 10
 
 type ClientQueueTestSuite struct {
 	suite.Suite
@@ -15,7 +15,7 @@ type ClientQueueTestSuite struct {
 }
 
 func (suite *ClientQueueTestSuite) SetupTest() {
-	suite.queue = ocppj.NewFIFOClientQueue(clientQueueCapacity)
+	suite.queue = ocppj.NewFIFOClientQueue(queueCapacity)
 }
 
 func (suite *ClientQueueTestSuite) TestQueueEmpty() {
@@ -36,7 +36,7 @@ func (suite *ClientQueueTestSuite) TestPushElement() {
 
 func (suite *ClientQueueTestSuite) TestQueueSize() {
 	t := suite.T()
-	for i := 0; i < clientQueueCapacity; i++ {
+	for i := 0; i < queueCapacity; i++ {
 		req := newMockRequest("somevalue")
 		err := suite.queue.Push(req)
 		require.Nil(t, err)
@@ -47,12 +47,12 @@ func (suite *ClientQueueTestSuite) TestQueueSize() {
 
 func (suite *ClientQueueTestSuite) TestQueueFull() {
 	t := suite.T()
-	for i := 0; i < clientQueueCapacity+2; i++ {
+	for i := 0; i < queueCapacity+2; i++ {
 		req := newMockRequest("somevalue")
 		err := suite.queue.Push(req)
-		if i < clientQueueCapacity {
+		if i < queueCapacity {
 			require.Nil(t, err)
-			if i < clientQueueCapacity-1 {
+			if i < queueCapacity-1 {
 				assert.False(t, suite.queue.IsFull())
 			} else {
 				assert.True(t, suite.queue.IsFull())
@@ -108,7 +108,7 @@ func (suite *ClientQueueTestSuite) TestQueueNoCapacity() {
 
 func (suite *ClientQueueTestSuite) TestQueueClear() {
 	t := suite.T()
-	for i := 0; i < clientQueueCapacity; i++ {
+	for i := 0; i < queueCapacity; i++ {
 		req := newMockRequest("somevalue")
 		err := suite.queue.Push(req)
 		require.Nil(t, err)

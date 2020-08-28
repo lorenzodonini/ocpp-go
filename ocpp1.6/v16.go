@@ -249,7 +249,7 @@ func NewCentralSystem(dispatcher *ocppj.Server, server ws.WsServer) CentralSyste
 	}
 	server.AddSupportedSubprotocol(types.V16Subprotocol)
 	if dispatcher == nil {
-		dispatcher = ocppj.NewServer(server, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		dispatcher = ocppj.NewServer(server, ocppj.NewFIFOQueueMap(0), core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
 	cs := centralSystem{
 		server:    dispatcher,

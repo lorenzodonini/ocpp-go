@@ -299,11 +299,15 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 	case CALL_RESULT:
 		callResult := message.(*CallResult)
 		s.completePendingRequest(wsChannel.GetID(), callResult.GetUniqueId()) // Remove current request from queue and send next one
-		s.responseHandler(wsChannel.GetID(), callResult.Payload, callResult.UniqueId)
+		if s.responseHandler != nil {
+			s.responseHandler(wsChannel.GetID(), callResult.Payload, callResult.UniqueId)
+		}
 	case CALL_ERROR:
 		callError := message.(*CallError)
 		s.completePendingRequest(wsChannel.GetID(), callError.GetUniqueId()) // Remove current request from queue and send next one
-		s.errorHandler(wsChannel.GetID(), ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+		if s.errorHandler != nil {
+			s.errorHandler(wsChannel.GetID(), ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+		}
 	}
 	return nil
 }

@@ -214,7 +214,7 @@ func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 
 // ----------------- Queue processing tests -----------------
 
-func (suite *OcppJTestSuite) TestEnqueueRequest() {
+func (suite *OcppJTestSuite) TestClientEnqueueRequest() {
 	t := suite.T()
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	suite.mockClient.On("Write", mock.Anything).Return(nil)
@@ -240,7 +240,7 @@ func (suite *OcppJTestSuite) TestEnqueueRequest() {
 	assert.Equal(t, marshaled, bundle.Data)
 }
 
-func (suite *OcppJTestSuite) TestEnqueueMultipleRequests() {
+func (suite *OcppJTestSuite) TestClientEnqueueMultipleRequests() {
 	t := suite.T()
 	messagesToQueue := 5
 	sentMessages := 0
@@ -275,9 +275,9 @@ func (suite *OcppJTestSuite) TestEnqueueMultipleRequests() {
 	assert.Equal(t, messagesToQueue, i)
 }
 
-func (suite *OcppJTestSuite) TestRequestQueueFull() {
+func (suite *OcppJTestSuite) TestClientRequestQueueFull() {
 	t := suite.T()
-	messagesToQueue := clientQueueCapacity
+	messagesToQueue := queueCapacity
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	suite.mockClient.On("Write", mock.Anything).Return(nil)
 	// Start normally
@@ -295,7 +295,7 @@ func (suite *OcppJTestSuite) TestRequestQueueFull() {
 	assert.Equal(t, "request queue is full, cannot send new request", err.Error())
 }
 
-func (suite *OcppJTestSuite) TestParallelRequests() {
+func (suite *OcppJTestSuite) TestClientParallelRequests() {
 	t := suite.T()
 	messagesToQueue := 10
 	sentMessages := 0
@@ -319,11 +319,11 @@ func (suite *OcppJTestSuite) TestParallelRequests() {
 	assert.Equal(t, messagesToQueue, suite.clientRequestQueue.Size())
 }
 
-// TestRequestFlow tests a typical flow with multiple request-responses.
+// TestClientRequestFlow tests a typical flow with multiple request-responses.
 //
 // Requests are sent concurrently and a response to each message is sent from the mocked server endpoint.
 // Both CallResult and CallError messages are returned to test all message types.
-func (suite *OcppJTestSuite) TestRequestFlow() {
+func (suite *OcppJTestSuite) TestClientRequestFlow() {
 	t := suite.T()
 	messagesToQueue := 10
 	processedMessages := 0

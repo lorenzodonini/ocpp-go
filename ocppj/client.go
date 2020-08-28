@@ -129,6 +129,7 @@ func (c *Client) requestPump() {
 			if !ok {
 				log.Infof("stopped processing requests")
 				c.requestQueue.Init()
+				c.requestChannel = nil
 				return
 			}
 			err := c.requestQueue.Push(bundle)
@@ -136,7 +137,6 @@ func (c *Client) requestPump() {
 				log.Errorf("request %v - %v: %v", bundle.Call.UniqueId, bundle.Call.Action, err)
 				continue
 			}
-			c.AddPendingRequest(bundle.Call.UniqueId, bundle.Call.Payload)
 			log.Debugf("enqueued request %v - %v", bundle.Call.UniqueId, bundle.Call.Action)
 		case rdy = <-c.readyForDispatch:
 		}
@@ -153,6 +153,7 @@ func (c *Client) dispatchNextRequest() {
 	el := c.requestQueue.Peek()
 	bundle, _ := el.(RequestBundle)
 	jsonMessage := bundle.Data
+	c.AddPendingRequest(bundle.Call.UniqueId, bundle.Call.Payload)
 
 	err := c.client.Write(jsonMessage)
 	if err != nil {
