@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"sync"
 	"time"
 )
 
@@ -336,6 +337,8 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 		sendResponseTrigger <- call
 	}).Return(nil)
 	// Mocked response generator
+	var wg sync.WaitGroup
+	wg.Add(messagesToQueue)
 	go func() {
 		for {
 			call, ok := <-sendResponseTrigger
@@ -378,6 +381,7 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 			} else {
 				assert.True(t, suite.clientRequestQueue.IsEmpty())
 			}
+			wg.Done()
 		}
 	}()
 	// Start client normally
@@ -391,7 +395,7 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 		}(i)
 	}
 	// Wait for processing to complete
-	time.Sleep(2000 * time.Millisecond)
+	wg.Wait()
 	close(sendResponseTrigger)
 	assert.True(t, suite.clientRequestQueue.IsEmpty())
 }

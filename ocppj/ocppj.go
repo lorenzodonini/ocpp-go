@@ -10,6 +10,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 	"math/rand"
 	"reflect"
+	"sync"
 )
 
 // The validator, used for validating incoming/outgoing OCPP messages.
@@ -225,6 +226,7 @@ func errorFromValidation(validationErrors validator.ValidationErrors, messageId 
 type Endpoint struct {
 	Profiles        []*ocpp.Profile
 	pendingRequests map[string]ocpp.Request
+	mutex           sync.Mutex
 }
 
 // Adds support for a new profile on the endpoint.
@@ -257,22 +259,30 @@ func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*ocpp.Profil
 // Sets a Request as pending on the endpoint. Requests are considered pending until a response was received.
 // The function expects a message unique ID and the Request.
 func (endpoint *Endpoint) AddPendingRequest(id string, request ocpp.Request) {
+	endpoint.mutex.Lock()
+	defer endpoint.mutex.Unlock()
 	endpoint.pendingRequests[id] = request
 }
 
 // Retrieves a pending Request, using the message ID.
 // If no request for the passed message ID is found, a false flag is returned.
 func (endpoint *Endpoint) GetPendingRequest(id string) (ocpp.Request, bool) {
+	endpoint.mutex.Lock()
+	defer endpoint.mutex.Unlock()
 	request, ok := endpoint.pendingRequests[id]
 	return request, ok
 }
 
 // Deletes a pending Request from the endpoint, using the message ID.
 func (endpoint *Endpoint) DeletePendingRequest(id string) {
+	endpoint.mutex.Lock()
+	defer endpoint.mutex.Unlock()
 	delete(endpoint.pendingRequests, id)
 }
 
 func (endpoint *Endpoint) clearPendingRequests() {
+	endpoint.mutex.Lock()
+	defer endpoint.mutex.Unlock()
 	endpoint.pendingRequests = map[string]ocpp.Request{}
 }
 
