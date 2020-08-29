@@ -119,6 +119,9 @@ type ServerQueueMap interface {
 	// Remove deletes the queue associated to a specific clientID.
 	// If no such element exists, nothing happens.
 	Remove(clientID string)
+	// Add inserts a new RequestQueue into the map structure.
+	// If such element already exists, it will be replaced with the new queue.
+	Add(clientID string, queue RequestQueue)
 }
 
 // FIFOQueueMap is a default implementation of ServerQueueMap for OCPP-J servers.
@@ -129,14 +132,19 @@ type ServerQueueMap interface {
 type FIFOQueueMap struct {
 	data          map[string]RequestQueue
 	queueCapacity int
+	mutex         sync.Mutex
 }
 
 func (f *FIFOQueueMap) Get(clientID string) (RequestQueue, bool) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
 	q, ok := f.data[clientID]
 	return q, ok
 }
 
 func (f *FIFOQueueMap) GetOrCreate(clientID string) RequestQueue {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
 	var q RequestQueue
 	var ok bool
 	q, ok = f.data[clientID]
@@ -148,7 +156,15 @@ func (f *FIFOQueueMap) GetOrCreate(clientID string) RequestQueue {
 }
 
 func (f *FIFOQueueMap) Remove(clientID string) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
 	delete(f.data, clientID)
+}
+
+func (f *FIFOQueueMap) Add(clientID string, queue RequestQueue) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+	f.data[clientID] = queue
 }
 
 // NewFIFOQueueMap creates a new FIFOQueueMap, which will automatically create queues with the specified capacity.

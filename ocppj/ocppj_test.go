@@ -612,4 +612,5 @@ func (suite *OcppJTestSuite) TestParseCall() {
 func TestMockOcppJ(t *testing.T) {
 	suite.Run(t, new(OcppJTestSuite))
 	suite.Run(t, new(ClientQueueTestSuite))
+	suite.Run(t, new(ServerQueueMapTestSuite))
 }

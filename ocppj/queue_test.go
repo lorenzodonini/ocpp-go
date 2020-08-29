@@ -118,3 +118,56 @@ func (suite *ClientQueueTestSuite) TestQueueClear() {
 	assert.True(t, suite.queue.IsEmpty())
 	assert.Equal(t, 0, suite.queue.Size())
 }
+
+type ServerQueueMapTestSuite struct {
+	suite.Suite
+	queueMap ocppj.ServerQueueMap
+}
+
+func (suite *ServerQueueMapTestSuite) SetupTest() {
+	suite.queueMap = ocppj.NewFIFOQueueMap(queueCapacity)
+}
+
+func (suite *ServerQueueMapTestSuite) TestAddElement() {
+	t := suite.T()
+	q := ocppj.NewFIFOClientQueue(0)
+	el := "element1"
+	_ = q.Push(el)
+	id := "test"
+	suite.queueMap.Add(id, q)
+
+	retrieved, ok := suite.queueMap.Get(id)
+	require.True(t, ok)
+	require.NotNil(t, retrieved)
+	assert.False(t, retrieved.IsEmpty())
+	assert.Equal(t, 1, retrieved.Size())
+	assert.Equal(t, el, retrieved.Peek())
+}
+
+func (suite *ServerQueueMapTestSuite) TestGetOrCreate() {
+	t := suite.T()
+	el := "element1"
+	id := "test"
+	q, ok := suite.queueMap.Get(id)
+	require.False(t, ok)
+	require.Nil(t, q)
+	q = suite.queueMap.GetOrCreate(id)
+	require.NotNil(t, q)
+	_ = q.Push(el)
+	// Verify consistency
+	q, ok = suite.queueMap.Get(id)
+	require.True(t, ok)
+	assert.Equal(t, 1, q.Size())
+	assert.Equal(t, el, q.Peek())
+}
+
+func (suite *ServerQueueMapTestSuite) TestRemove() {
+	t := suite.T()
+	id := "test"
+	q := suite.queueMap.GetOrCreate(id)
+	require.NotNil(t, q)
+	suite.queueMap.Remove(id)
+	q, ok := suite.queueMap.Get(id)
+	assert.False(t, ok)
+	assert.Nil(t, q)
+}
