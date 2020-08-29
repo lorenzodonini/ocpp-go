@@ -17,7 +17,7 @@ type Client struct {
 	responseHandler  func(response ocpp.Response, requestId string)
 	errorHandler     func(err *ocpp.Error, details interface{})
 	requestQueue     RequestQueue
-	requestChannel   chan RequestBundle
+	requestChannel   chan bool
 	readyForDispatch chan bool
 }
 
@@ -66,7 +66,7 @@ func (c *Client) Start(serverURL string) error {
 	fullUrl := fmt.Sprintf("%v/%v", serverURL, c.Id)
 	err := c.client.Start(fullUrl)
 	if err == nil {
-		c.requestChannel = make(chan RequestBundle)
+		c.requestChannel = make(chan bool, 1)
 		go c.requestPump()
 	}
 	return err
@@ -111,10 +111,12 @@ func (c *Client) SendRequest(request ocpp.Request) error {
 		return err
 	}
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
-	if c.requestQueue.IsFull() {
-		return fmt.Errorf("request queue is full, cannot send new request")
+	if err := c.requestQueue.Push(RequestBundle{Call: call, Data: jsonMessage}); err != nil {
+		log.Errorf("request %v - %v: %v", call.UniqueId, call.Action, err)
+		return err
 	}
-	c.requestChannel <- RequestBundle{Call: call, Data: jsonMessage}
+	log.Debugf("enqueued request %v - %v", call.UniqueId, call.Action)
+	c.requestChannel <- true
 	return nil
 }
 
@@ -124,7 +126,7 @@ func (c *Client) requestPump() {
 	rdy := true // Ready to transmit at the beginning
 	for {
 		select {
-		case bundle, ok := <-c.requestChannel:
+		case _, ok := <-c.requestChannel:
 			// Enqueue new request
 			if !ok {
 				log.Infof("stopped processing requests")
@@ -132,12 +134,6 @@ func (c *Client) requestPump() {
 				c.requestChannel = nil
 				return
 			}
-			err := c.requestQueue.Push(bundle)
-			if err != nil {
-				log.Errorf("request %v - %v: %v", bundle.Call.UniqueId, bundle.Call.Action, err)
-				continue
-			}
-			log.Debugf("enqueued request %v - %v", bundle.Call.UniqueId, bundle.Call.Action)
 		case rdy = <-c.readyForDispatch:
 		}
 		// Only dispatch request if able to send and request queue isn't empty

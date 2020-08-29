@@ -292,7 +292,7 @@ func (suite *OcppJTestSuite) TestClientRequestQueueFull() {
 	req := newMockRequest("full")
 	err = suite.chargePoint.SendRequest(req)
 	require.NotNil(t, err)
-	assert.Equal(t, "request queue is full, cannot send new request", err.Error())
+	assert.Equal(t, "request queue is full, cannot push new element", err.Error())
 }
 
 func (suite *OcppJTestSuite) TestClientParallelRequests() {
