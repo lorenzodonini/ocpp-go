@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -326,6 +327,7 @@ func (suite *OcppJTestSuite) TestClientParallelRequests() {
 // Both CallResult and CallError messages are returned to test all message types.
 func (suite *OcppJTestSuite) TestClientRequestFlow() {
 	t := suite.T()
+	var mutex sync.Mutex
 	messagesToQueue := 10
 	processedMessages := 0
 	sendResponseTrigger := make(chan *ocppj.Call, 1)
@@ -355,7 +357,8 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 			// Send response back to client
 			var data []byte
 			var err error
-			if processedMessages%2 == 0 {
+			v, _ := strconv.Atoi(req.MockValue)
+			if v%2 == 0 {
 				// Send CallResult
 				resp := newMockConfirmation("someResp")
 				res, err := suite.chargePoint.CreateCallResult(resp, call.GetUniqueId())
@@ -372,15 +375,15 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 			err = suite.mockClient.MessageHandler(data) // Triggers ocppMessageHandler
 			require.Nil(t, err)
 			// Make sure the top queue element was popped
+			mutex.Lock()
 			processedMessages += 1
-			if processedMessages < messagesToQueue {
-				peeked := suite.clientRequestQueue.Peek()
+			peeked = suite.clientRequestQueue.Peek()
+			if peeked != nil {
 				bundle, _ := peeked.(ocppj.RequestBundle)
 				require.NotNil(t, bundle)
 				assert.NotEqual(t, call.UniqueId, bundle.Call.UniqueId)
-			} else {
-				assert.True(t, suite.clientRequestQueue.IsEmpty())
 			}
+			mutex.Unlock()
 			wg.Done()
 		}
 	}()
@@ -389,7 +392,7 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 	require.Nil(t, err)
 	for i := 0; i < messagesToQueue; i++ {
 		go func(j int) {
-			req := newMockRequest(fmt.Sprintf("request-%v", j))
+			req := newMockRequest(fmt.Sprintf("%v", j))
 			err = suite.chargePoint.SendRequest(req)
 			require.Nil(t, err)
 		}(i)

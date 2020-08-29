@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -343,8 +344,9 @@ func (suite *OcppJTestSuite) TestParallelRequests() {
 //
 // Requests are sent concurrently and a response to each message is sent from the mocked client endpoint.
 // Both CallResult and CallError messages are returned to test all message types.
-func (suite *OcppJTestSuite) TestRequestFlow() {
+func (suite *OcppJTestSuite) TestServerRequestFlow() {
 	t := suite.T()
+	var mutex sync.Mutex
 	messagesToQueue := 10
 	processedMessages := 0
 	mockChargePoint1 := "cp1"
@@ -389,7 +391,8 @@ func (suite *OcppJTestSuite) TestRequestFlow() {
 			// Send response back to server
 			var data []byte
 			var err error
-			if processedMessages%2 == 0 {
+			v, _ := strconv.Atoi(req.MockValue)
+			if v%2 == 0 {
 				// Send CallResult
 				resp := newMockConfirmation("someResp")
 				res, err := suite.centralSystem.CreateCallResult(resp, call.GetUniqueId())
@@ -407,15 +410,15 @@ func (suite *OcppJTestSuite) TestRequestFlow() {
 			err = suite.mockServer.MessageHandler(wsChannel, data) // Triggers ocppMessageHandler
 			require.Nil(t, err)
 			// Make sure the top queue element was popped
+			mutex.Lock()
 			processedMessages += 1
-			if processedMessages < messagesToQueue {
-				peeked := q.Peek()
+			peeked = q.Peek()
+			if peeked != nil {
 				bundle, _ := peeked.(ocppj.RequestBundle)
 				require.NotNil(t, bundle)
 				assert.NotEqual(t, call.UniqueId, bundle.Call.UniqueId)
-			} else {
-				assert.True(t, suite.clientRequestQueue.IsEmpty())
 			}
+			mutex.Unlock()
 			wg.Done()
 		}
 	}()
@@ -430,7 +433,7 @@ func (suite *OcppJTestSuite) TestRequestFlow() {
 			chargePointTarget = mockChargePoint2
 		}
 		go func(j int, clientID string) {
-			req := newMockRequest(fmt.Sprintf("request-%v", j))
+			req := newMockRequest(fmt.Sprintf("%v", j))
 			err := suite.centralSystem.SendRequest(clientID, req)
 			require.Nil(t, err)
 		}(i, chargePointTarget)
