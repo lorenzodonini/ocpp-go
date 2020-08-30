@@ -24,7 +24,10 @@ type Server struct {
 }
 
 // Creates a new Server endpoint.
-// Requires a a websocket server and a list of profiles (optional).
+// Requires a a websocket server, a structure for queueing requests, and a list of profiles (optional).
+//
+// You may create a simple new server by using these default values:
+//	s := ocppj.NewServer(ws.NewServer(), ocppj.NewFIFOQueueMap(0))
 func NewServer(wsServer ws.WsServer, requestMap ServerQueueMap, profiles ...*ocpp.Profile) *Server {
 	endpoint := Endpoint{pendingRequests: map[string]ocpp.Request{}}
 	for _, profile := range profiles {

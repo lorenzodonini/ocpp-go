@@ -22,7 +22,10 @@ type Client struct {
 }
 
 // Creates a new Client endpoint.
-// Requires a unique client ID, a websocket client, a request queue struct and a list of supported profiles (optional).
+// Requires a unique client ID, a websocket client, a struct for queueing requests and a list of supported profiles (optional).
+//
+// You may create a simple new server by using these default values:
+//	s := ocppj.NewClient(ws.NewClient(), ocppj.NewFIFOClientQueue())
 func NewClient(id string, wsClient ws.WsClient, requestQueue RequestQueue, profiles ...*ocpp.Profile) *Client {
 	endpoint := Endpoint{pendingRequests: map[string]ocpp.Request{}}
 	for _, profile := range profiles {
@@ -101,13 +104,12 @@ func (c *Client) SendRequest(request ocpp.Request) error {
 	if err != nil {
 		return err
 	}
-	call, err := c.CreateCall(request) // This doesn't add a pending request yet
+	call, err := c.CreateCall(request)
 	if err != nil {
 		return err
 	}
 	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
-		// TODO: delete pending request on endpoint struct
 		return err
 	}
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine

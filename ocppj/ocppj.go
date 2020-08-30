@@ -42,6 +42,11 @@ var messageIdGenerator = func() string {
 	return fmt.Sprintf("%v", rand.Uint32())
 }
 
+// SetMessageIdGenerator sets a lambda function for generating unique IDs for new messages.
+// The function is invoked automatically when creating a new Call.
+//
+// Settings this overrides the default behavior, which is:
+//	fmt.Sprintf("%v", rand.Uint32())
 func SetMessageIdGenerator(generator func() string) {
 	if generator != nil {
 		messageIdGenerator = generator
