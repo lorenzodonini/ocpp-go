@@ -27,6 +27,7 @@ func NewMockWebSocket(id string) MockWebSocket {
 }
 
 // ---------------------- MOCK WEBSOCKET SERVER ----------------------
+
 type MockWebsocketServer struct {
 	mock.Mock
 	ws.WsServer
@@ -68,6 +69,7 @@ func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client
 }
 
 // ---------------------- MOCK WEBSOCKET CLIENT ----------------------
+
 type MockWebsocketClient struct {
 	mock.Mock
 	ws.WsClient
@@ -143,6 +145,7 @@ func newMockConfirmation(value string) *MockConfirmation {
 }
 
 // ---------------------- COMMON UTILITY METHODS ----------------------
+
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
 	wsServer := ws.Server{}
 	wsServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
@@ -244,12 +247,15 @@ func init() {
 }
 
 // ---------------------- TESTS ----------------------
+
 type OcppJTestSuite struct {
 	suite.Suite
-	chargePoint   *ocppj.Client
-	centralSystem *ocppj.Server
-	mockServer    *MockWebsocketServer
-	mockClient    *MockWebsocketClient
+	chargePoint        *ocppj.Client
+	centralSystem      *ocppj.Server
+	mockServer         *MockWebsocketServer
+	mockClient         *MockWebsocketClient
+	clientRequestQueue ocppj.RequestQueue
+	serverRequestMap   ocppj.ServerQueueMap
 }
 
 func (suite *OcppJTestSuite) SetupTest() {
@@ -258,11 +264,12 @@ func (suite *OcppJTestSuite) SetupTest() {
 	mockServer := MockWebsocketServer{}
 	suite.mockClient = &mockClient
 	suite.mockServer = &mockServer
-	suite.chargePoint = ocppj.NewClient("mock_id", suite.mockClient, mockProfile)
-	suite.centralSystem = ocppj.NewServer(suite.mockServer, mockProfile)
+	suite.clientRequestQueue = ocppj.NewFIFOClientQueue(queueCapacity)
+	suite.chargePoint = ocppj.NewClient("mock_id", suite.mockClient, suite.clientRequestQueue, mockProfile)
+	suite.serverRequestMap = ocppj.NewFIFOQueueMap(queueCapacity)
+	suite.centralSystem = ocppj.NewServer(suite.mockServer, suite.serverRequestMap, mockProfile)
 }
 
-// Protocol functions test
 func (suite *OcppJTestSuite) TestGetProfile() {
 	t := suite.T()
 	profile, ok := suite.chargePoint.GetProfile("mock")
@@ -364,11 +371,10 @@ func (suite *OcppJTestSuite) TestCreateCall() {
 	assert.True(t, ok)
 	assert.NotNil(t, message)
 	assert.Equal(t, mockValue, message.MockValue)
-	// Check that request was stored as pending request
+	// Check that request was not yet stored as pending request
 	pendingRequest, exists := suite.chargePoint.GetPendingRequest(call.UniqueId)
-	assert.True(t, exists)
-	assert.NotNil(t, pendingRequest)
-	suite.chargePoint.DeletePendingRequest(call.UniqueId)
+	assert.False(t, exists)
+	assert.Nil(t, pendingRequest)
 }
 
 func (suite *OcppJTestSuite) TestCreateCallResult() {
@@ -513,10 +519,12 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	messageId := "12345"
+	pendingRequest := newMockRequest("request")
 	// Test invalid message length
 	mockMessage[0] = float64(ocppj.CALL_ERROR) // Message Type ID
 	mockMessage[1] = messageId                 // Unique ID
 	mockMessage[2] = ocppj.GenericError
+	suite.chargePoint.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
 	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
@@ -559,7 +567,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	mockMessage[0] = float64(ocppj.CALL_RESULT) // Message Type ID
 	mockMessage[1] = messageId                  // Unique ID
 	mockMessage[2] = mockConfirmation
-	suite.chargePoint.AddPendingRequest(messageId, pendingRequest)
+	suite.chargePoint.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
 	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
@@ -567,7 +575,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockConfirmation.MockValue = "min"
-	suite.chargePoint.AddPendingRequest(messageId, pendingRequest)
+	suite.chargePoint.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that responses are not rejected
 	message, protoErr = suite.chargePoint.ParseMessage(mockMessage)
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
@@ -601,6 +609,8 @@ func (suite *OcppJTestSuite) TestParseCall() {
 
 //TODO: implement further ocpp-j protocol tests
 
-func TestOcppJ(t *testing.T) {
+func TestMockOcppJ(t *testing.T) {
 	suite.Run(t, new(OcppJTestSuite))
+	suite.Run(t, new(ClientQueueTestSuite))
+	suite.Run(t, new(ServerQueueMapTestSuite))
 }

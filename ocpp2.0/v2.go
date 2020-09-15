@@ -160,7 +160,7 @@ func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient)
 		}
 	})
 	if dispatcher == nil {
-		dispatcher = ocppj.NewClient(id, client, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
+		dispatcher = ocppj.NewClient(id, client, ocppj.NewFIFOClientQueue(0), authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
 	cs := chargingStation{client: dispatcher, responseHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
 	cs.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
@@ -314,7 +314,7 @@ func NewCSMS(dispatcher *ocppj.Server, server ws.WsServer) CSMS {
 	}
 	server.AddSupportedSubprotocol(types.V2Subprotocol)
 	if dispatcher == nil {
-		dispatcher = ocppj.NewServer(server, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
+		dispatcher = ocppj.NewServer(server, ocppj.NewFIFOQueueMap(0), authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
 	cs := csms{
 		server:    dispatcher,

@@ -103,6 +103,9 @@ func (websocketClient *MockWebsocketClient) Write(data []byte) error {
 func (websocketClient *MockWebsocketClient) AddOption(option interface{}) {
 }
 
+// Default queue capacity
+const queueCapacity = 10
+
 // ---------------------- MOCK FEATURE ----------------------
 const (
 	MockFeatureName = "Mock"
@@ -554,14 +557,24 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
-	// Run request test
+	// Run request test, expecting an error
 	err = suite.centralSystem.SendRequestAsync(wsId, request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
 	assert.Error(t, err)
 	assert.Equal(t, expectedError, err.Error())
-	// Run response test
+	// Add mocked request in queue and mark as pending, otherwise response will be ignored
+	mockCall, _ := suite.ocppjCentralSystem.CreateCall(request)
+	mockCall.UniqueId = messageId
+	jsonMessage, _ := mockCall.MarshalJSON()
+	requestBundle := ocppj.RequestBundle{
+		Call: mockCall,
+		Data: jsonMessage,
+	}
+	q := suite.serverRequestMap.GetOrCreate(wsId)
+	_ = q.Push(requestBundle)
 	suite.ocppjCentralSystem.AddPendingRequest(messageId, request)
+	// Run response test
 	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
 	assert.Nil(t, err)
 }
@@ -603,6 +616,8 @@ type OcppV16TestSuite struct {
 	chargePoint        ocpp16.ChargePoint
 	centralSystem      ocpp16.CentralSystem
 	messageIdGenerator TestRandomIdGenerator
+	clientRequestQueue ocppj.RequestQueue
+	serverRequestMap   ocppj.ServerQueueMap
 }
 
 type TestRandomIdGenerator struct {
@@ -626,8 +641,10 @@ func (suite *OcppV16TestSuite) SetupTest() {
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
-	suite.ocppjChargePoint = ocppj.NewClient("test_id", suite.mockWsClient, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
-	suite.ocppjCentralSystem = ocppj.NewServer(suite.mockWsServer, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
+	suite.clientRequestQueue = ocppj.NewFIFOClientQueue(queueCapacity)
+	suite.serverRequestMap = ocppj.NewFIFOQueueMap(queueCapacity)
+	suite.ocppjChargePoint = ocppj.NewClient("test_id", suite.mockWsClient, suite.clientRequestQueue, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
+	suite.ocppjCentralSystem = ocppj.NewServer(suite.mockWsServer, suite.serverRequestMap, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
 	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {

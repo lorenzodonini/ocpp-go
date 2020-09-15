@@ -10,6 +10,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 	"math/rand"
 	"reflect"
+	"sync"
 )
 
 // The validator, used for validating incoming/outgoing OCPP messages.
@@ -41,6 +42,11 @@ var messageIdGenerator = func() string {
 	return fmt.Sprintf("%v", rand.Uint32())
 }
 
+// SetMessageIdGenerator sets a lambda function for generating unique IDs for new messages.
+// The function is invoked automatically when creating a new Call.
+//
+// Settings this overrides the default behavior, which is:
+//	fmt.Sprintf("%v", rand.Uint32())
 func SetMessageIdGenerator(generator func() string) {
 	if generator != nil {
 		messageIdGenerator = generator
@@ -225,6 +231,7 @@ func errorFromValidation(validationErrors validator.ValidationErrors, messageId 
 type Endpoint struct {
 	Profiles        []*ocpp.Profile
 	pendingRequests map[string]ocpp.Request
+	mutex           sync.Mutex
 }
 
 // Adds support for a new profile on the endpoint.
@@ -257,22 +264,30 @@ func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*ocpp.Profil
 // Sets a Request as pending on the endpoint. Requests are considered pending until a response was received.
 // The function expects a message unique ID and the Request.
 func (endpoint *Endpoint) AddPendingRequest(id string, request ocpp.Request) {
+	endpoint.mutex.Lock()
+	defer endpoint.mutex.Unlock()
 	endpoint.pendingRequests[id] = request
 }
 
 // Retrieves a pending Request, using the message ID.
 // If no request for the passed message ID is found, a false flag is returned.
 func (endpoint *Endpoint) GetPendingRequest(id string) (ocpp.Request, bool) {
+	endpoint.mutex.Lock()
+	defer endpoint.mutex.Unlock()
 	request, ok := endpoint.pendingRequests[id]
 	return request, ok
 }
 
 // Deletes a pending Request from the endpoint, using the message ID.
 func (endpoint *Endpoint) DeletePendingRequest(id string) {
+	endpoint.mutex.Lock()
+	defer endpoint.mutex.Unlock()
 	delete(endpoint.pendingRequests, id)
 }
 
 func (endpoint *Endpoint) clearPendingRequests() {
+	endpoint.mutex.Lock()
+	defer endpoint.mutex.Unlock()
 	endpoint.pendingRequests = map[string]ocpp.Request{}
 }
 
@@ -347,7 +362,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 		}
 		return &call, nil
 	} else if typeId == CALL_RESULT {
-		request, ok := endpoint.pendingRequests[uniqueId]
+		request, ok := endpoint.GetPendingRequest(uniqueId)
 		if !ok {
 			log.Printf("No previous request %v sent. Discarding response message", uniqueId)
 			return nil, nil
@@ -362,13 +377,17 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 			UniqueId:      uniqueId,
 			Payload:       confirmation,
 		}
-		endpoint.DeletePendingRequest(callResult.GetUniqueId())
 		err = Validate.Struct(callResult)
 		if err != nil {
 			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId)
 		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
+		_, ok := endpoint.GetPendingRequest(uniqueId)
+		if !ok {
+			log.Printf("No previous request %v sent. Discarding error message", uniqueId)
+			return nil, nil
+		}
 		if len(arr) < 4 {
 			return nil, ocpp.NewError(FormationViolation, "Invalid Call Error message. Expected array length >= 4", uniqueId)
 		}
@@ -385,7 +404,6 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 			ErrorDescription: arr[3].(string),
 			ErrorDetails:     details,
 		}
-		endpoint.DeletePendingRequest(callError.GetUniqueId())
 		err := Validate.Struct(callError)
 		if err != nil {
 			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId)
@@ -398,12 +416,15 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 
 // Creates a Call message, given an OCPP request. A unique ID for the message is automatically generated.
 // Returns an error in case the request's feature is not supported on this endpoint.
+//
+// The created call is not automatically scheduled for transmission and is not added to the list of pending requests.
 func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	action := request.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
 		return nil, errors2.Errorf("Couldn't create Call for unsupported action %v", action)
 	}
+	// TODO: handle collisions?
 	uniqueId := messageIdGenerator()
 	call := Call{
 		MessageTypeId: CALL,
@@ -415,11 +436,11 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	if err != nil {
 		return nil, err
 	}
-	endpoint.AddPendingRequest(uniqueId, request)
 	return &call, nil
 }
 
 // Creates a CallResult message, given an OCPP response and the message's unique ID.
+//
 // Returns an error in case the response's feature is not supported on this endpoint.
 func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId string) (*CallResult, error) {
 	action := confirmation.GetFeatureName()
