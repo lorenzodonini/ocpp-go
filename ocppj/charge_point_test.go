@@ -65,7 +65,7 @@ func (suite *OcppJTestSuite) TestChargePointSendRequestFailed() {
 		require.False(t, suite.clientRequestQueue.IsEmpty())
 		req := suite.clientRequestQueue.Peek().(ocppj.RequestBundle)
 		callID = req.Call.GetUniqueId()
-		_, ok := suite.chargePoint.GetPendingRequest(callID)
+		_, ok := suite.chargePoint.PendingRequestState.GetPendingRequest(callID)
 		// Before anything is returned, the request must still be pending
 		assert.True(t, ok)
 	})
@@ -76,7 +76,7 @@ func (suite *OcppJTestSuite) TestChargePointSendRequestFailed() {
 	assert.Nil(t, err)
 	// Assert that pending request was removed
 	time.Sleep(500 * time.Millisecond)
-	_, ok := suite.chargePoint.GetPendingRequest(callID)
+	_, ok := suite.chargePoint.PendingRequestState.GetPendingRequest(callID)
 	assert.False(t, ok)
 }
 
@@ -180,7 +180,7 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 		assert.NotNil(t, confirmation)
 	})
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
-	suite.chargePoint.AddPendingRequest(mockUniqueId, mockRequest) // Manually add a pending request, so that response is not rejected
+	suite.chargePoint.PendingRequestState.AddPendingRequest(mockUniqueId, mockRequest) // Manually add a pending request, so that response is not rejected
 	err := suite.chargePoint.Start("somePath")
 	assert.Nil(t, err)
 	// Simulate central system message
@@ -206,7 +206,7 @@ func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 		assert.Equal(t, mockErrorDetails, details)
 	})
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
-	suite.chargePoint.AddPendingRequest(mockUniqueId, mockRequest) // Manually add a pending request, so that response is not rejected
+	suite.chargePoint.PendingRequestState.AddPendingRequest(mockUniqueId, mockRequest) // Manually add a pending request, so that response is not rejected
 	err := suite.chargePoint.Start("someUrl")
 	assert.Nil(t, err)
 	// Simulate central system message

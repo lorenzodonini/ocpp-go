@@ -47,7 +47,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
 		require.False(t, q.IsEmpty())
 		req := q.Peek().(ocppj.RequestBundle)
 		callID = req.Call.GetUniqueId()
-		_, ok = suite.centralSystem.GetPendingRequest(callID)
+		_, ok = suite.centralSystem.PendingRequestState.GetPendingRequest(callID)
 		// Before anything is returned, the request must still be pending
 		assert.True(t, ok)
 	})
@@ -58,7 +58,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
 	assert.Nil(t, err)
 	// Assert that pending request was removed
 	time.Sleep(500 * time.Millisecond)
-	_, ok := suite.centralSystem.GetPendingRequest(callID)
+	_, ok := suite.centralSystem.PendingRequestState.GetPendingRequest(callID)
 	assert.False(t, ok)
 }
 
@@ -223,7 +223,7 @@ func addMockPendingRequest(suite *OcppJTestSuite, mockRequest ocpp.Request, mock
 	}
 	q := suite.serverRequestMap.GetOrCreate(mockChargePointID)
 	_ = q.Push(requestBundle)
-	suite.centralSystem.AddPendingRequest(mockUniqueID, mockRequest)
+	suite.centralSystem.PendingRequestState.AddPendingRequest(mockUniqueID, mockRequest)
 }
 
 // ----------------- Queue processing tests -----------------
@@ -310,7 +310,7 @@ func (suite *OcppJTestSuite) TestRequestQueueFull() {
 	req := newMockRequest("full")
 	err := suite.centralSystem.SendRequest(mockChargePointId, req)
 	require.NotNil(t, err)
-	assert.Equal(t, fmt.Sprintf("request queue for client %v is full, cannot send new request", mockChargePointId), err.Error())
+	assert.Equal(t, "request queue is full, cannot push new element", err.Error())
 }
 
 func (suite *OcppJTestSuite) TestParallelRequests() {
