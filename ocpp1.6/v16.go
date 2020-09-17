@@ -131,7 +131,8 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 		}
 	})
 	if endpoint == nil {
-		endpoint = ocppj.NewClient(id, client, ocppj.NewFIFOClientQueue(0), core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
+		endpoint = ocppj.NewClient(id, client, dispatcher, dispatcher, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
 	cp := chargePoint{client: endpoint, confirmationHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
 	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
@@ -249,7 +250,8 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.WsServer) CentralSystem 
 	}
 	server.AddSupportedSubprotocol(types.V16Subprotocol)
 	if endpoint == nil {
-		endpoint = ocppj.NewServer(server, ocppj.NewFIFOQueueMap(0), core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		dispatcher := ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(0))
+		endpoint = ocppj.NewServer(server, dispatcher, dispatcher, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
 	cs := centralSystem{
 		server:    endpoint,

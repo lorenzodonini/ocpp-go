@@ -122,7 +122,7 @@ type ChargingStation interface {
 // Creates a new OCPP 2.0 charging station client.
 // The id parameter is required to uniquely identify the charge point.
 //
-// The dispatcher and client parameters may be omitted, in order to use a default configuration:
+// The endpoint and client parameters may be omitted, in order to use a default configuration:
 //   chargingStation := NewChargingStation("someUniqueId", nil, nil)
 //
 // Additional networking parameters (e.g. TLS or proxy configuration) may be passed, by creating a custom client.
@@ -142,7 +142,7 @@ type ChargingStation interface {
 //
 // For more advanced options, or if a custom networking/occpj layer is required,
 // please refer to ocppj.Client and ws.WsClient.
-func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient) ChargingStation {
+func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) ChargingStation {
 	if client == nil {
 		client = ws.NewClient()
 	}
@@ -159,10 +159,11 @@ func NewChargingStation(id string, dispatcher *ocppj.Client, client ws.WsClient)
 			dialer.Subprotocols = append(dialer.Subprotocols, types.V2Subprotocol)
 		}
 	})
-	if dispatcher == nil {
-		dispatcher = ocppj.NewClient(id, client, ocppj.NewFIFOClientQueue(0), authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
+	if endpoint == nil {
+		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
+		endpoint = ocppj.NewClient(id, client, dispatcher, dispatcher, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
-	cs := chargingStation{client: dispatcher, responseHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
+	cs := chargingStation{client: endpoint, responseHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
 	cs.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
 		cs.responseHandler <- confirmation
 	})
@@ -300,7 +301,7 @@ type CSMS interface {
 
 // Creates a new OCPP 2.0 CSMS.
 //
-// The dispatcher and client parameters may be omitted, in order to use a default configuration:
+// The endpoint and client parameters may be omitted, in order to use a default configuration:
 //   csms := NewCSMS(nil, nil)
 //
 // It is recommended to use the default configuration, unless a custom networking / ocppj layer is required.
@@ -308,16 +309,17 @@ type CSMS interface {
 //
 // If you need a TLS server, you may use the following:
 //	csms := NewCSMS(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
-func NewCSMS(dispatcher *ocppj.Server, server ws.WsServer) CSMS {
+func NewCSMS(endpoint *ocppj.Server, server ws.WsServer) CSMS {
 	if server == nil {
 		server = ws.NewServer()
 	}
 	server.AddSupportedSubprotocol(types.V2Subprotocol)
-	if dispatcher == nil {
-		dispatcher = ocppj.NewServer(server, ocppj.NewFIFOQueueMap(0), authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
+	if endpoint == nil {
+		dispatcher := ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(0))
+		endpoint = ocppj.NewServer(server, dispatcher, dispatcher, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
 	cs := csms{
-		server:    dispatcher,
+		server:    endpoint,
 		callbacks: map[string]func(confirmation ocpp.Response, err error){}}
 	cs.server.SetRequestHandler(cs.handleIncomingRequest)
 	cs.server.SetResponseHandler(cs.handleIncomingResponse)
