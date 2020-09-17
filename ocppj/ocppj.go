@@ -10,7 +10,6 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 	"math/rand"
 	"reflect"
-	"sync"
 )
 
 // The validator, used for validating incoming/outgoing OCPP messages.
@@ -227,11 +226,10 @@ func errorFromValidation(validationErrors validator.ValidationErrors, messageId 
 // -------------------- Endpoint --------------------
 
 // An OCPP-J endpoint is one of the two entities taking part in the communication.
-// The endpoint keeps state for supported OCPP profiles and pending requests.
+// The endpoint keeps state for supported OCPP profiles and current pending requests.
 type Endpoint struct {
-	Profiles        []*ocpp.Profile
-	pendingRequests map[string]ocpp.Request
-	mutex           sync.Mutex
+	Profiles            []*ocpp.Profile
+	PendingRequestState PendingRequestState
 }
 
 // Adds support for a new profile on the endpoint.
@@ -259,36 +257,6 @@ func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*ocpp.Profil
 		}
 	}
 	return nil, false
-}
-
-// Sets a Request as pending on the endpoint. Requests are considered pending until a response was received.
-// The function expects a message unique ID and the Request.
-func (endpoint *Endpoint) AddPendingRequest(id string, request ocpp.Request) {
-	endpoint.mutex.Lock()
-	defer endpoint.mutex.Unlock()
-	endpoint.pendingRequests[id] = request
-}
-
-// Retrieves a pending Request, using the message ID.
-// If no request for the passed message ID is found, a false flag is returned.
-func (endpoint *Endpoint) GetPendingRequest(id string) (ocpp.Request, bool) {
-	endpoint.mutex.Lock()
-	defer endpoint.mutex.Unlock()
-	request, ok := endpoint.pendingRequests[id]
-	return request, ok
-}
-
-// Deletes a pending Request from the endpoint, using the message ID.
-func (endpoint *Endpoint) DeletePendingRequest(id string) {
-	endpoint.mutex.Lock()
-	defer endpoint.mutex.Unlock()
-	delete(endpoint.pendingRequests, id)
-}
-
-func (endpoint *Endpoint) clearPendingRequests() {
-	endpoint.mutex.Lock()
-	defer endpoint.mutex.Unlock()
-	endpoint.pendingRequests = map[string]ocpp.Request{}
 }
 
 func parseRawJsonRequest(raw interface{}, requestType reflect.Type) (ocpp.Request, error) {
@@ -362,7 +330,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 		}
 		return &call, nil
 	} else if typeId == CALL_RESULT {
-		request, ok := endpoint.GetPendingRequest(uniqueId)
+		request, ok := endpoint.PendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
 			log.Printf("No previous request %v sent. Discarding response message", uniqueId)
 			return nil, nil
@@ -383,7 +351,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
-		_, ok := endpoint.GetPendingRequest(uniqueId)
+		_, ok := endpoint.PendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
 			log.Printf("No previous request %v sent. Discarding error message", uniqueId)
 			return nil, nil

@@ -17,27 +17,32 @@ type Server struct {
 	requestHandler            func(clientID string, request ocpp.Request, requestId string, action string)
 	responseHandler           func(clientID string, response ocpp.Response, requestId string)
 	errorHandler              func(clientID string, err *ocpp.Error, details interface{})
-	requestQueueMap           ServerQueueMap
-	readyForDispatch          chan string
-	requestChannel            chan string
-	pendingRequests           map[string]string
+	dispatcher                ServerDispatcher
 }
 
 // Creates a new Server endpoint.
-// Requires a a websocket server, a structure for queueing requests, and a list of profiles (optional).
+// Requires a a websocket server, a structure for queueing/dispatching requests,
+// a state handler and a list of profiles (optional).
 //
 // You may create a simple new server by using these default values:
-//	s := ocppj.NewServer(ws.NewServer(), ocppj.NewFIFOQueueMap(0))
-func NewServer(wsServer ws.WsServer, requestMap ServerQueueMap, profiles ...*ocpp.Profile) *Server {
-	endpoint := Endpoint{pendingRequests: map[string]ocpp.Request{}}
+//	s := ocppj.NewServer(ws.NewServer(), nil, nil)
+func NewServer(wsServer ws.WsServer, dispatcher ServerDispatcher, stateHandler PendingRequestState, profiles ...*ocpp.Profile) *Server {
+	endpoint := Endpoint{PendingRequestState: stateHandler}
 	for _, profile := range profiles {
 		endpoint.AddProfile(profile)
 	}
-	if wsServer != nil {
-		return &Server{Endpoint: endpoint, server: wsServer, requestQueueMap: requestMap, readyForDispatch: make(chan string, 1), pendingRequests: map[string]string{}}
-	} else {
-		return &Server{Endpoint: endpoint, server: &ws.Server{}, requestQueueMap: requestMap, readyForDispatch: make(chan string, 1), pendingRequests: map[string]string{}}
+	if dispatcher == nil {
+		dispatcher = NewDefaultServerDispatcher(NewFIFOQueueMap(0))
+		if stateHandler == nil {
+			stateHandler = dispatcher.(*DefaultServerDispatcher)
+		}
 	}
+	if wsServer == nil {
+		wsServer = ws.NewServer()
+	}
+	dispatcher.SetNetworkServer(wsServer)
+	dispatcher.SetPendingRequestState(stateHandler)
+	return &Server{Endpoint: endpoint, server: wsServer, dispatcher: dispatcher}
 }
 
 // Registers a handler for incoming requests.
@@ -79,26 +84,24 @@ func (s *Server) Start(listenPort int, listenPath string) {
 		}
 	})
 	s.server.SetDisconnectedClientHandler(func(ws ws.Channel) {
-		//TODO: handle reconnection and don't delete request queue
-		s.requestQueueMap.Remove(ws.GetID())
-		s.requestChannel <- ws.GetID()
+		// TODO: handle reconnection and don't delete request queue
+		// TODO: clear queueMap for client?
 		if s.disconnectedClientHandler != nil {
 			s.disconnectedClientHandler(ws.GetID())
 		}
 	})
 	s.server.SetMessageHandler(s.ocppMessageHandler)
-	s.requestChannel = make(chan string, 1)
-	go s.requestPump()
+	s.dispatcher.Start()
 	// Serve & run
-	// TODO: return error?
 	s.server.Start(listenPort, listenPath)
+	// TODO: return error?
 }
 
 // Stops the server.
 // This clears all pending requests and causes the Start function to return.
 func (s *Server) Stop() {
 	s.server.Stop()
-	s.clearPendingRequests()
+	s.dispatcher.Stop()
 }
 
 // Sends an OCPP Request to a client, identified by the clientID parameter.
@@ -113,7 +116,7 @@ func (s *Server) Stop() {
 //
 // - the output queue is full
 func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
-	if s.requestChannel == nil {
+	if !s.dispatcher.IsRunning() {
 		return fmt.Errorf("ocppj server is not started, couldn't send request")
 	}
 	err := Validate.Struct(request)
@@ -129,110 +132,12 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 		return err
 	}
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
-	q := s.requestQueueMap.GetOrCreate(clientID)
-	if q.IsFull() {
-		return fmt.Errorf("request queue for client %v is full, cannot send new request", clientID)
-	}
-	err = q.Push(RequestBundle{call, jsonMessage})
-	if err != nil {
+	if err := s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage}); err != nil {
+		log.Errorf("request %v - %v for client %v: %v", call.UniqueId, call.Action, clientID, err)
 		return err
 	}
 	log.Debugf("enqueued request %v - %v for client %v", call.UniqueId, call.Action, clientID)
-	// Notify requestPump that a new request for ClientID is pending
-	s.requestChannel <- clientID
 	return nil
-}
-
-// requestPump processes new outgoing requests for each client and makes sure they are processed sequentially.
-// This method is executed by a dedicated coroutine as soon as the server is started and runs indefinitely.
-func (s *Server) requestPump() {
-	var clientID string
-	var ok bool
-	var rdy bool
-	var clientQueue RequestQueue
-	clientReadyMap := map[string]bool{} // Empty at the beginning
-	for {
-		select {
-		case clientID, ok = <-s.requestChannel:
-			// Check if channel was closed
-			if !ok {
-				log.Infof("stopped processing requests")
-				s.clearPendingRequests()
-				s.requestChannel = nil
-				return
-			}
-			clientQueue, ok = s.requestQueueMap.Get(clientID)
-			// Check whether there is a request queue for the specified client
-			if !ok {
-				// No client queue found, deleting the ready flag
-				delete(clientReadyMap, clientID)
-				break
-			}
-			// Check whether can transmit to client
-			rdy, ok = clientReadyMap[clientID]
-			if !ok {
-				// First request sent to client. Setting ready flag to true
-				rdy = true
-				clientReadyMap[clientID] = rdy
-			}
-		case clientID = <-s.readyForDispatch:
-			// Client can now transmit again
-			rdy = true
-			clientReadyMap[clientID] = rdy
-			clientQueue, _ = s.requestQueueMap.Get(clientID)
-		}
-		// Only dispatch request if able to send and request queue isn't empty
-		if rdy && !clientQueue.IsEmpty() {
-			s.dispatchNextRequest(clientID)
-			// Update ready state
-			rdy = false
-			clientReadyMap[clientID] = rdy
-		}
-	}
-}
-
-func (s *Server) dispatchNextRequest(clientID string) {
-	// Get first element in queue
-	q, _ := s.requestQueueMap.Get(clientID)
-	el := q.Peek()
-	bundle, _ := el.(RequestBundle)
-	jsonMessage := bundle.Data
-	callID := bundle.Call.GetUniqueId()
-	s.AddPendingRequest(callID, bundle.Call.Payload)
-	s.pendingRequests[clientID] = callID
-	err := s.server.Write(clientID, jsonMessage)
-	if err != nil {
-		log.Errorf("error while sending message: %v", err)
-		//TODO: handle retransmission instead of removing pending request
-		s.completePendingRequest(clientID, callID)
-		if s.errorHandler != nil {
-			s.errorHandler(clientID, ocpp.NewError(GenericError, err.Error(), callID), err)
-		}
-	} else {
-		// Transmitted correctly
-		log.Debugf("sent request %v to client %v: %v", callID, clientID, string(jsonMessage))
-	}
-}
-
-func (s *Server) completePendingRequest(clientID string, requestID string) {
-	q, _ := s.requestQueueMap.Get(clientID)
-	el := q.Peek()
-	if el == nil {
-		log.Errorf("attempting to pop front of queue, but queue is empty")
-		return
-	}
-	bundle, _ := el.(RequestBundle)
-	callID := bundle.Call.GetUniqueId()
-	if callID != requestID {
-		log.Fatalf("internal state mismatch: received response for %v but expected response for %v", requestID, callID)
-		return
-	}
-	q.Pop()
-	delete(s.pendingRequests, clientID)
-	s.DeletePendingRequest(callID)
-	log.Debugf("removed request %v from front of queue", callID)
-	// Signal that next message in queue may be sent
-	s.readyForDispatch <- clientID
 }
 
 // Sends an OCPP Response to a client, identified by the clientID parameter.
@@ -301,13 +206,13 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 		s.requestHandler(wsChannel.GetID(), call.Payload, call.UniqueId, call.Action)
 	case CALL_RESULT:
 		callResult := message.(*CallResult)
-		s.completePendingRequest(wsChannel.GetID(), callResult.GetUniqueId()) // Remove current request from queue and send next one
+		s.dispatcher.CompleteRequest(wsChannel.GetID(), callResult.GetUniqueId())
 		if s.responseHandler != nil {
 			s.responseHandler(wsChannel.GetID(), callResult.Payload, callResult.UniqueId)
 		}
 	case CALL_ERROR:
 		callError := message.(*CallError)
-		s.completePendingRequest(wsChannel.GetID(), callError.GetUniqueId()) // Remove current request from queue and send next one
+		s.dispatcher.CompleteRequest(wsChannel.GetID(), callError.GetUniqueId())
 		if s.errorHandler != nil {
 			s.errorHandler(wsChannel.GetID(), ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
 		}
