@@ -446,9 +446,9 @@ func TestInvalidClientTLSCertificate(t *testing.T) {
 	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
 	err = wsClient.Start(u.String())
 	assert.NotNil(t, err)
-	netError, ok := err.(*net.OpError)
+	netError, ok := err.(net.Error)
 	require.True(t, ok)
-	assert.Equal(t, "tls: bad certificate", netError.Err.Error()) // tls.alertBadCertificate = 42
+	assert.Equal(t, "remote error: tls: bad certificate", netError.Error()) // tls.alertBadCertificate = 42
 	// Cleanup
 	wsServer.Stop()
 }
@@ -510,6 +510,7 @@ func createCACertificate(certificateFilename string, keyFilename string) (*x509.
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
+		DNSNames:              []string{"localhost"},
 	}
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
@@ -569,6 +570,7 @@ func createTLSCertificate(certificateFilename string, keyFilename string, cn str
 		KeyUsage:              keyUsage,
 		ExtKeyUsage:           extKeyUsage,
 		BasicConstraintsValid: true,
+		DNSNames:              []string{cn},
 	}
 	var derBytes []byte
 	if ca != nil && caKey != nil {
