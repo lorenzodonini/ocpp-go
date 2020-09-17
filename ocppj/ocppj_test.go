@@ -254,6 +254,8 @@ type OcppJTestSuite struct {
 	centralSystem      *ocppj.Server
 	mockServer         *MockWebsocketServer
 	mockClient         *MockWebsocketClient
+	clientDispatcher   ocppj.ClientDispatcher
+	serverDispatcher   ocppj.ServerDispatcher
 	clientRequestQueue ocppj.RequestQueue
 	serverRequestMap   ocppj.ServerQueueMap
 }
@@ -265,9 +267,11 @@ func (suite *OcppJTestSuite) SetupTest() {
 	suite.mockClient = &mockClient
 	suite.mockServer = &mockServer
 	suite.clientRequestQueue = ocppj.NewFIFOClientQueue(queueCapacity)
-	suite.chargePoint = ocppj.NewClient("mock_id", suite.mockClient, suite.clientRequestQueue, mockProfile)
+	suite.clientDispatcher = ocppj.NewDefaultClientDispatcher(suite.clientRequestQueue)
+	suite.chargePoint = ocppj.NewClient("mock_id", suite.mockClient, suite.clientDispatcher, suite.clientDispatcher.(ocppj.PendingRequestState), mockProfile)
 	suite.serverRequestMap = ocppj.NewFIFOQueueMap(queueCapacity)
-	suite.centralSystem = ocppj.NewServer(suite.mockServer, suite.serverRequestMap, mockProfile)
+	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(suite.serverRequestMap)
+	suite.centralSystem = ocppj.NewServer(suite.mockServer, suite.serverDispatcher, suite.serverDispatcher.(ocppj.PendingRequestState), mockProfile)
 }
 
 func (suite *OcppJTestSuite) TestGetProfile() {
@@ -372,7 +376,7 @@ func (suite *OcppJTestSuite) TestCreateCall() {
 	assert.NotNil(t, message)
 	assert.Equal(t, mockValue, message.MockValue)
 	// Check that request was not yet stored as pending request
-	pendingRequest, exists := suite.chargePoint.GetPendingRequest(call.UniqueId)
+	pendingRequest, exists := suite.chargePoint.PendingRequestState.GetPendingRequest(call.UniqueId)
 	assert.False(t, exists)
 	assert.Nil(t, pendingRequest)
 }
@@ -524,7 +528,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	mockMessage[0] = float64(ocppj.CALL_ERROR) // Message Type ID
 	mockMessage[1] = messageId                 // Unique ID
 	mockMessage[2] = ocppj.GenericError
-	suite.chargePoint.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
+	suite.chargePoint.PendingRequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
 	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
@@ -567,7 +571,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	mockMessage[0] = float64(ocppj.CALL_RESULT) // Message Type ID
 	mockMessage[1] = messageId                  // Unique ID
 	mockMessage[2] = mockConfirmation
-	suite.chargePoint.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
+	suite.chargePoint.PendingRequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
 	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
@@ -575,7 +579,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockConfirmation.MockValue = "min"
-	suite.chargePoint.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that responses are not rejected
+	suite.chargePoint.PendingRequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that responses are not rejected
 	message, protoErr = suite.chargePoint.ParseMessage(mockMessage)
 	assert.Nil(t, message)
 	assert.NotNil(t, protoErr)
