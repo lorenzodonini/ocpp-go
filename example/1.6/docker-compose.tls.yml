@@ -19,6 +19,7 @@ services:
       - "443:443"
     networks:
       - sim
+    tty: true
   charge-point:
     build:
       context: ../..
@@ -37,6 +38,7 @@ services:
       - CLIENT_CERTIFICATE_KEY_PATH=/usr/local/share/certs/charge-point.key
     networks:
       - sim
+    tty: true
 
 networks:
   sim:
