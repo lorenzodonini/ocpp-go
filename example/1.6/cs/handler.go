@@ -86,7 +86,7 @@ func (handler *CentralSystemHandler) OnHeartbeat(chargePointId string, request *
 }
 
 func (handler *CentralSystemHandler) OnMeterValues(chargePointId string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, err error) {
-	logDefault(chargePointId, request.GetFeatureName()).Infof("received meter values for connector %v, transaction %v. Meter values:\n", request.ConnectorId, request.TransactionId)
+	logDefault(chargePointId, request.GetFeatureName()).Infof("received meter values for connector %v, transaction %v. Meter values:\n", request.ConnectorId, *request.TransactionId)
 	for _, mv := range request.MeterValue {
 		logDefault(chargePointId, request.GetFeatureName()).Printf("%v", mv)
 	}
