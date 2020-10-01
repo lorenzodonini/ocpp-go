@@ -76,6 +76,7 @@ func (d *DefaultClientDispatcher) IsRunning() bool {
 
 func (d *DefaultClientDispatcher) Stop() {
 	close(d.requestChannel)
+	d.requestChannel = nil
 	// TODO: clear pending requests?
 }
 
@@ -232,6 +233,7 @@ func (d *DefaultServerDispatcher) IsRunning() bool {
 
 func (d *DefaultServerDispatcher) Stop() {
 	close(d.requestChannel)
+	d.requestChannel = nil
 	// TODO: clear pending requests?
 }
 
