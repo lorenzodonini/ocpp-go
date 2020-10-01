@@ -7,6 +7,7 @@ import (
 )
 
 // Utility functions
+
 func newInt(i int) *int {
 	return &i
 }
@@ -19,7 +20,8 @@ func newBool(b bool) *bool {
 	return &b
 }
 
-// Test
+// Test types
+
 func (suite *OcppV2TestSuite) TestIdTokenInfoValidation() {
 	var testTable = []GenericTestEntry{
 		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 1, Language1: "l1", Language2: "l2", GroupIdToken: &types.GroupIdToken{IdToken: "1234", Type: types.IdTokenTypeCentral}, PersonalMessage: &types.MessageContent{Format: types.MessageFormatUTF8, Language: "en", Content: "random"}}, true},
@@ -46,6 +48,20 @@ func (suite *OcppV2TestSuite) TestIdTokenInfoValidation() {
 		{types.IdTokenInfo{Status: "invalidAuthStatus"}, false},
 	}
 	ExecuteGenericTestTable(suite.T(), testTable)
+}
+
+func (suite *OcppV2TestSuite) TestStatusInfo() {
+	t := suite.T()
+	var testTable = []GenericTestEntry{
+		{types.StatusInfo{ReasonCode: "okCode", AdditionalInfo: "someAdditionalInfo"}, true},
+		{types.StatusInfo{ReasonCode: "okCode", AdditionalInfo: ""}, true},
+		{types.StatusInfo{ReasonCode: "okCode"}, true},
+		{types.StatusInfo{ReasonCode: ""}, false},
+		{types.StatusInfo{}, false},
+		{types.StatusInfo{ReasonCode: ">20.................."}, false},
+		{types.StatusInfo{ReasonCode: "okCode", AdditionalInfo: ">512............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}, false},
+	}
+	ExecuteGenericTestTable(t, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestChargingSchedulePeriodValidation() {
@@ -170,19 +186,19 @@ func (suite *OcppV2TestSuite) TestSampledValueValidation() {
 
 func (suite *OcppV2TestSuite) TestMeterValueValidation() {
 	var testTable = []GenericTestEntry{
-		{types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{ {Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, true},
-		{types.MeterValue{SampledValue: []types.SampledValue{ {Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, true},
+		{types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, true},
+		{types.MeterValue{SampledValue: []types.SampledValue{{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, true},
 		{types.MeterValue{SampledValue: []types.SampledValue{}}, false},
 		{types.MeterValue{}, false},
-		{types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{ {Value: 3.14, Context: "invalidContext", Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, false},
+		{types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{{Value: 3.14, Context: "invalidContext", Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, false},
 	}
 	ExecuteGenericTestTable(suite.T(), testTable)
 }
 
 func (suite *OcppV2TestSuite) TestMessageInfoValidation() {
 	var testTable = []GenericTestEntry{
-		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1*time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}, Display: &types.Component{Name: "name1"}}, true},
-		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1*time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1 * time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}, Display: &types.Component{Name: "name1"}}, true},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1 * time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
 		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
 		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
 		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, true},
@@ -194,7 +210,7 @@ func (suite *OcppV2TestSuite) TestMessageInfoValidation() {
 		{display.MessageInfo{ID: 42, Priority: "invalidPriority", State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, false},
 		{display.MessageInfo{ID: -1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, false},
 		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, TransactionID: ">36..................................", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, false},
-		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1*time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}, Display: &types.Component{}}, false},
+		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1 * time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}, Display: &types.Component{}}, false},
 	}
 	ExecuteGenericTestTable(suite.T(), testTable)
 }
