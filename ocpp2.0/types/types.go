@@ -276,6 +276,12 @@ type IdTokenInfo struct {
 	PersonalMessage     *MessageContent     `json:"personalMessage,omitempty"`
 }
 
+// StatusInfo is an element providing more information about the message status.
+type StatusInfo struct {
+	ReasonCode     string `json:"reasonCode" validate:"required,max=20"`                 // A predefined code for the reason why the status is returned in this response. The string is case- insensitive.
+	AdditionalInfo string `json:"additionalInfo,omitempty" validate:"omitempty,max=512"` // Additional text to provide detailed information.
+}
+
 // NewIdTokenInfo creates an IdTokenInfo. Optional parameters may be set afterwards on the initialized struct.
 func NewIdTokenInfo(status AuthorizationStatus) *IdTokenInfo {
 	return &IdTokenInfo{Status: status}
