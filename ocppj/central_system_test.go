@@ -1,6 +1,7 @@
 package ocppj_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -14,7 +15,45 @@ import (
 	"time"
 )
 
-// SendRequest
+func (suite *OcppJTestSuite) TestNewServer() {
+	s := ocppj.NewServer(nil, nil, nil)
+	assert.NotNil(suite.T(), s)
+}
+
+func (suite *OcppJTestSuite) TestServerStart() {
+	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
+	suite.centralSystem.Start(8887, "/{ws}")
+	assert.True(suite.T(), suite.serverDispatcher.IsRunning())
+}
+
+func (suite *OcppJTestSuite) TestServerNotStartedError() {
+	t := suite.T()
+	mockChargePointId := "1234"
+	// Start normally
+	req := newMockRequest("somevalue")
+	err := suite.centralSystem.SendRequest(mockChargePointId, req)
+	require.Error(t, err, "ocppj server is not started, couldn't send request")
+	assert.False(t, suite.serverDispatcher.IsRunning())
+}
+
+func (suite *OcppJTestSuite) TestServerStoppedError() {
+	t := suite.T()
+	mockChargePointId := "1234"
+	// Start server
+	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
+	suite.mockServer.On("Stop").Return(nil)
+	suite.centralSystem.Start(8887, "/{ws}")
+	// Stop server
+	suite.centralSystem.Stop()
+	// Send message. Expected error
+	assert.False(t, suite.serverDispatcher.IsRunning())
+	req := newMockRequest("somevalue")
+	err := suite.centralSystem.SendRequest(mockChargePointId, req)
+	assert.Error(t, err, "ocppj server is not started, couldn't send request")
+}
+
+// ----------------- SendRequest tests -----------------
+
 func (suite *OcppJTestSuite) TestCentralSystemSendRequest() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
@@ -33,6 +72,30 @@ func (suite *OcppJTestSuite) TestCentralSystemSendInvalidRequest() {
 	mockRequest := newMockRequest("")
 	err := suite.centralSystem.SendRequest(mockChargePointId, mockRequest)
 	assert.NotNil(suite.T(), err)
+}
+
+func (suite *OcppJTestSuite) TestServerSendInvalidJsonRequest() {
+	mockChargePointId := "1234"
+	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
+	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
+	suite.centralSystem.Start(8887, "/{ws}")
+	mockRequest := newMockRequest("somevalue")
+	mockRequest.MockAny = make(chan int)
+	err := suite.centralSystem.SendRequest(mockChargePointId, mockRequest)
+	require.Error(suite.T(), err)
+	assert.IsType(suite.T(), &json.UnsupportedTypeError{}, err)
+}
+
+func (suite *OcppJTestSuite) TestServerSendInvalidCall() {
+	mockChargePointId := "1234"
+	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
+	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
+	suite.centralSystem.Start(8887, "/{ws}")
+	mockRequest := newMockRequest("somevalue")
+	// Delete existing profiles and test error
+	suite.centralSystem.Profiles = []*ocpp.Profile{}
+	err := suite.centralSystem.SendRequest(mockChargePointId, mockRequest)
+	assert.Error(suite.T(), err, fmt.Sprintf("Couldn't create Call for unsupported action %v", mockRequest.GetFeatureName()))
 }
 
 func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
@@ -62,7 +125,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
 	assert.False(t, ok)
 }
 
-// SendResponse
+// ----------------- SendResponse tests -----------------
+
 func (suite *OcppJTestSuite) TestCentralSystemSendConfirmation() {
 	t := suite.T()
 	mockChargePointId := "0101"

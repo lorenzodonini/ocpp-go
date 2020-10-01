@@ -104,7 +104,8 @@ const (
 
 type MockRequest struct {
 	mock.Mock
-	MockValue string `json:"mockValue" validate:"required,max=10"`
+	MockValue string      `json:"mockValue" validate:"required,max=10"`
+	MockAny   interface{} `json:"mockAny"`
 }
 
 type MockConfirmation struct {
