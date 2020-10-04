@@ -276,15 +276,21 @@ type IdTokenInfo struct {
 	PersonalMessage     *MessageContent     `json:"personalMessage,omitempty"`
 }
 
+// NewIdTokenInfo creates an IdTokenInfo. Optional parameters may be set afterwards on the initialized struct.
+func NewIdTokenInfo(status AuthorizationStatus) *IdTokenInfo {
+	return &IdTokenInfo{Status: status}
+}
+
 // StatusInfo is an element providing more information about the message status.
 type StatusInfo struct {
 	ReasonCode     string `json:"reasonCode" validate:"required,max=20"`                 // A predefined code for the reason why the status is returned in this response. The string is case- insensitive.
 	AdditionalInfo string `json:"additionalInfo,omitempty" validate:"omitempty,max=512"` // Additional text to provide detailed information.
 }
 
-// NewIdTokenInfo creates an IdTokenInfo. Optional parameters may be set afterwards on the initialized struct.
-func NewIdTokenInfo(status AuthorizationStatus) *IdTokenInfo {
-	return &IdTokenInfo{Status: status}
+// NewStatusInfo creates a StatusInfo struct.
+// If no additional info need to be set, an empty string may be passed.
+func NewStatusInfo(reasonCode string, additionalInfo string) *StatusInfo {
+	return &StatusInfo{ReasonCode: reasonCode, AdditionalInfo: additionalInfo}
 }
 
 // EVSE represents the Electric Vehicle Supply Equipment, formerly referred to as connector(s).
