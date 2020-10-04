@@ -189,7 +189,7 @@ func (cs *chargingStation) LogStatusNotification(status diagnostics.UploadLogSta
 }
 
 func (cs *chargingStation) MeterValues(evseID int, meterValues []types.MeterValue, props ...func(request *meter.MeterValuesRequest)) (*meter.MeterValuesResponse, error) {
-	request := meter.NewMeterValuesRequest (evseID, meterValues)
+	request := meter.NewMeterValuesRequest(evseID, meterValues)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -237,6 +237,19 @@ func (cs *chargingStation) NotifyDisplayMessages(requestID int, props ...func(re
 		return nil, err
 	} else {
 		return response.(*display.NotifyDisplayMessagesResponse), err
+	}
+}
+
+func (cs *chargingStation) NotifyEVChargingNeeds(evseID int, chargingNeeds smartcharging.ChargingNeeds, props ...func(request *smartcharging.NotifyEVChargingNeedsRequest)) (*smartcharging.NotifyEVChargingNeedsResponse, error) {
+	request := smartcharging.NewNotifyEVChargingNeedsRequest(evseID, chargingNeeds)
+	for _, fn := range props {
+		fn(request)
+	}
+	response, err := cs.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return response.(*smartcharging.NotifyEVChargingNeedsResponse), err
 	}
 }
 
@@ -339,7 +352,7 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 		return fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send request", featureName)
 	}
 	switch featureName {
-	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, iso15118.Get15118EVCertificateFeatureName, iso15118.GetCertificateStatusFeatureName, availability.HeartbeatFeatureName, diagnostics.LogStatusNotificationFeatureName, meter.MeterValuesFeatureName, smartcharging.NotifyChargingLimitFeatureName, diagnostics.NotifyCustomerInformationFeatureName, display.NotifyDisplayMessagesFeatureName:
+	case authorization.AuthorizeFeatureName, provisioning.BootNotificationFeatureName, smartcharging.ClearedChargingLimitFeatureName, data.DataTransferFeatureName, firmware.FirmwareStatusNotificationFeatureName, iso15118.Get15118EVCertificateFeatureName, iso15118.GetCertificateStatusFeatureName, availability.HeartbeatFeatureName, diagnostics.LogStatusNotificationFeatureName, meter.MeterValuesFeatureName, smartcharging.NotifyChargingLimitFeatureName, diagnostics.NotifyCustomerInformationFeatureName, display.NotifyDisplayMessagesFeatureName, smartcharging.NotifyEVChargingNeedsFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charging station, cannot send request", featureName)
