@@ -13,6 +13,8 @@ type CSMSHandler interface {
 	OnNotifyChargingLimit(chargingStationID string, request *NotifyChargingLimitRequest) (response *NotifyChargingLimitResponse, err error)
 	// OnNotifyEVChargingNeeds is called on the CSMS whenever a NotifyEVChargingNeedsRequest is received from a charging station.
 	OnNotifyEVChargingNeeds(chargingStationID string, request *NotifyEVChargingNeedsRequest) (response *NotifyEVChargingNeedsResponse, err error)
+	// OnNotifyEVChargingSchedule is called on the CSMS whenever a NotifyEVChargingScheduleRequest is received from a charging station.
+	OnNotifyEVChargingSchedule(chargingStationID string, request *NotifyEVChargingScheduleRequest) (response *NotifyEVChargingScheduleResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Smart charging profile.
@@ -35,4 +37,5 @@ var Profile = ocpp.NewProfile(
 	GetCompositeScheduleFeature{},
 	NotifyChargingLimitFeature{},
 	NotifyEVChargingNeedsFeature{},
+	NotifyEVChargingScheduleFeature{},
 )
