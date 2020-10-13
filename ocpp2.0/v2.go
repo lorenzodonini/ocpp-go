@@ -85,6 +85,8 @@ type ChargingStation interface {
 	NotifyDisplayMessages(requestID int, props ...func(request *display.NotifyDisplayMessagesRequest)) (*display.NotifyDisplayMessagesResponse, error)
 	// Forwards the charging needs of an EV to the CSMS.
 	NotifyEVChargingNeeds(evseID int, chargingNeeds smartcharging.ChargingNeeds, props ...func(request *smartcharging.NotifyEVChargingNeedsRequest)) (*smartcharging.NotifyEVChargingNeedsResponse, error)
+	// Communicates the charging schedule as calculated by the EV to the CSMS.
+	NotifyEVChargingSchedule(timeBase *types.DateTime, evseID int, schedule types.ChargingSchedule, props ...func(request *smartcharging.NotifyEVChargingScheduleRequest)) (*smartcharging.NotifyEVChargingScheduleResponse, error)
 
 	// Registers a handler for incoming security profile messages
 	SetSecurityHandler(handler security.ChargingStationHandler)
