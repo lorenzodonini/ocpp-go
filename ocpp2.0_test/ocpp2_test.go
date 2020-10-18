@@ -389,6 +389,12 @@ func (handler MockCSMSDiagnosticsHandler) OnNotifyCustomerInformation(chargingSt
 	return resp, args.Error(1)
 }
 
+func (handler MockCSMSDiagnosticsHandler) OnNotifyEvent(chargingStationID string, request *diagnostics.NotifyEventRequest) (response *diagnostics.NotifyEventResponse, err error) {
+	args := handler.MethodCalled("OnNotifyEvent", chargingStationID, request)
+	resp := args.Get(0).(*diagnostics.NotifyEventResponse)
+	return resp, args.Error(1)
+}
+
 // ---------------------- MOCK CS DISPLAY HANDLER ----------------------
 
 type MockChargingStationDisplayHandler struct {
