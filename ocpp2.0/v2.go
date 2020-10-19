@@ -89,6 +89,8 @@ type ChargingStation interface {
 	NotifyEVChargingSchedule(timeBase *types.DateTime, evseID int, schedule types.ChargingSchedule, props ...func(request *smartcharging.NotifyEVChargingScheduleRequest)) (*smartcharging.NotifyEVChargingScheduleResponse, error)
 	// Notifies the CSMS about monitoring events.
 	NotifyEvent(generatedAt *types.DateTime, seqNo int, eventData []diagnostics.EventData, props ...func(request *diagnostics.NotifyEventRequest)) (*diagnostics.NotifyEventResponse, error)
+	// Sends a monitoring report to the CSMS, according to parameters specified in the GetMonitoringReport request, previously sent by the CSMS.
+	NotifyMonitoringReport(requestID int, seqNo int, generatedAt *types.DateTime, monitorData []diagnostics.MonitoringData, props ...func(request *diagnostics.NotifyMonitoringReportRequest)) (*diagnostics.NotifyMonitoringReportResponse, error)
 
 	// Registers a handler for incoming security profile messages
 	SetSecurityHandler(handler security.ChargingStationHandler)
