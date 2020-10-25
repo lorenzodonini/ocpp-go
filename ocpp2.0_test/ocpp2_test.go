@@ -227,6 +227,12 @@ func (handler MockCSMSProvisioningHandler) OnBootNotification(chargingStationId 
 	return conf, args.Error(1)
 }
 
+func (handler MockCSMSProvisioningHandler) OnNotifyReport(chargingStationID string, request *provisioning.NotifyReportRequest) (confirmation *provisioning.NotifyReportResponse, err error) {
+	args := handler.MethodCalled("OnNotifyReport", chargingStationID, request)
+	conf := args.Get(0).(*provisioning.NotifyReportResponse)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CS PROVISIONING HANDLER ----------------------
 
 type MockChargingStationProvisioningHandler struct {
