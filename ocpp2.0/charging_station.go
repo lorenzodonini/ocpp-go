@@ -292,6 +292,19 @@ func (cs *chargingStation) NotifyMonitoringReport(requestID int, seqNo int, gene
 	}
 }
 
+func (cs *chargingStation) NotifyReport(requestID int, generatedAt *types.DateTime, seqNo int, props ...func(request *provisioning.NotifyReportRequest)) (*provisioning.NotifyReportResponse, error) {
+	request := provisioning.NewNotifyReportRequest(requestID, generatedAt, seqNo)
+	for _, fn := range props {
+		fn(request)
+	}
+	response, err := cs.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return response.(*provisioning.NotifyReportResponse), err
+	}
+}
+
 func (cs *chargingStation) SetSecurityHandler(handler security.ChargingStationHandler) {
 	cs.securityHandler = handler
 }
@@ -407,7 +420,8 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 		smartcharging.NotifyEVChargingNeedsFeatureName,
 		smartcharging.NotifyEVChargingScheduleFeatureName,
 		diagnostics.NotifyEventFeatureName,
-		diagnostics.NotifyMonitoringReportFeatureName:
+		diagnostics.NotifyMonitoringReportFeatureName,
+		provisioning.NotifyReportFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charging station, cannot send request", featureName)

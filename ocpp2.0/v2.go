@@ -91,6 +91,8 @@ type ChargingStation interface {
 	NotifyEvent(generatedAt *types.DateTime, seqNo int, eventData []diagnostics.EventData, props ...func(request *diagnostics.NotifyEventRequest)) (*diagnostics.NotifyEventResponse, error)
 	// Sends a monitoring report to the CSMS, according to parameters specified in the GetMonitoringReport request, previously sent by the CSMS.
 	NotifyMonitoringReport(requestID int, seqNo int, generatedAt *types.DateTime, monitorData []diagnostics.MonitoringData, props ...func(request *diagnostics.NotifyMonitoringReportRequest)) (*diagnostics.NotifyMonitoringReportResponse, error)
+	// Sends a base report to the CSMS, according to parameters specified in the GetBaseReport request, previously sent by the CSMS.
+	NotifyReport(requestID int, generatedAt *types.DateTime, seqNo int, props ...func(request *provisioning.NotifyReportRequest)) (*provisioning.NotifyReportResponse, error)
 
 	// Registers a handler for incoming security profile messages
 	SetSecurityHandler(handler security.ChargingStationHandler)
