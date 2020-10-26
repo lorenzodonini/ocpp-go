@@ -416,6 +416,21 @@ func (cs *csms) InstallCertificate(clientId string, callback func(*iso15118.Inst
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) PublishFirmware(clientId string, callback func(*firmware.PublishFirmwareResponse, error), location string, checksum string, requestID int, props ...func(request *firmware.PublishFirmwareRequest)) error {
+	request := firmware.NewPublishFirmwareRequest(location, checksum, requestID)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*firmware.PublishFirmwareResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -498,7 +513,30 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		return fmt.Errorf("feature %v is unsupported on CSMS (missing profile), cannot send request", featureName)
 	}
 	switch featureName {
-	case reservation.CancelReservationFeatureName, security.CertificateSignedFeatureName, availability.ChangeAvailabilityFeatureName, authorization.ClearCacheFeatureName, smartcharging.ClearChargingProfileFeatureName, display.ClearDisplayFeatureName, diagnostics.ClearVariableMonitoringFeatureName, tariffcost.CostUpdatedFeatureName, diagnostics.CustomerInformationFeatureName, data.DataTransferFeatureName, iso15118.DeleteCertificateFeatureName, provisioning.GetBaseReportFeatureName, smartcharging.GetChargingProfilesFeatureName, smartcharging.GetCompositeScheduleFeatureName, display.GetDisplayMessagesFeatureName, iso15118.GetInstalledCertificateIdsFeatureName, localauth.GetLocalListVersionFeatureName, diagnostics.GetLogFeatureName, diagnostics.GetMonitoringReportFeatureName, provisioning.GetReportFeatureName, transactions.GetTransactionStatusFeatureName, provisioning.GetVariablesFeatureName, iso15118.InstallCertificateFeatureName:
+	case reservation.CancelReservationFeatureName,
+		security.CertificateSignedFeatureName,
+		availability.ChangeAvailabilityFeatureName,
+		authorization.ClearCacheFeatureName,
+		smartcharging.ClearChargingProfileFeatureName,
+		display.ClearDisplayFeatureName,
+		diagnostics.ClearVariableMonitoringFeatureName,
+		tariffcost.CostUpdatedFeatureName,
+		diagnostics.CustomerInformationFeatureName,
+		data.DataTransferFeatureName,
+		iso15118.DeleteCertificateFeatureName,
+		provisioning.GetBaseReportFeatureName,
+		smartcharging.GetChargingProfilesFeatureName,
+		smartcharging.GetCompositeScheduleFeatureName,
+		display.GetDisplayMessagesFeatureName,
+		iso15118.GetInstalledCertificateIdsFeatureName,
+		localauth.GetLocalListVersionFeatureName,
+		diagnostics.GetLogFeatureName,
+		diagnostics.GetMonitoringReportFeatureName,
+		provisioning.GetReportFeatureName,
+		transactions.GetTransactionStatusFeatureName,
+		provisioning.GetVariablesFeatureName,
+		iso15118.InstallCertificateFeatureName,
+		firmware.PublishFirmwareFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)

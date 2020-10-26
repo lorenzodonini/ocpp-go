@@ -638,6 +638,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.provisioningHandler.OnGetVariables(request.(*provisioning.GetVariablesRequest))
 	case iso15118.InstallCertificateFeatureName:
 		response, err = cs.iso15118Handler.OnInstallCertificate(request.(*iso15118.InstallCertificateRequest))
+	case firmware.PublishFirmwareFeatureName:
+		response, err = cs.firmwareHandler.OnPublishFirmware(request.(*firmware.PublishFirmwareRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return

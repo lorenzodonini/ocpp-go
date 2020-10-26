@@ -443,6 +443,12 @@ type MockChargingStationFirmwareHandler struct {
 	mock.Mock
 }
 
+func (handler MockChargingStationFirmwareHandler) OnPublishFirmware(request *firmware.PublishFirmwareRequest) (response *firmware.PublishFirmwareResponse, err error) {
+	args := handler.MethodCalled("OnPublishFirmware", request)
+	resp := args.Get(0).(*firmware.PublishFirmwareResponse)
+	return resp, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS FIRMWARE HANDLER ----------------------
 
 type MockCSMSFirmwareHandler struct {
