@@ -285,6 +285,8 @@ type CSMS interface {
 	GetVariables(clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.VariableData, props ...func(*provisioning.GetVariablesRequest)) error
 	// Installs a new CA certificate on a Charging station.
 	InstallCertificate(clientId string, callback func(*iso15118.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(*iso15118.InstallCertificateRequest)) error
+	// Publishes a firmware to a local controller, allowing charging stations to download the same firmware from the local controller directly.
+	PublishFirmware(clientId string, callback func(*firmware.PublishFirmwareResponse, error), location string, checksum string, requestID int, props ...func(request *firmware.PublishFirmwareRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
 	//RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error
