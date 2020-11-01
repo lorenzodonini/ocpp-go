@@ -10,12 +10,11 @@ import (
 // ISO8601 time format, assuming Zulu timestamp.
 const ISO8601 = "2006-01-02T15:04:05Z"
 
+// The default dateTime format is RFC3339.
 var DefaultTimeFormat = time.RFC3339
 
 // DateTimeFormat to be used for all OCPP messages.
-//
-// The default dateTime format is RFC3339.
-// Change this if another format is desired.
+// If not specified DefaultTimeFormat is used
 var DateTimeFormat = ""
 
 // DateTime wraps a time.Time struct, allowing for improved dateTime JSON compatibility.
