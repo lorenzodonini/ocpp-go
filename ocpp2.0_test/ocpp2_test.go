@@ -455,10 +455,16 @@ type MockCSMSFirmwareHandler struct {
 	mock.Mock
 }
 
-func (handler MockCSMSFirmwareHandler) OnFirmwareStatusNotification(chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (confirmation *firmware.FirmwareStatusNotificationResponse, err error) {
+func (handler MockCSMSFirmwareHandler) OnFirmwareStatusNotification(chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (response *firmware.FirmwareStatusNotificationResponse, err error) {
 	args := handler.MethodCalled("OnFirmwareStatusNotification", chargingStationID, request)
-	conf := args.Get(0).(*firmware.FirmwareStatusNotificationResponse)
-	return conf, args.Error(1)
+	resp := args.Get(0).(*firmware.FirmwareStatusNotificationResponse)
+	return resp, args.Error(1)
+}
+
+func (handler MockCSMSFirmwareHandler) OnPublishFirmwareStatusNotification(chargingStationID string, request *firmware.PublishFirmwareStatusNotificationRequest) (response *firmware.PublishFirmwareStatusNotificationResponse, err error) {
+	args := handler.MethodCalled("OnPublishFirmwareStatusNotification", chargingStationID, request)
+	resp := args.Get(0).(*firmware.PublishFirmwareStatusNotificationResponse)
+	return resp, args.Error(1)
 }
 
 // ---------------------- MOCK CS ISO15118 HANDLER ----------------------
