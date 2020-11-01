@@ -710,6 +710,8 @@ func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection,
 			response, err = cs.diagnosticsHandler.OnNotifyMonitoringReport(chargingStation.ID(), request.(*diagnostics.NotifyMonitoringReportRequest))
 		case provisioning.NotifyReportFeatureName:
 			response, err = cs.provisioningHandler.OnNotifyReport(chargingStation.ID(), request.(*provisioning.NotifyReportRequest))
+		case firmware.PublishFirmwareStatusNotificationFeatureName:
+			response, err = cs.firmwareHandler.OnPublishFirmwareStatusNotification(chargingStation.ID(), request.(*firmware.PublishFirmwareStatusNotificationRequest))
 		default:
 			cs.notSupportedError(chargingStation.ID(), requestId, action)
 			return
