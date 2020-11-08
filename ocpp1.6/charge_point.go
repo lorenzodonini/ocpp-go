@@ -2,6 +2,7 @@ package ocpp16
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -11,7 +12,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
-	log "github.com/sirupsen/logrus"
 )
 
 type chargePoint struct {
@@ -226,17 +226,28 @@ func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(conf
 }
 
 func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, requestId string) {
-	if confirmation != nil {
-		err := cp.client.SendResponse(requestId, confirmation)
-		if err != nil {
-			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
-			//TODO: handle error somehow
-		}
-	} else {
+	// send error response
+	if err != nil {
 		err = cp.client.SendError(requestId, ocppj.ProtocolError, err.Error(), nil)
 		if err != nil {
-			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
+			err = fmt.Errorf("replying cs from %s to request %s with 'protocol error': %w", chargePointId, requestId, err)
+			cp.error(err)
 		}
+
+		return
+	}
+
+	if confirmation == nil {
+		err = fmt.Errorf("empty confirmation to request %s", requestId)
+		cp.error(err)
+		return
+	}
+
+	// send confirmation response
+	err := cp.client.SendResponse(requestId, confirmation)
+	if err != nil {
+		err = fmt.Errorf("replying cs from %s to request %s: %w", chargePointId, requestId, err)
+		cp.error(err)
 	}
 }
 
@@ -250,18 +261,18 @@ func (cp *chargePoint) Stop() {
 }
 
 func (cp *chargePoint) notImplementedError(requestId string, action string) {
-	log.WithField("request", requestId).Errorf("cannot handle Call from central system. Sending CallError instead")
 	err := cp.client.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
-		log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
+		err = fmt.Errorf("replying cs to request %s with 'not implemented': %w", requestId, err)
+		cp.error(err)
 	}
 }
 
 func (cp *chargePoint) notSupportedError(requestId string, action string) {
-	log.WithField("request", requestId).Errorf("cannot handle call from central system. Sending CallError instead")
 	err := cp.client.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
 	if err != nil {
-		log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
+		err = fmt.Errorf("replying cs to request %s with 'not supported': %w", requestId, err)
+		cp.error(err)
 	}
 }
 
