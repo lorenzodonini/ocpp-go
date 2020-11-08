@@ -2,6 +2,7 @@ package ocpp16
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -11,7 +12,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
-	log "github.com/sirupsen/logrus"
 )
 
 type centralSystem struct {
@@ -23,6 +23,13 @@ type centralSystem struct {
 	remoteTriggerHandler remotetrigger.CentralSystemHandler
 	smartChargingHandler smartcharging.CentralSystemHandler
 	callbacks            map[string]func(confirmation ocpp.Response, err error)
+	errC                 chan error
+}
+
+func (cs *centralSystem) error(err error) {
+	if cs.errC != nil {
+		cs.errC <- err
+	}
 }
 
 func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *core.ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType core.AvailabilityType, props ...func(request *core.ChangeAvailabilityRequest)) error {
@@ -371,42 +378,42 @@ func (cs *centralSystem) Start(listenPort int, listenPath string) {
 }
 
 func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
-	if confirmation != nil {
-		err := cs.server.SendResponse(chargePointId, requestId, confirmation)
-		if err != nil {
-			//TODO: handle error somehow
-			log.Print(err)
-		}
-	} else {
+	// send error response
+	if err != nil {
 		err := cs.server.SendError(chargePointId, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"client":  chargePointId,
-				"request": requestId,
-			}).Errorf("unknown error %v while replying to message with CallError", err)
+			err = fmt.Errorf("replying cp %s to request %s with 'protocol error': %w", chargePointId, requestId, err)
+			cs.error(err)
 		}
+	}
+
+	if confirmation == nil {
+		err = fmt.Errorf("empty confirmation to request %s", requestId)
+		cp.error(err)
+		return
+	}
+
+	// send confirmation response
+	err := cs.server.SendResponse(chargePointId, requestId, confirmation)
+	if err != nil {
+		err = fmt.Errorf("replying cp %s to request %s: %w", chargePointId, requestId, err)
+		cs.error(err)
 	}
 }
 
 func (cs *centralSystem) notImplementedError(chargePointId string, requestId string, action string) {
-	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
 	err := cs.server.SendError(chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"client":  chargePointId,
-			"request": requestId,
-		}).Errorf("unknown error %v while replying to message with CallError", err)
+		err = fmt.Errorf("replying cp %s to request %s with 'not implemented': %w", chargePointId, requestId, err)
+		cs.error(err)
 	}
 }
 
 func (cs *centralSystem) notSupportedError(chargePointId string, requestId string, action string) {
-	log.Warnf("Cannot handle call %v from charge point %v. Sending CallError instead", requestId, chargePointId)
 	err := cs.server.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"client":  chargePointId,
-			"request": requestId,
-		}).Errorf("unknown error %v while replying to message with CallError", err)
+		err = fmt.Errorf("replying cp %s to request %s with 'not supported': %w", chargePointId, requestId, err)
+		cs.error(err)
 	}
 }
 
@@ -488,10 +495,8 @@ func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confir
 		delete(cs.callbacks, chargePointId)
 		callback(confirmation, nil)
 	} else {
-		log.WithFields(log.Fields{
-			"client":  chargePointId,
-			"request": requestId,
-		}).Errorf("no handler available for Call Result of type %v", confirmation.GetFeatureName())
+		err := fmt.Errorf("no handler available for call of type %v from client %s for request %s", confirmation.GetFeatureName(), chargePointId, requestId)
+		cs.error(err)
 	}
 }
 
@@ -500,9 +505,7 @@ func (cs *centralSystem) handleIncomingError(chargePointId string, err *ocpp.Err
 		delete(cs.callbacks, chargePointId)
 		callback(nil, err)
 	} else {
-		log.WithFields(log.Fields{
-			"client":  chargePointId,
-			"request": err.MessageId,
-		}).Errorf("no handler available for Call Error %v", err.Code)
+		err := fmt.Errorf("no handler available for call error %w from client %s for request %s", err, chargePointId)
+		cs.error(err)
 	}
 }
