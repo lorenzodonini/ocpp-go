@@ -24,6 +24,13 @@ type chargePoint struct {
 	smartChargingHandler smartcharging.ChargePointHandler
 	confirmationHandler  chan ocpp.Response
 	errorHandler         chan error
+	errC                 chan error // external error channel
+}
+
+func (cp *chargePoint) error(err error) {
+	if cp.errC != nil {
+		cp.errC <- err
+	}
 }
 
 func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *core.BootNotificationRequest)) (*core.BootNotificationConfirmation, error) {
@@ -185,6 +192,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) 
 	if _, found := cp.client.GetProfileForFeature(featureName); !found {
 		return nil, fmt.Errorf("feature %v is unsupported on charge point (missing profile), cannot send request", featureName)
 	}
+
 	err := cp.client.SendRequest(request)
 	if err != nil {
 		return nil, err
@@ -230,7 +238,7 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, reque
 	if err != nil {
 		err = cp.client.SendError(requestId, ocppj.ProtocolError, err.Error(), nil)
 		if err != nil {
-			err = fmt.Errorf("replying cs from %s to request %s with 'protocol error': %w", chargePointId, requestId, err)
+			err = fmt.Errorf("replying cs to request %s with 'protocol error': %w", requestId, err)
 			cp.error(err)
 		}
 
@@ -244,9 +252,9 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, reque
 	}
 
 	// send confirmation response
-	err := cp.client.SendResponse(requestId, confirmation)
+	err = cp.client.SendResponse(requestId, confirmation)
 	if err != nil {
-		err = fmt.Errorf("replying cs from %s to request %s: %w", chargePointId, requestId, err)
+		err = fmt.Errorf("replying cs to request %s: %w", requestId, err)
 		cp.error(err)
 	}
 }

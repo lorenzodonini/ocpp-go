@@ -389,12 +389,12 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Re
 
 	if confirmation == nil {
 		err = fmt.Errorf("empty confirmation to request %s", requestId)
-		cp.error(err)
+		cs.error(err)
 		return
 	}
 
 	// send confirmation response
-	err := cs.server.SendResponse(chargePointId, requestId, confirmation)
+	err = cs.server.SendResponse(chargePointId, requestId, confirmation)
 	if err != nil {
 		err = fmt.Errorf("replying cp %s to request %s: %w", chargePointId, requestId, err)
 		cs.error(err)
