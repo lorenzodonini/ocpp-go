@@ -16,7 +16,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -112,6 +111,9 @@ type WsServer interface {
 	// Shuts down a running websocket server.
 	// All open channels will be forcefully closed, and the previously called Start function will return.
 	Stop()
+	// Errors returns a channel for error messages. If it doesn't exist it es created.
+	// The channel is closed by the server when stopped.
+	Errors() <-chan error
 	// Sets a callback function for all incoming messages.
 	// The callbacks accept a Channel and the received data.
 	// It is up to the callback receiver, to check the identifier of the channel, to determine the source of the message.
@@ -151,6 +153,7 @@ type Server struct {
 	basicAuthHandler    func(username string, password string) bool
 	tlsCertificatePath  string
 	tlsCertificateKey   string
+	errC                chan error
 }
 
 // Creates a new simple websocket server (the websockets are not secured).
@@ -207,6 +210,19 @@ func (server *Server) SetBasicAuthHandler(handler func(username string, password
 	server.basicAuthHandler = handler
 }
 
+func (server *Server) error(err error) {
+	if server.errC != nil {
+		server.errC <- err
+	}
+}
+
+func (server *Server) Errors() <-chan error {
+	if server.errC == nil {
+		server.errC = make(chan error, 1)
+	}
+	return server.errC
+}
+
 func (server *Server) Start(port int, listenPath string) {
 	router := mux.NewRouter()
 	router.HandleFunc(listenPath, func(w http.ResponseWriter, r *http.Request) {
@@ -221,11 +237,11 @@ func (server *Server) Start(port int, listenPath string) {
 	server.httpServer.Handler = router
 	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
 		if err := server.httpServer.ListenAndServeTLS(server.tlsCertificatePath, server.tlsCertificateKey); err != http.ErrServerClosed {
-			log.Errorf("websocket server error: %v", err)
+			server.error(fmt.Errorf("failed to listen: %w", err))
 		}
 	} else {
 		if err := server.httpServer.ListenAndServe(); err != http.ErrServerClosed {
-			log.Errorf("websocket server error: %v", err)
+			server.error(fmt.Errorf("failed to listen: %w", err))
 		}
 	}
 }
@@ -233,7 +249,12 @@ func (server *Server) Start(port int, listenPath string) {
 func (server *Server) Stop() {
 	err := server.httpServer.Shutdown(context.TODO())
 	if err != nil {
-		log.Errorf("error while shutting down server: %v", err)
+		server.error(fmt.Errorf("shutdown failed: %w", err))
+	}
+
+	if server.errC != nil {
+		close(server.errC)
+		server.errC = nil
 	}
 }
 
@@ -264,7 +285,7 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !supported {
-		log.Warnf("client on %v requested unsupported subprotocols %v, closing socket", url.String(), clientSubprotocols)
+		server.error(fmt.Errorf("unsupported subprotocol: %v", clientSubprotocols))
 		http.Error(w, "unsupported subprotocol", http.StatusBadRequest)
 		return
 	}
@@ -272,27 +293,26 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	if server.basicAuthHandler != nil {
 		username, password, ok := r.BasicAuth()
 		if !ok {
-			log.Errorf("required basic auth credentials not found")
+			server.error(errors.New("basic auth failed: credentials not found"))
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 		ok = server.basicAuthHandler(username, password)
 		if !ok {
-			log.Errorf("required basic auth credentials invalid")
+			server.error(errors.New("basic auth failed: credentials invalid"))
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		log.Debugf("basic authentication for user %v was successful", username)
 	}
 	// Upgrade websocket
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		server.error(fmt.Errorf("upgrade failed: %w", err))
 		return
 	}
-	log.Printf("new client on URL %v", url.String())
+
 	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte), closeSignal: make(chan bool, 1), pingMessage: make(chan []byte, 1)}
 	server.connections[url.Path] = &ws
 	// Read and write routines are started in separate goroutines and function will return immediately
@@ -312,7 +332,6 @@ func (server *Server) readPump(ws *WebSocket) {
 	}()
 
 	conn.SetPingHandler(func(appData string) error {
-		log.WithField("client", ws.GetID()).Debug("ping received")
 		ws.pingMessage <- []byte(appData)
 		err := conn.SetReadDeadline(time.Now().Add(pingWait))
 		return err
@@ -323,19 +342,19 @@ func (server *Server) readPump(ws *WebSocket) {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
-				log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error while reading from ws: %v", err)
+				server.error(fmt.Errorf("read failed for %s: %w", ws.GetID(), err))
 			}
 			if server.disconnectedHandler != nil {
 				server.disconnectedHandler(ws)
 			}
 			break
 		}
-		log.WithFields(log.Fields{"client": ws.GetID()}).Debug("received message")
+
 		if server.messageHandler != nil {
 			var channel Channel = ws
 			err = server.messageHandler(channel, message)
 			if err != nil {
-				log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error while handling message: %v", err)
+				server.error(fmt.Errorf("handling failed for %s: %w", ws.GetID(), err))
 				continue
 			}
 		}
@@ -357,20 +376,20 @@ func (server *Server) writePump(ws *WebSocket) {
 				// Closing connection
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				if err != nil {
-					log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error while closing: %v", err)
+					server.error(fmt.Errorf("close failed: %w", err))
 				}
 				return
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error writing to websocket: %v", err)
+				server.error(fmt.Errorf("write failed for %s: %w", ws.GetID(), err))
 				return
 			}
 		case ping := <-ws.pingMessage:
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
 			err := conn.WriteMessage(websocket.PongMessage, ping)
 			if err != nil {
-				log.WithFields(log.Fields{"client": ws.GetID()}).Errorf("error writing to websocket: %v", err)
+				server.error(fmt.Errorf("write failed for %s: %w", ws.GetID(), err))
 				return
 			}
 		case closed, ok := <-ws.closeSignal:
@@ -425,6 +444,9 @@ type WsClient interface {
 	Start(url string) error
 	// Closes the output of the websocket Channel, effectively closing the connection to the server with a normal closure.
 	Stop()
+	// Errors returns a channel for error messages. If it doesn't exist it es created.
+	// The channel is closed by the client when stopped.
+	Errors() <-chan error
 	// Sets a callback function for all incoming messages.
 	SetMessageHandler(handler func(data []byte) error)
 	// Sends a message to the server over the websocket.
@@ -446,6 +468,7 @@ type Client struct {
 	messageHandler func(data []byte) error
 	dialOptions    []func(*websocket.Dialer)
 	authHeader     http.Header
+	errC           chan error
 }
 
 // Creates a new simple websocket client (the channel is not secured).
@@ -514,20 +537,19 @@ func (client *Client) writePump() {
 				// Closing connection normally
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				if err != nil {
-					log.Errorf("error while closing: %v", err)
+					client.error(fmt.Errorf("close failed: %w", err))
 				}
 				return
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				log.Errorf("error writing to websocket: %v", err)
+				client.error(fmt.Errorf("write failed: %w", err))
 				return
 			}
 		case <-ticker.C:
-			log.Debug("will send ping to server")
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-				log.Errorf("couldn't send ping message: %v", err)
+				client.error(fmt.Errorf("write failed: %w", err))
 				return
 			}
 		case closed, ok := <-client.webSocket.closeSignal:
@@ -546,22 +568,21 @@ func (client *Client) readPump() {
 	}()
 	_ = conn.SetReadDeadline(time.Now().Add(pongWait))
 	conn.SetPongHandler(func(string) error {
-		log.Debug("pong received")
 		return conn.SetReadDeadline(time.Now().Add(pongWait))
 	})
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
-				log.Errorf("error while reading from websocket: %v", err)
+				client.error(fmt.Errorf("read failed: %w", err))
 			}
 			return
 		}
-		log.Debugf("received message from server: %v", string(message))
+
 		if client.messageHandler != nil {
 			err = client.messageHandler(message)
 			if err != nil {
-				log.Errorf("error while handling message: %v", err)
+				client.error(fmt.Errorf("handle failed: %w", err))
 				continue
 			}
 		}
@@ -595,7 +616,9 @@ func (client *Client) Start(url string) error {
 			}
 			err = httpError
 		}
-		log.Errorf("couldn't connect to server: %v", err)
+
+		client.error(fmt.Errorf("connect failed: %w", err))
+
 		return err
 	}
 
@@ -608,4 +631,22 @@ func (client *Client) Start(url string) error {
 
 func (client *Client) Stop() {
 	close(client.webSocket.outQueue)
+
+	if client.errC != nil {
+		close(client.errC)
+		client.errC = nil
+	}
+}
+
+func (client *Client) error(err error) {
+	if client.errC != nil {
+		client.errC <- err
+	}
+}
+
+func (client *Client) Errors() <-chan error {
+	if client.errC == nil {
+		client.errC = make(chan error, 1)
+	}
+	return client.errC
 }

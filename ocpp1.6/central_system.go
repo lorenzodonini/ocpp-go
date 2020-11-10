@@ -32,7 +32,6 @@ func (cs *centralSystem) error(err error) {
 	}
 }
 
-// Errors returns a channel for error messages. If it doesn't exist it es created.
 func (cs *centralSystem) Errors() <-chan error {
 	if cs.errC == nil {
 		cs.errC = make(chan error, 1)
