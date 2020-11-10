@@ -512,7 +512,7 @@ func (cs *centralSystem) handleIncomingError(chargePointId string, err *ocpp.Err
 		delete(cs.callbacks, chargePointId)
 		callback(nil, err)
 	} else {
-		err := fmt.Errorf("no handler available for call error %w from client %s for request %s", err, chargePointId)
+		err := fmt.Errorf("no handler available for call error %w from client %s", err, chargePointId)
 		cs.error(err)
 	}
 }
