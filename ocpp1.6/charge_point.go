@@ -33,6 +33,14 @@ func (cp *chargePoint) error(err error) {
 	}
 }
 
+// Errors returns a channel for error messages. If it doesn't exist it es created.
+func (cp *chargePoint) Errors() <-chan error {
+	if cp.errC == nil {
+		cp.errC = make(chan error, 1)
+	}
+	return cp.errC
+}
+
 func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *core.BootNotificationRequest)) (*core.BootNotificationConfirmation, error) {
 	request := core.NewBootNotificationRequest(chargePointModel, chargePointVendor)
 	for _, fn := range props {
@@ -266,6 +274,11 @@ func (cp *chargePoint) Start(centralSystemUrl string) error {
 
 func (cp *chargePoint) Stop() {
 	cp.client.Stop()
+
+	if cp.errC != nil {
+		close(cp.errC)
+		cp.errC = nil
+	}
 }
 
 func (cp *chargePoint) notImplementedError(requestId string, action string) {

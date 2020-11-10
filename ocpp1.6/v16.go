@@ -88,6 +88,9 @@ type ChargePoint interface {
 	// Stops the charge point routine, disconnecting it from the central system.
 	// Any pending requests are discarded.
 	Stop()
+	// Errors returns a channel for error messages. If it doesn't exist it es created.
+	// The channel is closed by the charge point when stopped.
+	Errors() <-chan error
 }
 
 // Creates a new OCPP 1.6 charge point client.
@@ -232,6 +235,8 @@ type CentralSystem interface {
 	//
 	// The function blocks forever, so it is suggested to wrap it in a goroutine, in case other functionality needs to be executed on the main program thread.
 	Start(listenPort int, listenPath string)
+	// Errors returns a channel for error messages. If it doesn't exist it es created.
+	Errors() <-chan error
 }
 
 // Creates a new OCPP 1.6 central system.
