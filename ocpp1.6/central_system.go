@@ -32,6 +32,14 @@ func (cs *centralSystem) error(err error) {
 	}
 }
 
+// Errors returns a channel for error messages. If it doesn't exist it es created.
+func (cs *centralSystem) Errors() <-chan error {
+	if cs.errC == nil {
+		cs.errC = make(chan error, 1)
+	}
+	return cs.errC
+}
+
 func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *core.ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType core.AvailabilityType, props ...func(request *core.ChangeAvailabilityRequest)) error {
 	request := core.NewChangeAvailabilityRequest(connectorId, availabilityType)
 	for _, fn := range props {
