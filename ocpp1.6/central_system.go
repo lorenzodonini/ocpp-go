@@ -392,6 +392,8 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Re
 			err = fmt.Errorf("replying cp %s to request %s with 'protocol error': %w", chargePointId, requestId, err)
 			cs.error(err)
 		}
+
+		return
 	}
 
 	if confirmation == nil {
