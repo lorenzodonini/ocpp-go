@@ -65,6 +65,17 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return wsClient
 }
 
+func TestWebsocketSetConnected(t *testing.T) {
+	wsClient := NewWebsocketClient(t, func(data []byte) ([]byte, error) {
+		return nil, nil
+	})
+	assert.False(t, wsClient.IsConnected())
+	wsClient.setConnected(true)
+	assert.True(t, wsClient.IsConnected())
+	wsClient.setConnected(false)
+	assert.False(t, wsClient.IsConnected())
+}
+
 func TestWebsocketEcho(t *testing.T) {
 	message := []byte("Hello WebSocket!")
 	var wsServer *Server
@@ -99,6 +110,7 @@ func TestWebsocketEcho(t *testing.T) {
 	}()
 	err := wsClient.Start(u.String())
 	assert.Nil(t, err)
+	assert.True(t, wsClient.IsConnected())
 	result := <-done
 	assert.True(t, result)
 	// Cleanup

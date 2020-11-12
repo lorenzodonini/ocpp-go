@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -33,6 +34,10 @@ const (
 	defaultHandshakeTimeout = 30 * time.Second
 	// Default sub-protocol to send to peer upon connection.
 	defaultSubProtocol = "ocpp1.6"
+	// The base delay to be used for automatic reconnection. Will increase exponentially up to maxReconnectionDelay.
+	defaultAutoReconnectDelay = 5 * time.Second
+	// Default maximum reconnection delay for websockets
+	defaultMaxReconnectionDelay = 2 * time.Minute
 )
 
 // Config contains optional configuration parameters for a websocket server.
@@ -89,7 +94,7 @@ type WebSocket struct {
 	connection  *websocket.Conn
 	id          string
 	outQueue    chan []byte
-	closeSignal chan bool
+	closeSignal chan error
 	pingMessage chan []byte
 }
 
@@ -376,8 +381,7 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		server.error(fmt.Errorf("upgrade failed: %w", err))
 		return
 	}
-
-	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte), closeSignal: make(chan bool, 1), pingMessage: make(chan []byte, 1)}
+	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte), closeSignal: make(chan error, 1), pingMessage: make(chan []byte, 1)}
 	server.connections[url.Path] = &ws
 	// Read and write routines are started in separate goroutines and function will return immediately
 	go server.writePump(&ws)
@@ -392,7 +396,8 @@ func (server *Server) readPump(ws *WebSocket) {
 	conn := ws.connection
 	defer func() {
 		_ = conn.Close()
-		ws.closeSignal <- true
+		//TODO: close signal
+		//ws.closeSignal <- true
 	}()
 
 	conn.SetPingHandler(func(appData string) error {
@@ -457,7 +462,8 @@ func (server *Server) writePump(ws *WebSocket) {
 				return
 			}
 		case closed, ok := <-ws.closeSignal:
-			if !ok || closed {
+			if !ok || closed != nil {
+				//TODO: handle signal
 				return
 			}
 		}
@@ -519,6 +525,19 @@ type WsClient interface {
 	//
 	// This function must be called before connecting to the server, otherwise it may lead to unexpected behavior.
 	SetTimeoutConfig(config ClientTimeoutConfig)
+	// Sets a callback function for receiving notifications about an unexpected disconnection from the server.
+	// The callback is invoked even if the automatic reconnection mechanism is active.
+	//
+	// If the client was stopped using the Stop function, the callback will NOT be invoked.
+	SetDisconnectedHandler(handler func(err error))
+	// Sets a callback function for receiving notifications whenever the connection to the server is re-established.
+	// Connections are re-established automatically thanks to the auto-reconnection mechanism.
+	//
+	// If set, the DisconnectedHandler will always be invoked before the Reconnected callback is invoked.
+	SetReconnectedHandler(handler func())
+	// IsConnected Returns information about the current connection status.
+	// If the client is currently attempting to auto-reconnect to the server, the function returns false.
+	IsConnected() bool
 	// Sends a message to the server over the websocket.
 	//
 	// The data is queued and will be sent asynchronously in the background.
@@ -543,6 +562,10 @@ type Client struct {
 	dialOptions    []func(*websocket.Dialer)
 	header         http.Header
 	timeoutConfig  ClientTimeoutConfig
+	connected      bool
+	onDisconnected func(err error)
+	onReconnected  func()
+	mutex          sync.Mutex
 	errC           chan error
 }
 
@@ -587,6 +610,14 @@ func (client *Client) SetTimeoutConfig(config ClientTimeoutConfig) {
 	client.timeoutConfig = config
 }
 
+func (client *Client) SetDisconnectedHandler(handler func(err error)) {
+	client.onDisconnected = handler
+}
+
+func (client *Client) SetReconnectedHandler(handler func()) {
+	client.onReconnected = handler
+}
+
 func (client *Client) AddOption(option interface{}) {
 	dialOption, ok := option.(func(*websocket.Dialer))
 	if ok {
@@ -605,10 +636,15 @@ func (client *Client) SetHeaderValue(key string, value string) {
 func (client *Client) writePump() {
 	ticker := time.NewTicker(client.timeoutConfig.PingPeriod)
 	conn := client.webSocket.connection
-	defer func() {
+	// Closure function shuts down the current connection
+	closure := func(err error) {
 		ticker.Stop()
 		_ = conn.Close()
-	}()
+		client.setConnected(false)
+		if client.onDisconnected != nil && err != nil {
+			client.onDisconnected(err)
+		}
+	}
 
 	for {
 		select {
@@ -620,21 +656,32 @@ func (client *Client) writePump() {
 				if err != nil {
 					client.error(fmt.Errorf("close failed: %w", err))
 				}
+				// Disconnected by user command. Not calling auto-reconnect.
+				// Passing nil will also not call onDisconnected
+				closure(nil)
 				return
 			}
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
 				client.error(fmt.Errorf("write failed: %w", err))
+				closure(err)
+				client.handleReconnection()
 				return
 			}
 		case <-ticker.C:
+			// Send periodic ping
 			_ = conn.SetWriteDeadline(time.Now().Add(client.timeoutConfig.WriteWait))
 			if err := conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				client.error(fmt.Errorf("write failed: %w", err))
+				closure(err)
+				client.handleReconnection()
 				return
 			}
 		case closed, ok := <-client.webSocket.closeSignal:
-			if !ok || closed {
+			// Read pump sent a closeSignal (i.e. a message couldn't be read in that moment)
+			if !ok || closed != nil {
+				closure(closed)
+				client.handleReconnection()
 				return
 			}
 		}
@@ -643,10 +690,6 @@ func (client *Client) writePump() {
 
 func (client *Client) readPump() {
 	conn := client.webSocket.connection
-	defer func() {
-		_ = conn.Close()
-		client.webSocket.closeSignal <- true
-	}()
 	_ = conn.SetReadDeadline(time.Now().Add(client.timeoutConfig.PongWait))
 	conn.SetPongHandler(func(string) error {
 		return conn.SetReadDeadline(time.Now().Add(client.timeoutConfig.PongWait))
@@ -657,12 +700,15 @@ func (client *Client) readPump() {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
 				client.error(fmt.Errorf("read failed: %w", err))
 			}
+			// Notify writePump of error. Disconnection will be handled there
+			client.webSocket.closeSignal <- err
 			return
 		}
 
 		if client.messageHandler != nil {
 			err = client.messageHandler(message)
 			if err != nil {
+				// TODO: Handle?
 				client.error(fmt.Errorf("handle failed: %w", err))
 				continue
 			}
@@ -670,7 +716,43 @@ func (client *Client) readPump() {
 	}
 }
 
+func (client *Client) handleReconnection() {
+	delay := defaultAutoReconnectDelay
+	for {
+		// Wait before reconnecting
+		time.Sleep(delay)
+		err := client.Start(client.webSocket.id)
+		if err == nil {
+			// Re-connection was successful
+			if client.onReconnected != nil {
+				client.onReconnected()
+			}
+			return
+		}
+		// Re-connection failed, increase delay exponentially
+		delay *= 2
+		if delay >= defaultMaxReconnectionDelay {
+			delay = defaultMaxReconnectionDelay
+		}
+	}
+}
+
+func (client *Client) setConnected(connected bool) {
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+	client.connected = connected
+}
+
+func (client *Client) IsConnected() bool {
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+	return client.connected
+}
+
 func (client *Client) Write(data []byte) error {
+	if !client.IsConnected() {
+		return errors.New("client is currently not connected, cannot send data")
+	}
 	client.webSocket.outQueue <- data
 	return nil
 }
@@ -701,7 +783,8 @@ func (client *Client) Start(url string) error {
 		return err
 	}
 
-	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte), closeSignal: make(chan bool, 1)}
+	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte), closeSignal: make(chan error, 1)}
+	client.setConnected(true)
 	//Start reader and write routine
 	go client.writePump()
 	go client.readPump()
