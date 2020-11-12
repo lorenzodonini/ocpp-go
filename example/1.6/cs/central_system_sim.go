@@ -82,7 +82,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 	expiryDate := types.NewDateTime(time.Now().Add(1 * time.Hour))
 	cb1 := func(confirmation *reservation.ReserveNowConfirmation, err error) {
 		if err != nil {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Warn(err)
+			logDefault(chargePointID, reservation.ReserveNowFeatureName).Errorf("error on request: %v", err)
 		} else if confirmation.Status == reservation.ReservationStatusAccepted {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("connector %v reserved for client %v until %v (reservation ID %d)", connectorID, clientIdTag, expiryDate.FormatTimestamp(), reservationID)
 		} else {
@@ -99,7 +99,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 	// Cancel the reservation
 	cb2 := func(confirmation *reservation.CancelReservationConfirmation, err error) {
 		if err != nil {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Warn(err)
+			logDefault(chargePointID, reservation.CancelReservationFeatureName).Errorf("error on request: %v", err)
 		} else if confirmation.Status == reservation.CancelReservationStatusAccepted {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("reservation %v canceled successfully", reservationID)
 		} else {
@@ -116,7 +116,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 	// Get current local list version
 	cb3 := func(confirmation *localauth.GetLocalListVersionConfirmation, err error) {
 		if err != nil {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Errorf("error while sending request: %v", err)
+			logDefault(chargePointID, localauth.GetLocalListVersionFeatureName).Errorf("error on request: %v", err)
 		} else {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("current local list version: %v", confirmation.ListVersion)
 		}
@@ -133,7 +133,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 	// Change meter sampling values time
 	cb4 := func(confirmation *core.ChangeConfigurationConfirmation, err error) {
 		if err != nil {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Errorf("error while sending request: %v", err)
+			logDefault(chargePointID, core.ChangeConfigurationFeatureName).Errorf("error on request: %v", err)
 		} else if confirmation.Status == core.ConfigurationStatusNotSupported {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Warnf("couldn't update configuration for unsupported key: %v", configKey)
 		} else if confirmation.Status == core.ConfigurationStatusRejected {
@@ -153,7 +153,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 	// Trigger a heartbeat message
 	cb5 := func(confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
 		if err != nil {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Errorf("error while sending request: %v", err)
+			logDefault(chargePointID, remotetrigger.TriggerMessageFeatureName).Errorf("error on request: %v", err)
 		} else if confirmation.Status == remotetrigger.TriggerMessageStatusAccepted {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v triggered successfully", core.HeartbeatFeatureName)
 		} else if confirmation.Status == remotetrigger.TriggerMessageStatusRejected {
@@ -171,7 +171,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 	// Trigger a diagnostics status notification
 	cb6 := func(confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
 		if err != nil {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Errorf("error while sending request: %v", err)
+			logDefault(chargePointID, remotetrigger.TriggerMessageFeatureName).Errorf("error on request: %v", err)
 		} else if confirmation.Status == remotetrigger.TriggerMessageStatusAccepted {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v triggered successfully", firmware.GetDiagnosticsFeatureName)
 		} else if confirmation.Status == remotetrigger.TriggerMessageStatusRejected {
