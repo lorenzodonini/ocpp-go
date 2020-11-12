@@ -23,7 +23,7 @@ Planned milestones and features:
 
 ## OCPP 1.6 Usage
 
-Go version 1.11+ is required.
+Go version 1.13+ is required.
 
 ```sh
 go get github.com/lorenzodonini/ocpp-go
