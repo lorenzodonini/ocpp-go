@@ -310,7 +310,7 @@ type SampledValue struct {
 
 type MeterValue struct {
 	Timestamp    *DateTime      `json:"timestamp" validate:"required"`
-	SampledValue []SampledValue `json:"sampledValue" validate:"required,min=1,dive"`
+	SampledValue []SampledValue `json:"sampledValue" validate:"required,min=0,dive"`
 }
 
 // Initialize validator
