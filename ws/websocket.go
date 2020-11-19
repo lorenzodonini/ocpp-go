@@ -76,8 +76,6 @@ func NewClientTimeoutConfig() ClientTimeoutConfig {
 	}
 }
 
-var upgrader = websocket.Upgrader{Subprotocols: []string{}}
-
 // Channel represents a bi-directional communication channel, which provides at least a unique ID.
 type Channel interface {
 	GetID() string
@@ -202,12 +200,13 @@ type Server struct {
 	tlsCertificatePath  string
 	tlsCertificateKey   string
 	timeoutConfig       ServerTimeoutConfig
+	upgrader            websocket.Upgrader
 	errC                chan error
 }
 
 // Creates a new simple websocket server (the websockets are not secured).
 func NewServer() *Server {
-	return &Server{timeoutConfig: NewServerTimeoutConfig()}
+	return &Server{timeoutConfig: NewServerTimeoutConfig(), upgrader: websocket.Upgrader{Subprotocols: []string{}}}
 }
 
 // Creates a new secure websocket server. All created websocket channels will use TLS.
@@ -251,13 +250,13 @@ func (server *Server) SetTimeoutConfig(config ServerTimeoutConfig) {
 }
 
 func (server *Server) AddSupportedSubprotocol(subProto string) {
-	for _, sub := range upgrader.Subprotocols {
+	for _, sub := range server.upgrader.Subprotocols {
 		if sub == subProto {
 			// Don't add duplicates
 			return
 		}
 	}
-	upgrader.Subprotocols = append(upgrader.Subprotocols, subProto)
+	server.upgrader.Subprotocols = append(server.upgrader.Subprotocols, subProto)
 }
 
 func (server *Server) SetBasicAuthHandler(handler func(username string, password string) bool) {
@@ -326,11 +325,11 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if requested subprotocol is supported
 	clientSubprotocols := websocket.Subprotocols(r)
 	supported := false
-	if len(upgrader.Subprotocols) == 0 {
+	if len(server.upgrader.Subprotocols) == 0 {
 		// All subProtocols are accepted
 		supported = true
 	}
-	for _, supportedProto := range upgrader.Subprotocols {
+	for _, supportedProto := range server.upgrader.Subprotocols {
 		for _, requestedProto := range clientSubprotocols {
 			if requestedProto == supportedProto {
 				supported = true
@@ -361,7 +360,7 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// Upgrade websocket
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := server.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		server.error(fmt.Errorf("upgrade failed: %w", err))
 		return
@@ -681,9 +680,7 @@ func (client *Client) Start(url string) error {
 			}
 			err = httpError
 		}
-
 		client.error(fmt.Errorf("connect failed: %w", err))
-
 		return err
 	}
 
