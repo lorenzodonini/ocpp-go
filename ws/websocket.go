@@ -20,20 +20,61 @@ import (
 
 const (
 	// Time allowed to write a message to the peer.
-	writeWait = 10 * time.Second
+	defaultWriteWait = 10 * time.Second
 	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
+	defaultPongWait = 60 * time.Second
 	// Time allowed to wait for a ping on the server, before closing a connection due to inactivity.
-	pingWait = pongWait
+	defaultPingWait = defaultPongWait
 	// Send pings to peer with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
+	defaultPingPeriod = (defaultPongWait * 9) / 10
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
 	// Time allowed for the initial handshake to complete.
-	handshakeTimeout = 30 * time.Second
+	defaultHandshakeTimeout = 30 * time.Second
 	// Default sub-protocol to send to peer upon connection.
 	defaultSubProtocol = "ocpp1.6"
 )
+
+// Config contains optional configuration parameters for a websocket server.
+// Setting the parameter allows to define custom timeout intervals for websocket network operations.
+//
+// To set a custom configuration, refer to the server's SetTimeoutConfig method.
+// If no configuration is passed, a default configuration is generated via the NewServerTimeoutConfig function.
+type ServerTimeoutConfig struct {
+	WriteWait time.Duration
+	PingWait  time.Duration
+}
+
+// NewServerTimeoutConfig creates a default timeout configuration for a websocket endpoint.
+//
+// You may change fields arbitrarily and pass the struct to a SetTimeoutConfig method.
+func NewServerTimeoutConfig() ServerTimeoutConfig {
+	return ServerTimeoutConfig{WriteWait: defaultWriteWait, PingWait: defaultPingWait}
+}
+
+// Config contains optional configuration parameters for a websocket client.
+// Setting the parameter allows to define custom timeout intervals for websocket network operations.
+//
+// To set a custom configuration, refer to the client's SetTimeoutConfig method.
+// If no configuration is passed, a default configuration is generated via the NewClientTimeoutConfig function.
+type ClientTimeoutConfig struct {
+	WriteWait        time.Duration
+	HandshakeTimeout time.Duration
+	PongWait         time.Duration
+	PingPeriod       time.Duration
+}
+
+// NewClientTimeoutConfig creates a default timeout configuration for a websocket endpoint.
+//
+// You may change fields arbitrarily and pass the struct to a SetTimeoutConfig method.
+func NewClientTimeoutConfig() ClientTimeoutConfig {
+	return ClientTimeoutConfig{
+		WriteWait:        defaultWriteWait,
+		HandshakeTimeout: defaultHandshakeTimeout,
+		PongWait:         defaultPongWait,
+		PingPeriod:       defaultPingPeriod,
+	}
+}
 
 var upgrader = websocket.Upgrader{Subprotocols: []string{}}
 
@@ -44,6 +85,7 @@ type Channel interface {
 
 // WebSocket is a wrapper for a single websocket channel.
 // The connection itself is provided by the gorilla websocket package.
+//
 // Don't use a websocket directly, but refer to WsServer and WsClient.
 type WebSocket struct {
 	connection  *websocket.Conn
@@ -90,6 +132,8 @@ func (e HttpConnectionError) Error() string {
 // To specify supported sub-protocols, use:
 //	server.AddSupportedSubprotocol("ocpp1.6")
 //
+// If you need to set a specific timeout configuration, refer to the SetTimeoutConfig method.
+//
 // Using Start and Stop you can respectively start and stop listening for incoming client websocket connections.
 //
 // To be notified of new and terminated connections,
@@ -124,6 +168,10 @@ type WsServer interface {
 	// Sets a callback function for all client disconnection events.
 	// Once a client is disconnected, it is not possible to read/write on the respective Channel any longer.
 	SetDisconnectedClientHandler(handler func(ws Channel))
+	// Set custom timeout configuration parameters. If not passed, a default ServerTimeoutConfig struct will be used.
+	//
+	// This function must be called before starting the server, otherwise it may lead to unexpected behavior.
+	SetTimeoutConfig(config ServerTimeoutConfig)
 	// Sends a message on a specific Channel, identifier by the webSocketId parameter.
 	// If the passed ID is invalid, an error is returned.
 	//
@@ -153,12 +201,13 @@ type Server struct {
 	basicAuthHandler    func(username string, password string) bool
 	tlsCertificatePath  string
 	tlsCertificateKey   string
+	timeoutConfig       ServerTimeoutConfig
 	errC                chan error
 }
 
 // Creates a new simple websocket server (the websockets are not secured).
 func NewServer() *Server {
-	return &Server{}
+	return &Server{timeoutConfig: NewServerTimeoutConfig()}
 }
 
 // Creates a new secure websocket server. All created websocket channels will use TLS.
@@ -181,6 +230,7 @@ func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.
 		httpServer: &http.Server{
 			TLSConfig: tlsConfig,
 		},
+		timeoutConfig: NewServerTimeoutConfig(),
 	}
 }
 
@@ -194,6 +244,10 @@ func (server *Server) SetNewClientHandler(handler func(ws Channel)) {
 
 func (server *Server) SetDisconnectedClientHandler(handler func(ws Channel)) {
 	server.disconnectedHandler = handler
+}
+
+func (server *Server) SetTimeoutConfig(config ServerTimeoutConfig) {
+	server.timeoutConfig = config
 }
 
 func (server *Server) AddSupportedSubprotocol(subProto string) {
@@ -333,10 +387,10 @@ func (server *Server) readPump(ws *WebSocket) {
 
 	conn.SetPingHandler(func(appData string) error {
 		ws.pingMessage <- []byte(appData)
-		err := conn.SetReadDeadline(time.Now().Add(pingWait))
+		err := conn.SetReadDeadline(time.Now().Add(server.timeoutConfig.PingWait))
 		return err
 	})
-	_ = conn.SetReadDeadline(time.Now().Add(pingWait))
+	_ = conn.SetReadDeadline(time.Now().Add(server.timeoutConfig.PingWait))
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -358,7 +412,7 @@ func (server *Server) readPump(ws *WebSocket) {
 				continue
 			}
 		}
-		_ = conn.SetReadDeadline(time.Now().Add(pingWait))
+		_ = conn.SetReadDeadline(time.Now().Add(server.timeoutConfig.PingWait))
 	}
 }
 
@@ -371,7 +425,7 @@ func (server *Server) writePump(ws *WebSocket) {
 	for {
 		select {
 		case data, ok := <-ws.outQueue:
-			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
+			_ = conn.SetWriteDeadline(time.Now().Add(server.timeoutConfig.WriteWait))
 			if !ok {
 				// Closing connection
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
@@ -386,7 +440,7 @@ func (server *Server) writePump(ws *WebSocket) {
 				return
 			}
 		case ping := <-ws.pingMessage:
-			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
+			_ = conn.SetWriteDeadline(time.Now().Add(server.timeoutConfig.WriteWait))
 			err := conn.WriteMessage(websocket.PongMessage, ping)
 			if err != nil {
 				server.error(fmt.Errorf("write failed for %s: %w", ws.GetID(), err))
@@ -426,6 +480,8 @@ func (server *Server) writePump(ws *WebSocket) {
 // To add basic HTTP authentication, use:
 //	client.SetBasicAuth("username","password")
 //
+// If you need to set a specific timeout configuration, refer to the SetTimeoutConfig method.
+//
 // Using Start and Stop you can respectively open/close a websocket to a websocket server.
 //
 // To receive incoming messages, you will need to set your own handler using SetMessageHandler.
@@ -449,6 +505,10 @@ type WsClient interface {
 	Errors() <-chan error
 	// Sets a callback function for all incoming messages.
 	SetMessageHandler(handler func(data []byte) error)
+	// Set custom timeout configuration parameters. If not passed, a default ClientTimeoutConfig struct will be used.
+	//
+	// This function must be called before connecting to the server, otherwise it may lead to unexpected behavior.
+	SetTimeoutConfig(config ClientTimeoutConfig)
 	// Sends a message to the server over the websocket.
 	//
 	// The data is queued and will be sent asynchronously in the background.
@@ -468,6 +528,7 @@ type Client struct {
 	messageHandler func(data []byte) error
 	dialOptions    []func(*websocket.Dialer)
 	authHeader     http.Header
+	timeoutConfig  ClientTimeoutConfig
 	errC           chan error
 }
 
@@ -476,7 +537,7 @@ type Client struct {
 // Additional options may be added using the AddOption function.
 // Basic authentication can be set using the SetBasicAuth function.
 func NewClient() *Client {
-	return &Client{dialOptions: []func(*websocket.Dialer){}}
+	return &Client{dialOptions: []func(*websocket.Dialer){}, timeoutConfig: NewClientTimeoutConfig()}
 }
 
 // Creates a new secure websocket client. If supported by the server, the websocket channel will use TLS.
@@ -497,15 +558,19 @@ func NewClient() *Client {
 // self-signed certificate (do not use in production!), pass:
 //	InsecureSkipVerify: true
 func NewTLSClient(tlsConfig *tls.Config) *Client {
-	cli := &Client{dialOptions: []func(*websocket.Dialer){}}
-	cli.dialOptions = append(cli.dialOptions, func(dialer *websocket.Dialer) {
+	client := &Client{dialOptions: []func(*websocket.Dialer){}, timeoutConfig: NewClientTimeoutConfig()}
+	client.dialOptions = append(client.dialOptions, func(dialer *websocket.Dialer) {
 		dialer.TLSClientConfig = tlsConfig
 	})
-	return cli
+	return client
 }
 
 func (client *Client) SetMessageHandler(handler func(data []byte) error) {
 	client.messageHandler = handler
+}
+
+func (client *Client) SetTimeoutConfig(config ClientTimeoutConfig) {
+	client.timeoutConfig = config
 }
 
 func (client *Client) AddOption(option interface{}) {
@@ -522,7 +587,7 @@ func (client *Client) SetBasicAuth(username string, password string) {
 }
 
 func (client *Client) writePump() {
-	ticker := time.NewTicker(pingPeriod)
+	ticker := time.NewTicker(client.timeoutConfig.PingPeriod)
 	conn := client.webSocket.connection
 	defer func() {
 		ticker.Stop()
@@ -532,7 +597,7 @@ func (client *Client) writePump() {
 	for {
 		select {
 		case data, ok := <-client.webSocket.outQueue:
-			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
+			_ = conn.SetWriteDeadline(time.Now().Add(client.timeoutConfig.WriteWait))
 			if !ok {
 				// Closing connection normally
 				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
@@ -547,7 +612,7 @@ func (client *Client) writePump() {
 				return
 			}
 		case <-ticker.C:
-			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
+			_ = conn.SetWriteDeadline(time.Now().Add(client.timeoutConfig.WriteWait))
 			if err := conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				client.error(fmt.Errorf("write failed: %w", err))
 				return
@@ -566,9 +631,9 @@ func (client *Client) readPump() {
 		_ = conn.Close()
 		client.webSocket.closeSignal <- true
 	}()
-	_ = conn.SetReadDeadline(time.Now().Add(pongWait))
+	_ = conn.SetReadDeadline(time.Now().Add(client.timeoutConfig.PongWait))
 	conn.SetPongHandler(func(string) error {
-		return conn.SetReadDeadline(time.Now().Add(pongWait))
+		return conn.SetReadDeadline(time.Now().Add(client.timeoutConfig.PongWait))
 	})
 	for {
 		_, message, err := conn.ReadMessage()
@@ -598,7 +663,7 @@ func (client *Client) Start(url string) error {
 	dialer := websocket.Dialer{
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
-		HandshakeTimeout: handshakeTimeout,
+		HandshakeTimeout: client.timeoutConfig.HandshakeTimeout,
 		Subprotocols:     []string{},
 	}
 	for _, option := range client.dialOptions {
