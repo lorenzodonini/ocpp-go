@@ -230,6 +230,7 @@ func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.
 			TLSConfig: tlsConfig,
 		},
 		timeoutConfig: NewServerTimeoutConfig(),
+		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
 	}
 }
 
