@@ -31,7 +31,7 @@ const (
 )
 
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *Server {
-	wsServer := Server{httpServer: &http.Server{}}
+	wsServer := NewServer()
 	wsServer.SetMessageHandler(func(ws Channel, data []byte) error {
 		assert.NotNil(t, ws)
 		assert.NotNil(t, data)
@@ -45,11 +45,11 @@ func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 		}
 		return nil
 	})
-	return &wsServer
+	return wsServer
 }
 
 func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *Client {
-	wsClient := Client{}
+	wsClient := NewClient()
 	wsClient.SetMessageHandler(func(data []byte) error {
 		assert.NotNil(t, data)
 		if onMessage != nil {
@@ -62,7 +62,7 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 		}
 		return nil
 	})
-	return &wsClient
+	return wsClient
 }
 
 func TestWebsocketEcho(t *testing.T) {
@@ -479,6 +479,91 @@ func TestUnsupportedSubprotocol(t *testing.T) {
 	err := wsClient.Start(u.String())
 	assert.NotNil(t, err)
 	// Cleanup
+	wsServer.Stop()
+}
+
+func TestSetServerTimeoutConfig(t *testing.T) {
+	var wsServer *Server
+	disconnected := make(chan bool)
+	wsServer = NewWebsocketServer(t, nil)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+	})
+	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
+		// TODO: check for error with upcoming API
+		disconnected <- true
+	})
+	// Setting server timeout
+	config := NewServerTimeoutConfig()
+	pingWait := 2 * time.Second
+	writeWait := 2 * time.Second
+	config.PingWait = pingWait
+	config.WriteWait = writeWait
+	wsServer.SetTimeoutConfig(config)
+	// Start server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(500 * time.Millisecond)
+	assert.Equal(t, wsServer.timeoutConfig.PingWait, pingWait)
+	assert.Equal(t, wsServer.timeoutConfig.WriteWait, writeWait)
+	// Run test
+	wsClient := NewWebsocketClient(t, nil)
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	err := wsClient.Start(u.String())
+	assert.NoError(t, err)
+	result := <-disconnected
+	assert.True(t, result)
+	// Cleanup
+	wsClient.Stop()
+	wsServer.Stop()
+}
+
+func TestSetClientTimeoutConfig(t *testing.T) {
+	var wsServer *Server
+	disconnected := make(chan bool)
+	wsServer = NewWebsocketServer(t, nil)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+	})
+	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
+		// TODO: check for error with upcoming API
+		disconnected <- true
+	})
+	// Start server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(500 * time.Millisecond)
+	// Run test
+	wsClient := NewWebsocketClient(t, nil)
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	// Set client timeout
+	config := NewClientTimeoutConfig()
+	handshakeTimeout := 1 * time.Nanosecond // Very low timeout, handshake will fail
+	pongWait := 2 * time.Second
+	writeWait := 2 * time.Second
+	pingPeriod := 5 * time.Second
+	config.PongWait = pongWait
+	config.HandshakeTimeout = handshakeTimeout
+	config.WriteWait = writeWait
+	config.PingPeriod = pingPeriod
+	wsClient.SetTimeoutConfig(config)
+	// Start client and expect handshake error
+	err := wsClient.Start(u.String())
+	opError, ok := err.(*net.OpError)
+	require.True(t, ok)
+	assert.Equal(t, "dial", opError.Op)
+	assert.True(t, opError.Timeout())
+	assert.Error(t, opError.Err, "i/o timeout")
+	config.HandshakeTimeout = defaultHandshakeTimeout
+	wsClient.SetTimeoutConfig(config)
+	// Start client
+	err = wsClient.Start(u.String())
+	require.NoError(t, err)
+	assert.Equal(t, wsClient.timeoutConfig.PongWait, pongWait)
+	assert.Equal(t, wsClient.timeoutConfig.WriteWait, writeWait)
+	assert.Equal(t, wsClient.timeoutConfig.PingPeriod, pingPeriod)
+	result := <-disconnected
+	assert.True(t, result)
+	// Cleanup
+	wsClient.Stop()
 	wsServer.Stop()
 }
 
