@@ -22,6 +22,8 @@ type NetworkTestSuite struct {
 	suite.Suite
 	proxy     *toxiproxy.Proxy
 	proxyPort int
+	server    *Server
+	client    *Client
 }
 
 func (s *NetworkTestSuite) SetupSuite() {
@@ -41,27 +43,27 @@ func (s *NetworkTestSuite) TearDownSuite() {
 	s.proxy.Delete()
 }
 
+func (s *NetworkTestSuite) SetupTest() {
+	s.server = NewWebsocketServer(s.T(), nil)
+	s.client = NewWebsocketClient(s.T(), nil)
+}
+
 func (s *NetworkTestSuite) TearDownTest() {
 	// Reset websocket timeouts
-	pongWait = defaultPongWait
-	pingWait = defaultPingWait
-	pingPeriod = defaultPingPeriod
-	autoReconnectDelay = defaultAutoReconnectDelay
-	maxReconnectionDelay = defaultMaxReconnectionDelay
+	s.server = nil
+	s.client = nil
 }
 
 func (s *NetworkTestSuite) TestClientConnectionFailed() {
 	t := s.T()
-	var wsServer *Server
-	wsServer = NewWebsocketServer(t, nil)
-	wsServer.SetNewClientHandler(func(ws Channel) {
+	s.server = NewWebsocketServer(t, nil)
+	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.Fail(t, "should not accept new clients")
 	})
-	go wsServer.Start(serverPort, serverPath)
+	go s.server.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
 	// Test client
-	wsClient := NewWebsocketClient(t, nil)
 	host := s.proxy.Listen
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 
@@ -69,7 +71,7 @@ func (s *NetworkTestSuite) TestClientConnectionFailed() {
 	_ = s.proxy.Disable()
 	defer s.proxy.Enable()
 	// Attempt connection
-	err := wsClient.Start(u.String())
+	err := s.client.Start(u.String())
 	require.Error(t, err)
 	netError, ok := err.(*net.OpError)
 	require.True(t, ok)
@@ -79,24 +81,22 @@ func (s *NetworkTestSuite) TestClientConnectionFailed() {
 	assert.Equal(t, "connect", sysError.Syscall)
 	assert.Equal(t, syscall.ECONNREFUSED, sysError.Err)
 	// Cleanup
-	wsServer.Stop()
+	s.server.Stop()
 }
 
 func (s *NetworkTestSuite) TestClientConnectionFailedTimeout() {
 	t := s.T()
 	// Set timeouts for test
-	handshakeTimeout = 2 * time.Second
+	s.client.timeoutConfig.HandshakeTimeout = 2 * time.Second
 	// Setup
-	var wsServer *Server
-	wsServer = NewWebsocketServer(t, nil)
-	wsServer.SetNewClientHandler(func(ws Channel) {
+	s.server = NewWebsocketServer(t, nil)
+	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.Fail(t, "should not accept new clients")
 	})
-	go wsServer.Start(serverPort, serverPath)
+	go s.server.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
 	// Test client
-	wsClient := NewWebsocketClient(t, nil)
 	host := s.proxy.Listen
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 
@@ -107,7 +107,7 @@ func (s *NetworkTestSuite) TestClientConnectionFailedTimeout() {
 	defer s.proxy.RemoveToxic("connectTimeout")
 	require.NoError(t, err)
 	// Attempt connection
-	err = wsClient.Start(u.String())
+	err = s.client.Start(u.String())
 	require.Error(t, err)
 	netError, ok := err.(*net.OpError)
 	require.True(t, ok)
@@ -115,50 +115,48 @@ func (s *NetworkTestSuite) TestClientConnectionFailedTimeout() {
 	assert.True(t, strings.Contains(netError.Error(), "timeout"))
 	assert.True(t, netError.Timeout())
 	// Cleanup
-	wsServer.Stop()
+	s.server.Stop()
 }
 
 func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	t := s.T()
 	// Set timeouts for test
-	autoReconnectDelay = 1 * time.Second
+	s.client.timeoutConfig.AutoReconnectDelay = 1 * time.Second
 	// Setup
-	var wsServer *Server
 	serverOnDisconnected := make(chan bool, 1)
 	clientOnDisconnected := make(chan bool, 1)
 	reconnected := make(chan bool, 1)
-	wsServer = NewWebsocketServer(t, nil)
-	wsServer.SetNewClientHandler(func(ws Channel) {
+	s.server = NewWebsocketServer(t, nil)
+	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.NotNil(t, ws)
-		conn := wsServer.connections[ws.GetID()]
+		conn := s.server.connections[ws.GetID()]
 		assert.NotNil(t, conn)
 		// Simulate connection closed as soon client is connected
 		err := conn.connection.Close()
 		assert.Nil(t, err)
 	})
-	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
+	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- true
 	})
-	go wsServer.Start(serverPort, serverPath)
+	go s.server.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
 	// Test bench
-	wsClient := NewWebsocketClient(t, nil)
-	wsClient.SetDisconnectedHandler(func(err error) {
+	s.client.SetDisconnectedHandler(func(err error) {
 		assert.NotNil(t, err)
 		closeError, ok := err.(*websocket.CloseError)
 		require.True(t, ok)
 		assert.Equal(t, websocket.CloseAbnormalClosure, closeError.Code)
-		assert.False(t, wsClient.IsConnected())
+		assert.False(t, s.client.IsConnected())
 		clientOnDisconnected <- true
 	})
-	wsClient.SetReconnectedHandler(func() {
+	s.client.SetReconnectedHandler(func() {
 		reconnected <- true
 	})
 	// Connect client
 	host := s.proxy.Listen
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
-	err := wsClient.Start(u.String())
+	err := s.client.Start(u.String())
 	require.Nil(t, err)
 	result := <-serverOnDisconnected
 	require.True(t, result)
@@ -169,11 +167,11 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	result = <-reconnected
 	elapsed := time.Since(start)
 	assert.True(t, result)
-	assert.True(t, wsClient.IsConnected())
-	assert.True(t, elapsed >= autoReconnectDelay)
+	assert.True(t, s.client.IsConnected())
+	assert.True(t, elapsed >= s.client.timeoutConfig.AutoReconnectDelay)
 	// Cleanup
-	wsClient.Stop()
-	wsServer.Stop()
+	s.client.Stop()
+	s.server.Stop()
 }
 
 func (s *NetworkTestSuite) TestClientPongTimeout() {
@@ -181,32 +179,29 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 	// Set timeouts for test
 	// Will attempt to send ping after 1 second, and server expects ping within 1.4 seconds
 	// Server will close connection
-	pongWait = 2 * time.Second
-	pingWait = (pongWait * 7) / 10
-	pingPeriod = (pongWait * 5) / 10
-	autoReconnectDelay = 1 * time.Second
+	s.client.timeoutConfig.PongWait = 2 * time.Second
+	s.client.timeoutConfig.PingPeriod = (s.client.timeoutConfig.PongWait * 5) / 10
+	s.client.timeoutConfig.AutoReconnectDelay = 1 * time.Second
+	s.server.timeoutConfig.PingWait = (s.client.timeoutConfig.PongWait * 7) / 10
 	// Setup
-	var wsServer *Server
 	serverOnDisconnected := make(chan bool, 1)
 	clientOnDisconnected := make(chan bool, 1)
 	reconnected := make(chan bool, 1)
-	wsServer = NewWebsocketServer(t, nil)
-	wsServer.SetNewClientHandler(func(ws Channel) {
+	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.NotNil(t, ws)
 	})
-	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
+	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- true
 	})
-	wsServer.SetMessageHandler(func(ws Channel, data []byte) error {
+	s.server.SetMessageHandler(func(ws Channel, data []byte) error {
 		assert.Fail(t, "unexpected message received")
 		return errors.New("unexpected message received")
 	})
-	go wsServer.Start(serverPort, serverPath)
+	go s.server.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
 	// Test client
-	wsClient := NewWebsocketClient(t, nil)
-	wsClient.SetDisconnectedHandler(func(err error) {
+	s.client.SetDisconnectedHandler(func(err error) {
 		defer func() {
 			clientOnDisconnected <- true
 		}()
@@ -215,14 +210,14 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 		require.True(t, ok)
 		assert.Equal(t, websocket.CloseAbnormalClosure, closeError.Code)
 	})
-	wsClient.SetReconnectedHandler(func() {
+	s.client.SetReconnectedHandler(func() {
 		reconnected <- true
 	})
 	host := s.proxy.Listen
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 
 	// Attempt connection
-	err := wsClient.Start(u.String())
+	err := s.client.Start(u.String())
 	require.NoError(t, err)
 	// Slow upstream network -> ping won't get through and server-side close will be triggered
 	_, err = s.proxy.AddToxic("readTimeout", "timeout", "upstream", 1, toxiproxy.Attributes{
@@ -241,41 +236,38 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 	result = <-reconnected
 	require.True(t, result)
 	elapsed := time.Since(startTimeout)
-	assert.GreaterOrEqual(t, elapsed.Milliseconds(), autoReconnectDelay.Milliseconds())
+	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.AutoReconnectDelay.Milliseconds())
 	// Cleanup
-	wsClient.Stop()
-	wsServer.Stop()
+	s.client.Stop()
+	s.server.Stop()
 }
 
 func (s *NetworkTestSuite) TestClientReadTimeout() {
 	t := s.T()
 	// Set timeouts for test
-	pongWait = 2 * time.Second
-	pingWait = pongWait
-	pingPeriod = (pongWait * 8) / 10
-	autoReconnectDelay = 1 * time.Second
+	s.client.timeoutConfig.PongWait = 2 * time.Second
+	s.client.timeoutConfig.PingPeriod = (s.client.timeoutConfig.PongWait * 7) / 10
+	s.client.timeoutConfig.AutoReconnectDelay = 1 * time.Second
+	s.server.timeoutConfig.PingWait = s.client.timeoutConfig.PongWait
 	// Setup
-	var wsServer *Server
 	serverOnDisconnected := make(chan bool, 1)
 	clientOnDisconnected := make(chan bool, 1)
 	reconnected := make(chan bool, 1)
-	wsServer = NewWebsocketServer(t, nil)
-	wsServer.SetNewClientHandler(func(ws Channel) {
+	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.NotNil(t, ws)
 	})
-	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
+	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- true
 	})
-	wsServer.SetMessageHandler(func(ws Channel, data []byte) error {
+	s.server.SetMessageHandler(func(ws Channel, data []byte) error {
 		assert.Fail(t, "unexpected message received")
 		return errors.New("unexpected message received")
 	})
-	go wsServer.Start(serverPort, serverPath)
+	go s.server.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
 	// Test client
-	wsClient := NewWebsocketClient(t, nil)
-	wsClient.SetDisconnectedHandler(func(err error) {
+	s.client.SetDisconnectedHandler(func(err error) {
 		defer func() {
 			clientOnDisconnected <- true
 		}()
@@ -288,14 +280,14 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 		//TODO: not deterministic. Sometimes abnormal closure, sometimes timeout
 		assert.True(t, c)
 	})
-	wsClient.SetReconnectedHandler(func() {
+	s.client.SetReconnectedHandler(func() {
 		reconnected <- true
 	})
 	host := s.proxy.Listen
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 
 	// Attempt connection
-	err := wsClient.Start(u.String())
+	err := s.client.Start(u.String())
 	require.NoError(t, err)
 	// Slow down network. Ping will be received but pong won't go through
 	_, err = s.proxy.AddToxic("writeTimeout", "timeout", "downstream", 1, toxiproxy.Attributes{
@@ -314,10 +306,10 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	result = <-reconnected
 	require.True(t, result)
 	elapsed := time.Since(startTimeout)
-	assert.GreaterOrEqual(t, elapsed.Milliseconds(), autoReconnectDelay.Milliseconds())
+	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.AutoReconnectDelay.Milliseconds())
 	// Cleanup
-	wsClient.Stop()
-	wsServer.Stop()
+	s.client.Stop()
+	s.server.Stop()
 }
 
 func TestNetworkErrors(t *testing.T) {

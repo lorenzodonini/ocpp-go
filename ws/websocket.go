@@ -63,10 +63,12 @@ func NewServerTimeoutConfig() ServerTimeoutConfig {
 // To set a custom configuration, refer to the client's SetTimeoutConfig method.
 // If no configuration is passed, a default configuration is generated via the NewClientTimeoutConfig function.
 type ClientTimeoutConfig struct {
-	WriteWait        time.Duration
-	HandshakeTimeout time.Duration
-	PongWait         time.Duration
-	PingPeriod       time.Duration
+	WriteWait             time.Duration
+	HandshakeTimeout      time.Duration
+	PongWait              time.Duration
+	PingPeriod            time.Duration
+	AutoReconnectDelay    time.Duration
+	MaxAutoReconnectDelay time.Duration
 }
 
 // NewClientTimeoutConfig creates a default timeout configuration for a websocket endpoint.
@@ -74,10 +76,12 @@ type ClientTimeoutConfig struct {
 // You may change fields arbitrarily and pass the struct to a SetTimeoutConfig method.
 func NewClientTimeoutConfig() ClientTimeoutConfig {
 	return ClientTimeoutConfig{
-		WriteWait:        defaultWriteWait,
-		HandshakeTimeout: defaultHandshakeTimeout,
-		PongWait:         defaultPongWait,
-		PingPeriod:       defaultPingPeriod,
+		WriteWait:             defaultWriteWait,
+		HandshakeTimeout:      defaultHandshakeTimeout,
+		PongWait:              defaultPongWait,
+		PingPeriod:            defaultPingPeriod,
+		AutoReconnectDelay:    defaultAutoReconnectDelay,
+		MaxAutoReconnectDelay: defaultMaxReconnectionDelay,
 	}
 }
 
