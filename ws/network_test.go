@@ -49,7 +49,6 @@ func (s *NetworkTestSuite) SetupTest() {
 }
 
 func (s *NetworkTestSuite) TearDownTest() {
-	// Reset websocket timeouts
 	s.server = nil
 	s.client = nil
 }
@@ -61,7 +60,7 @@ func (s *NetworkTestSuite) TestClientConnectionFailed() {
 		assert.Fail(t, "should not accept new clients")
 	})
 	go s.server.Start(serverPort, serverPath)
-	time.Sleep(1 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 
 	// Test client
 	host := s.proxy.Listen
@@ -94,7 +93,7 @@ func (s *NetworkTestSuite) TestClientConnectionFailedTimeout() {
 		assert.Fail(t, "should not accept new clients")
 	})
 	go s.server.Start(serverPort, serverPath)
-	time.Sleep(1 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 
 	// Test client
 	host := s.proxy.Listen
@@ -139,7 +138,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 		serverOnDisconnected <- true
 	})
 	go s.server.Start(serverPort, serverPath)
-	time.Sleep(1 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 
 	// Test bench
 	s.client.SetDisconnectedHandler(func(err error) {
@@ -198,7 +197,7 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 		return errors.New("unexpected message received")
 	})
 	go s.server.Start(serverPort, serverPath)
-	time.Sleep(1 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 
 	// Test client
 	s.client.SetDisconnectedHandler(func(err error) {
@@ -264,7 +263,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 		return errors.New("unexpected message received")
 	})
 	go s.server.Start(serverPort, serverPath)
-	time.Sleep(1 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 
 	// Test client
 	s.client.SetDisconnectedHandler(func(err error) {
