@@ -185,6 +185,12 @@ type WsServer interface {
 	// The handler function is called whenever a new client attempts to connect, to check for credentials correctness.
 	// The handler must return true if the credentials were correct, false otherwise.
 	SetBasicAuthHandler(handler func(username string, password string) bool)
+	// SetCheckOriginHandler sets a handler for incoming websocket connections, allowing to perform
+	// custom cross-origin checks.
+	//
+	// By default, if the Origin header is present in the request, and the Origin host is not equal
+	// to the Host request header, the websocket handshake fails.
+	SetCheckOriginHandler(handler func(r *http.Request) bool)
 }
 
 // Default implementation of a Websocket server.
@@ -262,6 +268,10 @@ func (server *Server) AddSupportedSubprotocol(subProto string) {
 
 func (server *Server) SetBasicAuthHandler(handler func(username string, password string) bool) {
 	server.basicAuthHandler = handler
+}
+
+func (server *Server) SetCheckOriginHandler(handler func(r *http.Request) bool) {
+	server.upgrader.CheckOrigin = handler
 }
 
 func (server *Server) error(err error) {
@@ -518,6 +528,10 @@ type WsClient interface {
 	// SetBasicAuth adds basic authentication credentials, to use when connecting to the server.
 	// The credentials are automatically encoded in base64.
 	SetBasicAuth(username string, password string)
+	// SetHeaderValue sets a value on the HTTP header sent when opening a websocket connection to the server.
+	//
+	// The function overwrites previous header fields with the same key.
+	SetHeaderValue(key string, value string)
 }
 
 // Client is the the default implementation of a Websocket client.
@@ -527,7 +541,7 @@ type Client struct {
 	webSocket      WebSocket
 	messageHandler func(data []byte) error
 	dialOptions    []func(*websocket.Dialer)
-	authHeader     http.Header
+	header         http.Header
 	timeoutConfig  ClientTimeoutConfig
 	errC           chan error
 }
@@ -537,7 +551,7 @@ type Client struct {
 // Additional options may be added using the AddOption function.
 // Basic authentication can be set using the SetBasicAuth function.
 func NewClient() *Client {
-	return &Client{dialOptions: []func(*websocket.Dialer){}, timeoutConfig: NewClientTimeoutConfig()}
+	return &Client{dialOptions: []func(*websocket.Dialer){}, timeoutConfig: NewClientTimeoutConfig(), header: http.Header{}}
 }
 
 // Creates a new secure websocket client. If supported by the server, the websocket channel will use TLS.
@@ -558,7 +572,7 @@ func NewClient() *Client {
 // self-signed certificate (do not use in production!), pass:
 //	InsecureSkipVerify: true
 func NewTLSClient(tlsConfig *tls.Config) *Client {
-	client := &Client{dialOptions: []func(*websocket.Dialer){}, timeoutConfig: NewClientTimeoutConfig()}
+	client := &Client{dialOptions: []func(*websocket.Dialer){}, timeoutConfig: NewClientTimeoutConfig(), header: http.Header{}}
 	client.dialOptions = append(client.dialOptions, func(dialer *websocket.Dialer) {
 		dialer.TLSClientConfig = tlsConfig
 	})
@@ -581,9 +595,11 @@ func (client *Client) AddOption(option interface{}) {
 }
 
 func (client *Client) SetBasicAuth(username string, password string) {
-	client.authHeader = http.Header{
-		"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte(username+":"+password))},
-	}
+	client.header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(username+":"+password)))
+}
+
+func (client *Client) SetHeaderValue(key string, value string) {
+	client.header.Set(key, value)
 }
 
 func (client *Client) writePump() {
@@ -669,7 +685,7 @@ func (client *Client) Start(url string) error {
 	for _, option := range client.dialOptions {
 		option(&dialer)
 	}
-	ws, resp, err := dialer.Dial(url, client.authHeader)
+	ws, resp, err := dialer.Dial(url, client.header)
 	if err != nil {
 		if resp != nil {
 			httpError := HttpConnectionError{Message: err.Error(), HttpStatus: resp.Status, HttpCode: resp.StatusCode}
