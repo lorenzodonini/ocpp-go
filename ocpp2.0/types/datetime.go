@@ -2,15 +2,17 @@ package types
 
 import (
 	"encoding/json"
+	"github.com/araddon/dateparse"
 	"strings"
 	"time"
 )
 
-// DateTimeFormat to be used for all OCPP messages.
-//
 // The default dateTime format is RFC3339.
-// Change this if another format is desired.
-var DateTimeFormat = time.RFC3339
+var DefaultTimeFormat = time.RFC3339
+
+// DateTimeFormat to be used for all OCPP messages.
+// If not specified DefaultTimeFormat is used
+var DateTimeFormat = ""
 
 // DateTime wraps a time.Time struct, allowing for improved dateTime JSON compatibility.
 type DateTime struct {
@@ -26,8 +28,12 @@ func (dt *DateTime) UnmarshalJSON(input []byte) error {
 	strInput := string(input)
 	strInput = strings.Trim(strInput, `"`)
 	if DateTimeFormat == "" {
-		defaultTime := time.Time{}
-		err := json.Unmarshal(input, defaultTime)
+		var stringTime string
+		err := json.Unmarshal(input, &stringTime)
+		if err != nil {
+			return err
+		}
+		defaultTime, err := dateparse.ParseAny(stringTime)
 		if err != nil {
 			return err
 		}
@@ -46,18 +52,25 @@ func (dt *DateTime) MarshalJSON() ([]byte, error) {
 	if DateTimeFormat == "" {
 		return json.Marshal(dt.Time)
 	}
-	timeStr := FormatTimestamp(dt.Time)
+	timeStr := dt.FormatTimestamp()
 	return json.Marshal(timeStr)
 }
 
 // Formats the UTC timestamp using the DateTimeFormat setting.
 // This function is used during JSON marshaling as well.
 func (dt *DateTime) FormatTimestamp() string {
-	return dt.UTC().Format(DateTimeFormat)
+	if DateTimeFormat != "" {
+		return dt.UTC().Format(DateTimeFormat)
+	}
+	return dt.UTC().Format(DefaultTimeFormat)
+
 }
 
 func FormatTimestamp(t time.Time) string {
-	return t.UTC().Format(DateTimeFormat)
+	if DateTimeFormat != "" {
+		return t.UTC().Format(DateTimeFormat)
+	}
+	return t.UTC().Format(DefaultTimeFormat)
 }
 
 // DateTime Validation
