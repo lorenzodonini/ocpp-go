@@ -22,8 +22,8 @@ jobs:
           context: .
       - name: Release Charge Point 1.6 example
         uses: docker/build-push-action@v2
-          with:
-            push: true
-            tags: ldonini/ocpp1.6-charge-point:${{ github.event.release.tag_name }}
-            file: example/1.6/cp/Dockerfile
-            context: .
+        with:
+          push: true
+          tags: ldonini/ocpp1.6-charge-point:${{ github.event.release.tag_name }}
+          file: example/1.6/cp/Dockerfile
+          context: .
