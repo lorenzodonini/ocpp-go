@@ -1,4 +1,4 @@
-name: CI
+name: Default CI
 on: [push, pull_request, workflow_dispatch]
 jobs:
   # This workflow contains a job called "test", which is run on every push

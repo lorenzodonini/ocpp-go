@@ -1,7 +1,7 @@
 name: Release examples
 on:
   release:
-    - types: [published,prereleased]
+    types: [published,prereleased]
 jobs:
   release_tag:
     runs-on: ubuntu-latest
