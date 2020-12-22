@@ -30,5 +30,6 @@ jobs:
           sed '1d;$d' ocpp20.out >> coverage.out
       - name: Publish coverage
         env:
-          COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         run: goveralls -coverprofile=coverage.out -service=github -repotoken $COVERALLS_TOKEN
