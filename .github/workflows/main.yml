@@ -31,5 +31,4 @@ jobs:
       - name: Publish coverage
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         run: goveralls -coverprofile=coverage.out -service=github -repotoken $COVERALLS_TOKEN
