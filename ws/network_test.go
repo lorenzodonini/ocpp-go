@@ -120,7 +120,7 @@ func (s *NetworkTestSuite) TestClientConnectionFailedTimeout() {
 func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	t := s.T()
 	// Set timeouts for test
-	s.client.timeoutConfig.AutoReconnectDelay = 1 * time.Second
+	s.client.timeoutConfig.ReconnectBackoff = 1 * time.Second
 	// Setup
 	serverOnDisconnected := make(chan bool, 1)
 	clientOnDisconnected := make(chan bool, 1)
@@ -167,7 +167,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	elapsed := time.Since(start)
 	assert.True(t, result)
 	assert.True(t, s.client.IsConnected())
-	assert.True(t, elapsed >= s.client.timeoutConfig.AutoReconnectDelay)
+	assert.True(t, elapsed >= s.client.timeoutConfig.ReconnectBackoff)
 	// Cleanup
 	s.client.Stop()
 	s.server.Stop()
@@ -180,7 +180,7 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 	// Server will close connection
 	s.client.timeoutConfig.PongWait = 2 * time.Second
 	s.client.timeoutConfig.PingPeriod = (s.client.timeoutConfig.PongWait * 5) / 10
-	s.client.timeoutConfig.AutoReconnectDelay = 1 * time.Second
+	s.client.timeoutConfig.ReconnectBackoff = 1 * time.Second
 	s.server.timeoutConfig.PingWait = (s.client.timeoutConfig.PongWait * 7) / 10
 	// Setup
 	serverOnDisconnected := make(chan bool, 1)
@@ -235,7 +235,7 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 	result = <-reconnected
 	require.True(t, result)
 	elapsed := time.Since(startTimeout)
-	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.AutoReconnectDelay.Milliseconds())
+	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.ReconnectBackoff.Milliseconds())
 	// Cleanup
 	s.client.Stop()
 	s.server.Stop()
@@ -246,7 +246,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	// Set timeouts for test
 	s.client.timeoutConfig.PongWait = 2 * time.Second
 	s.client.timeoutConfig.PingPeriod = (s.client.timeoutConfig.PongWait * 7) / 10
-	s.client.timeoutConfig.AutoReconnectDelay = 1 * time.Second
+	s.client.timeoutConfig.ReconnectBackoff = 1 * time.Second
 	s.server.timeoutConfig.PingWait = s.client.timeoutConfig.PongWait
 	// Setup
 	serverOnDisconnected := make(chan bool, 1)
@@ -305,7 +305,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	result = <-reconnected
 	require.True(t, result)
 	elapsed := time.Since(startTimeout)
-	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.AutoReconnectDelay.Milliseconds())
+	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.ReconnectBackoff.Milliseconds())
 	// Cleanup
 	s.client.Stop()
 	s.server.Stop()

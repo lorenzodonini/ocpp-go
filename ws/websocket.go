@@ -34,10 +34,10 @@ const (
 	defaultHandshakeTimeout = 30 * time.Second
 	// Default sub-protocol to send to peer upon connection.
 	defaultSubProtocol = "ocpp1.6"
-	// The base delay to be used for automatic reconnection. Will increase exponentially up to maxReconnectionDelay.
-	defaultAutoReconnectDelay = 5 * time.Second
+	// The base delay to be used for automatic reconnection. Will double for every attempt up to maxReconnectionDelay.
+	defaultReconnectBackoff = 5 * time.Second
 	// Default maximum reconnection delay for websockets
-	defaultMaxReconnectionDelay = 2 * time.Minute
+	defaultReconnectMaxBackoff = 2 * time.Minute
 )
 
 // Config contains optional configuration parameters for a websocket server.
@@ -63,12 +63,12 @@ func NewServerTimeoutConfig() ServerTimeoutConfig {
 // To set a custom configuration, refer to the client's SetTimeoutConfig method.
 // If no configuration is passed, a default configuration is generated via the NewClientTimeoutConfig function.
 type ClientTimeoutConfig struct {
-	WriteWait             time.Duration
-	HandshakeTimeout      time.Duration
-	PongWait              time.Duration
-	PingPeriod            time.Duration
-	AutoReconnectDelay    time.Duration
-	MaxAutoReconnectDelay time.Duration
+	WriteWait           time.Duration
+	HandshakeTimeout    time.Duration
+	PongWait            time.Duration
+	PingPeriod          time.Duration
+	ReconnectBackoff    time.Duration
+	ReconnectMaxBackoff time.Duration
 }
 
 // NewClientTimeoutConfig creates a default timeout configuration for a websocket endpoint.
@@ -76,12 +76,12 @@ type ClientTimeoutConfig struct {
 // You may change fields arbitrarily and pass the struct to a SetTimeoutConfig method.
 func NewClientTimeoutConfig() ClientTimeoutConfig {
 	return ClientTimeoutConfig{
-		WriteWait:             defaultWriteWait,
-		HandshakeTimeout:      defaultHandshakeTimeout,
-		PongWait:              defaultPongWait,
-		PingPeriod:            defaultPingPeriod,
-		AutoReconnectDelay:    defaultAutoReconnectDelay,
-		MaxAutoReconnectDelay: defaultMaxReconnectionDelay,
+		WriteWait:           defaultWriteWait,
+		HandshakeTimeout:    defaultHandshakeTimeout,
+		PongWait:            defaultPongWait,
+		PingPeriod:          defaultPingPeriod,
+		ReconnectBackoff:    defaultReconnectBackoff,
+		ReconnectMaxBackoff: defaultReconnectMaxBackoff,
 	}
 }
 
@@ -98,7 +98,7 @@ type WebSocket struct {
 	connection  *websocket.Conn
 	id          string
 	outQueue    chan []byte
-	closeSignal chan error
+	closeSignal chan error // used by the readPump to notify the closed connection to the writePump
 	pingMessage chan []byte
 }
 
@@ -400,8 +400,7 @@ func (server *Server) readPump(ws *WebSocket) {
 	conn := ws.connection
 	defer func() {
 		_ = conn.Close()
-		//TODO: close signal
-		//ws.closeSignal <- true
+		//TODO: close signal?
 	}()
 
 	conn.SetPingHandler(func(appData string) error {
@@ -721,7 +720,7 @@ func (client *Client) readPump() {
 }
 
 func (client *Client) handleReconnection() {
-	delay := defaultAutoReconnectDelay
+	delay := client.timeoutConfig.ReconnectBackoff
 	for {
 		// Wait before reconnecting
 		time.Sleep(delay)
@@ -735,8 +734,8 @@ func (client *Client) handleReconnection() {
 		}
 		// Re-connection failed, increase delay exponentially
 		delay *= 2
-		if delay >= defaultMaxReconnectionDelay {
-			delay = defaultMaxReconnectionDelay
+		if delay >= client.timeoutConfig.ReconnectMaxBackoff {
+			delay = client.timeoutConfig.ReconnectMaxBackoff
 		}
 	}
 }
