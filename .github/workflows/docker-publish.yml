@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - feature/github-actions
 jobs:
   publish_latest:
     runs-on: ubuntu-latest
