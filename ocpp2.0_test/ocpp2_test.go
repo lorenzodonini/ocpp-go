@@ -611,6 +611,12 @@ func (handler MockCSMSSmartChargingHandler) OnNotifyEVChargingSchedule(chargingS
 	return r, args.Error(1)
 }
 
+func (handler MockCSMSSmartChargingHandler) OnReportChargingProfiles(chargingStationID string, request *smartcharging.ReportChargingProfilesRequest) (reponse *smartcharging.ReportChargingProfilesResponse, err error) {
+	args := handler.MethodCalled("OnReportChargingProfiles", chargingStationID, request)
+	r := args.Get(0).(*smartcharging.ReportChargingProfilesResponse)
+	return r, args.Error(1)
+}
+
 // ---------------------- MOCK CS TARIFF COST HANDLER ----------------------
 
 type MockChargingStationTariffCostHandler struct {

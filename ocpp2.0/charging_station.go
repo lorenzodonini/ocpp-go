@@ -318,6 +318,19 @@ func (cs *chargingStation) PublishFirmwareStatusNotification(status firmware.Pub
 	}
 }
 
+func (cs *chargingStation) ReportChargingProfiles(requestID int, chargingLimitSource types.ChargingLimitSourceType, evseID int, chargingProfile []types.ChargingProfile, props ...func(request *smartcharging.ReportChargingProfilesRequest)) (*smartcharging.ReportChargingProfilesResponse, error) {
+	request := smartcharging.NewReportChargingProfilesRequest(requestID, chargingLimitSource, evseID, chargingProfile)
+	for _, fn := range props {
+		fn(request)
+	}
+	response, err := cs.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return response.(*smartcharging.ReportChargingProfilesResponse), err
+	}
+}
+
 func (cs *chargingStation) SetSecurityHandler(handler security.ChargingStationHandler) {
 	cs.securityHandler = handler
 }
@@ -435,7 +448,8 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 		diagnostics.NotifyEventFeatureName,
 		diagnostics.NotifyMonitoringReportFeatureName,
 		provisioning.NotifyReportFeatureName,
-		firmware.PublishFirmwareStatusNotificationFeatureName:
+		firmware.PublishFirmwareStatusNotificationFeatureName,
+		smartcharging.ReportChargingProfilesFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charging station, cannot send request", featureName)
