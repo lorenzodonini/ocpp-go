@@ -438,19 +438,19 @@ func NewChargingSchedule(chargingRateUnit ChargingRateUnitType, schedulePeriod .
 }
 
 type ChargingProfile struct {
-	ChargingProfileId      int                        `json:"chargingProfileId" validate:"gte=0"`
-	TransactionId          int                        `json:"transactionId,omitempty"`
-	StackLevel             int                        `json:"stackLevel" validate:"gt=0"`
+	ID                     int                        `json:"id" validate:"gte=0"`
+	StackLevel             int                        `json:"stackLevel" validate:"gte=0"`
 	ChargingProfilePurpose ChargingProfilePurposeType `json:"chargingProfilePurpose" validate:"required,chargingProfilePurpose"`
 	ChargingProfileKind    ChargingProfileKindType    `json:"chargingProfileKind" validate:"required,chargingProfileKind"`
 	RecurrencyKind         RecurrencyKindType         `json:"recurrencyKind,omitempty" validate:"omitempty,recurrencyKind"`
 	ValidFrom              *DateTime                  `json:"validFrom,omitempty"`
 	ValidTo                *DateTime                  `json:"validTo,omitempty"`
-	ChargingSchedule       *ChargingSchedule          `json:"chargingSchedule" validate:"required"`
+	TransactionID          string                     `json:"transactionId,omitempty" validate:"omitempty,max=36"`
+	ChargingSchedule       []ChargingSchedule         `json:"chargingSchedule" validate:"required,min=1,max=3,dive"`
 }
 
-func NewChargingProfile(chargingProfileId int, stackLevel int, chargingProfilePurpose ChargingProfilePurposeType, chargingProfileKind ChargingProfileKindType, schedule *ChargingSchedule) *ChargingProfile {
-	return &ChargingProfile{ChargingProfileId: chargingProfileId, StackLevel: stackLevel, ChargingProfilePurpose: chargingProfilePurpose, ChargingProfileKind: chargingProfileKind, ChargingSchedule: schedule}
+func NewChargingProfile(id int, stackLevel int, chargingProfilePurpose ChargingProfilePurposeType, chargingProfileKind ChargingProfileKindType, schedule []ChargingSchedule) *ChargingProfile {
+	return &ChargingProfile{ID: id, StackLevel: stackLevel, ChargingProfilePurpose: chargingProfilePurpose, ChargingProfileKind: chargingProfileKind, ChargingSchedule: schedule}
 }
 
 // Remote Start/Stop
