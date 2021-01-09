@@ -150,6 +150,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 		clientOnDisconnected <- true
 	})
 	s.client.SetReconnectedHandler(func() {
+		time.Sleep(50 * time.Millisecond) // Make sure we reconnected after backoff
 		reconnected <- true
 	})
 	// Connect client
@@ -167,7 +168,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	elapsed := time.Since(start)
 	assert.True(t, result)
 	assert.True(t, s.client.IsConnected())
-	assert.True(t, elapsed >= s.client.timeoutConfig.ReconnectBackoff)
+	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.ReconnectBackoff.Milliseconds())
 	// Cleanup
 	s.client.Stop()
 	s.server.Stop()
@@ -210,6 +211,7 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 		assert.Equal(t, websocket.CloseAbnormalClosure, closeError.Code)
 	})
 	s.client.SetReconnectedHandler(func() {
+		time.Sleep(50 * time.Millisecond) // Make sure we reconnected after backoff
 		reconnected <- true
 	})
 	host := s.proxy.Listen
@@ -280,6 +282,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 		assert.True(t, c)
 	})
 	s.client.SetReconnectedHandler(func() {
+		time.Sleep(50 * time.Millisecond) // Make sure we reconnected after backoff
 		reconnected <- true
 	})
 	host := s.proxy.Listen
