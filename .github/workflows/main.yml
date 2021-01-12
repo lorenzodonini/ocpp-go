@@ -1,0 +1,34 @@
+name: Default CI
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  # This workflow contains a job called "test", which is run on every push
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15.x
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup toxiproxy
+        run: |
+          wget -O toxiproxy-2.1.4.deb https://github.com/Shopify/toxiproxy/releases/download/v2.1.4/toxiproxy_2.1.4_amd64.deb
+          sudo dpkg -i toxiproxy-2.1.4.deb
+          sudo cp ws/toxiproxy.service /lib/systemd/system/
+          sudo systemctl start toxiproxy
+      - name: Install goveralls
+        run: |
+          go get golang.org/x/tools/cmd/cover
+          go get github.com/mattn/goveralls
+      - name: Run tests
+        run: |
+          go test ./ws ./ocppj -v -covermode=count -coverprofile=coverage.out
+          go test -v -covermode=count -coverprofile=ocpp16.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp1.6/... github.com/lorenzodonini/ocpp-go/ocpp1.6_test
+          go test -v -covermode=count -coverprofile=ocpp20.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp2.0/... github.com/lorenzodonini/ocpp-go/ocpp2.0_test
+          sed '1d;$d' ocpp16.out >> coverage.out
+          sed '1d;$d' ocpp20.out >> coverage.out
+      - name: Publish coverage
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: goveralls -coverprofile=coverage.out -service=github -repotoken $COVERALLS_TOKEN
