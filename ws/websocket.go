@@ -732,7 +732,7 @@ func (client *Client) handleReconnection() {
 			}
 			return
 		}
-		// Re-connection failed, increase delay exponentially
+		// Re-connection failed, double the delay
 		delay *= 2
 		if delay >= client.timeoutConfig.ReconnectMaxBackoff {
 			delay = client.timeoutConfig.ReconnectMaxBackoff

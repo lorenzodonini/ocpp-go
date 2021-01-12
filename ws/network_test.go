@@ -130,9 +130,6 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 		assert.NotNil(t, ws)
 		conn := s.server.connections[ws.GetID()]
 		assert.NotNil(t, conn)
-		// Simulate connection closed as soon client is connected
-		err := conn.connection.Close()
-		assert.Nil(t, err)
 	})
 	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- true
@@ -158,6 +155,12 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 	err := s.client.Start(u.String())
 	require.Nil(t, err)
+	// Close all connection from server side
+	for _, s := range s.server.connections {
+		err := s.connection.Close()
+		assert.Nil(t, err)
+	}
+	// Wait for disconnect to propagate
 	result := <-serverOnDisconnected
 	require.True(t, result)
 	result = <-clientOnDisconnected
