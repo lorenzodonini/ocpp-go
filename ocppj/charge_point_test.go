@@ -487,10 +487,6 @@ func (suite *OcppJTestSuite) TestClientDisconnected() {
 			}
 		}
 	}()
-	// Get the pending request state struct
-	state, ok := suite.clientDispatcher.(ocppj.PendingRequestState)
-	require.True(t, ok)
-	assert.False(t, state.HasPendingRequest())
 	// Send some messages
 	for i := 0; i < messagesToQueue; i++ {
 		req := newMockRequest(fmt.Sprintf("%v", i))
@@ -505,7 +501,6 @@ func (suite *OcppJTestSuite) TestClientDisconnected() {
 	// Not all messages were sent, some are still in queue
 	assert.True(t, suite.clientDispatcher.IsPaused())
 	assert.True(t, suite.clientDispatcher.IsRunning())
-	assert.True(t, state.HasPendingRequest())
 	currentSize := suite.clientRequestQueue.Size()
 	currentSent := sentMessages
 	// Wait for some more time and double-check
@@ -516,7 +511,6 @@ func (suite *OcppJTestSuite) TestClientDisconnected() {
 	assert.Equal(t, currentSent, sentMessages)
 	assert.Less(t, currentSize, messagesToQueue)
 	assert.Less(t, sentMessages, messagesToQueue)
-	assert.True(t, state.HasPendingRequest())
 }
 
 // TestClientReconnected ensures that upon reconnection, the client retains its internal state
@@ -572,7 +566,6 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 	// One message was sent, but all others are still in queue
 	time.Sleep(200 * time.Millisecond)
 	assert.True(t, suite.clientDispatcher.IsPaused())
-	assert.True(t, state.HasPendingRequest())
 	// Wait for some more time and then reconnect
 	time.Sleep(500 * time.Millisecond)
 	suite.mockClient.ReconnectedHandler()
