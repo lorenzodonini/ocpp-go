@@ -450,4 +450,184 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 	assert.True(t, suite.clientRequestQueue.IsEmpty())
 }
 
-//TODO: test retransmission
+// TestClientDisconnected ensures that upon disconnection, the client keeps its internal state
+// and the internal queue does not change.
+func (suite *OcppJTestSuite) TestClientDisconnected() {
+	t := suite.T()
+	messagesToQueue := 8
+	sentMessages := 0
+	writeC := make(chan *ocppj.Call, 1)
+	triggerC := make(chan bool, 1)
+	disconnectError := errors.New("some error")
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
+	suite.mockClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
+		sentMessages += 1
+		data := args.Get(0).([]byte)
+		call := ParseCall(&suite.chargePoint.Endpoint, string(data), t)
+		require.NotNil(t, call)
+		writeC <- call
+	}).Return(nil)
+	// Start normally
+	err := suite.chargePoint.Start("someUrl")
+	require.Nil(t, err)
+	// Start mocked response routine
+	go func() {
+		counter := 0
+		for {
+			call, ok := <-writeC
+			if !ok {
+				return
+			}
+			// Trigger request completion after some artificial delay
+			time.Sleep(50 * time.Millisecond)
+			suite.clientDispatcher.CompleteRequest(call.UniqueId)
+			counter++
+			if counter == (messagesToQueue / 2) {
+				triggerC <- true
+			}
+		}
+	}()
+	// Get the pending request state struct
+	state, ok := suite.clientDispatcher.(ocppj.PendingRequestState)
+	require.True(t, ok)
+	assert.False(t, state.HasPendingRequest())
+	// Send some messages
+	for i := 0; i < messagesToQueue; i++ {
+		req := newMockRequest(fmt.Sprintf("%v", i))
+		err = suite.chargePoint.SendRequest(req)
+		require.NoError(t, err)
+	}
+	// Wait for trigger disconnect after a few responses were returned
+	_ = <-triggerC
+	assert.False(t, suite.clientDispatcher.IsPaused())
+	suite.mockClient.DisconnectedHandler(disconnectError)
+	time.Sleep(200 * time.Millisecond)
+	// Not all messages were sent, some are still in queue
+	assert.True(t, suite.clientDispatcher.IsPaused())
+	assert.True(t, suite.clientDispatcher.IsRunning())
+	assert.True(t, state.HasPendingRequest())
+	currentSize := suite.clientRequestQueue.Size()
+	currentSent := sentMessages
+	// Wait for some more time and double-check
+	time.Sleep(500 * time.Millisecond)
+	assert.True(t, suite.clientDispatcher.IsPaused())
+	assert.True(t, suite.clientDispatcher.IsRunning())
+	assert.Equal(t, currentSize, suite.clientRequestQueue.Size())
+	assert.Equal(t, currentSent, sentMessages)
+	assert.Less(t, currentSize, messagesToQueue)
+	assert.Less(t, sentMessages, messagesToQueue)
+	assert.True(t, state.HasPendingRequest())
+}
+
+// TestClientReconnected ensures that upon reconnection, the client retains its internal state
+// and resumes sending requests.
+func (suite *OcppJTestSuite) TestClientReconnected() {
+	t := suite.T()
+	messagesToQueue := 8
+	sentMessages := 0
+	writeC := make(chan *ocppj.Call, 1)
+	triggerC := make(chan bool, 1)
+	disconnectError := errors.New("some error")
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
+	suite.mockClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
+		sentMessages += 1
+		data := args.Get(0).([]byte)
+		call := ParseCall(&suite.chargePoint.Endpoint, string(data), t)
+		require.NotNil(t, call)
+		writeC <- call
+	}).Return(nil)
+	// Start normally
+	err := suite.chargePoint.Start("someUrl")
+	require.Nil(t, err)
+	// Start mocked response routine
+	go func() {
+		counter := 0
+		for {
+			call, ok := <-writeC
+			if !ok {
+				return
+			}
+			// Trigger request completion after some artificial delay
+			time.Sleep(50 * time.Millisecond)
+			suite.clientDispatcher.CompleteRequest(call.UniqueId)
+			counter++
+			if counter == (messagesToQueue/2) || counter == messagesToQueue {
+				triggerC <- true
+			}
+		}
+	}()
+	// Get the pending request state struct
+	state, ok := suite.clientDispatcher.(ocppj.PendingRequestState)
+	require.True(t, ok)
+	assert.False(t, state.HasPendingRequest())
+	// Send some messages
+	for i := 0; i < messagesToQueue; i++ {
+		req := newMockRequest(fmt.Sprintf("%v", i))
+		err = suite.chargePoint.SendRequest(req)
+		require.NoError(t, err)
+	}
+	// Wait for trigger disconnect after a few responses were returned
+	_ = <-triggerC
+	suite.mockClient.DisconnectedHandler(disconnectError)
+	// One message was sent, but all others are still in queue
+	time.Sleep(200 * time.Millisecond)
+	assert.True(t, suite.clientDispatcher.IsPaused())
+	assert.True(t, state.HasPendingRequest())
+	// Wait for some more time and then reconnect
+	time.Sleep(500 * time.Millisecond)
+	suite.mockClient.ReconnectedHandler()
+	assert.False(t, suite.clientDispatcher.IsPaused())
+	assert.True(t, suite.clientDispatcher.IsRunning())
+	assert.False(t, suite.clientRequestQueue.IsEmpty())
+	// Wait until remaining messages are sent
+	_ = <-triggerC
+	assert.False(t, suite.clientDispatcher.IsPaused())
+	assert.True(t, suite.clientDispatcher.IsRunning())
+	assert.Equal(t, messagesToQueue, sentMessages)
+	assert.True(t, suite.clientRequestQueue.IsEmpty())
+	assert.False(t, state.HasPendingRequest())
+}
+
+// TestClientResponseTimeout ensures that upon a response timeout, the client dispatcher:
+//
+//  - cancels the current pending request
+//	- fires an error, which is returned to the caller
+func (suite *OcppJTestSuite) TestClientResponseTimeout() {
+	t := suite.T()
+	requestID := ""
+	triggerC := make(chan bool, 1)
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
+	suite.mockClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
+		data := args.Get(0).([]byte)
+		call := ParseCall(&suite.chargePoint.Endpoint, string(data), t)
+		require.NotNil(t, call)
+		requestID = call.UniqueId
+	}).Return(nil)
+	suite.chargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+		assert.Error(t, err, fmt.Sprintf("ocpp %v - request timed out, no response received from server", ocppj.GenericError))
+		assert.Equal(t, ocppj.GenericError, err.Code)
+		assert.Equal(t, requestID, err.MessageId)
+		triggerC <- true
+	})
+	// Sets a low response timeout for testing purposes
+	suite.clientDispatcher.SetTimeout(500 * time.Millisecond)
+	// Start normally and send a message
+	err := suite.chargePoint.Start("someUrl")
+	require.NoError(t, err)
+	req := newMockRequest("test")
+	err = suite.chargePoint.SendRequest(req)
+	require.NoError(t, err)
+	// Wait for request to be enqueued, then check state
+	time.Sleep(50 * time.Millisecond)
+	state, ok := suite.clientDispatcher.(ocppj.PendingRequestState)
+	require.True(t, ok)
+	assert.False(t, suite.clientRequestQueue.IsEmpty())
+	assert.True(t, suite.clientDispatcher.IsRunning())
+	assert.Equal(t, 1, suite.clientRequestQueue.Size())
+	assert.True(t, state.HasPendingRequest())
+	// Wait for timeout error to be thrown
+	_ = <-triggerC
+	assert.True(t, suite.clientRequestQueue.IsEmpty())
+	assert.True(t, suite.clientDispatcher.IsRunning())
+	assert.False(t, state.HasPendingRequest())
+}

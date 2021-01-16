@@ -6,6 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ws"
 	log "github.com/sirupsen/logrus"
 	"sync"
+	"time"
 )
 
 // Contains the pending request state for messages.
@@ -23,6 +24,8 @@ type PendingRequestState interface {
 	// Clears all currently pending requests. Any confirmation/error,
 	// received as a response to a previously sent request, will be ignored.
 	ClearPendingRequests()
+	// Returns true if there currently is at least one pending request, false otherwise.
+	HasPendingRequest() bool
 }
 
 // ClientDispatcher contains the state and logic for handling outgoing messages on a client endpoint.
@@ -33,13 +36,67 @@ type PendingRequestState interface {
 // A PendingRequestState needs to be passed to the dispatcher, before starting it.
 // The dispatcher is in charge of managing pending requests while managing the request flow.
 type ClientDispatcher interface {
+	// Starts the dispatcher. Depending on the implementation, this may
+	// start a dedicated goroutine or simply allocate the necessary state.
 	Start()
+	// Sets the maximum timeout to be considered after sending a request.
+	// If a response to the request is not received within the specified period, the request
+	// is discarded and an error is returned to the caller.
+	//
+	// The timeout is reset upon a disconnection/reconnection.
+	//
+	// This function must be called before starting the dispatcher, otherwise it may lead to unexpected behavior.
+	SetTimeout(timeout time.Duration)
+	// Returns true, if the dispatcher is currently running, false otherwise.
+	// If the dispatcher is paused, the function still returns true.
 	IsRunning() bool
+	// Returns true, if the dispatcher is currently paused, false otherwise.
+	// If the dispatcher is not running at all, the function will still return false.
+	IsPaused() bool
+	// Dispatches a request. Depending on the implementation, this may first queue a request
+	// and process it later, asynchronously, or write it directly to the networking layer.
+	//
+	// If no network client was set, an error is returned.
 	SendRequest(req interface{}) error
+	// Notifies the dispatcher that a request has been completed (i.e. a response was received).
+	// The dispatcher takes care of removing the request marked by the requestID from
+	// the pending requests. It will then attempt to process the next queued request.
 	CompleteRequest(requestID string)
+	// Sets a callback to be invoked when a request gets canceled, due to network timeouts.
+	//
+	// Calling Stop on the dispatcher will not trigger this callback.
+	//
+	// If no callback is set, a request will still be removed from the dispatcher when a timeout occurs.
+	SetOnRequestCanceled(cb func(string))
+	// Sets the network client, so the dispatcher may send requests using the networking layer directly.
+	//
+	// This needs to be set before calling the Start method. If not, sending requests will fail.
 	SetNetworkClient(client ws.WsClient)
+	// Sets the state manager for pending requests in the dispatcher.
+	//
+	// The state should only be accessed by the dispatcher while running.
 	SetPendingRequestState(stateHandler PendingRequestState)
+	// Stops a running dispatcher. This will clear all state and empty the internal queues.
+	//
+	// If an onRequestCanceled callback is set, it won't be triggered by stopping the dispatcher.
 	Stop()
+	// Notifies that an external event (typically network-related) should pause
+	// the dispatcher. Internal timers will be stopped an no further requests
+	// will be set to pending. You may keep enqueuing requests.
+	// Use the Resume method for re-starting the dispatcher.
+	Pause()
+	// Undoes a previous pause operation, restarting internal timers and the
+	// regular request flow.
+	//
+	// If there was a pending request before pausing the dispatcher, a response/timeout
+	// for this request shall be awaited anew.
+	Resume()
+}
+
+// pendingRequest is used internally for associating metadata to a pending Request.
+type pendingRequest struct {
+	request   ocpp.Request
+	startTime time.Time
 }
 
 // DefaultClientDispatcher is a default implementation of the ClientDispatcher interface.
@@ -50,10 +107,17 @@ type DefaultClientDispatcher struct {
 	requestQueue     RequestQueue
 	requestChannel   chan bool
 	readyForDispatch chan bool
-	pendingRequests  map[string]ocpp.Request
+	pendingRequests  map[string]pendingRequest
 	network          ws.WsClient
 	mutex            sync.Mutex
+	onRequestCancel  func(requestID string)
+	timer            *time.Timer
+	paused           bool
+	timeout          time.Duration
 }
+
+const defaultTimeoutTick = 24 * time.Hour
+const defaultMessageTimeout = 30 * time.Second
 
 // NewDefaultClientDispatcher creates a new DefaultClientDispatcher struct.
 func NewDefaultClientDispatcher(queue RequestQueue) *DefaultClientDispatcher {
@@ -61,20 +125,40 @@ func NewDefaultClientDispatcher(queue RequestQueue) *DefaultClientDispatcher {
 		requestQueue:     queue,
 		requestChannel:   nil,
 		readyForDispatch: make(chan bool, 1),
-		pendingRequests:  map[string]ocpp.Request{},
+		pendingRequests:  map[string]pendingRequest{},
+		timeout:          defaultMessageTimeout,
 	}
+}
+
+func (d *DefaultClientDispatcher) SetOnRequestCanceled(cb func(string)) {
+	d.onRequestCancel = cb
+}
+
+func (d *DefaultClientDispatcher) SetTimeout(timeout time.Duration) {
+	d.timeout = timeout
 }
 
 func (d *DefaultClientDispatcher) Start() {
 	d.requestChannel = make(chan bool, 1)
+	d.timer = time.NewTimer(defaultTimeoutTick) // Default to 24 hours tick
 	go d.messagePump()
 }
 
 func (d *DefaultClientDispatcher) IsRunning() bool {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 	return d.requestChannel != nil
 }
 
+func (d *DefaultClientDispatcher) IsPaused() bool {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	return d.paused
+}
+
 func (d *DefaultClientDispatcher) Stop() {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 	close(d.requestChannel)
 	d.requestChannel = nil
 	// TODO: clear pending requests?
@@ -86,10 +170,17 @@ func (d *DefaultClientDispatcher) SetNetworkClient(client ws.WsClient) {
 
 func (d *DefaultClientDispatcher) SetPendingRequestState(_ PendingRequestState) {}
 
+// ----------------------------
+// Request State implementation
+// ----------------------------
+
 func (d *DefaultClientDispatcher) AddPendingRequest(requestID string, req ocpp.Request) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	d.pendingRequests[requestID] = req
+	pendingReq := pendingRequest{
+		request: req,
+	}
+	d.pendingRequests[requestID] = pendingReq
 }
 
 func (d *DefaultClientDispatcher) DeletePendingRequest(requestID string) {
@@ -101,14 +192,20 @@ func (d *DefaultClientDispatcher) DeletePendingRequest(requestID string) {
 func (d *DefaultClientDispatcher) ClearPendingRequests() {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	d.pendingRequests = map[string]ocpp.Request{}
+	d.pendingRequests = map[string]pendingRequest{}
 }
 
 func (d *DefaultClientDispatcher) GetPendingRequest(requestID string) (ocpp.Request, bool) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	req, ok := d.pendingRequests[requestID]
-	return req, ok
+	pendingReq, ok := d.pendingRequests[requestID]
+	return pendingReq.request, ok
+}
+
+func (d *DefaultClientDispatcher) HasPendingRequest() bool {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	return len(d.pendingRequests) > 0
 }
 
 func (d *DefaultClientDispatcher) SendRequest(req interface{}) error {
@@ -129,17 +226,44 @@ func (d *DefaultClientDispatcher) messagePump() {
 		case _, ok := <-d.requestChannel:
 			// New request was posted
 			if !ok {
-				log.Infof("stopped processing requests")
 				d.requestQueue.Init()
 				d.requestChannel = nil
 				return
 			}
+		case _, ok := <-d.timer.C:
+			// Timeout elapsed
+			if !ok {
+				continue
+			}
+			if d.HasPendingRequest() {
+				// Current request timed out. Removing request and triggering cancel callback
+				el := d.requestQueue.Peek()
+				bundle, _ := el.(RequestBundle)
+				d.CompleteRequest(bundle.Call.UniqueId)
+				if d.onRequestCancel != nil {
+					d.onRequestCancel(bundle.Call.UniqueId)
+				}
+			}
+			// No request is currently pending -> set timer to high number
+			d.timer.Reset(defaultTimeoutTick)
 		case rdy = <-d.readyForDispatch:
+			d.mutex.Lock()
+			paused := d.paused
+			d.mutex.Unlock()
+			if paused {
+				// Ignore dispatch events as long as dispatcher is paused
+				continue
+			}
 		}
 		// Only dispatch request if able to send and request queue isn't empty
 		if rdy && !d.requestQueue.IsEmpty() {
 			d.dispatchNextRequest()
 			rdy = false
+			// Set timer
+			if !d.timer.Stop() {
+				<-d.timer.C
+			}
+			d.timer.Reset(d.timeout)
 		}
 	}
 }
@@ -150,17 +274,37 @@ func (d *DefaultClientDispatcher) dispatchNextRequest() {
 	bundle, _ := el.(RequestBundle)
 	jsonMessage := bundle.Data
 	d.AddPendingRequest(bundle.Call.UniqueId, bundle.Call.Payload)
-
+	// Attempt to send over network
 	err := d.network.Write(jsonMessage)
 	if err != nil {
-		log.Errorf("error while sending message: %v", err)
-		//TODO: handle retransmission instead of removing pending request
-		d.DeletePendingRequest(bundle.Call.GetUniqueId())
+		//TODO: handle retransmission instead of skipping request altogether
 		d.CompleteRequest(bundle.Call.GetUniqueId())
-		// TODO: throw error?
+		if d.onRequestCancel != nil {
+			d.onRequestCancel(bundle.Call.GetUniqueId())
+		}
+	}
+}
+
+func (d *DefaultClientDispatcher) Pause() {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	if !d.timer.Stop() {
+		<-d.timer.C
+	}
+	d.timer.Reset(defaultTimeoutTick)
+	d.paused = true
+}
+
+func (d *DefaultClientDispatcher) Resume() {
+	d.mutex.Lock()
+	d.paused = false
+	d.mutex.Unlock()
+	if d.HasPendingRequest() {
+		// There is a pending request already. Awaiting response, before dispatching new requests.
+		d.timer.Reset(d.timeout)
 	} else {
-		// Transmitted correctly
-		log.Debugf("sent request %v: %v", bundle.Call.UniqueId, string(jsonMessage))
+		// Can dispatch a new request. Notifying message pump.
+		d.readyForDispatch <- true
 	}
 }
 
@@ -243,6 +387,10 @@ func (d *DefaultServerDispatcher) SetNetworkServer(server ws.WsServer) {
 
 func (d *DefaultServerDispatcher) SetPendingRequestState(_ PendingRequestState) {}
 
+// ----------------------------
+// Request State implementation
+// ----------------------------
+
 func (d *DefaultServerDispatcher) AddPendingRequest(requestID string, req ocpp.Request) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -266,6 +414,12 @@ func (d *DefaultServerDispatcher) GetPendingRequest(requestID string) (ocpp.Requ
 	defer d.mutex.Unlock()
 	req, ok := d.pendingRequests[requestID]
 	return req, ok
+}
+
+func (d *DefaultServerDispatcher) HasPendingRequest() bool {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	return len(d.pendingRequests) > 0
 }
 
 func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle) error {

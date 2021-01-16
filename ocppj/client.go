@@ -71,6 +71,9 @@ func (c *Client) SetErrorHandler(handler func(err *ocpp.Error, details interface
 func (c *Client) Start(serverURL string) error {
 	// Set internal message handler
 	c.client.SetMessageHandler(c.ocppMessageHandler)
+	c.client.SetDisconnectedHandler(c.onDisconnected)
+	c.client.SetReconnectedHandler(c.onReconnected)
+	c.dispatcher.SetOnRequestCanceled(c.onDispatcherError)
 	// Connect & run
 	fullUrl := fmt.Sprintf("%v/%v", serverURL, c.Id)
 	err := c.client.Start(fullUrl)
@@ -148,7 +151,7 @@ func (c *Client) SendResponse(requestId string, response ocpp.Response) error {
 	if err != nil {
 		return err
 	}
-	return c.client.Write([]byte(jsonMessage))
+	return c.client.Write(jsonMessage)
 }
 
 // Sends an OCPP Error to the server.
@@ -169,7 +172,7 @@ func (c *Client) SendError(requestId string, errorCode ocpp.ErrorCode, descripti
 	if err != nil {
 		return err
 	}
-	return c.client.Write([]byte(jsonMessage))
+	return c.client.Write(jsonMessage)
 }
 
 func (c *Client) ocppMessageHandler(data []byte) error {
@@ -203,4 +206,20 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 		}
 	}
 	return nil
+}
+
+func (c *Client) onDisconnected(err error) {
+	//TODO: is err really needed?
+	c.dispatcher.Pause()
+}
+
+func (c *Client) onReconnected() {
+	c.dispatcher.Resume()
+}
+
+// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
+func (c *Client) onDispatcherError(requestID string) {
+	if c.errorHandler != nil {
+		c.errorHandler(ocpp.NewError(GenericError, "request timed out, no response received from server", requestID), nil)
+	}
 }
