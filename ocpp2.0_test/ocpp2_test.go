@@ -93,7 +93,10 @@ func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client
 type MockWebsocketClient struct {
 	mock.Mock
 	ws.WsClient
-	MessageHandler func(data []byte) error
+	MessageHandler      func(data []byte) error
+	ReconnectedHandler  func()
+	DisconnectedHandler func(err error)
+	errC                chan error
 }
 
 func (websocketClient *MockWebsocketClient) Start(url string) error {
@@ -109,12 +112,33 @@ func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(data 
 	websocketClient.MessageHandler = handler
 }
 
+func (websocketClient *MockWebsocketClient) SetReconnectedHandler(handler func()) {
+	websocketClient.ReconnectedHandler = handler
+}
+
+func (websocketClient *MockWebsocketClient) SetDisconnectedHandler(handler func(err error)) {
+	websocketClient.DisconnectedHandler = handler
+}
+
 func (websocketClient *MockWebsocketClient) Write(data []byte) error {
 	args := websocketClient.MethodCalled("Write", data)
 	return args.Error(0)
 }
 
 func (websocketClient *MockWebsocketClient) AddOption(option interface{}) {
+}
+
+func (websocketClient *MockWebsocketClient) SetBasicAuth(username string, password string) {
+}
+
+func (websocketClient *MockWebsocketClient) SetTimeoutConfig(config ws.ClientTimeoutConfig) {
+}
+
+func (websocketClient *MockWebsocketClient) Errors() <-chan error {
+	if websocketClient.errC == nil {
+		websocketClient.errC = make(chan error, 1)
+	}
+	return websocketClient.errC
 }
 
 // Default queue capacity
