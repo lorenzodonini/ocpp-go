@@ -317,6 +317,8 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	s.server.Stop()
 }
 
+//TODO: test error channel from websocket
+
 func TestNetworkErrors(t *testing.T) {
 	suite.Run(t, new(NetworkTestSuite))
 }
