@@ -398,10 +398,6 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) readPump(ws *WebSocket) {
 	conn := ws.connection
-	defer func() {
-		_ = conn.Close()
-		//TODO: close signal?
-	}()
 
 	conn.SetPingHandler(func(appData string) error {
 		ws.pingMessage <- []byte(appData)
@@ -416,10 +412,12 @@ func (server *Server) readPump(ws *WebSocket) {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
 				server.error(fmt.Errorf("read failed for %s: %w", ws.GetID(), err))
 			}
+			// Notify writePump of error. Disconnection will be handled there
+			ws.closeSignal <- err
 			if server.disconnectedHandler != nil {
 				server.disconnectedHandler(ws)
 			}
-			break
+			return
 		}
 
 		if server.messageHandler != nil {
@@ -452,6 +450,7 @@ func (server *Server) writePump(ws *WebSocket) {
 				}
 				return
 			}
+
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
 				server.error(fmt.Errorf("write failed for %s: %w", ws.GetID(), err))
