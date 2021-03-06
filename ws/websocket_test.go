@@ -10,7 +10,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"math/big"
 	"net"
@@ -19,6 +18,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"

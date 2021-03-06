@@ -3,10 +3,6 @@ package ws
 import (
 	"errors"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"net"
 	"net/url"
 	"os"
@@ -15,7 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Shopify/toxiproxy/client"
+	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+
+	toxiproxy "github.com/Shopify/toxiproxy/client"
 )
 
 type NetworkTestSuite struct {
@@ -129,7 +130,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.NotNil(t, ws)
 		conn := s.server.connections[ws.GetID()]
-		assert.NotNil(t, conn)
+		require.NotNil(t, conn)
 	})
 	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- true
@@ -156,9 +157,10 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	err := s.client.Start(u.String())
 	require.Nil(t, err)
 	// Close all connection from server side
+	time.Sleep(500 * time.Millisecond)
 	for _, s := range s.server.connections {
-		err := s.connection.Close()
-		assert.Nil(t, err)
+		err = s.connection.Close()
+		require.Nil(t, err)
 	}
 	// Wait for disconnect to propagate
 	result := <-serverOnDisconnected
