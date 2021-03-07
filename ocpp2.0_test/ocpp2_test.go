@@ -299,6 +299,12 @@ type MockCSMSReservationHandler struct {
 	mock.Mock
 }
 
+func (handler MockCSMSReservationHandler) OnReservationStatusUpdate(chargingStationID string, request *reservation.ReservationStatusUpdateRequest) (response *reservation.ReservationStatusUpdateResponse, err error) {
+	args := handler.MethodCalled("OnReservationStatusUpdate", chargingStationID, request)
+	resp := args.Get(0).(*reservation.ReservationStatusUpdateResponse)
+	return resp, args.Error(1)
+}
+
 // ---------------------- MOCK CS AVAILABILITY HANDLER ----------------------
 
 type MockChargingStationAvailabilityHandler struct {

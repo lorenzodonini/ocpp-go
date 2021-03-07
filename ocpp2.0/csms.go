@@ -746,6 +746,8 @@ func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection,
 			response, err = cs.firmwareHandler.OnPublishFirmwareStatusNotification(chargingStation.ID(), request.(*firmware.PublishFirmwareStatusNotificationRequest))
 		case smartcharging.ReportChargingProfilesFeatureName:
 			response, err = cs.smartChargingHandler.OnReportChargingProfiles(chargingStation.ID(), request.(*smartcharging.ReportChargingProfilesRequest))
+		case reservation.ReservationStatusUpdateFeatureName:
+			response, err = cs.reservationHandler.OnReservationStatusUpdate(chargingStation.ID(), request.(*reservation.ReservationStatusUpdateRequest))
 		default:
 			cs.notSupportedError(chargingStation.ID(), requestId, action)
 			return

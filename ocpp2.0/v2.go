@@ -97,7 +97,8 @@ type ChargingStation interface {
 	PublishFirmwareStatusNotification(status firmware.PublishFirmwareStatus, props ...func(request *firmware.PublishFirmwareStatusNotificationRequest)) (*firmware.PublishFirmwareStatusNotificationResponse, error)
 	// Reports charging profiles installed in the Charging Station, as requested previously by the CSMS.
 	ReportChargingProfiles(requestID int, chargingLimitSource types.ChargingLimitSourceType, evseID int, chargingProfile []types.ChargingProfile, props ...func(request *smartcharging.ReportChargingProfilesRequest)) (*smartcharging.ReportChargingProfilesResponse, error)
-
+	// Notifies the CSMS about a reservation status having changed (i.e. the reservation has expired)
+	ReservationStatusUpdate(reservationID int, status reservation.ReservationUpdateStatus, props ...func(request *reservation.ReservationStatusUpdateRequest)) (*reservation.ReservationStatusUpdateResponse, error)
 	// Registers a handler for incoming security profile messages
 	SetSecurityHandler(handler security.ChargingStationHandler)
 	// Registers a handler for incoming provisioning profile messages
