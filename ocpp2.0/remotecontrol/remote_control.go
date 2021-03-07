@@ -9,9 +9,13 @@ type CSMSHandler interface {
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Remote control profile.
 type ChargingStationHandler interface {
+	// OnRequestStartTransaction is called on a charging station whenever a RequestStartTransactionRequest is received from the CSMS.
+	OnRequestStartTransaction(request *RequestStartTransactionRequest) (response *RequestStartTransactionResponse, err error)
 }
 
 const ProfileName = "remoteControl"
 
 var Profile = ocpp.NewProfile(
-	ProfileName)
+	ProfileName,
+	RequestStartTransactionFeature{},
+)

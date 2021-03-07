@@ -551,6 +551,12 @@ type MockChargingStationRemoteControlHandler struct {
 	mock.Mock
 }
 
+func (handler MockChargingStationRemoteControlHandler) OnRequestStartTransaction(request *remotecontrol.RequestStartTransactionRequest) (response *remotecontrol.RequestStartTransactionResponse, err error) {
+	args := handler.MethodCalled("OnRequestStartTransaction", request)
+	conf := args.Get(0).(*remotecontrol.RequestStartTransactionResponse)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS REMOTE CONTROL HANDLER ----------------------
 
 type MockCSMSRemoteControlHandler struct {
