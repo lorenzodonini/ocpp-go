@@ -46,10 +46,6 @@ type RequestStartTransactionResponse struct {
 	StatusInfo    *types.StatusInfo      `json:"statusInfo,omitempty"`
 }
 
-// To cancel a reservation the CSMS SHALL send an RequestStartTransactionRequest to the Charging Station.
-// If the Charging Station has a reservation matching the reservationId in the request payload, it SHALL return status ‘Accepted’.
-// Otherwise it SHALL return ‘Rejected’.
-
 // The CSMS may remotely start a transaction for a user.
 // This functionality may be triggered by:
 //	- a CSO, to help out a user, that is having trouble starting a transaction

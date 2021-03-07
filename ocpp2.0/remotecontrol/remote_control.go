@@ -11,6 +11,8 @@ type CSMSHandler interface {
 type ChargingStationHandler interface {
 	// OnRequestStartTransaction is called on a charging station whenever a RequestStartTransactionRequest is received from the CSMS.
 	OnRequestStartTransaction(request *RequestStartTransactionRequest) (response *RequestStartTransactionResponse, err error)
+	// OnRequestStopTransaction is called on a charging station whenever a RequestStopTransactionRequest is received from the CSMS.
+	OnRequestStopTransaction(request *RequestStopTransactionRequest) (response *RequestStopTransactionResponse, err error)
 }
 
 const ProfileName = "remoteControl"
@@ -18,4 +20,5 @@ const ProfileName = "remoteControl"
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	RequestStartTransactionFeature{},
+	RequestStopTransactionFeature{},
 )

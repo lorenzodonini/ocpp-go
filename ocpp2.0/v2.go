@@ -293,6 +293,8 @@ type CSMS interface {
 	PublishFirmware(clientId string, callback func(*firmware.PublishFirmwareResponse, error), location string, checksum string, requestID int, props ...func(request *firmware.PublishFirmwareRequest)) error
 	// Remotely triggers a transaction to be started on a charging station.
 	RequestStartTransaction(clientId string, callback func(*remotecontrol.RequestStartTransactionResponse, error), remoteStartID int, IdToken types.IdTokenType, props ...func(request *remotecontrol.RequestStartTransactionRequest)) error
+	// Remotely triggers an ongoing transaction to be stopped on a charging station.
+	RequestStopTransaction(clientId string, callback func(*remotecontrol.RequestStopTransactionResponse, error), transactionID string, props ...func(request *remotecontrol.RequestStopTransactionRequest)) error
 
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
