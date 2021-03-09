@@ -293,6 +293,12 @@ func (handler MockChargingStationReservationHandler) OnCancelReservation(request
 	return conf, args.Error(1)
 }
 
+func (handler MockChargingStationReservationHandler) OnReserveNow(request *reservation.ReserveNowRequest) (resp *reservation.ReserveNowResponse, err error) {
+	args := handler.MethodCalled("OnReserveNow", request)
+	conf := args.Get(0).(*reservation.ReserveNowResponse)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS RESERVATION HANDLER ----------------------
 
 type MockCSMSReservationHandler struct {

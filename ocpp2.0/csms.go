@@ -461,6 +461,21 @@ func (cs *csms) RequestStopTransaction(clientId string, callback func(*remotecon
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) ReserveNow(clientId string, callback func(*reservation.ReserveNowResponse, error), id int, expiryDateTime *types.DateTime, idToken types.IdTokenType, props ...func(request *reservation.ReserveNowRequest)) error {
+	request := reservation.NewReserveNowRequest(id, expiryDateTime, idToken)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*reservation.ReserveNowResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -568,7 +583,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		iso15118.InstallCertificateFeatureName,
 		firmware.PublishFirmwareFeatureName,
 		remotecontrol.RequestStartTransactionFeatureName,
-		remotecontrol.RequestStopTransactionFeatureName:
+		remotecontrol.RequestStopTransactionFeatureName,
+		reservation.ReserveNowFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)

@@ -686,6 +686,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.remoteControlHandler.OnRequestStartTransaction(request.(*remotecontrol.RequestStartTransactionRequest))
 	case remotecontrol.RequestStopTransactionFeatureName:
 		response, err = cs.remoteControlHandler.OnRequestStopTransaction(request.(*remotecontrol.RequestStopTransactionRequest))
+	case reservation.ReserveNowFeatureName:
+		response, err = cs.reservationHandler.OnReserveNow(request.(*reservation.ReserveNowRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return

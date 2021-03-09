@@ -69,7 +69,7 @@ func (c ReservationStatusUpdateResponse) GetFeatureName() string {
 	return ReservationStatusUpdateFeatureName
 }
 
-// Creates a new ReservationStatusUpdateRequest, containing all required fields.
+// Creates a new ReservationStatusUpdateRequest, containing all required fields. There are no optional fields for this message.
 func NewReservationStatusUpdateRequest(reservationID int, status ReservationUpdateStatus) *ReservationStatusUpdateRequest {
 	return &ReservationStatusUpdateRequest{ReservationID: reservationID, Status: status}
 }
