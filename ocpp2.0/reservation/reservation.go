@@ -15,6 +15,8 @@ type CSMSHandler interface {
 type ChargingStationHandler interface {
 	// OnCancelReservation is called on a charging station whenever a CancelReservationRequest is received from the CSMS.
 	OnCancelReservation(request *CancelReservationRequest) (resp *CancelReservationResponse, err error)
+	// OnReserveNow is called on a charging station whenever a ReserveNowRequest is received from the CSMS.
+	OnReserveNow(request *ReserveNowRequest) (resp *ReserveNowResponse, err error)
 }
 
 const ProfileName = "reservation"
@@ -23,4 +25,5 @@ var Profile = ocpp.NewProfile(
 	ProfileName,
 	CancelReservationFeature{},
 	ReservationStatusUpdateFeature{},
+	ReserveNowFeature{},
 )
