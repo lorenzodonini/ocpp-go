@@ -2,15 +2,17 @@ package ocppj_test
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
-	"testing"
 )
 
 // ---------------------- MOCK WEBSOCKET ----------------------
@@ -271,6 +273,15 @@ func CheckCallError(t *testing.T, callError *ocppj.CallError, expectedId string,
 	assert.Nil(t, err)
 }
 
+func assertPanic(t *testing.T, f func(), recoveredAssertion func(interface{})) {
+	defer func() {
+		r := recover()
+		require.NotNil(t, r)
+		recoveredAssertion(r)
+	}()
+	f()
+}
+
 var Validate = validator.New()
 
 func init() {
@@ -303,6 +314,15 @@ func (suite *OcppJTestSuite) SetupTest() {
 	suite.serverRequestMap = ocppj.NewFIFOQueueMap(queueCapacity)
 	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(suite.serverRequestMap)
 	suite.centralSystem = ocppj.NewServer(suite.mockServer, suite.serverDispatcher, suite.serverDispatcher.(ocppj.PendingRequestState), mockProfile)
+}
+
+func (suite *OcppJTestSuite) TearDownTest() {
+	if suite.clientDispatcher.IsRunning() {
+		suite.clientDispatcher.Stop()
+	}
+	if suite.serverDispatcher.IsRunning() {
+		suite.serverDispatcher.Stop()
+	}
 }
 
 func (suite *OcppJTestSuite) TestGetProfile() {
@@ -643,6 +663,47 @@ func (suite *OcppJTestSuite) TestParseCall() {
 }
 
 //TODO: implement further ocpp-j protocol tests
+
+type testLogger struct {
+	c chan string
+}
+
+func (l *testLogger) Debug(args ...interface{}) {
+	l.c <- "debug"
+}
+func (l *testLogger) Debugf(format string, args ...interface{}) {
+	l.c <- "debugf"
+}
+func (l *testLogger) Info(args ...interface{}) {
+	l.c <- "info"
+}
+func (l *testLogger) Infof(format string, args ...interface{}) {
+	l.c <- "infof"
+}
+func (l *testLogger) Error(args ...interface{}) {
+	l.c <- "error"
+}
+func (l *testLogger) Errorf(format string, args ...interface{}) {
+	l.c <- "errorf"
+}
+
+func (suite *OcppJTestSuite) TestLogger() {
+	t := suite.T()
+	logger := testLogger{c: make(chan string, 1)}
+	// Test with custom logger
+	ocppj.SetLogger(&logger)
+	defer ocppj.SetLogger(&ocpp.VoidLogger{})
+	// Expect an error
+	_ = ocppj.ParseRawJsonMessage(nil)
+	s := <-logger.c
+	assert.Equal(t, "error", s)
+	// Nil logger must cause a panic
+	assertPanic(t, func() {
+		ocppj.SetLogger(nil)
+	}, func(r interface{}) {
+		assert.Equal(t, "cannot set a nil logger", r.(string))
+	})
+}
 
 func TestMockOcppJ(t *testing.T) {
 	suite.Run(t, new(OcppJTestSuite))

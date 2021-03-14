@@ -2,11 +2,12 @@ package ocppj
 
 import (
 	"errors"
-	"github.com/lorenzodonini/ocpp-go/ocpp"
-	"github.com/lorenzodonini/ocpp-go/ws"
-	log "github.com/sirupsen/logrus"
+	"fmt"
 	"sync"
 	"time"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 // Contains the pending request state for messages.
@@ -34,7 +35,7 @@ type PendingRequestState interface {
 // The dispatcher writes outgoing messages directly to the networking layer, using a previously set websocket client.
 //
 // A PendingRequestState needs to be passed to the dispatcher, before starting it.
-// The dispatcher is in charge of managing pending requests while managing the request flow.
+// The dispatcher is in charge of managing pending requests while handling the request flow.
 type ClientDispatcher interface {
 	// Starts the dispatcher. Depending on the implementation, this may
 	// start a dedicated goroutine or simply allocate the necessary state.
@@ -56,7 +57,7 @@ type ClientDispatcher interface {
 	// Dispatches a request. Depending on the implementation, this may first queue a request
 	// and process it later, asynchronously, or write it directly to the networking layer.
 	//
-	// If no network client was set, an error is returned.
+	// If no network client was set, or the request couldn't be processed, an error is returned.
 	SendRequest(req interface{}) error
 	// Notifies the dispatcher that a request has been completed (i.e. a response was received).
 	// The dispatcher takes care of removing the request marked by the requestID from
@@ -316,7 +317,7 @@ func (d *DefaultClientDispatcher) CompleteRequest(requestId string) {
 	}
 	bundle, _ := el.(RequestBundle)
 	if bundle.Call.UniqueId != requestId {
-		log.Fatalf("internal state mismatch: received response for %v but expected response for %v", requestId, bundle.Call.UniqueId)
+		log.Errorf("internal state mismatch: received response for %v but expected response for %v", requestId, bundle.Call.UniqueId)
 		return
 	}
 	d.requestQueue.Pop()
@@ -332,15 +333,49 @@ func (d *DefaultClientDispatcher) CompleteRequest(requestId string) {
 // The dispatcher writes outgoing messages directly to the networking layer, using a previously set websocket server.
 //
 // A PendingRequestState needs to be passed to the dispatcher, before starting it.
-// The dispatcher is in charge of managing all pending requests to clients, while managing the request flow.
+// The dispatcher is in charge of managing all pending requests to clients, while handling the request flow.
 type ServerDispatcher interface {
+	// Starts the dispatcher. Depending on the implementation, this may
+	// start a dedicated goroutine or simply allocate the necessary state.
 	Start()
+	// Returns true, if the dispatcher is currently running, false otherwise.
+	// If the dispatcher is paused, the function still returns true.
 	IsRunning() bool
+	// Dispatches a request for a specific client. Depending on the implementation, this may first queue
+	// a request and process it later (asynchronously), or write it directly to the networking layer.
+	//
+	// If no network server was set, or the request couldn't be processed, an error is returned.
 	SendRequest(clientID string, req RequestBundle) error
+	// Notifies the dispatcher that a request has been completed (i.e. a response was received),
+	// for a specific client.
+	// The dispatcher takes care of removing the request marked by the requestID from
+	// that client's pending requests. It will then attempt to process the next queued request.
 	CompleteRequest(clientID string, requestID string)
+	// Sets a callback to be invoked when a request gets canceled, due to network timeouts.
+	//
+	// Calling Stop on the dispatcher will not trigger this callback.
+	//
+	// If no callback is set, a request will still be removed from the dispatcher when a timeout occurs.
+	SetOnRequestCanceled(cb func(string, string))
+	// Sets the network server, so the dispatcher may send requests using the networking layer directly.
+	//
+	// This needs to be set before calling the Start method. If not, sending requests will fail.
 	SetNetworkServer(server ws.WsServer)
+	// Sets the state manager for pending requests in the dispatcher.
+	//
+	// The state should only be accessed by the dispatcher while running.
 	SetPendingRequestState(stateHandler PendingRequestState)
+	// Stops a running dispatcher. This will clear all state and empty the internal queues.
+	//
+	// If an onRequestCanceled callback is set, it won't be triggered by stopping the dispatcher.
 	Stop()
+	// Notifies that an external event (typically network-related) should stop
+	// dispatching requests for a specific client.
+	//
+	// Internal queues for that client will be cleared and no further requests will be accepted.
+	// Undelivered pending requests are also cleared.
+	// The OnRequestCanceled callback will be invoked for each discarded request.
+	DeleteClient(clientID string)
 }
 
 // DefaultServerDispatcher is a default implementation of the ServerDispatcher interface.
@@ -352,6 +387,7 @@ type DefaultServerDispatcher struct {
 	requestChannel   chan string
 	readyForDispatch chan string
 	pendingRequests  map[string]ocpp.Request
+	onRequestCancel  func(clientID string, requestID string)
 	network          ws.WsServer
 	mutex            sync.Mutex
 }
@@ -376,13 +412,26 @@ func (d *DefaultServerDispatcher) IsRunning() bool {
 }
 
 func (d *DefaultServerDispatcher) Stop() {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 	close(d.requestChannel)
 	d.requestChannel = nil
 	// TODO: clear pending requests?
 }
 
+func (d *DefaultServerDispatcher) DeleteClient(clientID string) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	d.queueMap.Remove(clientID)
+	d.requestChannel <- clientID
+}
+
 func (d *DefaultServerDispatcher) SetNetworkServer(server ws.WsServer) {
 	d.network = server
+}
+
+func (d *DefaultServerDispatcher) SetOnRequestCanceled(cb func(string, string)) {
+	d.onRequestCancel = cb
 }
 
 func (d *DefaultServerDispatcher) SetPendingRequestState(_ PendingRequestState) {}
@@ -424,7 +473,7 @@ func (d *DefaultServerDispatcher) HasPendingRequest() bool {
 
 func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle) error {
 	if d.network == nil {
-		return errors.New("cannot SendRequest, no network server was set")
+		return fmt.Errorf("cannot send request %v, no network server was set", req.Call.UniqueId)
 	}
 	q := d.queueMap.GetOrCreate(clientID)
 	if err := q.Push(req); err != nil {
@@ -447,9 +496,9 @@ func (d *DefaultServerDispatcher) messagePump() {
 		case clientID, ok = <-d.requestChannel:
 			// Check if channel was closed
 			if !ok {
-				log.Infof("stopped processing requests")
-				// TODO: clear queue map?
+				d.queueMap.Init()
 				d.requestChannel = nil
+				log.Info("stopped processing requests")
 				return
 			}
 			clientQueue, ok = d.queueMap.Get(clientID)
@@ -457,12 +506,13 @@ func (d *DefaultServerDispatcher) messagePump() {
 			if !ok {
 				// No client queue found, deleting the ready flag
 				delete(clientReadyMap, clientID)
+				rdy = false
 				break
 			}
 			// Check whether can transmit to client
 			rdy, ok = clientReadyMap[clientID]
 			if !ok {
-				// First request sent to client. Setting ready flag to true
+				// First request for this client. Setting ready flag to true
 				rdy = true
 				clientReadyMap[clientID] = rdy
 			}
@@ -494,15 +544,10 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) {
 	if err != nil {
 		log.Errorf("error while sending message: %v", err)
 		//TODO: handle retransmission instead of removing pending request
-		d.DeletePendingRequest(bundle.Call.GetUniqueId())
-		d.CompleteRequest(clientID, bundle.Call.GetUniqueId())
-		// TODO: throw error?
-		//if s.errorHandler != nil {
-		//	s.errorHandler(clientID, ocpp.NewError(GenericError, err.Error(), callID), err)
-		//}
-	} else {
-		// Transmitted correctly
-		log.Debugf("sent request %v to client %v: %v", callID, clientID, string(jsonMessage))
+		d.CompleteRequest(clientID, callID)
+		if d.onRequestCancel != nil {
+			d.onRequestCancel(clientID, callID)
+		}
 	}
 }
 
@@ -520,7 +565,7 @@ func (d *DefaultServerDispatcher) CompleteRequest(clientID string, requestID str
 	bundle, _ := el.(RequestBundle)
 	callID := bundle.Call.GetUniqueId()
 	if callID != requestID {
-		log.Fatalf("internal state mismatch: received response for %v but expected response for %v", requestID, callID)
+		log.Errorf("internal state mismatch: received response for %v but expected response for %v", requestID, callID)
 		return
 	}
 	q.Pop()
