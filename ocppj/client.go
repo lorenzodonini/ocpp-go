@@ -2,9 +2,9 @@ package ocppj
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
-	log "github.com/sirupsen/logrus"
 )
 
 // The endpoint initiating the connection to an OCPP server, in an OCPP-J topology.
@@ -185,7 +185,7 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 				return err2
 			}
 		}
-		log.Print(err)
+		log.Error(err)
 		return err
 	}
 	switch message.GetMessageTypeId() {

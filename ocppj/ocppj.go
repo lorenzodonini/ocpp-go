@@ -4,19 +4,33 @@ package ocppj
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp"
-	errors2 "github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-	"gopkg.in/go-playground/validator.v9"
 	"math/rand"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/pkg/errors"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // The validator, used for validating incoming/outgoing OCPP messages.
 var Validate = validator.New()
 
+// The internal verbose logger
+var log ocpp.Logger = &ocpp.VoidLogger{}
+
 func init() {
 	_ = Validate.RegisterValidation("errorCode", IsErrorCodeValid)
+}
+
+// Sets a custom Logger implementation, allowing the ocpp-j package to log events.
+// By default, a VoidLogger is used, so no logs will be sent to any output.
+//
+// The function panics, if a nil logger is passed.
+func SetLogger(logger ocpp.Logger) {
+	if logger == nil {
+		panic("cannot set a nil logger")
+	}
+	log = logger
 }
 
 // MessageType identifies the type of message exchanged between two OCPP endpoints.
@@ -168,7 +182,7 @@ func ParseRawJsonMessage(dataJson []byte) []interface{} {
 	err := json.Unmarshal(dataJson, &arr)
 	if err != nil {
 		// TODO: return error
-		log.Fatal(err)
+		log.Error(err)
 	}
 	return arr
 }
@@ -332,7 +346,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 	} else if typeId == CALL_RESULT {
 		request, ok := endpoint.PendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
-			log.Printf("No previous request %v sent. Discarding response message", uniqueId)
+			log.Infof("No previous request %v sent. Discarding response message", uniqueId)
 			return nil, nil
 		}
 		profile, _ := endpoint.GetProfileForFeature(request.GetFeatureName())
@@ -353,7 +367,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 	} else if typeId == CALL_ERROR {
 		_, ok := endpoint.PendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
-			log.Printf("No previous request %v sent. Discarding error message", uniqueId)
+			log.Infof("No previous request %v sent. Discarding error message", uniqueId)
 			return nil, nil
 		}
 		if len(arr) < 4 {
@@ -390,7 +404,7 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	action := request.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
-		return nil, errors2.Errorf("Couldn't create Call for unsupported action %v", action)
+		return nil, errors.Errorf("Couldn't create Call for unsupported action %v", action)
 	}
 	// TODO: handle collisions?
 	uniqueId := messageIdGenerator()
@@ -414,7 +428,7 @@ func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId 
 	action := confirmation.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
-		return nil, errors2.Errorf("Couldn't create Call Result for unsupported action %v", action)
+		return nil, errors.Errorf("Couldn't create Call Result for unsupported action %v", action)
 	}
 	callResult := CallResult{
 		MessageTypeId: CALL_RESULT,

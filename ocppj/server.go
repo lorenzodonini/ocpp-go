@@ -2,9 +2,9 @@ package ocppj
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
-	log "github.com/sirupsen/logrus"
 )
 
 // The endpoint waiting for incoming connections from OCPP clients, in an OCPP-J topology.
@@ -71,9 +71,9 @@ func (s *Server) SetDisconnectedClientHandler(handler func(clientID string)) {
 }
 
 // Starts the underlying Websocket server on a specified listenPort and listenPath.
-// The function runs indefinitely, until the server is stopped.
 //
-// Call this function in a separate goroutine, to perform other operations on the main thread.
+// The function runs indefinitely, until the server is stopped.
+// Invoke this function in a separate goroutine, to perform other operations on the main thread.
 //
 // An error may be returned, if the websocket server couldn't be started.
 func (s *Server) Start(listenPort int, listenPath string) {
@@ -83,13 +83,7 @@ func (s *Server) Start(listenPort int, listenPath string) {
 			s.newClientHandler(ws.GetID())
 		}
 	})
-	s.server.SetDisconnectedClientHandler(func(ws ws.Channel) {
-		// TODO: handle reconnection and don't delete request queue
-		// TODO: clear queueMap for client?
-		if s.disconnectedClientHandler != nil {
-			s.disconnectedClientHandler(ws.GetID())
-		}
-	})
+	s.server.SetDisconnectedClientHandler(s.onDisconnected)
 	s.server.SetMessageHandler(s.ocppMessageHandler)
 	s.dispatcher.Start()
 	// Serve & run
@@ -218,4 +212,13 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 		}
 	}
 	return nil
+}
+
+func (s *Server) onDisconnected(ws ws.Channel) {
+	// Clear state for disconnected client
+	s.dispatcher.DeleteClient(ws.GetID())
+	// Invoke callback
+	if s.disconnectedClientHandler != nil {
+		s.disconnectedClientHandler(ws.GetID())
+	}
 }

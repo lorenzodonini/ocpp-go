@@ -110,6 +110,8 @@ func NewFIFOClientQueue(capacity int) *FIFOClientQueue {
 //
 // An OCPP-J server may serve multiple clients at the same time, so it will need to provide a queue for each client.
 type ServerQueueMap interface {
+	// Init puts the queue map in its initial state. May be used for initial setup or clearing.
+	Init()
 	// Get retrieves the queue associated to a specific clientID.
 	// If no such element exists, the returned flag will be false.
 	Get(clientID string) (RequestQueue, bool)
@@ -133,6 +135,12 @@ type FIFOQueueMap struct {
 	data          map[string]RequestQueue
 	queueCapacity int
 	mutex         sync.Mutex
+}
+
+func (f *FIFOQueueMap) Init() {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+	f.data = map[string]RequestQueue{}
 }
 
 func (f *FIFOQueueMap) Get(clientID string) (RequestQueue, bool) {
