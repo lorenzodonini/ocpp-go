@@ -2,6 +2,9 @@ package ocpp2_test
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	ocpp2 "github.com/lorenzodonini/ocpp-go/ocpp2.0"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
@@ -28,8 +31,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"reflect"
-	"testing"
 )
 
 // ---------------------- MOCK WEBSOCKET ----------------------
@@ -749,7 +750,7 @@ func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request o
 	require.Error(t, err)
 	assert.Equal(t, expectedError, err.Error())
 	// Run response test
-	suite.ocppjClient.PendingRequestState.AddPendingRequest(messageId, request)
+	suite.ocppjClient.RequestState.AddPendingRequest(messageId, request)
 	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
 	require.Nil(t, err)
 	result := <-resultChannel
@@ -785,7 +786,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 	require.Error(t, err)
 	assert.Equal(t, expectedError, err.Error())
 	// Mark mocked request as pending, otherwise response will be ignored
-	suite.ocppjServer.PendingRequestState.AddPendingRequest(messageId, request)
+	suite.ocppjServer.RequestState.AddPendingRequest(wsId, messageId, request)
 	// Run response test
 	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
 	assert.Nil(t, err)
@@ -857,8 +858,8 @@ func (suite *OcppV2TestSuite) SetupTest() {
 	suite.mockWsServer = &mockServer
 	suite.clientDispatcher = ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(queueCapacity))
 	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(queueCapacity))
-	suite.ocppjClient = ocppj.NewClient("test_id", suite.mockWsClient, suite.clientDispatcher, suite.clientDispatcher.(ocppj.PendingRequestState), securityProfile, provisioningProfile, authProfile, availabilityProfile, reservationProfile, diagnosticsProfile, dataProfile, displayProfile, firmwareProfile, isoProfile, localAuthProfile, meterProfile, remoteProfile, smartChargingProfile, tariffProfile, transactionsProfile)
-	suite.ocppjServer = ocppj.NewServer(suite.mockWsServer, suite.serverDispatcher, suite.serverDispatcher.(ocppj.PendingRequestState), securityProfile, provisioningProfile, authProfile, availabilityProfile, reservationProfile, diagnosticsProfile, dataProfile, displayProfile, firmwareProfile, isoProfile, localAuthProfile, meterProfile, remoteProfile, smartChargingProfile, tariffProfile, transactionsProfile)
+	suite.ocppjClient = ocppj.NewClient("test_id", suite.mockWsClient, suite.clientDispatcher, nil, securityProfile, provisioningProfile, authProfile, availabilityProfile, reservationProfile, diagnosticsProfile, dataProfile, displayProfile, firmwareProfile, isoProfile, localAuthProfile, meterProfile, remoteProfile, smartChargingProfile, tariffProfile, transactionsProfile)
+	suite.ocppjServer = ocppj.NewServer(suite.mockWsServer, suite.serverDispatcher, nil, securityProfile, provisioningProfile, authProfile, availabilityProfile, reservationProfile, diagnosticsProfile, dataProfile, displayProfile, firmwareProfile, isoProfile, localAuthProfile, meterProfile, remoteProfile, smartChargingProfile, tariffProfile, transactionsProfile)
 	suite.chargingStation = ocpp2.NewChargingStation("test_id", suite.ocppjClient, suite.mockWsClient)
 	suite.csms = ocpp2.NewCSMS(suite.ocppjServer, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {

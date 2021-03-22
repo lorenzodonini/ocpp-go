@@ -18,31 +18,41 @@ type Server struct {
 	responseHandler           func(clientID string, response ocpp.Response, requestId string)
 	errorHandler              func(clientID string, err *ocpp.Error, details interface{})
 	dispatcher                ServerDispatcher
+	RequestState              ServerState
 }
 
 // Creates a new Server endpoint.
-// Requires a a websocket server, a structure for queueing/dispatching requests,
-// a state handler and a list of profiles (optional).
+// Requires a a websocket server. Optionally a structure for queueing/dispatching requests,
+// a custom state handler and a list of profiles may be passed.
 //
 // You may create a simple new server by using these default values:
 //	s := ocppj.NewServer(ws.NewServer(), nil, nil)
-func NewServer(wsServer ws.WsServer, dispatcher ServerDispatcher, stateHandler PendingRequestState, profiles ...*ocpp.Profile) *Server {
+//
+// The dispatcher's associated ClientState will be set during initialization.
+func NewServer(wsServer ws.WsServer, dispatcher ServerDispatcher, stateHandler ServerState, profiles ...*ocpp.Profile) *Server {
 	if dispatcher == nil {
 		dispatcher = NewDefaultServerDispatcher(NewFIFOQueueMap(0))
-		if stateHandler == nil {
-			stateHandler = dispatcher.(*DefaultServerDispatcher)
-		}
 	}
-	endpoint := Endpoint{PendingRequestState: stateHandler}
-	for _, profile := range profiles {
-		endpoint.AddProfile(profile)
+	if stateHandler == nil {
+		d, ok := dispatcher.(*DefaultServerDispatcher)
+		if !ok {
+			stateHandler = NewSimpleServerState(nil)
+		} else {
+			stateHandler = d.pendingRequestState
+		}
 	}
 	if wsServer == nil {
 		wsServer = ws.NewServer()
 	}
 	dispatcher.SetNetworkServer(wsServer)
 	dispatcher.SetPendingRequestState(stateHandler)
-	return &Server{Endpoint: endpoint, server: wsServer, dispatcher: dispatcher}
+
+	// Create server and add profiles
+	s := Server{Endpoint: Endpoint{}, server: wsServer, RequestState: stateHandler, dispatcher: dispatcher}
+	for _, profile := range profiles {
+		s.AddProfile(profile)
+	}
+	return &s
 }
 
 // Registers a handler for incoming requests.
@@ -182,11 +192,18 @@ func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.Err
 }
 
 func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
-	parsedJson := ParseRawJsonMessage(data)
-	message, err := s.ParseMessage(parsedJson)
+	parsedJson, err := ParseRawJsonMessage(data)
 	if err != nil {
-		if err.MessageId != "" {
-			err2 := s.SendError(wsChannel.GetID(), err.MessageId, err.Code, err.Description, nil)
+		log.Error(err)
+		return err
+	}
+	// Get pending requests for client
+	pending := s.RequestState.GetClientState(wsChannel.GetID())
+	message, err := s.ParseMessage(parsedJson, pending)
+	if err != nil {
+		ocppErr := err.(*ocpp.Error)
+		if ocppErr.MessageId != "" {
+			err2 := s.SendError(wsChannel.GetID(), ocppErr.MessageId, ocppErr.Code, ocppErr.Description, nil)
 			if err2 != nil {
 				return err2
 			}
@@ -217,6 +234,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 func (s *Server) onDisconnected(ws ws.Channel) {
 	// Clear state for disconnected client
 	s.dispatcher.DeleteClient(ws.GetID())
+	s.RequestState.ClearClientPendingRequest(ws.GetID())
 	// Invoke callback
 	if s.disconnectedClientHandler != nil {
 		s.disconnectedClientHandler(ws.GetID())
