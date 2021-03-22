@@ -214,11 +214,13 @@ func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return &wsClient
 }
 
-func ParseCall(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.Call {
-	parsedData := ocppj.ParseJsonMessage(json)
-	result, err := endpoint.ParseMessage(parsedData)
-	assert.Nil(t, err)
-	assert.NotNil(t, result)
+func ParseCall(endpoint *ocppj.Endpoint, state ocppj.ClientState, json string, t *testing.T) *ocppj.Call {
+	parsedData, err := ocppj.ParseJsonMessage(json)
+	require.NoError(t, err)
+	require.NotNil(t, parsedData)
+	result, err := endpoint.ParseMessage(parsedData, state)
+	require.NoError(t, err)
+	require.NotNil(t, result)
 	call, ok := result.(*ocppj.Call)
 	assert.Equal(t, true, ok)
 	assert.NotNil(t, call)
@@ -234,11 +236,13 @@ func CheckCall(call *ocppj.Call, t *testing.T, expectedAction string, expectedId
 	assert.Nil(t, err)
 }
 
-func ParseCallResult(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.CallResult {
-	parsedData := ocppj.ParseJsonMessage(json)
-	result, err := endpoint.ParseMessage(parsedData)
-	assert.Nil(t, err)
-	assert.NotNil(t, result)
+func ParseCallResult(endpoint *ocppj.Endpoint, state ocppj.ClientState, json string, t *testing.T) *ocppj.CallResult {
+	parsedData, err := ocppj.ParseJsonMessage(json)
+	require.NoError(t, err)
+	require.NotNil(t, parsedData)
+	result, ocppErr := endpoint.ParseMessage(parsedData, state)
+	require.NoError(t, ocppErr)
+	require.NotNil(t, result)
 	callResult, ok := result.(*ocppj.CallResult)
 	assert.Equal(t, true, ok)
 	assert.NotNil(t, callResult)
@@ -253,10 +257,13 @@ func CheckCallResult(result *ocppj.CallResult, t *testing.T, expectedId string) 
 	assert.Nil(t, err)
 }
 
-func ParseCallError(endpoint *ocppj.Endpoint, json string, t *testing.T) *ocppj.CallError {
-	parsedData := ocppj.ParseJsonMessage(json)
-	result, err := endpoint.ParseMessage(parsedData)
-	assert.Nil(t, err)
+func ParseCallError(endpoint *ocppj.Endpoint, state ocppj.ClientState, json string, t *testing.T) *ocppj.CallError {
+	parsedData, err := ocppj.ParseJsonMessage(json)
+	require.NoError(t, err)
+	require.NotNil(t, parsedData)
+	result, ocppErr := endpoint.ParseMessage(parsedData, state)
+	require.NoError(t, ocppErr)
+	require.NotNil(t, result)
 	callError, ok := result.(*ocppj.CallError)
 	assert.Equal(t, true, ok)
 	assert.NotNil(t, callError)
@@ -310,10 +317,10 @@ func (suite *OcppJTestSuite) SetupTest() {
 	suite.mockServer = &mockServer
 	suite.clientRequestQueue = ocppj.NewFIFOClientQueue(queueCapacity)
 	suite.clientDispatcher = ocppj.NewDefaultClientDispatcher(suite.clientRequestQueue)
-	suite.chargePoint = ocppj.NewClient("mock_id", suite.mockClient, suite.clientDispatcher, suite.clientDispatcher.(ocppj.PendingRequestState), mockProfile)
+	suite.chargePoint = ocppj.NewClient("mock_id", suite.mockClient, suite.clientDispatcher, nil, mockProfile)
 	suite.serverRequestMap = ocppj.NewFIFOQueueMap(queueCapacity)
 	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(suite.serverRequestMap)
-	suite.centralSystem = ocppj.NewServer(suite.mockServer, suite.serverDispatcher, suite.serverDispatcher.(ocppj.PendingRequestState), mockProfile)
+	suite.centralSystem = ocppj.NewServer(suite.mockServer, suite.serverDispatcher, nil, mockProfile)
 }
 
 func (suite *OcppJTestSuite) TearDownTest() {
@@ -427,7 +434,7 @@ func (suite *OcppJTestSuite) TestCreateCall() {
 	assert.NotNil(t, message)
 	assert.Equal(t, mockValue, message.MockValue)
 	// Check that request was not yet stored as pending request
-	pendingRequest, exists := suite.chargePoint.PendingRequestState.GetPendingRequest(call.UniqueId)
+	pendingRequest, exists := suite.chargePoint.RequestState.GetPendingRequest(call.UniqueId)
 	assert.False(t, exists)
 	assert.Nil(t, pendingRequest)
 }
@@ -467,9 +474,11 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidLength() {
 	// Test invalid message length
 	mockMessage[0] = ocppj.CALL // Message Type ID
 	mockMessage[1] = messageId  // Unique ID
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
 	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
 	assert.Equal(t, "Invalid message. Expected array length >= 3", protoErr.Description)
@@ -483,9 +492,11 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidTypeId() {
 	// Test invalid message length
 	mockMessage[0] = invalidTypeId // Message Type ID
 	mockMessage[1] = messageId     // Unique ID
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
 	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", invalidTypeId), protoErr.Description)
@@ -498,9 +509,11 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidMessageId() {
 	// Test invalid message length
 	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
 	mockMessage[1] = invalidMessageId    // Unique ID
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
 	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", invalidMessageId), protoErr.Description)
@@ -514,9 +527,11 @@ func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
 	// Test invalid message length
 	mockMessage[0] = float64(invalidTypeId) // Message Type ID
 	mockMessage[1] = messageId              // Unique ID
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
 	assert.Equal(t, ocppj.MessageTypeNotSupported, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid message type ID %v", invalidTypeId), protoErr.Description)
@@ -531,9 +546,11 @@ func (suite *OcppJTestSuite) TestParseMessageUnsupported() {
 	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
 	mockMessage[1] = messageId           // Unique ID
 	mockMessage[2] = invalidAction       // Action
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
 	assert.Equal(t, ocppj.NotSupported, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Unsupported feature %v", invalidAction), protoErr.Description)
@@ -547,9 +564,11 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
 	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
 	mockMessage[1] = messageId           // Unique ID
 	mockMessage[2] = MockFeatureName
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
 	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
 	assert.Equal(t, "Invalid Call message. Expected array length 4", protoErr.Description)
@@ -564,10 +583,10 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallResult() {
 	mockMessage[0] = float64(ocppj.CALL_RESULT) // Message Type ID
 	mockMessage[1] = messageId                  // Unique ID
 	mockMessage[2] = mockConfirmation
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
 	// Both message and error should be nil
-	assert.Nil(t, message)
-	assert.Nil(t, protoErr)
+	require.Nil(t, message)
+	require.NoError(t, err)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
@@ -579,10 +598,12 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	mockMessage[0] = float64(ocppj.CALL_ERROR) // Message Type ID
 	mockMessage[1] = messageId                 // Unique ID
 	mockMessage[2] = ocppj.GenericError
-	suite.chargePoint.PendingRequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
 	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
 	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Description)
@@ -598,16 +619,20 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRequest() {
 	mockMessage[1] = messageId           // Unique ID
 	mockMessage[2] = MockFeatureName
 	mockMessage[3] = mockRequest
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
 	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockRequest.MockValue = "somelongvalue"
-	message, protoErr = suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	message, err = suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr = err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
 	assert.Equal(t, ocppj.PropertyConstraintViolation, protoErr.Code)
 }
@@ -622,18 +647,22 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	mockMessage[0] = float64(ocppj.CALL_RESULT) // Message Type ID
 	mockMessage[1] = messageId                  // Unique ID
 	mockMessage[2] = mockConfirmation
-	suite.chargePoint.PendingRequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
 	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockConfirmation.MockValue = "min"
-	suite.chargePoint.PendingRequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that responses are not rejected
-	message, protoErr = suite.chargePoint.ParseMessage(mockMessage)
-	assert.Nil(t, message)
-	assert.NotNil(t, protoErr)
+	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that responses are not rejected
+	message, err = suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr = err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
 	assert.Equal(t, ocppj.PropertyConstraintViolation, protoErr.Code)
 }
@@ -649,7 +678,7 @@ func (suite *OcppJTestSuite) TestParseCall() {
 	mockMessage[1] = messageId           // Unique ID
 	mockMessage[2] = MockFeatureName
 	mockMessage[3] = mockRequest
-	message, protoErr := suite.chargePoint.ParseMessage(mockMessage)
+	message, protoErr := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
 	assert.Nil(t, protoErr)
 	assert.NotNil(t, message)
 	assert.Equal(t, ocppj.CALL, message.GetMessageTypeId())
@@ -694,9 +723,11 @@ func (suite *OcppJTestSuite) TestLogger() {
 	ocppj.SetLogger(&logger)
 	defer ocppj.SetLogger(&ocpp.VoidLogger{})
 	// Expect an error
-	_ = ocppj.ParseRawJsonMessage(nil)
+	arr, err := ocppj.ParseRawJsonMessage([]byte("[3,\"1234\",{}]"))
+	require.NoError(t, err)
+	_, _ = suite.chargePoint.ParseMessage(arr, suite.chargePoint.RequestState)
 	s := <-logger.c
-	assert.Equal(t, "error", s)
+	assert.Equal(t, "infof", s)
 	// Nil logger must cause a panic
 	assertPanic(t, func() {
 		ocppj.SetLogger(nil)
@@ -709,4 +740,6 @@ func TestMockOcppJ(t *testing.T) {
 	suite.Run(t, new(OcppJTestSuite))
 	suite.Run(t, new(ClientQueueTestSuite))
 	suite.Run(t, new(ServerQueueMapTestSuite))
+	suite.Run(t, new(ClientStateTestSuite))
+	suite.Run(t, new(ServerStateTestSuite))
 }

@@ -111,8 +111,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
 		require.False(t, q.IsEmpty())
 		req := q.Peek().(ocppj.RequestBundle)
 		callID = req.Call.GetUniqueId()
-		_, ok = suite.centralSystem.PendingRequestState.GetPendingRequest(callID)
 		// Before anything is returned, the request must still be pending
+		_, ok = suite.centralSystem.RequestState.GetClientState(mockChargePointId).GetPendingRequest(callID)
 		assert.True(t, ok)
 	})
 	suite.centralSystem.Start(8887, "/{ws}")
@@ -122,7 +122,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
 	assert.Nil(t, err)
 	// Assert that pending request was removed
 	time.Sleep(500 * time.Millisecond)
-	_, ok := suite.centralSystem.PendingRequestState.GetPendingRequest(callID)
+	_, ok := suite.centralSystem.RequestState.GetClientState(mockChargePointId).GetPendingRequest(callID)
 	assert.False(t, ok)
 }
 
@@ -288,7 +288,7 @@ func addMockPendingRequest(suite *OcppJTestSuite, mockRequest ocpp.Request, mock
 	}
 	q := suite.serverRequestMap.GetOrCreate(mockChargePointID)
 	_ = q.Push(requestBundle)
-	suite.centralSystem.PendingRequestState.AddPendingRequest(mockUniqueID, mockRequest)
+	suite.centralSystem.RequestState.AddPendingRequest(mockChargePointID, mockUniqueID, mockRequest)
 }
 
 // ----------------- Queue processing tests -----------------
@@ -429,7 +429,8 @@ func (suite *OcppJTestSuite) TestServerRequestFlow() {
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
 		wsID := args.String(0)
 		data := args.Get(1).([]byte)
-		call := ParseCall(&suite.centralSystem.Endpoint, string(data), t)
+		state := suite.centralSystem.RequestState.GetClientState(wsID)
+		call := ParseCall(&suite.centralSystem.Endpoint, state, string(data), t)
 		require.NotNil(t, call)
 		sendResponseTrigger <- triggerData{clientID: wsID, call: call}
 	}).Return(nil)

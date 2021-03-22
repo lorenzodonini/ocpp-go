@@ -161,7 +161,7 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) C
 	})
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
-		endpoint = ocppj.NewClient(id, client, dispatcher, dispatcher, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
+		endpoint = ocppj.NewClient(id, client, dispatcher, nil, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
 	cs := chargingStation{client: endpoint, responseHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
 	cs.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
@@ -316,7 +316,7 @@ func NewCSMS(endpoint *ocppj.Server, server ws.WsServer) CSMS {
 	server.AddSupportedSubprotocol(types.V2Subprotocol)
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(0))
-		endpoint = ocppj.NewServer(server, dispatcher, dispatcher, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
+		endpoint = ocppj.NewServer(server, dispatcher, nil, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
 	cs := newCSMS(endpoint)
 	cs.server.SetRequestHandler(cs.handleIncomingRequest)

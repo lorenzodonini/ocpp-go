@@ -17,6 +17,7 @@ type Client struct {
 	responseHandler func(response ocpp.Response, requestId string)
 	errorHandler    func(err *ocpp.Error, details interface{})
 	dispatcher      ClientDispatcher
+	RequestState    ClientState
 }
 
 // Creates a new Client endpoint.
@@ -25,23 +26,23 @@ type Client struct {
 //
 // You may create a simple new server by using these default values:
 //	s := ocppj.NewClient(ws.NewClient(), nil, nil)
-func NewClient(id string, wsClient ws.WsClient, dispatcher ClientDispatcher, stateHandler PendingRequestState, profiles ...*ocpp.Profile) *Client {
-	endpoint := Endpoint{PendingRequestState: stateHandler}
+func NewClient(id string, wsClient ws.WsClient, dispatcher ClientDispatcher, stateHandler ClientState, profiles ...*ocpp.Profile) *Client {
+	endpoint := Endpoint{}
 	for _, profile := range profiles {
 		endpoint.AddProfile(profile)
 	}
 	if dispatcher == nil {
 		dispatcher = NewDefaultClientDispatcher(NewFIFOClientQueue(10))
-		if stateHandler == nil {
-			stateHandler = dispatcher.(*DefaultClientDispatcher)
-		}
+	}
+	if stateHandler == nil {
+		stateHandler = NewSimpleClientState()
 	}
 	if wsClient == nil {
 		wsClient = ws.NewClient()
 	}
 	dispatcher.SetNetworkClient(wsClient)
 	dispatcher.SetPendingRequestState(stateHandler)
-	return &Client{Endpoint: endpoint, client: wsClient, Id: id, dispatcher: dispatcher}
+	return &Client{Endpoint: endpoint, client: wsClient, Id: id, dispatcher: dispatcher, RequestState: stateHandler}
 }
 
 // Registers a handler for incoming requests.
@@ -176,11 +177,16 @@ func (c *Client) SendError(requestId string, errorCode ocpp.ErrorCode, descripti
 }
 
 func (c *Client) ocppMessageHandler(data []byte) error {
-	parsedJson := ParseRawJsonMessage(data)
-	message, err := c.ParseMessage(parsedJson)
+	parsedJson, err := ParseRawJsonMessage(data)
 	if err != nil {
-		if err.MessageId != "" {
-			err2 := c.SendError(err.MessageId, err.Code, err.Description, nil)
+		log.Error(err)
+		return err
+	}
+	message, err := c.ParseMessage(parsedJson, c.RequestState)
+	if err != nil {
+		ocppErr := err.(*ocpp.Error)
+		if ocppErr.MessageId != "" {
+			err2 := c.SendError(ocppErr.MessageId, ocppErr.Code, ocppErr.Description, nil)
 			if err2 != nil {
 				return err2
 			}
@@ -209,7 +215,7 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 }
 
 func (c *Client) onDisconnected(err error) {
-	//TODO: is err really needed?
+	log.Error("disconnected from server", err)
 	c.dispatcher.Pause()
 }
 

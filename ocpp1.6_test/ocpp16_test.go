@@ -2,6 +2,9 @@ package ocpp16_test
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -13,12 +16,9 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"reflect"
-	"testing"
 )
 
 // ---------------------- MOCK WEBSOCKET ----------------------
@@ -551,7 +551,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	assert.Error(t, err)
 	assert.Equal(t, expectedError, err.Error())
 	// Run response test
-	suite.ocppjChargePoint.PendingRequestState.AddPendingRequest(messageId, request)
+	suite.ocppjChargePoint.RequestState.AddPendingRequest(messageId, request)
 	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
 	assert.Nil(t, err)
 	result := <-resultChannel
@@ -588,7 +588,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	assert.Error(t, err)
 	assert.Equal(t, expectedError, err.Error())
 	// Mark mocked request as pending, otherwise response will be ignored
-	suite.ocppjCentralSystem.PendingRequestState.AddPendingRequest(messageId, request)
+	suite.ocppjCentralSystem.RequestState.AddPendingRequest(wsId, messageId, request)
 	// Run response test
 	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
 	assert.Nil(t, err)
@@ -658,8 +658,8 @@ func (suite *OcppV16TestSuite) SetupTest() {
 	suite.mockWsServer = &mockServer
 	suite.clientDispatcher = ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(queueCapacity))
 	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(queueCapacity))
-	suite.ocppjChargePoint = ocppj.NewClient("test_id", suite.mockWsClient, suite.clientDispatcher, suite.clientDispatcher.(ocppj.PendingRequestState), coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
-	suite.ocppjCentralSystem = ocppj.NewServer(suite.mockWsServer, suite.serverDispatcher, suite.serverDispatcher.(ocppj.PendingRequestState), coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
+	suite.ocppjChargePoint = ocppj.NewClient("test_id", suite.mockWsClient, suite.clientDispatcher, nil, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
+	suite.ocppjCentralSystem = ocppj.NewServer(suite.mockWsServer, suite.serverDispatcher, nil, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
 	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
@@ -671,6 +671,5 @@ func (suite *OcppV16TestSuite) SetupTest() {
 //TODO: implement generic protocol tests
 
 func TestOcpp16Protocol(t *testing.T) {
-	logrus.SetLevel(logrus.PanicLevel)
 	suite.Run(t, new(OcppV16TestSuite))
 }

@@ -177,19 +177,18 @@ func IsErrorCodeValid(fl validator.FieldLevel) bool {
 
 // Unmarshals an OCPP-J json object from a byte array.
 // Returns the array of elements contained in the message.
-func ParseRawJsonMessage(dataJson []byte) []interface{} {
+func ParseRawJsonMessage(dataJson []byte) ([]interface{}, error) {
 	var arr []interface{}
 	err := json.Unmarshal(dataJson, &arr)
 	if err != nil {
-		// TODO: return error
-		log.Error(err)
+		return nil, err
 	}
-	return arr
+	return arr, nil
 }
 
 // Unmarshals an OCPP-J json object from a JSON string.
 // Returns the array of elements contained in the message.
-func ParseJsonMessage(dataJson string) []interface{} {
+func ParseJsonMessage(dataJson string) ([]interface{}, error) {
 	rawJson := []byte(dataJson)
 	return ParseRawJsonMessage(rawJson)
 }
@@ -242,8 +241,7 @@ func errorFromValidation(validationErrors validator.ValidationErrors, messageId 
 // An OCPP-J endpoint is one of the two entities taking part in the communication.
 // The endpoint keeps state for supported OCPP profiles and current pending requests.
 type Endpoint struct {
-	Profiles            []*ocpp.Profile
-	PendingRequestState PendingRequestState
+	Profiles []*ocpp.Profile
 }
 
 // Adds support for a new profile on the endpoint.
@@ -304,7 +302,7 @@ func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (o
 // Parses an OCPP-J message. The function expects an array of elements, as contained in the JSON message.
 //
 // Pending requests are automatically cleared, in case the received message is a CallResponse or CallError.
-func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error) {
+func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState ClientState) (Message, error) {
 	// Checking message fields
 	if len(arr) < 3 {
 		return nil, ocpp.NewError(FormationViolation, "Invalid message. Expected array length >= 3", "")
@@ -344,7 +342,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 		}
 		return &call, nil
 	} else if typeId == CALL_RESULT {
-		request, ok := endpoint.PendingRequestState.GetPendingRequest(uniqueId)
+		request, ok := pendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
 			log.Infof("No previous request %v sent. Discarding response message", uniqueId)
 			return nil, nil
@@ -365,7 +363,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}) (Message, *ocpp.Error)
 		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
-		_, ok := endpoint.PendingRequestState.GetPendingRequest(uniqueId)
+		_, ok := pendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
 			log.Infof("No previous request %v sent. Discarding error message", uniqueId)
 			return nil, nil
