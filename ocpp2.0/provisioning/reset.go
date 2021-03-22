@@ -7,7 +7,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
-// -------------------- Get Report (CSMS -> CS) --------------------
+// -------------------- Reset (CSMS -> CS) --------------------
 
 const ResetFeatureName = "Reset"
 

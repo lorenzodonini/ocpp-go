@@ -203,6 +203,12 @@ type MockCSMSSecurityHandler struct {
 	mock.Mock
 }
 
+func (handler MockCSMSSecurityHandler) OnSecurityEventNotification(chargingStationID string, request *security.SecurityEventNotificationRequest) (reponse *security.SecurityEventNotificationResponse, err error) {
+	args := handler.MethodCalled("OnSecurityEventNotification", chargingStationID, request)
+	response := args.Get(0).(*security.SecurityEventNotificationResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CS SECURITY HANDLER ----------------------
 
 type MockChargingStationSecurityHandler struct {
