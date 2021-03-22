@@ -476,6 +476,21 @@ func (cs *csms) ReserveNow(clientId string, callback func(*reservation.ReserveNo
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) Reset(clientId string, callback func(*provisioning.ResetResponse, error), t provisioning.ResetType, props ...func(request *provisioning.ResetRequest)) error {
+	request := provisioning.NewResetRequest(t)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*provisioning.ResetResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -584,7 +599,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		firmware.PublishFirmwareFeatureName,
 		remotecontrol.RequestStartTransactionFeatureName,
 		remotecontrol.RequestStopTransactionFeatureName,
-		reservation.ReserveNowFeatureName:
+		reservation.ReserveNowFeatureName,
+		provisioning.ResetFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)
