@@ -257,6 +257,12 @@ func (handler MockChargingStationProvisioningHandler) OnGetVariables(request *pr
 	return conf, args.Error(1)
 }
 
+func (handler MockChargingStationProvisioningHandler) OnReset(request *provisioning.ResetRequest) (response *provisioning.ResetResponse, err error) {
+	args := handler.MethodCalled("OnReset", request)
+	response = args.Get(0).(*provisioning.ResetResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS AUTHORIZATION HANDLER ----------------------
 
 type MockCSMSAuthorizationHandler struct {
