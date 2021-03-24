@@ -491,6 +491,21 @@ func (cs *csms) Reset(clientId string, callback func(*provisioning.ResetResponse
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) SendLocalList(clientId string, callback func(*localauth.SendLocalListResponse, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error {
+	request := localauth.NewSendLocalListRequest(version, updateType)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*localauth.SendLocalListResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -600,7 +615,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		remotecontrol.RequestStartTransactionFeatureName,
 		remotecontrol.RequestStopTransactionFeatureName,
 		reservation.ReserveNowFeatureName,
-		provisioning.ResetFeatureName:
+		provisioning.ResetFeatureName,
+		localauth.SendLocalListFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)

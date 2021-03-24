@@ -302,6 +302,8 @@ type CSMS interface {
 	ReserveNow(clientId string, callback func(*reservation.ReserveNowResponse, error), id int, expiryDateTime *types.DateTime, idToken types.IdTokenType, props ...func(request *reservation.ReserveNowRequest)) error
 	// Instructs the Charging Station to reset itself.
 	Reset(clientId string, callback func(*provisioning.ResetResponse, error), t provisioning.ResetType, props ...func(request *provisioning.ResetRequest)) error
+	// Sends a local authorization list to a charging station, which can be used for the authorization of idTokens.
+	SendLocalList(clientId string, callback func(*localauth.SendLocalListResponse, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
 	//RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error

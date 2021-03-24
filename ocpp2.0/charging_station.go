@@ -704,6 +704,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.reservationHandler.OnReserveNow(request.(*reservation.ReserveNowRequest))
 	case provisioning.ResetFeatureName:
 		response, err = cs.provisioningHandler.OnReset(request.(*provisioning.ResetRequest))
+	case localauth.SendLocalListFeatureName:
+		response, err = cs.localAuthListHandler.OnSendLocalList(request.(*localauth.SendLocalListRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return
