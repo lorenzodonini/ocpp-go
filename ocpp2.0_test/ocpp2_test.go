@@ -545,16 +545,16 @@ func (handler MockChargingStationLocalAuthHandler) OnGetLocalListVersion(request
 	return conf, args.Error(1)
 }
 
+func (handler MockChargingStationLocalAuthHandler) OnSendLocalList(request *localauth.SendLocalListRequest) (response *localauth.SendLocalListResponse, err error) {
+	args := handler.MethodCalled("OnSendLocalList", request)
+	response = args.Get(0).(*localauth.SendLocalListResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS LOCAL AUTH HANDLER ----------------------
 
 type MockCSMSLocalAuthHandler struct {
 	mock.Mock
-}
-
-func (handler MockCSMSMeterHandler) OnMeterValues(chargingStationID string, request *meter.MeterValuesRequest) (response *meter.MeterValuesResponse, err error) {
-	args := handler.MethodCalled("OnMeterValues", chargingStationID, request)
-	r := args.Get(0).(*meter.MeterValuesResponse)
-	return r, args.Error(1)
 }
 
 // ---------------------- MOCK CS METER HANDLER ----------------------
@@ -567,6 +567,12 @@ type MockChargingStationMeterHandler struct {
 
 type MockCSMSMeterHandler struct {
 	mock.Mock
+}
+
+func (handler MockCSMSMeterHandler) OnMeterValues(chargingStationID string, request *meter.MeterValuesRequest) (response *meter.MeterValuesResponse, err error) {
+	args := handler.MethodCalled("OnMeterValues", chargingStationID, request)
+	r := args.Get(0).(*meter.MeterValuesResponse)
+	return r, args.Error(1)
 }
 
 // ---------------------- MOCK CS REMOTE CONTROL HANDLER ----------------------

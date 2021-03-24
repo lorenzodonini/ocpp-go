@@ -11,7 +11,9 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Local Authorization List profile.
 type ChargingStationHandler interface {
 	// OnGetLocalListVersion is called on a charging station whenever a GetLocalListVersionRequest is received from the CSMS.
-	OnGetLocalListVersion(request *GetLocalListVersionRequest) (confirmation *GetLocalListVersionResponse, err error)
+	OnGetLocalListVersion(request *GetLocalListVersionRequest) (response *GetLocalListVersionResponse, err error)
+	// OnSendLocalList is called on a charging station whenever a SendLocalListRequest is received from the CSMS.
+	OnSendLocalList(request *SendLocalListRequest) (response *SendLocalListResponse, err error)
 }
 
 const ProfileName = "localAuthList"
@@ -19,4 +21,5 @@ const ProfileName = "localAuthList"
 var Profile = ocpp.NewProfile(
 	ProfileName,
 	GetLocalListVersionFeature{},
+	SendLocalListFeature{},
 )
