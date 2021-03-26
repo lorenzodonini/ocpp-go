@@ -7,9 +7,9 @@ import (
 	"math/rand"
 	"reflect"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp"
-	"github.com/pkg/errors"
 	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
 )
 
 // The validator, used for validating incoming/outgoing OCPP messages.
@@ -404,7 +404,7 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	action := request.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
-		return nil, errors.Errorf("Couldn't create Call for unsupported action %v", action)
+		return nil, fmt.Errorf("Couldn't create Call for unsupported action %v", action)
 	}
 	// TODO: handle collisions?
 	uniqueId := messageIdGenerator()
@@ -428,7 +428,7 @@ func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId 
 	action := confirmation.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
-		return nil, errors.Errorf("Couldn't create Call Result for unsupported action %v", action)
+		return nil, fmt.Errorf("Couldn't create Call Result for unsupported action %v", action)
 	}
 	callResult := CallResult{
 		MessageTypeId: CALL_RESULT,

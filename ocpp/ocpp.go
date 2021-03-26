@@ -5,8 +5,6 @@ package ocpp
 import (
 	"fmt"
 	"reflect"
-
-	"github.com/pkg/errors"
 )
 
 // Feature represents a single functionality, associated to a unique name.
@@ -93,7 +91,7 @@ func (p *Profile) GetFeature(name string) Feature {
 func (p *Profile) ParseRequest(featureName string, rawRequest interface{}, requestParser func(raw interface{}, requestType reflect.Type) (Request, error)) (Request, error) {
 	feature, ok := p.Features[featureName]
 	if !ok {
-		return nil, errors.Errorf("Feature %s not found", featureName)
+		return nil, fmt.Errorf("Feature %s not found", featureName)
 	}
 	requestType := feature.GetRequestType()
 	return requestParser(rawRequest, requestType)
@@ -104,7 +102,7 @@ func (p *Profile) ParseRequest(featureName string, rawRequest interface{}, reque
 func (p *Profile) ParseResponse(featureName string, rawResponse interface{}, responseParser func(raw interface{}, responseType reflect.Type) (Response, error)) (Response, error) {
 	feature, ok := p.Features[featureName]
 	if !ok {
-		return nil, errors.Errorf("Feature %s not found", featureName)
+		return nil, fmt.Errorf("Feature %s not found", featureName)
 	}
 	responseType := feature.GetResponseType()
 	return responseParser(rawResponse, responseType)
