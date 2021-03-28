@@ -192,13 +192,15 @@ func (d *DefaultClientDispatcher) messagePump() {
 			// No request is currently pending -> set timer to high number
 			d.timer.Reset(defaultTimeoutTick)
 		case rdy = <-d.readyForDispatch:
-			d.mutex.Lock()
-			paused := d.paused
-			d.mutex.Unlock()
-			if paused {
-				// Ignore dispatch events as long as dispatcher is paused
-				continue
-			}
+			// Ready flag set, keep going
+		}
+		// Check if dispatcher is paused
+		d.mutex.Lock()
+		paused := d.paused
+		d.mutex.Unlock()
+		if paused {
+			// Ignore dispatch events as long as dispatcher is paused
+			continue
 		}
 		// Only dispatch request if able to send and request queue isn't empty
 		if rdy && !d.requestQueue.IsEmpty() {

@@ -282,7 +282,6 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 		if !c {
 			fmt.Println(errMsg)
 		}
-		//TODO: not deterministic. Sometimes abnormal closure, sometimes timeout
 		assert.True(t, c)
 	})
 	s.client.SetReconnectedHandler(func() {
