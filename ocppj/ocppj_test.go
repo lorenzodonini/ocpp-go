@@ -737,9 +737,11 @@ func (suite *OcppJTestSuite) TestLogger() {
 }
 
 func TestMockOcppJ(t *testing.T) {
-	suite.Run(t, new(OcppJTestSuite))
 	suite.Run(t, new(ClientQueueTestSuite))
 	suite.Run(t, new(ServerQueueMapTestSuite))
 	suite.Run(t, new(ClientStateTestSuite))
 	suite.Run(t, new(ServerStateTestSuite))
+	suite.Run(t, new(ClientDispatcherTestSuite))
+	suite.Run(t, new(ServerDispatcherTestSuite))
+	suite.Run(t, new(OcppJTestSuite))
 }
