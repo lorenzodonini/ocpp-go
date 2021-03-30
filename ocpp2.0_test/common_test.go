@@ -1,9 +1,10 @@
 package ocpp2_test
 
 import (
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/display"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"time"
 )
 
 // Utility functions
@@ -120,9 +121,57 @@ func (suite *OcppV2TestSuite) TestComponentVariableValidation() {
 	ExecuteGenericTestTable(t, testTable)
 }
 
+func (suite *OcppV2TestSuite) TestConsumptionCostValidation() {
+	var testTable = []GenericTestEntry{
+		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage, Amount: 7, AmountMultiplier: newInt(3)}}), true},
+		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage, Amount: 7, AmountMultiplier: newInt(-3)}}), true},
+		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage, Amount: 7}}), true},
+		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage}}), true},
+		{types.ConsumptionCost{Cost: []types.CostType{{CostKind: types.CostKindRelativePricePercentage}}}, true},
+		{types.NewConsumptionCost(1.0, []types.CostType{{}}), false},
+		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage, Amount: 7, AmountMultiplier: newInt(4)}}), false},
+		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage, Amount: 7, AmountMultiplier: newInt(-4)}}), false},
+		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage, Amount: -1, AmountMultiplier: newInt(3)}}), false},
+		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: "invalidCostKind", Amount: 7, AmountMultiplier: newInt(3)}}), false},
+		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage, Amount: 7}, {CostKind: types.CostKindRelativePricePercentage, Amount: 7}, {CostKind: types.CostKindRelativePricePercentage, Amount: 7}, {CostKind: types.CostKindRelativePricePercentage, Amount: 7}}), false},
+	}
+	ExecuteGenericTestTable(suite.T(), testTable)
+}
+
+func (suite *OcppV2TestSuite) TestSalesTariffEntryValidation() {
+	dummyCostType := types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage, Amount: 7}})
+	var testTable = []GenericTestEntry{
+		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(1200)}, ConsumptionCost: []types.ConsumptionCost{dummyCostType}}, true},
+		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500}}, true},
+		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{}}, true},
+		{types.SalesTariffEntry{RelativeTimeInterval: types.RelativeTimeInterval{}}, true},
+		{types.SalesTariffEntry{}, true},
+		{types.SalesTariffEntry{EPriceLevel: newInt(-1), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(1200)}, ConsumptionCost: []types.ConsumptionCost{dummyCostType}}, false},
+		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(-1)}, ConsumptionCost: []types.ConsumptionCost{dummyCostType}}, false},
+		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(1200)}, ConsumptionCost: []types.ConsumptionCost{dummyCostType, dummyCostType, dummyCostType, dummyCostType}}, false},
+		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(1200)}, ConsumptionCost: []types.ConsumptionCost{types.NewConsumptionCost(1.0, []types.CostType{{}})}}, false},
+	}
+	ExecuteGenericTestTable(suite.T(), testTable)
+}
+
+func (suite *OcppV2TestSuite) TestSalesTariffValidation() {
+	dummySalesTariffEntry := types.SalesTariffEntry{}
+	var testTable = []GenericTestEntry{
+		{types.SalesTariff{ID: 1, SalesTariffDescription: "someDesc", NumEPriceLevels: newInt(1), SalesTariffEntry: []types.SalesTariffEntry{dummySalesTariffEntry}}, true},
+		{types.SalesTariff{ID: 1, NumEPriceLevels: newInt(1), SalesTariffEntry: []types.SalesTariffEntry{dummySalesTariffEntry}}, true},
+		{types.SalesTariff{ID: 1, SalesTariffEntry: []types.SalesTariffEntry{dummySalesTariffEntry}}, true},
+		{types.SalesTariff{SalesTariffEntry: []types.SalesTariffEntry{dummySalesTariffEntry}}, true},
+		{types.SalesTariff{SalesTariffEntry: []types.SalesTariffEntry{}}, false},
+		{types.SalesTariff{}, false},
+		{types.SalesTariff{ID: 1, SalesTariffDescription: ">32..............................", NumEPriceLevels: newInt(1), SalesTariffEntry: []types.SalesTariffEntry{dummySalesTariffEntry}}, false},
+		{types.SalesTariff{ID: 1, SalesTariffDescription: "someDesc", NumEPriceLevels: newInt(1), SalesTariffEntry: []types.SalesTariffEntry{{EPriceLevel: newInt(-1)}}}, false},
+	}
+	ExecuteGenericTestTable(suite.T(), testTable)
+}
+
 func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
 	t := suite.T()
-	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0), types.NewChargingSchedulePeriod(100, 8.0))
+	chargingSchedule := types.NewChargingSchedule(1, types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0), types.NewChargingSchedulePeriod(100, 8.0))
 	var testTable = []GenericTestEntry{
 		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, RecurrencyKind: types.RecurrencyKindDaily, ValidFrom: types.NewDateTime(time.Now()), ValidTo: types.NewDateTime(time.Now().Add(8 * time.Hour)), TransactionID: "d34d", ChargingSchedule: []types.ChargingSchedule{*chargingSchedule}}, true},
 		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: []types.ChargingSchedule{*chargingSchedule}}, true},
@@ -137,7 +186,7 @@ func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
 		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: "invalidChargingProfilePurpose", ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: []types.ChargingSchedule{*chargingSchedule}}, false},
 		{types.ChargingProfile{ID: 1, StackLevel: -1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: []types.ChargingSchedule{*chargingSchedule}}, false},
 		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, RecurrencyKind: "invalidRecurrencyKind", ChargingSchedule: []types.ChargingSchedule{*chargingSchedule}}, false},
-		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: []types.ChargingSchedule{*types.NewChargingSchedule(types.ChargingRateUnitWatts)}}, false},
+		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: []types.ChargingSchedule{*types.NewChargingSchedule(1, types.ChargingRateUnitWatts)}}, false},
 		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: []types.ChargingSchedule{*chargingSchedule, *chargingSchedule, *chargingSchedule, *chargingSchedule}}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
