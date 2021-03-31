@@ -806,7 +806,7 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOption
 		assert.Equal(t, options.clientId, clientId)
 		if options.rawWrittenMessage != nil {
 			assert.NotNil(t, bytes)
-			assert.Equal(t, options.rawWrittenMessage, bytes)
+			assert.Equal(t, string(options.rawWrittenMessage), string(bytes))
 		}
 		if options.forwardWrittenMessage {
 			// Notify client of incoming response
@@ -867,7 +867,7 @@ func setupDefaultChargingStationHandlers(suite *OcppV2TestSuite, options expecte
 		bytes := data.([]byte)
 		if options.rawWrittenMessage != nil {
 			assert.NotNil(t, bytes)
-			assert.Equal(t, options.rawWrittenMessage, bytes)
+			assert.Equal(t, string(options.rawWrittenMessage), string(bytes))
 		}
 		// Notify server of incoming request
 		if options.forwardWrittenMessage {

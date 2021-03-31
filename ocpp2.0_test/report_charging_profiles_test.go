@@ -2,18 +2,20 @@ package ocpp2_test
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"time"
 )
 
 // Tests
 func (suite *OcppV2TestSuite) TestReportChargingProfilesRequestValidation() {
 	t := suite.T()
 	chargingSchedule := types.ChargingSchedule{
+		ID:                     1,
 		StartSchedule:          types.NewDateTime(time.Now()),
 		Duration:               newInt(600),
 		ChargingRateUnit:       types.ChargingRateUnitWatts,
@@ -57,6 +59,7 @@ func (suite *OcppV2TestSuite) TestReportChargingProfilesE2EMocked() {
 	evseID := 1
 	tbc := false
 	chargingSchedule := types.ChargingSchedule{
+		ID:                     1,
 		StartSchedule:          types.NewDateTime(time.Now()),
 		Duration:               newInt(600),
 		ChargingRateUnit:       types.ChargingRateUnitWatts,
@@ -70,8 +73,8 @@ func (suite *OcppV2TestSuite) TestReportChargingProfilesE2EMocked() {
 		ChargingProfileKind:    types.ChargingProfileKindAbsolute,
 		ChargingSchedule:       []types.ChargingSchedule{chargingSchedule},
 	}
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"chargingLimitSource":"%v","evseId":%v,"chargingProfile":[{"id":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":[{"startSchedule":"%v","duration":%v,"chargingRateUnit":"%v","minChargingRate":%v,"chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}]}]}]`,
-		messageId, smartcharging.ReportChargingProfilesFeatureName, requestID, chargingLimitSource, evseID, chargingProfile.ID, chargingProfile.StackLevel, chargingProfile.ChargingProfilePurpose, chargingProfile.ChargingProfileKind, chargingSchedule.StartSchedule.FormatTimestamp(), *chargingSchedule.Duration, chargingSchedule.ChargingRateUnit, *chargingSchedule.MinChargingRate, chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, chargingSchedule.ChargingSchedulePeriod[0].Limit)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"chargingLimitSource":"%v","evseId":%v,"chargingProfile":[{"id":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":[{"id":%v,"startSchedule":"%v","duration":%v,"chargingRateUnit":"%v","minChargingRate":%v,"chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}]}]}]`,
+		messageId, smartcharging.ReportChargingProfilesFeatureName, requestID, chargingLimitSource, evseID, chargingProfile.ID, chargingProfile.StackLevel, chargingProfile.ChargingProfilePurpose, chargingProfile.ChargingProfileKind, chargingSchedule.ID, chargingSchedule.StartSchedule.FormatTimestamp(), *chargingSchedule.Duration, chargingSchedule.ChargingRateUnit, *chargingSchedule.MinChargingRate, chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, chargingSchedule.ChargingSchedulePeriod[0].Limit)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
 	response := smartcharging.NewReportChargingProfilesResponse()
 	channel := NewMockWebSocket(wsId)
@@ -91,6 +94,7 @@ func (suite *OcppV2TestSuite) TestReportChargingProfilesE2EMocked() {
 		assert.Equal(t, chargingProfile.ChargingProfilePurpose, request.ChargingProfile[0].ChargingProfilePurpose)
 		assert.Equal(t, chargingProfile.ChargingProfileKind, request.ChargingProfile[0].ChargingProfileKind)
 		require.Len(t, request.ChargingProfile[0].ChargingSchedule, 1)
+		assert.Equal(t, chargingSchedule.ID, request.ChargingProfile[0].ChargingSchedule[0].ID)
 		assert.Equal(t, chargingSchedule.StartSchedule.FormatTimestamp(), request.ChargingProfile[0].ChargingSchedule[0].StartSchedule.FormatTimestamp())
 		assert.Equal(t, *chargingSchedule.Duration, *request.ChargingProfile[0].ChargingSchedule[0].Duration)
 		assert.Equal(t, chargingSchedule.ChargingRateUnit, request.ChargingProfile[0].ChargingSchedule[0].ChargingRateUnit)

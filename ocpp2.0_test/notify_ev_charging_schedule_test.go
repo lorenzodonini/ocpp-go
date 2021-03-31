@@ -2,12 +2,13 @@ package ocpp2_test
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"time"
 )
 
 func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleRequestValidation() {
@@ -53,6 +54,7 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleE2EMocked() {
 	timeBase := types.NewDateTime(time.Now())
 	evseID := 42
 	chargingSchedule := types.ChargingSchedule{
+		ID:                     1,
 		StartSchedule:          types.NewDateTime(time.Now()),
 		Duration:               newInt(600),
 		ChargingRateUnit:       types.ChargingRateUnitWatts,
@@ -61,8 +63,8 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleE2EMocked() {
 	}
 	status := types.GenericStatusAccepted
 	statusInfo := types.NewStatusInfo("ok", "someInfo")
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"timeBase":"%v","evseId":%v,"chargingSchedule":{"startSchedule":"%v","duration":%v,"chargingRateUnit":"%v","minChargingRate":%v,"chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}]`,
-		messageId, smartcharging.NotifyEVChargingScheduleFeatureName, timeBase.FormatTimestamp(), evseID, chargingSchedule.StartSchedule.FormatTimestamp(), *chargingSchedule.Duration, chargingSchedule.ChargingRateUnit, *chargingSchedule.MinChargingRate, chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, chargingSchedule.ChargingSchedulePeriod[0].Limit)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"timeBase":"%v","evseId":%v,"chargingSchedule":{"id":%v,"startSchedule":"%v","duration":%v,"chargingRateUnit":"%v","minChargingRate":%v,"chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}}]`,
+		messageId, smartcharging.NotifyEVChargingScheduleFeatureName, timeBase.FormatTimestamp(), evseID, chargingSchedule.ID, chargingSchedule.StartSchedule.FormatTimestamp(), *chargingSchedule.Duration, chargingSchedule.ChargingRateUnit, *chargingSchedule.MinChargingRate, chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, chargingSchedule.ChargingSchedulePeriod[0].Limit)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","statusInfo":{"reasonCode":"%v","additionalInfo":"%v"}}]`,
 		messageId, status, statusInfo.ReasonCode, statusInfo.AdditionalInfo)
 	notifyEVChargingScheduleResponse := smartcharging.NewNotifyEVChargingScheduleResponse(status)
@@ -76,6 +78,7 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleE2EMocked() {
 		require.NotNil(t, request)
 		assert.Equal(t, timeBase.FormatTimestamp(), request.TimeBase.FormatTimestamp())
 		assert.Equal(t, evseID, request.EvseID)
+		assert.Equal(t, chargingSchedule.ID, request.ChargingSchedule.ID)
 		assert.Equal(t, chargingSchedule.StartSchedule.FormatTimestamp(), request.ChargingSchedule.StartSchedule.FormatTimestamp())
 		assert.Equal(t, *chargingSchedule.Duration, *request.ChargingSchedule.Duration)
 		assert.Equal(t, *chargingSchedule.MinChargingRate, *request.ChargingSchedule.MinChargingRate)
