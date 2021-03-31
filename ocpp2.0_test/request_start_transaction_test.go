@@ -72,6 +72,7 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 	idToken := types.IdTokenTypeKeyCode
 	schedule := []types.ChargingSchedule{
 		{
+			ID:               1,
 			ChargingRateUnit: types.ChargingRateUnitAmperes,
 			ChargingSchedulePeriod: []types.ChargingSchedulePeriod{
 				{
@@ -92,8 +93,8 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 	status := remotecontrol.RequestStartStopStatusAccepted
 	transactionId := "12345"
 	statusInfo := types.StatusInfo{ReasonCode: "200"}
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"remoteStartId":%v,"idToken":"%v","chargingProfile":{"id":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":[{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}]},"groupIdToken":"%v"}]`,
-		messageId, remotecontrol.RequestStartTransactionFeatureName, *evseId, remoteStartID, idToken, chargingProfile.ID, chargingProfile.StackLevel, chargingProfile.ChargingProfilePurpose, chargingProfile.ChargingProfileKind, schedule[0].ChargingRateUnit, schedule[0].ChargingSchedulePeriod[0].StartPeriod, schedule[0].ChargingSchedulePeriod[0].Limit, groupIdToken)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"remoteStartId":%v,"idToken":"%v","chargingProfile":{"id":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":[{"id":%v,"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}]},"groupIdToken":"%v"}]`,
+		messageId, remotecontrol.RequestStartTransactionFeatureName, *evseId, remoteStartID, idToken, chargingProfile.ID, chargingProfile.StackLevel, chargingProfile.ChargingProfilePurpose, chargingProfile.ChargingProfileKind, schedule[0].ID, schedule[0].ChargingRateUnit, schedule[0].ChargingSchedulePeriod[0].StartPeriod, schedule[0].ChargingSchedulePeriod[0].Limit, groupIdToken)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","transactionId":"%v","statusInfo":{"reasonCode":"%v"}}]`,
 		messageId, status, transactionId, statusInfo.ReasonCode)
 	requestStartTransactionResponse := remotecontrol.NewRequestStartTransactionResponse(status)
@@ -113,6 +114,7 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 		assert.Equal(t, chargingProfile.ChargingProfileKind, request.ChargingProfile.ChargingProfileKind)
 		require.Len(t, request.ChargingProfile.ChargingSchedule, len(chargingProfile.ChargingSchedule))
 		s := request.ChargingProfile.ChargingSchedule[0]
+		assert.Equal(t, chargingProfile.ChargingSchedule[0].ID, s.ID)
 		assert.Equal(t, chargingProfile.ChargingSchedule[0].ChargingRateUnit, s.ChargingRateUnit)
 		require.Len(t, s.ChargingSchedulePeriod, len(chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod))
 		assert.Equal(t, chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod[0].Limit, s.ChargingSchedulePeriod[0].Limit)
