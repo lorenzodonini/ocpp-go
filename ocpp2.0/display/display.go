@@ -15,6 +15,8 @@ type ChargingStationHandler interface {
 	OnClearDisplay(request *ClearDisplayRequest) (confirmation *ClearDisplayResponse, err error)
 	// OnGetDisplayMessages is called on a charging station whenever a GetDisplayMessagesRequest is received from the CSMS.
 	OnGetDisplayMessages(request *GetDisplayMessagesRequest) (confirmation *GetDisplayMessagesResponse, err error)
+	// OnSetDisplayMessage is called on a charging station whenever a SetDisplayMessageRequest is received from the CSMS.
+	OnSetDisplayMessage(request *SetDisplayMessageRequest) (response *SetDisplayMessageResponse, err error)
 }
 
 const ProfileName = "display"
@@ -24,4 +26,5 @@ var Profile = ocpp.NewProfile(
 	ClearDisplayFeature{},
 	GetDisplayMessagesFeature{},
 	NotifyDisplayMessagesFeature{},
+	SetDisplayMessageFeature{},
 )

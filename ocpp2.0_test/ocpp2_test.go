@@ -449,6 +449,12 @@ func (handler MockChargingStationDisplayHandler) OnGetDisplayMessages(request *d
 	return conf, args.Error(1)
 }
 
+func (handler MockChargingStationDisplayHandler) OnSetDisplayMessage(request *display.SetDisplayMessageRequest) (response *display.SetDisplayMessageResponse, err error) {
+	args := handler.MethodCalled("OnSetDisplayMessage", request)
+	response = args.Get(0).(*display.SetDisplayMessageResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS DISPLAY HANDLER ----------------------
 
 type MockCSMSDisplayHandler struct {

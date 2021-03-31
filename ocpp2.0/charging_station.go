@@ -708,6 +708,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.localAuthListHandler.OnSendLocalList(request.(*localauth.SendLocalListRequest))
 	case smartcharging.SetChargingProfileFeatureName:
 		response, err = cs.smartChargingHandler.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
+	case display.SetDisplayMessageFeatureName:
+		response, err = cs.displayHandler.OnSetDisplayMessage(request.(*display.SetDisplayMessageRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return
