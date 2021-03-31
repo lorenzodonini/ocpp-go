@@ -623,6 +623,12 @@ func (handler MockChargingStationSmartChargingHandler) OnGetCompositeSchedule(re
 	return conf, args.Error(1)
 }
 
+func (handler MockChargingStationSmartChargingHandler) OnSetChargingProfile(request *smartcharging.SetChargingProfileRequest) (response *smartcharging.SetChargingProfileResponse, err error) {
+	args := handler.MethodCalled("OnSetChargingProfile", request)
+	response = args.Get(0).(*smartcharging.SetChargingProfileResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS SMART CHARGING HANDLER ----------------------
 
 type MockCSMSSmartChargingHandler struct {
