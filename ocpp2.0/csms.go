@@ -521,6 +521,21 @@ func (cs *csms) SetChargingProfile(clientId string, callback func(*smartcharging
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) SetDisplayMessage(clientId string, callback func(*display.SetDisplayMessageResponse, error), message display.MessageInfo, props ...func(request *display.SetDisplayMessageRequest)) error {
+	request := display.NewSetDisplayMessageRequest(message)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*display.SetDisplayMessageResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -632,7 +647,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		reservation.ReserveNowFeatureName,
 		provisioning.ResetFeatureName,
 		localauth.SendLocalListFeatureName,
-		smartcharging.SetChargingProfileFeatureName:
+		smartcharging.SetChargingProfileFeatureName,
+		display.SetDisplayMessageFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)
