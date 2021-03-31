@@ -506,6 +506,21 @@ func (cs *csms) SendLocalList(clientId string, callback func(*localauth.SendLoca
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) SetChargingProfile(clientId string, callback func(*smartcharging.SetChargingProfileResponse, error), evseID int, chargingProfile *types.ChargingProfile, props ...func(request *smartcharging.SetChargingProfileRequest)) error {
+	request := smartcharging.NewSetChargingProfileRequest(evseID, chargingProfile)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*smartcharging.SetChargingProfileResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -616,7 +631,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		remotecontrol.RequestStopTransactionFeatureName,
 		reservation.ReserveNowFeatureName,
 		provisioning.ResetFeatureName,
-		localauth.SendLocalListFeatureName:
+		localauth.SendLocalListFeatureName,
+		smartcharging.SetChargingProfileFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)

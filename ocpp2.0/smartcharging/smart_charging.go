@@ -27,6 +27,8 @@ type ChargingStationHandler interface {
 	OnGetChargingProfiles(request *GetChargingProfilesRequest) (response *GetChargingProfilesResponse, err error)
 	// OnGetCompositeSchedule is called on a charging station whenever a GetCompositeScheduleRequest is received from the CSMS.
 	OnGetCompositeSchedule(request *GetCompositeScheduleRequest) (response *GetCompositeScheduleResponse, err error)
+	// OnSetChargingProfile is called on a charging station whenever a SetChargingProfileRequest is received from the CSMS.
+	OnSetChargingProfile(request *SetChargingProfileRequest) (response *SetChargingProfileResponse, err error)
 }
 
 const ProfileName = "smartCharging"
@@ -41,4 +43,5 @@ var Profile = ocpp.NewProfile(
 	NotifyEVChargingNeedsFeature{},
 	NotifyEVChargingScheduleFeature{},
 	ReportChargingProfilesFeature{},
+	SetChargingProfileFeature{},
 )
