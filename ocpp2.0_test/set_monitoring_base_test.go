@@ -64,10 +64,12 @@ func (suite *OcppV2TestSuite) TestSetMonitoringBaseE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.SetMonitoringBase(wsId, func(confirmation *diagnostics.SetMonitoringBaseResponse, err error) {
+	err = suite.csms.SetMonitoringBase(wsId, func(response *diagnostics.SetMonitoringBaseResponse, err error) {
 		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		require.NotNil(t, response)
+		assert.Equal(t, status, response.Status)
+		assert.Equal(t, statusInfo.ReasonCode, response.StatusInfo.ReasonCode)
+		assert.Equal(t, statusInfo.AdditionalInfo, response.StatusInfo.AdditionalInfo)
 		resultChannel <- true
 	}, monitoringBase)
 	require.Nil(t, err)

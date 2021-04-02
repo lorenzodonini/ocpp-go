@@ -711,6 +711,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.displayHandler.OnSetDisplayMessage(request.(*display.SetDisplayMessageRequest))
 	case diagnostics.SetMonitoringBaseFeatureName:
 		response, err = cs.diagnosticsHandler.OnSetMonitoringBase(request.(*diagnostics.SetMonitoringBaseRequest))
+	case diagnostics.SetMonitoringLevelFeatureName:
+		response, err = cs.diagnosticsHandler.OnSetMonitoringLevel(request.(*diagnostics.SetMonitoringLevelRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return

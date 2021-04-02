@@ -551,6 +551,21 @@ func (cs *csms) SetMonitoringBase(clientId string, callback func(*diagnostics.Se
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) SetMonitoringLevel(clientId string, callback func(*diagnostics.SetMonitoringLevelResponse, error), severity int, props ...func(request *diagnostics.SetMonitoringLevelRequest)) error {
+	request := diagnostics.NewSetMonitoringLevelRequest(severity)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*diagnostics.SetMonitoringLevelResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -664,7 +679,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		localauth.SendLocalListFeatureName,
 		smartcharging.SetChargingProfileFeatureName,
 		display.SetDisplayMessageFeatureName,
-		diagnostics.SetMonitoringBaseFeatureName:
+		diagnostics.SetMonitoringBaseFeatureName,
+		diagnostics.SetMonitoringLevelFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)
