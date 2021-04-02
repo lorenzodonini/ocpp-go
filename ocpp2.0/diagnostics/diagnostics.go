@@ -25,6 +25,8 @@ type ChargingStationHandler interface {
 	OnGetLog(request *GetLogRequest) (response *GetLogResponse, err error)
 	// OnGetMonitoringReport is called on a charging station whenever a GetMonitoringReportRequest is received from the CSMS.
 	OnGetMonitoringReport(request *GetMonitoringReportRequest) (response *GetMonitoringReportResponse, err error)
+	// OnSetMonitoringBase is called on a charging station whenever a SetMonitoringBaseRequest is received from the CSMS.
+	OnSetMonitoringBase(request *SetMonitoringBaseRequest) (response *SetMonitoringBaseResponse, err error)
 }
 
 const ProfileName = "diagnostics"
@@ -39,4 +41,5 @@ var Profile = ocpp.NewProfile(
 	NotifyCustomerInformationFeature{},
 	NotifyEventFeature{},
 	NotifyMonitoringReportFeature{},
+	SetMonitoringBaseFeature{},
 )

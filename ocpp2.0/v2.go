@@ -308,6 +308,8 @@ type CSMS interface {
 	SetChargingProfile(clientId string, callback func(*smartcharging.SetChargingProfileResponse, error), evseID int, chargingProfile *types.ChargingProfile, props ...func(request *smartcharging.SetChargingProfileRequest)) error
 	// Asks a charging station to configure a new display message, that should be displayed (in the future).
 	SetDisplayMessage(clientId string, callback func(*display.SetDisplayMessageResponse, error), message display.MessageInfo, props ...func(request *display.SetDisplayMessageRequest)) error
+	// Requests a charging station to activate a set of preconfigured monitoring settings, as denoted by the value of MonitoringBase.
+	SetMonitoringBase(clientId string, callback func(*diagnostics.SetMonitoringBaseResponse, error), monitoringBase diagnostics.MonitoringBase, props ...func(request *diagnostics.SetMonitoringBaseRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
 	//RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error
