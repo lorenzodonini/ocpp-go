@@ -401,6 +401,12 @@ func (handler MockChargingStationDiagnosticsHandler) OnGetMonitoringReport(reque
 	return conf, args.Error(1)
 }
 
+func (handler MockChargingStationDiagnosticsHandler) OnSetMonitoringBase(request *diagnostics.SetMonitoringBaseRequest) (response *diagnostics.SetMonitoringBaseResponse, err error) {
+	args := handler.MethodCalled("OnSetMonitoringBase", request)
+	response = args.Get(0).(*diagnostics.SetMonitoringBaseResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS DIAGNOSTICS HANDLER ----------------------
 
 type MockCSMSDiagnosticsHandler struct {

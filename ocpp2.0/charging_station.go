@@ -645,7 +645,6 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 	}
 	// Process request
 	var response ocpp.Response = nil
-	cs.client.GetProfileForFeature(action)
 	var err error = nil
 	switch action {
 	case reservation.CancelReservationFeatureName:
@@ -710,6 +709,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.smartChargingHandler.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
 	case display.SetDisplayMessageFeatureName:
 		response, err = cs.displayHandler.OnSetDisplayMessage(request.(*display.SetDisplayMessageRequest))
+	case diagnostics.SetMonitoringBaseFeatureName:
+		response, err = cs.diagnosticsHandler.OnSetMonitoringBase(request.(*diagnostics.SetMonitoringBaseRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return
