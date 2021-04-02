@@ -71,7 +71,7 @@ func (c SetMonitoringBaseResponse) GetFeatureName() string {
 	return SetMonitoringBaseFeatureName
 }
 
-// Creates a new SetMonitoringBaseRequest, containing all required fields.  There are no optional fields for this message.
+// Creates a new SetMonitoringBaseRequest, containing all required fields. There are no optional fields for this message.
 func NewSetMonitoringBaseRequest(monitoringBase MonitoringBase) *SetMonitoringBaseRequest {
 	return &SetMonitoringBaseRequest{MonitoringBase: monitoringBase}
 }
