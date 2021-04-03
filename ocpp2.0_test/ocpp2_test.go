@@ -419,6 +419,12 @@ func (handler MockChargingStationDiagnosticsHandler) OnSetMonitoringLevel(reques
 	return response, args.Error(1)
 }
 
+func (handler MockChargingStationDiagnosticsHandler) OnSetVariableMonitoring(request *diagnostics.SetVariableMonitoringRequest) (response *diagnostics.SetVariableMonitoringResponse, err error) {
+	args := handler.MethodCalled("OnSetVariableMonitoring", request)
+	response = args.Get(0).(*diagnostics.SetVariableMonitoringResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS DIAGNOSTICS HANDLER ----------------------
 
 type MockCSMSDiagnosticsHandler struct {
