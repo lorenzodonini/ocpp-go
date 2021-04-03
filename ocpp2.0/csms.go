@@ -566,6 +566,21 @@ func (cs *csms) SetMonitoringLevel(clientId string, callback func(*diagnostics.S
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) SetNetworkProfile(clientId string, callback func(*provisioning.SetNetworkProfileResponse, error), configurationSlot int, connectionData provisioning.NetworkConnectionProfile, props ...func(request *provisioning.SetNetworkProfileRequest)) error {
+	request := provisioning.NewSetNetworkProfileRequest(configurationSlot, connectionData)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*provisioning.SetNetworkProfileResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -680,7 +695,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		smartcharging.SetChargingProfileFeatureName,
 		display.SetDisplayMessageFeatureName,
 		diagnostics.SetMonitoringBaseFeatureName,
-		diagnostics.SetMonitoringLevelFeatureName:
+		diagnostics.SetMonitoringLevelFeatureName,
+		provisioning.SetNetworkProfileFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)
