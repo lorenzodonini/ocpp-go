@@ -29,6 +29,8 @@ type ChargingStationHandler interface {
 	OnSetMonitoringBase(request *SetMonitoringBaseRequest) (response *SetMonitoringBaseResponse, err error)
 	// OnSetMonitoringLevel is called on a charging station whenever a SetMonitoringLevelRequest is received from the CSMS.
 	OnSetMonitoringLevel(request *SetMonitoringLevelRequest) (response *SetMonitoringLevelResponse, err error)
+	// OnSetVariableMonitoring is called on a charging station whenever a SetVariableMonitoringRequest is received from the CSMS.
+	OnSetVariableMonitoring(request *SetVariableMonitoringRequest) (response *SetVariableMonitoringResponse, err error)
 }
 
 const ProfileName = "diagnostics"
@@ -45,4 +47,5 @@ var Profile = ocpp.NewProfile(
 	NotifyMonitoringReportFeature{},
 	SetMonitoringBaseFeature{},
 	SetMonitoringLevelFeature{},
+	SetVariableMonitoringFeature{},
 )
