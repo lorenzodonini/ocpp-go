@@ -289,7 +289,7 @@ type CSMS interface {
 	// Asks a Charging Station whether it has transaction-related messages waiting to be delivered to the CSMS. When a transactionId is provided, only messages for a specific transaction are asked for.
 	GetTransactionStatus(clientId string, callback func(*transactions.GetTransactionStatusResponse, error), props ...func(*transactions.GetTransactionStatusRequest)) error
 	// Retrieves from a Charging Station the value of an attribute for one or more Variable of one or more Components.
-	GetVariables(clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.VariableData, props ...func(*provisioning.GetVariablesRequest)) error
+	GetVariables(clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.GetVariableData, props ...func(*provisioning.GetVariablesRequest)) error
 	// Installs a new CA certificate on a Charging station.
 	InstallCertificate(clientId string, callback func(*iso15118.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(*iso15118.InstallCertificateRequest)) error
 	// Publishes a firmware to a local controller, allowing charging stations to download the same firmware from the local controller directly.

@@ -1,9 +1,10 @@
 package provisioning
 
 import (
+	"reflect"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
 )
 
 // -------------------- Get Variable (CSMS -> CS) --------------------
@@ -31,13 +32,13 @@ func isValidGetVariableStatus(fl validator.FieldLevel) bool {
 	}
 }
 
-type VariableData struct {
+type GetVariableData struct {
 	AttributeType types.Attribute `json:"attributeType,omitempty" validate:"omitempty,attribute"`
 	Component     types.Component `json:"component" validate:"required"`
 	Variable      types.Variable  `json:"variable" validate:"required"`
 }
 
-type VariableResult struct {
+type GetVariableResult struct {
 	AttributeStatus GetVariableStatus `json:"attributeStatus" validate:"required,getVariableStatus"`
 	AttributeType   types.Attribute   `json:"attributeType,omitempty" validate:"omitempty,attribute"`
 	AttributeValue  string            `json:"attributeValue,omitempty" validate:"omitempty,max=1000"`
@@ -47,13 +48,13 @@ type VariableResult struct {
 
 // The field definition of the GetVariables request payload sent by the CSMS to the Charging Station.
 type GetVariablesRequest struct {
-	GetVariableData   []VariableData            `json:"getVariableData" validate:"required,min=1,dive"`
+	GetVariableData []GetVariableData `json:"getVariableData" validate:"required,min=1,dive"`
 }
 
 // This field definition of the GetVariables response payload, sent by the Charging Station to the CSMS in response to a GetVariablesRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetVariablesResponse struct {
-	GetVariableResult []VariableResult               `json:"getVariableResult" validate:"required,min=1,dive"`
+	GetVariableResult []GetVariableResult `json:"getVariableResult" validate:"required,min=1,dive"`
 }
 
 // The CSO may trigger the CSMS to request to request for a number of variables in a Charging Station.
@@ -84,12 +85,12 @@ func (c GetVariablesResponse) GetFeatureName() string {
 }
 
 // Creates a new GetVariablesRequest, containing all required fields.  There are no optional fields for this message.
-func NewGetVariablesRequest(variableData []VariableData) *GetVariablesRequest {
+func NewGetVariablesRequest(variableData []GetVariableData) *GetVariablesRequest {
 	return &GetVariablesRequest{variableData}
 }
 
 // Creates a new GetVariablesResponse, containing all required fields. There are no optional fields for this message.
-func NewGetVariablesResponse(result []VariableResult) *GetVariablesResponse {
+func NewGetVariablesResponse(result []GetVariableResult) *GetVariablesResponse {
 	return &GetVariablesResponse{result}
 }
 

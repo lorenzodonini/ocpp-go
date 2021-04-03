@@ -386,7 +386,7 @@ func (cs *csms) GetTransactionStatus(clientId string, callback func(*transaction
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetVariables(clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.VariableData, props ...func(*provisioning.GetVariablesRequest)) error {
+func (cs *csms) GetVariables(clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.GetVariableData, props ...func(*provisioning.GetVariablesRequest)) error {
 	request := provisioning.NewGetVariablesRequest(variableData)
 	for _, fn := range props {
 		fn(request)
