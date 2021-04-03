@@ -22,6 +22,8 @@ type ChargingStationHandler interface {
 	OnGetVariables(request *GetVariablesRequest) (response *GetVariablesResponse, err error)
 	// OnReset is called on a charging station whenever a ResetRequest is received from the CSMS.
 	OnReset(request *ResetRequest) (response *ResetResponse, err error)
+	// OnSetNetworkProfile is called on a charging station whenever a SetNetworkProfileRequest is received from the CSMS.
+	OnSetNetworkProfile(request *SetNetworkProfileRequest) (response *SetNetworkProfileResponse, err error)
 }
 
 const ProfileName = "provisioning"
@@ -34,4 +36,5 @@ var Profile = ocpp.NewProfile(
 	GetVariablesFeature{},
 	NotifyReportFeature{},
 	ResetFeature{},
+	SetNetworkProfileFeature{},
 )

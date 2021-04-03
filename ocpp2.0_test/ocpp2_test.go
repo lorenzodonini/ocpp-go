@@ -269,6 +269,12 @@ func (handler MockChargingStationProvisioningHandler) OnReset(request *provision
 	return response, args.Error(1)
 }
 
+func (handler MockChargingStationProvisioningHandler) OnSetNetworkProfile(request *provisioning.SetNetworkProfileRequest) (response *provisioning.SetNetworkProfileResponse, err error) {
+	args := handler.MethodCalled("OnSetNetworkProfile", request)
+	response = args.Get(0).(*provisioning.SetNetworkProfileResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS AUTHORIZATION HANDLER ----------------------
 
 type MockCSMSAuthorizationHandler struct {

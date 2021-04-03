@@ -248,7 +248,7 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) C
 type CSMS interface {
 	// Cancel a pending reservation, provided the reservationId, on a charging station.
 	CancelReservation(clientId string, callback func(*reservation.CancelReservationResponse, error), reservationId int, props ...func(*reservation.CancelReservationRequest)) error
-	// The CSMS installs a new certificate (chain), signed by the CA, on the charging station. This typically follows a SignCertificate message, initiated by the charging station.
+	// Installs a new certificate (chain), signed by the CA, on the charging station. This typically follows a SignCertificate message, initiated by the charging station.
 	CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), certificate []string, props ...func(*security.CertificateSignedRequest)) error
 	// Instructs a charging station to change its availability to the desired operational status.
 	ChangeAvailability(clientId string, callback func(*availability.ChangeAvailabilityResponse, error), evseID int, operationalStatus availability.OperationalStatus, props ...func(*availability.ChangeAvailabilityRequest)) error
@@ -312,6 +312,8 @@ type CSMS interface {
 	SetMonitoringBase(clientId string, callback func(*diagnostics.SetMonitoringBaseResponse, error), monitoringBase diagnostics.MonitoringBase, props ...func(request *diagnostics.SetMonitoringBaseRequest)) error
 	// Restricts a Charging Station to reporting only monitoring events with a severity number lower than or equal to a certain severity.
 	SetMonitoringLevel(clientId string, callback func(*diagnostics.SetMonitoringLevelResponse, error), severity int, props ...func(request *diagnostics.SetMonitoringLevelRequest)) error
+	// Updates the connection details on a Charging Station.
+	SetNetworkProfile(clientId string, callback func(*provisioning.SetNetworkProfileResponse, error), configurationSlot int, connectionData provisioning.NetworkConnectionProfile, props ...func(request *provisioning.SetNetworkProfileRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
 	//RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error
