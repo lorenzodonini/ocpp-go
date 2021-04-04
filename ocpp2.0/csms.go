@@ -596,6 +596,21 @@ func (cs *csms) SetVariableMonitoring(clientId string, callback func(*diagnostic
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) SetVariables(clientId string, callback func(*provisioning.SetVariablesResponse, error), data []provisioning.SetVariableData, props ...func(request *provisioning.SetVariablesRequest)) error {
+	request := provisioning.NewSetVariablesRequest(data)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*provisioning.SetVariablesResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -712,7 +727,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		diagnostics.SetMonitoringBaseFeatureName,
 		diagnostics.SetMonitoringLevelFeatureName,
 		provisioning.SetNetworkProfileFeatureName,
-		diagnostics.SetVariableMonitoringFeatureName:
+		diagnostics.SetVariableMonitoringFeatureName,
+		provisioning.SetVariablesFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)

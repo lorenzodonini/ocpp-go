@@ -717,6 +717,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.provisioningHandler.OnSetNetworkProfile(request.(*provisioning.SetNetworkProfileRequest))
 	case diagnostics.SetVariableMonitoringFeatureName:
 		response, err = cs.diagnosticsHandler.OnSetVariableMonitoring(request.(*diagnostics.SetVariableMonitoringRequest))
+	case provisioning.SetVariablesFeatureName:
+		response, err = cs.provisioningHandler.OnSetVariables(request.(*provisioning.SetVariablesRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return
