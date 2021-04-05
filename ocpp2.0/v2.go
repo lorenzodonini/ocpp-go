@@ -101,6 +101,8 @@ type ChargingStation interface {
 	ReservationStatusUpdate(reservationID int, status reservation.ReservationUpdateStatus, props ...func(request *reservation.ReservationStatusUpdateRequest)) (*reservation.ReservationStatusUpdateResponse, error)
 	// Informs the CSMS about critical security events.
 	SecurityEventNotification(typ string, timestamp *types.DateTime, props ...func(request *security.SecurityEventNotificationRequest)) (*security.SecurityEventNotificationResponse, error)
+	// Requests the CSMS to issue a new certificate.
+	SignCertificate(csr string, props ...func(request *security.SignCertificateRequest)) (*security.SignCertificateResponse, error)
 	// Registers a handler for incoming security profile messages
 	SetSecurityHandler(handler security.ChargingStationHandler)
 	// Registers a handler for incoming provisioning profile messages

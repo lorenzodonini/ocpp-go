@@ -6,7 +6,9 @@ import "github.com/lorenzodonini/ocpp-go/ocpp"
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Security profile.
 type CSMSHandler interface {
 	// OnSecurityEventNotification is called on the CSMS whenever a SecurityEventNotificationRequest is received from a charging station.
-	OnSecurityEventNotification(chargingStationID string, request *SecurityEventNotificationRequest) (reponse *SecurityEventNotificationResponse, err error)
+	OnSecurityEventNotification(chargingStationID string, request *SecurityEventNotificationRequest) (response *SecurityEventNotificationResponse, err error)
+	// OnSignCertificate is called on the CSMS whenever a SignCertificateRequest is received from a charging station.
+	OnSignCertificate(chargingStationID string, request *SignCertificateRequest) (response *SignCertificateResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Security profile.
@@ -21,4 +23,5 @@ var Profile = ocpp.NewProfile(
 	ProfileName,
 	CertificateSignedFeature{},
 	SecurityEventNotificationFeature{},
+	SignCertificateFeature{},
 )
