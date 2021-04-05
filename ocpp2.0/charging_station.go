@@ -370,6 +370,19 @@ func (cs *chargingStation) SignCertificate(csr string, props ...func(request *se
 	}
 }
 
+func (cs *chargingStation) StatusNotification(timestamp *types.DateTime, status availability.ConnectorStatus, evseID int, connectorID int, props ...func(request *availability.StatusNotificationRequest)) (*availability.StatusNotificationResponse, error) {
+	request := availability.NewStatusNotificationRequest(timestamp, status, evseID, connectorID)
+	for _, fn := range props {
+		fn(request)
+	}
+	response, err := cs.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return response.(*availability.StatusNotificationResponse), err
+	}
+}
+
 func (cs *chargingStation) SetSecurityHandler(handler security.ChargingStationHandler) {
 	cs.securityHandler = handler
 }
@@ -491,7 +504,8 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 		smartcharging.ReportChargingProfilesFeatureName,
 		reservation.ReservationStatusUpdateFeatureName,
 		security.SecurityEventNotificationFeatureName,
-		security.SignCertificateFeatureName:
+		security.SignCertificateFeatureName,
+		availability.StatusNotificationFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charging station, cannot send request", featureName)

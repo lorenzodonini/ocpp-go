@@ -8,6 +8,8 @@ import "github.com/lorenzodonini/ocpp-go/ocpp"
 type CSMSHandler interface {
 	// OnHeartbeat is called on the CSMS whenever a HeartbeatResponse is received from a charging station.
 	OnHeartbeat(chargingStationID string, request *HeartbeatRequest) (response *HeartbeatResponse, err error)
+	// OnStatusNotification is called on the CSMS whenever a StatusNotificationRequest is received from a charging station.
+	OnStatusNotification(chargingStationID string, request *StatusNotificationRequest) (response *StatusNotificationResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Availability profile.
@@ -22,4 +24,5 @@ var Profile = ocpp.NewProfile(
 	ProfileName,
 	ChangeAvailabilityFeature{},
 	HeartbeatFeature{},
+	StatusNotificationFeature{},
 )
