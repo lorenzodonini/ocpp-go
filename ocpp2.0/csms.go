@@ -912,6 +912,8 @@ func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection,
 			response, err = cs.securityHandler.OnSecurityEventNotification(chargingStation.ID(), request.(*security.SecurityEventNotificationRequest))
 		case security.SignCertificateFeatureName:
 			response, err = cs.securityHandler.OnSignCertificate(chargingStation.ID(), request.(*security.SignCertificateRequest))
+		case availability.StatusNotificationFeatureName:
+			response, err = cs.availabilityHandler.OnStatusNotification(chargingStation.ID(), request.(*availability.StatusNotificationRequest))
 		default:
 			cs.notSupportedError(chargingStation.ID(), requestId, action)
 			return

@@ -365,6 +365,12 @@ func (handler MockCSMSAvailabilityHandler) OnHeartbeat(chargingStationID string,
 	return resp, args.Error(1)
 }
 
+func (handler MockCSMSAvailabilityHandler) OnStatusNotification(chargingStationID string, request *availability.StatusNotificationRequest) (response *availability.StatusNotificationResponse, err error) {
+	args := handler.MethodCalled("OnStatusNotification", chargingStationID, request)
+	response = args.Get(0).(*availability.StatusNotificationResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CS DATA HANDLER ----------------------
 
 type MockChargingStationDataHandler struct {
