@@ -203,9 +203,15 @@ type MockCSMSSecurityHandler struct {
 	mock.Mock
 }
 
-func (handler MockCSMSSecurityHandler) OnSecurityEventNotification(chargingStationID string, request *security.SecurityEventNotificationRequest) (reponse *security.SecurityEventNotificationResponse, err error) {
+func (handler MockCSMSSecurityHandler) OnSecurityEventNotification(chargingStationID string, request *security.SecurityEventNotificationRequest) (response *security.SecurityEventNotificationResponse, err error) {
 	args := handler.MethodCalled("OnSecurityEventNotification", chargingStationID, request)
-	response := args.Get(0).(*security.SecurityEventNotificationResponse)
+	response = args.Get(0).(*security.SecurityEventNotificationResponse)
+	return response, args.Error(1)
+}
+
+func (handler MockCSMSSecurityHandler) OnSignCertificate(chargingStationID string, request *security.SignCertificateRequest) (response *security.SignCertificateResponse, err error) {
+	args := handler.MethodCalled("OnSignCertificate", chargingStationID, request)
+	response = args.Get(0).(*security.SignCertificateResponse)
 	return response, args.Error(1)
 }
 

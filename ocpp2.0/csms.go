@@ -910,6 +910,8 @@ func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection,
 			response, err = cs.reservationHandler.OnReservationStatusUpdate(chargingStation.ID(), request.(*reservation.ReservationStatusUpdateRequest))
 		case security.SecurityEventNotificationFeatureName:
 			response, err = cs.securityHandler.OnSecurityEventNotification(chargingStation.ID(), request.(*security.SecurityEventNotificationRequest))
+		case security.SignCertificateFeatureName:
+			response, err = cs.securityHandler.OnSignCertificate(chargingStation.ID(), request.(*security.SignCertificateRequest))
 		default:
 			cs.notSupportedError(chargingStation.ID(), requestId, action)
 			return
