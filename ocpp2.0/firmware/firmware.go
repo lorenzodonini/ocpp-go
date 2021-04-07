@@ -15,6 +15,8 @@ type CSMSHandler interface {
 type ChargingStationHandler interface {
 	// OnPublishFirmware is called on a charging station whenever a PublishFirmwareRequest is received from the CSMS.
 	OnPublishFirmware(request *PublishFirmwareRequest) (response *PublishFirmwareResponse, err error)
+	// OnUnpublishFirmware is called on a charging station whenever a UnpublishFirmwareRequest is received from the CSMS.
+	OnUnpublishFirmware(request *UnpublishFirmwareRequest) (response *UnpublishFirmwareResponse, err error)
 }
 
 const ProfileName = "firmware"
@@ -24,4 +26,5 @@ var Profile = ocpp.NewProfile(
 	FirmwareStatusNotificationFeature{},
 	PublishFirmwareFeature{},
 	PublishFirmwareStatusNotificationFeature{},
+	UnpublishFirmwareFeature{},
 )
