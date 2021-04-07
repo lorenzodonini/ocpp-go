@@ -749,6 +749,12 @@ type MockCSMSTransactionsHandler struct {
 	mock.Mock
 }
 
+func (handler MockCSMSTransactionsHandler) OnTransactionEvent(chargingStationID string, request *transactions.TransactionEventRequest) (response *transactions.TransactionEventResponse, err error) {
+	args := handler.MethodCalled("OnTransactionEvent", chargingStationID, request)
+	response = args.Get(0).(*transactions.TransactionEventResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
@@ -840,7 +846,7 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOption
 		case MockCSMSTariffCostHandler:
 			suite.csms.SetTariffCostHandler(h.(MockCSMSTariffCostHandler))
 		case MockCSMSTransactionsHandler:
-			suite.csms.SetTransactionsHandler(h.(MockChargingStationTransactionHandler))
+			suite.csms.SetTransactionsHandler(h.(MockCSMSTransactionsHandler))
 		}
 	}
 	suite.csms.SetNewChargingStationHandler(func(chargingStation ocpp2.ChargingStationConnection) {

@@ -383,6 +383,19 @@ func (cs *chargingStation) StatusNotification(timestamp *types.DateTime, status 
 	}
 }
 
+func (cs *chargingStation) TransactionEvent(t transactions.TransactionEvent, timestamp *types.DateTime, reason transactions.TriggerReason, seqNo int, info transactions.Transaction, props ...func(request *transactions.TransactionEventRequest)) (*transactions.TransactionEventResponse, error) {
+	request := transactions.NewTransactionEventRequest(t, timestamp, reason, seqNo, info)
+	for _, fn := range props {
+		fn(request)
+	}
+	response, err := cs.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return response.(*transactions.TransactionEventResponse), err
+	}
+}
+
 func (cs *chargingStation) SetSecurityHandler(handler security.ChargingStationHandler) {
 	cs.securityHandler = handler
 }
@@ -505,7 +518,8 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 		reservation.ReservationStatusUpdateFeatureName,
 		security.SecurityEventNotificationFeatureName,
 		security.SignCertificateFeatureName,
-		availability.StatusNotificationFeatureName:
+		availability.StatusNotificationFeatureName,
+		transactions.TransactionEventFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charging station, cannot send request", featureName)
