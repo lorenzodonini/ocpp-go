@@ -527,6 +527,12 @@ func (handler MockChargingStationFirmwareHandler) OnUnpublishFirmware(request *f
 	return response, args.Error(1)
 }
 
+func (handler MockChargingStationFirmwareHandler) OnUpdateFirmware(request *firmware.UpdateFirmwareRequest) (response *firmware.UpdateFirmwareResponse, err error) {
+	args := handler.MethodCalled("OnUpdateFirmware", request)
+	response = args.Get(0).(*firmware.UpdateFirmwareResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS FIRMWARE HANDLER ----------------------
 
 type MockCSMSFirmwareHandler struct {
