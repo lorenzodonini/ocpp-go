@@ -765,6 +765,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.remoteControlHandler.OnTriggerMessage(request.(*remotecontrol.TriggerMessageRequest))
 	case remotecontrol.UnlockConnectorFeatureName:
 		response, err = cs.remoteControlHandler.OnUnlockConnector(request.(*remotecontrol.UnlockConnectorRequest))
+	case firmware.UnpublishFirmwareFeatureName:
+		response, err = cs.firmwareHandler.OnUnpublishFirmware(request.(*firmware.UnpublishFirmwareRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return

@@ -328,6 +328,8 @@ type CSMS interface {
 	TriggerMessage(clientId string, callback func(*remotecontrol.TriggerMessageResponse, error), requestedMessage remotecontrol.MessageTrigger, props ...func(request *remotecontrol.TriggerMessageRequest)) error
 	// Instructs the Charging Station to unlock a connector, to help out an EV-driver.
 	UnlockConnector(clientId string, callback func(*remotecontrol.UnlockConnectorResponse, error), evseID int, connectorID int, props ...func(request *remotecontrol.UnlockConnectorRequest)) error
+	// Instructs a Local Controller to stops serving a firmware update to connected Charging Stations.
+	UnpublishFirmware(clientId string, callback func(*firmware.UnpublishFirmwareResponse, error), checksum string, props ...func(request *firmware.UnpublishFirmwareRequest)) error
 	//GetConfiguration(clientId string, callback func(*GetConfigurationConfirmation, error), keys []string, props ...func(*GetConfigurationRequest)) error
 	//RemoteStartTransaction(clientId string, callback func(*RemoteStartTransactionConfirmation, error), idTag string, props ...func(*RemoteStartTransactionRequest)) error
 	//RemoteStopTransaction(clientId string, callback func(*RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *RemoteStopTransactionRequest)) error

@@ -641,6 +641,21 @@ func (cs *csms) UnlockConnector(clientId string, callback func(*remotecontrol.Un
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) UnpublishFirmware(clientId string, callback func(*firmware.UnpublishFirmwareResponse, error), checksum string, props ...func(request *firmware.UnpublishFirmwareRequest)) error {
+	request := firmware.NewUnpublishFirmwareRequest(checksum)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*firmware.UnpublishFirmwareResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -760,7 +775,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		diagnostics.SetVariableMonitoringFeatureName,
 		provisioning.SetVariablesFeatureName,
 		remotecontrol.TriggerMessageFeatureName,
-		remotecontrol.UnlockConnectorFeatureName:
+		remotecontrol.UnlockConnectorFeatureName,
+		firmware.UnpublishFirmwareFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)
