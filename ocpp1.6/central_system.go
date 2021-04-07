@@ -2,6 +2,7 @@ package ocpp16
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -22,6 +23,7 @@ type centralSystem struct {
 	reservationHandler   reservation.CentralSystemHandler
 	remoteTriggerHandler remotetrigger.CentralSystemHandler
 	smartChargingHandler smartcharging.CentralSystemHandler
+	callbacksMutex       sync.RWMutex
 	callbacks            map[string]func(confirmation ocpp.Response, err error)
 	errC                 chan error
 }
@@ -371,10 +373,11 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", featureName)
 	}
-	cs.callbacks[clientId] = callback
-	err := cs.server.SendRequest(clientId, request)
-	if err != nil {
-		delete(cs.callbacks, clientId)
+
+	cs.insertCallback(clientId, callback)
+
+	if err := cs.server.SendRequest(clientId, request); err != nil {
+		_, _ = cs.popCallback(clientId)
 		return err
 	}
 	return nil
@@ -499,9 +502,25 @@ func (cs *centralSystem) handleIncomingRequest(chargePointId string, request ocp
 	}()
 }
 
+func (cs *centralSystem) insertCallback(chargePointId string, callback func(confirmation ocpp.Response, err error)) {
+	cs.callbacksMutex.Lock()
+	defer cs.callbacksMutex.Unlock()
+
+	cs.callbacks[chargePointId] = callback
+}
+
+func (cs *centralSystem) popCallback(chargePointId string) (func(confirmation ocpp.Response, err error), bool) {
+	cs.callbacksMutex.Lock()
+	defer cs.callbacksMutex.Unlock()
+
+	callback, ok := cs.callbacks[chargePointId]
+	delete(cs.callbacks, chargePointId)
+
+	return callback, ok
+}
+
 func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confirmation ocpp.Response, requestId string) {
-	if callback, ok := cs.callbacks[chargePointId]; ok {
-		delete(cs.callbacks, chargePointId)
+	if callback, ok := cs.popCallback(chargePointId); ok {
 		callback(confirmation, nil)
 	} else {
 		err := fmt.Errorf("no handler available for call of type %v from client %s for request %s", confirmation.GetFeatureName(), chargePointId, requestId)
@@ -510,8 +529,7 @@ func (cs *centralSystem) handleIncomingConfirmation(chargePointId string, confir
 }
 
 func (cs *centralSystem) handleIncomingError(chargePointId string, err *ocpp.Error, details interface{}) {
-	if callback, ok := cs.callbacks[chargePointId]; ok {
-		delete(cs.callbacks, chargePointId)
+	if callback, ok := cs.popCallback(chargePointId); ok {
 		callback(nil, err)
 	} else {
 		err := fmt.Errorf("no handler available for call error %w from client %s", err, chargePointId)
