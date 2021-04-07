@@ -641,6 +641,12 @@ func (handler MockChargingStationRemoteControlHandler) OnRequestStopTransaction(
 	return conf, args.Error(1)
 }
 
+func (handler MockChargingStationRemoteControlHandler) OnTriggerMessage(request *remotecontrol.TriggerMessageRequest) (response *remotecontrol.TriggerMessageResponse, err error) {
+	args := handler.MethodCalled("OnTriggerMessage", request)
+	response = args.Get(0).(*remotecontrol.TriggerMessageResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS REMOTE CONTROL HANDLER ----------------------
 
 type MockCSMSRemoteControlHandler struct {
