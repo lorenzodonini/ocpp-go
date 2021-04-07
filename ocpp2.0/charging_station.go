@@ -761,6 +761,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.diagnosticsHandler.OnSetVariableMonitoring(request.(*diagnostics.SetVariableMonitoringRequest))
 	case provisioning.SetVariablesFeatureName:
 		response, err = cs.provisioningHandler.OnSetVariables(request.(*provisioning.SetVariablesRequest))
+	case remotecontrol.TriggerMessageFeatureName:
+		response, err = cs.remoteControlHandler.OnTriggerMessage(request.(*remotecontrol.TriggerMessageRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return

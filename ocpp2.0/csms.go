@@ -611,6 +611,21 @@ func (cs *csms) SetVariables(clientId string, callback func(*provisioning.SetVar
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) TriggerMessage(clientId string, callback func(*remotecontrol.TriggerMessageResponse, error), requestedMessage remotecontrol.MessageTrigger, props ...func(request *remotecontrol.TriggerMessageRequest)) error {
+	request := remotecontrol.NewTriggerMessageRequest(requestedMessage)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*remotecontrol.TriggerMessageResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -728,7 +743,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		diagnostics.SetMonitoringLevelFeatureName,
 		provisioning.SetNetworkProfileFeatureName,
 		diagnostics.SetVariableMonitoringFeatureName,
-		provisioning.SetVariablesFeatureName:
+		provisioning.SetVariablesFeatureName,
+		remotecontrol.TriggerMessageFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)

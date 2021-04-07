@@ -13,6 +13,8 @@ type ChargingStationHandler interface {
 	OnRequestStartTransaction(request *RequestStartTransactionRequest) (response *RequestStartTransactionResponse, err error)
 	// OnRequestStopTransaction is called on a charging station whenever a RequestStopTransactionRequest is received from the CSMS.
 	OnRequestStopTransaction(request *RequestStopTransactionRequest) (response *RequestStopTransactionResponse, err error)
+	// OnTriggerMessage is called on a charging station whenever a TriggerMessageRequest is received from the CSMS.
+	OnTriggerMessage(request *TriggerMessageRequest) (response *TriggerMessageResponse, err error)
 }
 
 const ProfileName = "remoteControl"
@@ -21,4 +23,5 @@ var Profile = ocpp.NewProfile(
 	ProfileName,
 	RequestStartTransactionFeature{},
 	RequestStopTransactionFeature{},
+	TriggerMessageFeature{},
 )
