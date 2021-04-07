@@ -626,6 +626,21 @@ func (cs *csms) TriggerMessage(clientId string, callback func(*remotecontrol.Tri
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) UnlockConnector(clientId string, callback func(*remotecontrol.UnlockConnectorResponse, error), evseID int, connectorID int, props ...func(request *remotecontrol.UnlockConnectorRequest)) error {
+	request := remotecontrol.NewUnlockConnectorRequest(evseID, connectorID)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*remotecontrol.UnlockConnectorResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -744,7 +759,8 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		provisioning.SetNetworkProfileFeatureName,
 		diagnostics.SetVariableMonitoringFeatureName,
 		provisioning.SetVariablesFeatureName,
-		remotecontrol.TriggerMessageFeatureName:
+		remotecontrol.TriggerMessageFeatureName,
+		remotecontrol.UnlockConnectorFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)

@@ -647,6 +647,12 @@ func (handler MockChargingStationRemoteControlHandler) OnTriggerMessage(request 
 	return response, args.Error(1)
 }
 
+func (handler MockChargingStationRemoteControlHandler) OnUnlockConnector(request *remotecontrol.UnlockConnectorRequest) (response *remotecontrol.UnlockConnectorResponse, err error) {
+	args := handler.MethodCalled("OnUnlockConnector", request)
+	response = args.Get(0).(*remotecontrol.UnlockConnectorResponse)
+	return response, args.Error(1)
+}
+
 // ---------------------- MOCK CSMS REMOTE CONTROL HANDLER ----------------------
 
 type MockCSMSRemoteControlHandler struct {
