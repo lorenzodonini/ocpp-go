@@ -27,15 +27,15 @@ type Server struct {
 // You may create a simple new server by using these default values:
 //	s := ocppj.NewServer(ws.NewServer(), nil, nil)
 func NewServer(wsServer ws.WsServer, dispatcher ServerDispatcher, stateHandler PendingRequestState, profiles ...*ocpp.Profile) *Server {
-	endpoint := Endpoint{PendingRequestState: stateHandler}
-	for _, profile := range profiles {
-		endpoint.AddProfile(profile)
-	}
 	if dispatcher == nil {
 		dispatcher = NewDefaultServerDispatcher(NewFIFOQueueMap(0))
 		if stateHandler == nil {
 			stateHandler = dispatcher.(*DefaultServerDispatcher)
 		}
+	}
+	endpoint := Endpoint{PendingRequestState: stateHandler}
+	for _, profile := range profiles {
+		endpoint.AddProfile(profile)
 	}
 	if wsServer == nil {
 		wsServer = ws.NewServer()
