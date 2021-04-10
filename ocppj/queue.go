@@ -2,7 +2,7 @@ package ocppj
 
 import (
 	"container/list"
-	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -50,7 +50,7 @@ func (q *FIFOClientQueue) Push(element interface{}) error {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 	if q.requestQueue.Len() >= q.capacity && q.capacity > 0 {
-		return errors.New("request queue is full, cannot push new element")
+		return fmt.Errorf("request queue is full, cannot push new element")
 	}
 	q.requestQueue.PushBack(element)
 	return nil

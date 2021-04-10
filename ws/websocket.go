@@ -8,7 +8,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -334,7 +333,7 @@ func (server *Server) Stop() {
 func (server *Server) Write(webSocketId string, data []byte) error {
 	ws, ok := server.connections[webSocketId]
 	if !ok {
-		return errors.New(fmt.Sprintf("couldn't write to websocket. No socket with id %v is open", webSocketId))
+		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
 	}
 	ws.outQueue <- data
 	return nil
@@ -366,14 +365,14 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	if server.basicAuthHandler != nil {
 		username, password, ok := r.BasicAuth()
 		if !ok {
-			server.error(errors.New("basic auth failed: credentials not found"))
+			server.error(fmt.Errorf("basic auth failed: credentials not found"))
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 		ok = server.basicAuthHandler(username, password)
 		if !ok {
-			server.error(errors.New("basic auth failed: credentials invalid"))
+			server.error(fmt.Errorf("basic auth failed: credentials invalid"))
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
@@ -753,7 +752,7 @@ func (client *Client) IsConnected() bool {
 
 func (client *Client) Write(data []byte) error {
 	if !client.IsConnected() {
-		return errors.New("client is currently not connected, cannot send data")
+		return fmt.Errorf("client is currently not connected, cannot send data")
 	}
 	client.webSocket.outQueue <- data
 	return nil

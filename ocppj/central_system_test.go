@@ -2,18 +2,18 @@ package ocppj_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp"
-	"github.com/lorenzodonini/ocpp-go/ocppj"
-	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 func (suite *OcppJTestSuite) TestNewServer() {
@@ -104,7 +104,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
 	mockChargePointId := "1234"
 	var callID string
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
-	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(errors.New("networkError")).Run(func(args mock.Arguments) {
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(fmt.Errorf("networkError")).Run(func(args mock.Arguments) {
 		clientID := args.String(0)
 		q, ok := suite.serverRequestMap.Get(clientID)
 		require.True(t, ok)
@@ -158,7 +158,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendConfirmationFailed() {
 	mockChargePointId := "0101"
 	mockUniqueId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
-	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(errors.New("networkError"))
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(fmt.Errorf("networkError"))
 	suite.centralSystem.Start(8887, "/{ws}")
 	mockConfirmation := newMockConfirmation("mockValue")
 	err := suite.centralSystem.SendResponse(mockChargePointId, mockUniqueId, mockConfirmation)
@@ -196,7 +196,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendErrorFailed() {
 	mockChargePointId := "0101"
 	mockUniqueId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
-	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(errors.New("networkError"))
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(fmt.Errorf("networkError"))
 	suite.centralSystem.Start(8887, "/{ws}")
 	mockConfirmation := newMockConfirmation("mockValue")
 	err := suite.centralSystem.SendResponse(mockChargePointId, mockUniqueId, mockConfirmation)

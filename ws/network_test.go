@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -200,7 +199,7 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 	})
 	s.server.SetMessageHandler(func(ws Channel, data []byte) error {
 		assert.Fail(t, "unexpected message received")
-		return errors.New("unexpected message received")
+		return fmt.Errorf("unexpected message received")
 	})
 	go s.server.Start(serverPort, serverPath)
 	time.Sleep(500 * time.Millisecond)
@@ -267,7 +266,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	})
 	s.server.SetMessageHandler(func(ws Channel, data []byte) error {
 		assert.Fail(t, "unexpected message received")
-		return errors.New("unexpected message received")
+		return fmt.Errorf("unexpected message received")
 	})
 	go s.server.Start(serverPort, serverPath)
 	time.Sleep(500 * time.Millisecond)
