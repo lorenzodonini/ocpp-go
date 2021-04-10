@@ -2,16 +2,17 @@ package ocppj_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp"
-	"github.com/lorenzodonini/ocpp-go/ocppj"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
 
 // ----------------- Start tests -----------------
@@ -31,7 +32,7 @@ func (suite *OcppJTestSuite) TestChargePointStart() {
 }
 
 func (suite *OcppJTestSuite) TestChargePointStartFailed() {
-	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(errors.New("startError"))
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(fmt.Errorf("startError"))
 	err := suite.chargePoint.Start("someUrl")
 	assert.NotNil(suite.T(), err)
 }
@@ -108,7 +109,7 @@ func (suite *OcppJTestSuite) TestChargePointSendRequestFailed() {
 	t := suite.T()
 	var callID string
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
-	suite.mockClient.On("Write", mock.Anything).Return(errors.New("networkError")).Run(func(args mock.Arguments) {
+	suite.mockClient.On("Write", mock.Anything).Return(fmt.Errorf("networkError")).Run(func(args mock.Arguments) {
 		require.False(t, suite.clientRequestQueue.IsEmpty())
 		req := suite.clientRequestQueue.Peek().(ocppj.RequestBundle)
 		callID = req.Call.GetUniqueId()
@@ -156,7 +157,7 @@ func (suite *OcppJTestSuite) TestChargePointSendInvalidConfirmation() {
 func (suite *OcppJTestSuite) TestChargePointSendConfirmationFailed() {
 	t := suite.T()
 	mockUniqueId := "1234"
-	suite.mockClient.On("Write", mock.Anything).Return(errors.New("networkError"))
+	suite.mockClient.On("Write", mock.Anything).Return(fmt.Errorf("networkError"))
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	_ = suite.chargePoint.Start("someUrl")
 	mockConfirmation := newMockConfirmation("mockValue")
@@ -188,7 +189,7 @@ func (suite *OcppJTestSuite) TestChargePointSendInvalidError() {
 func (suite *OcppJTestSuite) TestChargePointSendErrorFailed() {
 	t := suite.T()
 	mockUniqueId := "1234"
-	suite.mockClient.On("Write", mock.Anything).Return(errors.New("networkError"))
+	suite.mockClient.On("Write", mock.Anything).Return(fmt.Errorf("networkError"))
 	mockConfirmation := newMockConfirmation("mockValue")
 	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
@@ -458,7 +459,7 @@ func (suite *OcppJTestSuite) TestClientDisconnected() {
 	sentMessages := 0
 	writeC := make(chan *ocppj.Call, 1)
 	triggerC := make(chan bool, 1)
-	disconnectError := errors.New("some error")
+	disconnectError := fmt.Errorf("some error")
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	suite.mockClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
 		sentMessages += 1
@@ -521,7 +522,7 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 	sentMessages := 0
 	writeC := make(chan *ocppj.Call, 1)
 	triggerC := make(chan bool, 1)
-	disconnectError := errors.New("some error")
+	disconnectError := fmt.Errorf("some error")
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	suite.mockClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
 		sentMessages += 1

@@ -1,7 +1,6 @@
 package ocppj
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -211,7 +210,7 @@ func (d *DefaultClientDispatcher) HasPendingRequest() bool {
 
 func (d *DefaultClientDispatcher) SendRequest(req interface{}) error {
 	if d.network == nil {
-		return errors.New("cannot SendRequest, no network client was set")
+		return fmt.Errorf("cannot SendRequest, no network client was set")
 	}
 	if err := d.requestQueue.Push(req); err != nil {
 		return err
