@@ -203,7 +203,53 @@ func (suite *OcppJTestSuite) TestCentralSystemSendErrorFailed() {
 	assert.NotNil(t, err)
 }
 
-// Call Handlers
+// Handlers
+
+func (suite *OcppJTestSuite) TestCentralSystemNewClientHandler() {
+	t := suite.T()
+	mockClientID := "1234"
+	connectedC := make(chan bool, 1)
+	suite.centralSystem.SetNewClientHandler(func(clientID string) {
+		assert.Equal(t, mockClientID, clientID)
+		connectedC <- true
+	})
+	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return()
+	// Internal ocppj <-> websocket handlers are registered on start
+	suite.centralSystem.Start(8887, "somePath")
+	// Simulate client connection
+	channel := NewMockWebSocket(mockClientID)
+	suite.mockServer.NewClientHandler(channel)
+	ok, _ := <-connectedC
+	assert.True(t, ok)
+}
+
+func (suite *OcppJTestSuite) TestCentralSystemDisconnectedHandler() {
+	t := suite.T()
+	mockClientID := "1234"
+	connectedC := make(chan bool, 1)
+	disconnectedC := make(chan bool, 1)
+	suite.centralSystem.SetNewClientHandler(func(clientID string) {
+		assert.Equal(t, mockClientID, clientID)
+		connectedC <- true
+	})
+	suite.centralSystem.SetDisconnectedClientHandler(func(clientID string) {
+		assert.Equal(t, mockClientID, clientID)
+		disconnectedC <- true
+	})
+	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return()
+	// Internal ocppj <-> websocket handlers are registered on start
+	suite.centralSystem.Start(8887, "somePath")
+	// Simulate client connection
+	channel := NewMockWebSocket(mockClientID)
+	suite.mockServer.NewClientHandler(channel)
+	ok, _ := <-connectedC
+	assert.True(t, ok)
+	// Simulate client disconnection
+	suite.mockServer.DisconnectedClientHandler(channel)
+	ok, _ = <-disconnectedC
+	assert.True(t, ok)
+}
+
 func (suite *OcppJTestSuite) TestCentralSystemRequestHandler() {
 	t := suite.T()
 	mockChargePointId := "1234"
