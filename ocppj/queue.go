@@ -39,7 +39,7 @@ type RequestQueue interface {
 type FIFOClientQueue struct {
 	requestQueue *list.List
 	capacity     int
-	mutex        sync.Mutex
+	mutex        sync.RWMutex
 }
 
 func (q *FIFOClientQueue) Init() {
@@ -134,7 +134,7 @@ type ServerQueueMap interface {
 type FIFOQueueMap struct {
 	data          map[string]RequestQueue
 	queueCapacity int
-	mutex         sync.Mutex
+	mutex         sync.RWMutex
 }
 
 func (f *FIFOQueueMap) Init() {

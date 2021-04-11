@@ -90,7 +90,7 @@ type DefaultClientDispatcher struct {
 	readyForDispatch    chan bool
 	pendingRequestState ClientState
 	network             ws.WsClient
-	mutex               sync.Mutex
+	mutex               sync.RWMutex
 	onRequestCancel     func(requestID string)
 	timer               *time.Timer
 	paused              bool
@@ -335,7 +335,7 @@ type DefaultServerDispatcher struct {
 	pendingRequestState ServerState
 	onRequestCancel     func(clientID string, requestID string)
 	network             ws.WsServer
-	mutex               sync.Mutex
+	mutex               sync.RWMutex
 }
 
 // NewDefaultServerDispatcher creates a new DefaultServerDispatcher struct.
