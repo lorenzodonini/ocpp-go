@@ -105,7 +105,7 @@ func (suite *ClientStateTestSuite) TestClearPendingRequests() {
 
 type ServerStateTestSuite struct {
 	suite.Suite
-	mutex sync.Mutex
+	mutex sync.RWMutex
 	state ocppj.ServerState
 }
 

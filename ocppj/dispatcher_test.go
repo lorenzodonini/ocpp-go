@@ -16,7 +16,7 @@ import (
 
 type ServerDispatcherTestSuite struct {
 	suite.Suite
-	mutex           sync.Mutex
+	mutex           sync.RWMutex
 	state           ocppj.ServerState
 	websocketServer MockWebsocketServer
 	endpoint        ocppj.Server

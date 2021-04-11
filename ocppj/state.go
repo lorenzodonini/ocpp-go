@@ -37,7 +37,7 @@ type ClientState interface {
 type simpleClientState struct {
 	requestID      string
 	pendingRequest pendingRequest
-	mutex          sync.Mutex
+	mutex          sync.RWMutex
 }
 
 // Creates a simple struct implementing ClientState, to be used by client/server dispatchers.
@@ -129,13 +129,13 @@ type ServerState interface {
 // See NewSimpleServerState for more info.
 type simpleServerState struct {
 	pendingRequestState map[string]ClientState
-	mutex               *sync.Mutex
+	mutex               *sync.RWMutex
 }
 
 // Creates a simple struct implementing ServerState, to be used by server dispatchers.
 //
 // If no mutex is passed, then atomic access to the data struct is not guaranteed, and race conditions may arise.
-func NewSimpleServerState(m *sync.Mutex) ServerState {
+func NewSimpleServerState(m *sync.RWMutex) ServerState {
 	return &simpleServerState{
 		pendingRequestState: map[string]ClientState{},
 		mutex:               m,
