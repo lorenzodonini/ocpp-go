@@ -17,11 +17,19 @@ func New() CallbackQueue {
 	}
 }
 
-func (cq *CallbackQueue) Queue(id string, callback func(confirmation ocpp.Response, err error)) {
+func (cq *CallbackQueue) TryQueue(id string, try func() error, callback func(confirmation ocpp.Response, err error)) error {
 	cq.callbacksMutex.Lock()
 	defer cq.callbacksMutex.Unlock()
 
 	cq.callbacks[id] = append(cq.callbacks[id], callback)
+
+	if err := try(); err != nil {
+		_, _ = cq.Dequeue(id)
+
+		return err
+	}
+
+	return nil
 }
 
 func (cq *CallbackQueue) Dequeue(id string) (func(confirmation ocpp.Response, err error), bool) {
