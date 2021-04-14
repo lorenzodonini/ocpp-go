@@ -383,13 +383,10 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", featureName)
 	}
 
-	cs.callbackQueue.Queue(clientId, callback)
-
-	if err := cs.server.SendRequest(clientId, request); err != nil {
-		_, _ = cs.callbackQueue.Dequeue(clientId)
-		return err
+	send := func() error {
+		return cs.server.SendRequest(clientId, request)
 	}
-	return nil
+	return cs.callbackQueue.TryQueue(clientId, send, callback)
 }
 
 func (cs *centralSystem) Start(listenPort int, listenPath string) {
