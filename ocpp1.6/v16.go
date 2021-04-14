@@ -258,9 +258,7 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.WsServer) CentralSystem 
 		dispatcher := ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(0))
 		endpoint = ocppj.NewServer(server, dispatcher, dispatcher, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
-	cs := centralSystem{
-		server:    endpoint,
-		callbacks: map[string]func(confirmation ocpp.Response, err error){}}
+	cs := newCentralSystem(endpoint)
 	cs.server.SetRequestHandler(cs.handleIncomingRequest)
 	cs.server.SetResponseHandler(cs.handleIncomingConfirmation)
 	cs.server.SetErrorHandler(cs.handleIncomingError)

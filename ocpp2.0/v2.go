@@ -318,9 +318,7 @@ func NewCSMS(endpoint *ocppj.Server, server ws.WsServer) CSMS {
 		dispatcher := ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(0))
 		endpoint = ocppj.NewServer(server, dispatcher, dispatcher, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
-	cs := csms{
-		server:    endpoint,
-		callbacks: map[string]func(confirmation ocpp.Response, err error){}}
+	cs := newCSMS(endpoint)
 	cs.server.SetRequestHandler(cs.handleIncomingRequest)
 	cs.server.SetResponseHandler(cs.handleIncomingResponse)
 	cs.server.SetErrorHandler(cs.handleIncomingError)

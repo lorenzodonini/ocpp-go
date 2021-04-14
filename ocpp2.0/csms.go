@@ -2,6 +2,8 @@ package ocpp2
 
 import (
 	"fmt"
+
+	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/availability"
@@ -42,7 +44,17 @@ type csms struct {
 	diagnosticsHandler   diagnostics.CSMSHandler
 	displayHandler       display.CSMSHandler
 	dataHandler          data.CSMSHandler
-	callbacks            map[string]func(response ocpp.Response, err error)
+	callbackQueue        callbackqueue.CallbackQueue
+}
+
+func newCSMS(server *ocppj.Server) csms {
+	if server == nil {
+		panic("server must not be nil")
+	}
+	return csms{
+		server:        server,
+		callbackQueue: callbackqueue.New(),
+	}
 }
 
 func (cs *csms) CancelReservation(clientId string, callback func(*reservation.CancelReservationResponse, error), reservationId int, props ...func(request *reservation.CancelReservationRequest)) error {
@@ -413,10 +425,11 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)
 	}
-	cs.callbacks[clientId] = callback
-	err := cs.server.SendRequest(clientId, request)
-	if err != nil {
-		delete(cs.callbacks, clientId)
+
+	cs.callbackQueue.Queue(clientId, callback)
+
+	if err := cs.server.SendRequest(clientId, request); err != nil {
+		_, _ = cs.callbackQueue.Dequeue(clientId)
 		return err
 	}
 	return nil
@@ -573,8 +586,7 @@ func (cs *csms) handleIncomingRequest(chargingStationID string, request ocpp.Req
 }
 
 func (cs *csms) handleIncomingResponse(chargingStationID string, response ocpp.Response, requestId string) {
-	if callback, ok := cs.callbacks[chargingStationID]; ok {
-		delete(cs.callbacks, chargingStationID)
+	if callback, ok := cs.callbackQueue.Dequeue(chargingStationID); ok {
 		callback(response, nil)
 	} else {
 		log.WithFields(log.Fields{
@@ -585,8 +597,7 @@ func (cs *csms) handleIncomingResponse(chargingStationID string, response ocpp.R
 }
 
 func (cs *csms) handleIncomingError(chargingStationID string, err *ocpp.Error, details interface{}) {
-	if callback, ok := cs.callbacks[chargingStationID]; ok {
-		delete(cs.callbacks, chargingStationID)
+	if callback, ok := cs.callbackQueue.Dequeue(chargingStationID); ok {
 		callback(nil, err)
 	} else {
 		//TODO: print details
