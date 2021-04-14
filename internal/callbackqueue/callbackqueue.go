@@ -24,7 +24,9 @@ func (cq *CallbackQueue) TryQueue(id string, try func() error, callback func(con
 	cq.callbacks[id] = append(cq.callbacks[id], callback)
 
 	if err := try(); err != nil {
-		_, _ = cq.Dequeue(id)
+		// pop off last element
+		callbacks := cq.callbacks[id]
+		cq.callbacks[id] = callbacks[:len(callbacks)-1]
 
 		return err
 	}
