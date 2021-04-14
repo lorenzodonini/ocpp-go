@@ -793,6 +793,7 @@ func (client *Client) Start(url string) error {
 }
 
 func (client *Client) Stop() {
+	client.setConnected(false)
 	close(client.webSocket.outQueue)
 
 	if client.errC != nil {
