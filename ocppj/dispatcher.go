@@ -517,9 +517,8 @@ func (d *DefaultServerDispatcher) messagePump() {
 			}
 		case clientID = <-d.readyForDispatch:
 			// Client can now transmit again
-			rdy = true
+			clientQueue, rdy = d.queueMap.Get(clientID)
 			clientReadyMap[clientID] = rdy
-			clientQueue, _ = d.queueMap.Get(clientID)
 		}
 		// Only dispatch request if able to send and request queue isn't empty
 		if rdy && !clientQueue.IsEmpty() {
