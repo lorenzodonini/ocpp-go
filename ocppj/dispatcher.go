@@ -106,7 +106,7 @@ func NewDefaultClientDispatcher(queue RequestQueue) *DefaultClientDispatcher {
 		requestQueue:        queue,
 		requestChannel:      nil,
 		readyForDispatch:    make(chan bool, 1),
-		pendingRequestState: NewSimpleClientState(),
+		pendingRequestState: NewClientState(),
 		timeout:             defaultMessageTimeout,
 	}
 }
@@ -345,7 +345,7 @@ func NewDefaultServerDispatcher(queueMap ServerQueueMap) *DefaultServerDispatche
 		requestChannel:   nil,
 		readyForDispatch: make(chan string, 1),
 	}
-	d.pendingRequestState = NewSimpleServerState(&d.mutex)
+	d.pendingRequestState = NewServerState(&d.mutex)
 	return d
 }
 

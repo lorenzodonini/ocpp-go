@@ -16,7 +16,7 @@ type ClientStateTestSuite struct {
 }
 
 func (suite *ClientStateTestSuite) SetupTest() {
-	suite.state = ocppj.NewSimpleClientState()
+	suite.state = ocppj.NewClientState()
 }
 
 func (suite *ClientStateTestSuite) TestAddPendingRequest() {
@@ -110,7 +110,7 @@ type ServerStateTestSuite struct {
 }
 
 func (suite *ServerStateTestSuite) SetupTest() {
-	suite.state = ocppj.NewSimpleServerState(&suite.mutex)
+	suite.state = ocppj.NewServerState(&suite.mutex)
 }
 
 func (suite *ServerStateTestSuite) TestAddPendingRequests() {
