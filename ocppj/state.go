@@ -34,18 +34,18 @@ type ClientState interface {
 // Supports a single pending request. To add a new pending request, the previous one needs to be deleted.
 //
 // Uses a mutex internally for concurrent access to the data struct.
-type simpleClientState struct {
+type clientState struct {
 	requestID      string
 	pendingRequest pendingRequest
 	mutex          sync.RWMutex
 }
 
 // Creates a simple struct implementing ClientState, to be used by client/server dispatchers.
-func NewSimpleClientState() ClientState {
-	return &simpleClientState{}
+func NewClientState() ClientState {
+	return &clientState{}
 }
 
-func (s *simpleClientState) AddPendingRequest(requestID string, req ocpp.Request) {
+func (s *clientState) AddPendingRequest(requestID string, req ocpp.Request) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if requestID != "" && s.requestID == "" {
@@ -56,7 +56,7 @@ func (s *simpleClientState) AddPendingRequest(requestID string, req ocpp.Request
 	}
 }
 
-func (s *simpleClientState) GetPendingRequest(requestID string) (ocpp.Request, bool) {
+func (s *clientState) GetPendingRequest(requestID string) (ocpp.Request, bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if s.requestID != requestID {
@@ -65,7 +65,7 @@ func (s *simpleClientState) GetPendingRequest(requestID string) (ocpp.Request, b
 	return s.pendingRequest.request, true
 }
 
-func (s *simpleClientState) DeletePendingRequest(requestID string) {
+func (s *clientState) DeletePendingRequest(requestID string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if s.requestID != requestID {
@@ -74,13 +74,13 @@ func (s *simpleClientState) DeletePendingRequest(requestID string) {
 	s.requestID = ""
 }
 
-func (s *simpleClientState) ClearPendingRequests() {
+func (s *clientState) ClearPendingRequests() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.requestID = ""
 }
 
-func (s *simpleClientState) HasPendingRequest() bool {
+func (s *clientState) HasPendingRequest() bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return s.requestID != ""
@@ -121,13 +121,13 @@ type ServerState interface {
 
 // Simple implementation of ServerState, using a map.
 // Supports any amount of clients and stores the pending requests for each client in a
-// simpleClientState struct.
+// clientState struct.
 //
 // Client data is not deleted automatically; it should be deleted after a client session has ended.
 //
 // May internally use a mutex for concurrent access to the data struct.
-// See NewSimpleServerState for more info.
-type simpleServerState struct {
+// See NewServerState for more info.
+type serverState struct {
 	pendingRequestState map[string]ClientState
 	mutex               *sync.RWMutex
 }
@@ -135,14 +135,14 @@ type simpleServerState struct {
 // Creates a simple struct implementing ServerState, to be used by server dispatchers.
 //
 // If no mutex is passed, then atomic access to the data struct is not guaranteed, and race conditions may arise.
-func NewSimpleServerState(m *sync.RWMutex) ServerState {
-	return &simpleServerState{
+func NewServerState(m *sync.RWMutex) ServerState {
+	return &serverState{
 		pendingRequestState: map[string]ClientState{},
 		mutex:               m,
 	}
 }
 
-func (d *simpleServerState) AddPendingRequest(clientID string, requestID string, req ocpp.Request) {
+func (d *serverState) AddPendingRequest(clientID string, requestID string, req ocpp.Request) {
 	if d.mutex != nil {
 		d.mutex.Lock()
 		defer d.mutex.Unlock()
@@ -151,7 +151,7 @@ func (d *simpleServerState) AddPendingRequest(clientID string, requestID string,
 	state.AddPendingRequest(requestID, req)
 }
 
-func (d *simpleServerState) DeletePendingRequest(clientID string, requestID string) {
+func (d *serverState) DeletePendingRequest(clientID string, requestID string) {
 	if d.mutex != nil {
 		d.mutex.Lock()
 		defer d.mutex.Unlock()
@@ -163,7 +163,7 @@ func (d *simpleServerState) DeletePendingRequest(clientID string, requestID stri
 	state.DeletePendingRequest(requestID)
 }
 
-func (d *simpleServerState) GetClientState(clientID string) ClientState {
+func (d *serverState) GetClientState(clientID string) ClientState {
 	if d.mutex != nil {
 		d.mutex.Lock()
 		defer d.mutex.Unlock()
@@ -171,7 +171,7 @@ func (d *simpleServerState) GetClientState(clientID string) ClientState {
 	return d.getOrCreateState(clientID)
 }
 
-func (d *simpleServerState) HasPendingRequest(clientID string) bool {
+func (d *serverState) HasPendingRequest(clientID string) bool {
 	if d.mutex != nil {
 		d.mutex.Lock()
 		defer d.mutex.Unlock()
@@ -180,7 +180,7 @@ func (d *simpleServerState) HasPendingRequest(clientID string) bool {
 	return exists && state.HasPendingRequest()
 }
 
-func (d *simpleServerState) HasPendingRequests() bool {
+func (d *serverState) HasPendingRequests() bool {
 	if d.mutex != nil {
 		d.mutex.Lock()
 		defer d.mutex.Unlock()
@@ -193,7 +193,7 @@ func (d *simpleServerState) HasPendingRequests() bool {
 	return false
 }
 
-func (d *simpleServerState) ClearClientPendingRequest(clientID string) {
+func (d *serverState) ClearClientPendingRequest(clientID string) {
 	if d.mutex != nil {
 		d.mutex.Lock()
 		defer d.mutex.Unlock()
@@ -201,7 +201,7 @@ func (d *simpleServerState) ClearClientPendingRequest(clientID string) {
 	delete(d.pendingRequestState, clientID)
 }
 
-func (d *simpleServerState) ClearAllPendingRequests() {
+func (d *serverState) ClearAllPendingRequests() {
 	if d.mutex != nil {
 		d.mutex.Lock()
 		defer d.mutex.Unlock()
@@ -209,10 +209,10 @@ func (d *simpleServerState) ClearAllPendingRequests() {
 	d.pendingRequestState = map[string]ClientState{}
 }
 
-func (d *simpleServerState) getOrCreateState(clientID string) ClientState {
+func (d *serverState) getOrCreateState(clientID string) ClientState {
 	state, exists := d.pendingRequestState[clientID]
 	if !exists {
-		state = NewSimpleClientState()
+		state = NewClientState()
 		d.pendingRequestState[clientID] = state
 	}
 	return state

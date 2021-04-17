@@ -517,7 +517,6 @@ func (suite *OcppJTestSuite) TestServerRequestFlow() {
 				data, err = res.MarshalJSON()
 				require.Nil(t, err)
 			}
-			fmt.Printf("sending mocked response to message %v\n", call.GetUniqueId())
 			wsChannel := mockChargePoints[d.clientID]
 			err = suite.mockServer.MessageHandler(wsChannel, data) // Triggers ocppMessageHandler
 			require.Nil(t, err)

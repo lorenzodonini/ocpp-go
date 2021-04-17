@@ -35,7 +35,7 @@ func NewClient(id string, wsClient ws.WsClient, dispatcher ClientDispatcher, sta
 		dispatcher = NewDefaultClientDispatcher(NewFIFOClientQueue(10))
 	}
 	if stateHandler == nil {
-		stateHandler = NewSimpleClientState()
+		stateHandler = NewClientState()
 	}
 	if wsClient == nil {
 		wsClient = ws.NewClient()

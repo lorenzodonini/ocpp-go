@@ -134,9 +134,8 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 		}
 	})
 	if endpoint == nil {
-		state := ocppj.NewSimpleClientState()
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
-		endpoint = ocppj.NewClient(id, client, dispatcher, state, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		endpoint = ocppj.NewClient(id, client, dispatcher, nil, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
 	cp := chargePoint{client: endpoint, confirmationHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
 	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {

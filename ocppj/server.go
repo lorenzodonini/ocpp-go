@@ -36,7 +36,7 @@ func NewServer(wsServer ws.WsServer, dispatcher ServerDispatcher, stateHandler S
 	if stateHandler == nil {
 		d, ok := dispatcher.(*DefaultServerDispatcher)
 		if !ok {
-			stateHandler = NewSimpleServerState(nil)
+			stateHandler = NewServerState(nil)
 		} else {
 			stateHandler = d.pendingRequestState
 		}
