@@ -3,6 +3,8 @@ package ocpp16
 
 import (
 	"github.com/gorilla/websocket"
+
+	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -13,7 +15,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
-	log "github.com/sirupsen/logrus"
 )
 
 // -------------------- v1.6 Charge Point --------------------
@@ -133,11 +134,16 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 			dialer.Subprotocols = append(dialer.Subprotocols, types.V16Subprotocol)
 		}
 	})
+	cp := chargePoint{confirmationHandler: make(chan ocpp.Response), errorHandler: make(chan error), callbacks: callbackqueue.New()}
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
+		// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
+		dispatcher.SetOnRequestCanceled(func(rID string, action string, request ocpp.Request) {
+			cp.onRequestTimeout(rID, action, request)
+		})
 		endpoint = ocppj.NewClient(id, client, dispatcher, nil, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
-	cp := chargePoint{client: endpoint, confirmationHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
+	cp.client = endpoint
 	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
 		cp.confirmationHandler <- confirmation
 	})
@@ -262,10 +268,4 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.WsServer) CentralSystem 
 	cs.server.SetResponseHandler(cs.handleIncomingConfirmation)
 	cs.server.SetErrorHandler(cs.handleIncomingError)
 	return &cs
-}
-
-func init() {
-	log.New()
-	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
-	log.SetLevel(log.InfoLevel)
 }

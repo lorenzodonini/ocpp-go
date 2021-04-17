@@ -44,11 +44,12 @@ type ClientDispatcher interface {
 	// the pending requests. It will then attempt to process the next queued request.
 	CompleteRequest(requestID string)
 	// Sets a callback to be invoked when a request gets canceled, due to network timeouts.
+	// The callback passes the original message ID, feature name and request struct of the failed request.
 	//
 	// Calling Stop on the dispatcher will not trigger this callback.
 	//
 	// If no callback is set, a request will still be removed from the dispatcher when a timeout occurs.
-	SetOnRequestCanceled(cb func(string))
+	SetOnRequestCanceled(cb func(string, string, ocpp.Request))
 	// Sets the network client, so the dispatcher may send requests using the networking layer directly.
 	//
 	// This needs to be set before calling the Start method. If not, sending requests will fail.
@@ -91,7 +92,7 @@ type DefaultClientDispatcher struct {
 	pendingRequestState ClientState
 	network             ws.WsClient
 	mutex               sync.RWMutex
-	onRequestCancel     func(requestID string)
+	onRequestCancel     func(string, string, ocpp.Request)
 	timer               *time.Timer
 	paused              bool
 	timeout             time.Duration
@@ -111,7 +112,7 @@ func NewDefaultClientDispatcher(queue RequestQueue) *DefaultClientDispatcher {
 	}
 }
 
-func (d *DefaultClientDispatcher) SetOnRequestCanceled(cb func(string)) {
+func (d *DefaultClientDispatcher) SetOnRequestCanceled(cb func(string, string, ocpp.Request)) {
 	d.onRequestCancel = cb
 }
 
@@ -186,7 +187,7 @@ func (d *DefaultClientDispatcher) messagePump() {
 				bundle, _ := el.(RequestBundle)
 				d.CompleteRequest(bundle.Call.UniqueId)
 				if d.onRequestCancel != nil {
-					d.onRequestCancel(bundle.Call.UniqueId)
+					d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
 				}
 			}
 			// No request is currently pending -> set timer to high number
@@ -227,7 +228,7 @@ func (d *DefaultClientDispatcher) dispatchNextRequest() {
 		//TODO: handle retransmission instead of skipping request altogether
 		d.CompleteRequest(bundle.Call.GetUniqueId())
 		if d.onRequestCancel != nil {
-			d.onRequestCancel(bundle.Call.GetUniqueId())
+			d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
 		}
 	}
 }
@@ -298,11 +299,12 @@ type ServerDispatcher interface {
 	// that client's pending requests. It will then attempt to process the next queued request.
 	CompleteRequest(clientID string, requestID string)
 	// Sets a callback to be invoked when a request gets canceled, due to network timeouts.
+	// The callback passes the original client ID, message ID, feature name and request struct of the failed request.
 	//
 	// Calling Stop on the dispatcher will not trigger this callback.
 	//
 	// If no callback is set, a request will still be removed from the dispatcher when a timeout occurs.
-	SetOnRequestCanceled(cb func(string, string))
+	SetOnRequestCanceled(cb func(string, string, string, ocpp.Request))
 	// Sets the network server, so the dispatcher may send requests using the networking layer directly.
 	//
 	// This needs to be set before calling the Start method. If not, sending requests will fail.
@@ -333,7 +335,7 @@ type DefaultServerDispatcher struct {
 	requestChannel      chan string
 	readyForDispatch    chan string
 	pendingRequestState ServerState
-	onRequestCancel     func(clientID string, requestID string)
+	onRequestCancel     func(string, string, string, ocpp.Request)
 	network             ws.WsServer
 	mutex               sync.RWMutex
 }
@@ -377,7 +379,7 @@ func (d *DefaultServerDispatcher) SetNetworkServer(server ws.WsServer) {
 	d.network = server
 }
 
-func (d *DefaultServerDispatcher) SetOnRequestCanceled(cb func(string, string)) {
+func (d *DefaultServerDispatcher) SetOnRequestCanceled(cb func(string, string, string, ocpp.Request)) {
 	d.onRequestCancel = cb
 }
 
@@ -462,7 +464,7 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) {
 		//TODO: handle retransmission instead of removing pending request
 		d.CompleteRequest(clientID, callID)
 		if d.onRequestCancel != nil {
-			d.onRequestCancel(clientID, callID)
+			d.onRequestCancel(clientID, callID, bundle.Call.Action, bundle.Call.Payload)
 		}
 	}
 }
