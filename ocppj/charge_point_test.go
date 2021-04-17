@@ -588,7 +588,8 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	t := suite.T()
 	requestID := ""
-	triggerC := make(chan bool, 1)
+	req := newMockRequest("test")
+	timeoutC := make(chan bool, 1)
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	suite.mockClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
 		data := args.Get(0).([]byte)
@@ -596,18 +597,17 @@ func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 		require.NotNil(t, call)
 		requestID = call.UniqueId
 	}).Return(nil)
-	suite.chargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
-		assert.Error(t, err, fmt.Sprintf("ocpp %v - request timed out, no response received from server", ocppj.GenericError))
-		assert.Equal(t, ocppj.GenericError, err.Code)
-		assert.Equal(t, requestID, err.MessageId)
-		triggerC <- true
+	suite.clientDispatcher.SetOnRequestCanceled(func(rID string, action string, request ocpp.Request) {
+		assert.Equal(t, requestID, rID)
+		assert.Equal(t, MockFeatureName, action)
+		assert.Equal(t, req, request)
+		timeoutC <- true
 	})
 	// Sets a low response timeout for testing purposes
 	suite.clientDispatcher.SetTimeout(500 * time.Millisecond)
 	// Start normally and send a message
 	err := suite.chargePoint.Start("someUrl")
 	require.NoError(t, err)
-	req := newMockRequest("test")
 	err = suite.chargePoint.SendRequest(req)
 	require.NoError(t, err)
 	// Wait for request to be enqueued, then check state
@@ -618,7 +618,7 @@ func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	assert.Equal(t, 1, suite.clientRequestQueue.Size())
 	assert.True(t, state.HasPendingRequest())
 	// Wait for timeout error to be thrown
-	_ = <-triggerC
+	_ = <-timeoutC
 	assert.True(t, suite.clientRequestQueue.IsEmpty())
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.False(t, state.HasPendingRequest())

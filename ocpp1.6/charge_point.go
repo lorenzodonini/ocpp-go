@@ -3,6 +3,7 @@ package ocpp16
 import (
 	"fmt"
 
+	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -24,6 +25,8 @@ type chargePoint struct {
 	smartChargingHandler smartcharging.ChargePointHandler
 	confirmationHandler  chan ocpp.Response
 	errorHandler         chan error
+	callbacks            callbackqueue.CallbackQueue
+	stopC                chan struct{}
 	errC                 chan error // external error channel
 }
 
@@ -31,6 +34,13 @@ func (cp *chargePoint) error(err error) {
 	if cp.errC != nil {
 		cp.errC <- err
 	}
+}
+
+// Callback invoked whenever a queued request is canceled, due to timeout.
+// By default, the callback returns a GenericError to the caller, who sent the original request.
+func (cp *chargePoint) onRequestTimeout(rID string, action string, request ocpp.Request) {
+	err := ocpp.NewError(ocppj.GenericError, "request timed out, no response received from server", rID)
+	cp.errorHandler <- err
 }
 
 // Errors returns a channel for error messages. If it doesn't exist it es created.

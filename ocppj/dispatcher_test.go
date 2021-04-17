@@ -93,9 +93,11 @@ func (s *ServerDispatcherTestSuite) TestRequestCanceled() {
 	require.NoError(t, err)
 	bundle := ocppj.RequestBundle{Call: call, Data: data}
 	// Set canceled callback
-	s.dispatcher.SetOnRequestCanceled(func(client string, request string) {
-		assert.Equal(t, clientID, client)
-		assert.Equal(t, requestID, request)
+	s.dispatcher.SetOnRequestCanceled(func(cID string, rID string, action string, request ocpp.Request) {
+		assert.Equal(t, clientID, cID)
+		assert.Equal(t, requestID, rID)
+		assert.Equal(t, MockFeatureName, action)
+		assert.Equal(t, req, request)
 		canceled <- true
 	})
 	s.dispatcher.Start()
@@ -220,8 +222,10 @@ func (c *ClientDispatcherTestSuite) TestRequestCanceled() {
 	require.NoError(t, err)
 	bundle := ocppj.RequestBundle{Call: call, Data: data}
 	// Set canceled callback
-	c.dispatcher.SetOnRequestCanceled(func(request string) {
-		assert.Equal(t, requestID, request)
+	c.dispatcher.SetOnRequestCanceled(func(rID string, action string, request ocpp.Request) {
+		assert.Equal(t, requestID, rID)
+		assert.Equal(t, MockFeatureName, action)
+		assert.Equal(t, req, request)
 		canceled <- true
 	})
 	c.dispatcher.Start()
@@ -260,8 +264,10 @@ func (c *ClientDispatcherTestSuite) TestDispatcherTimeout() {
 	bundle := ocppj.RequestBundle{Call: call, Data: data}
 	// Set low timeout to trigger OnRequestCanceled callback
 	c.dispatcher.SetTimeout(1 * time.Second)
-	c.dispatcher.SetOnRequestCanceled(func(reqID string) {
-		assert.Equal(t, requestID, reqID)
+	c.dispatcher.SetOnRequestCanceled(func(rID string, action string, request ocpp.Request) {
+		assert.Equal(t, requestID, rID)
+		assert.Equal(t, MockFeatureName, action)
+		assert.Equal(t, req, request)
 		timeout <- true
 	})
 	c.dispatcher.Start()
@@ -294,8 +300,10 @@ func (c *ClientDispatcherTestSuite) TestPauseDispatcher() {
 	// Set timeout to test pause functionality
 	c.dispatcher.SetTimeout(500 * time.Millisecond)
 	// The callback will only be triggered at the end of the test case
-	c.dispatcher.SetOnRequestCanceled(func(reqID string) {
-		assert.Equal(t, requestID, reqID)
+	c.dispatcher.SetOnRequestCanceled(func(rID string, action string, request ocpp.Request) {
+		assert.Equal(t, requestID, rID)
+		assert.Equal(t, MockFeatureName, action)
+		assert.Equal(t, req, request)
 		timeout <- true
 	})
 	c.dispatcher.Start()
@@ -332,7 +340,7 @@ func (c *ClientDispatcherTestSuite) TestSendWhilePausedDispatcher() {
 	// Set timeout (unused for this test)
 	c.dispatcher.SetTimeout(1 * time.Second)
 	// The callback will only be triggered at the end of the test case
-	c.dispatcher.SetOnRequestCanceled(func(reqID string) {
+	c.dispatcher.SetOnRequestCanceled(func(rID string, action string, request ocpp.Request) {
 		require.Fail(t, "unexpected OnRequestCanceled")
 	})
 	c.dispatcher.Start()

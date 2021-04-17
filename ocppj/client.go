@@ -74,7 +74,6 @@ func (c *Client) Start(serverURL string) error {
 	c.client.SetMessageHandler(c.ocppMessageHandler)
 	c.client.SetDisconnectedHandler(c.onDisconnected)
 	c.client.SetReconnectedHandler(c.onReconnected)
-	c.dispatcher.SetOnRequestCanceled(c.onDispatcherError)
 	// Connect & run
 	fullUrl := fmt.Sprintf("%v/%v", serverURL, c.Id)
 	err := c.client.Start(fullUrl)
@@ -221,11 +220,4 @@ func (c *Client) onDisconnected(err error) {
 
 func (c *Client) onReconnected() {
 	c.dispatcher.Resume()
-}
-
-// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
-func (c *Client) onDispatcherError(requestID string) {
-	if c.errorHandler != nil {
-		c.errorHandler(ocpp.NewError(GenericError, "request timed out, no response received from server", requestID), nil)
-	}
 }
