@@ -1,7 +1,6 @@
 package ocppj
 
 import (
-	"container/list"
 	"fmt"
 	"sync"
 )
@@ -35,74 +34,76 @@ type RequestQueue interface {
 	IsEmpty() bool
 }
 
-// FIFOClientQueue is a default queue implementation for OCPP-J clients.
+// FIFOClientQueue is a default queue implementation. The queue is thread-safe.
 type FIFOClientQueue struct {
-	requestQueue *list.List
-	capacity     int
-	mutex        sync.RWMutex
+	elements []interface{}
+	capacity int
+	mutex    sync.RWMutex
 }
 
 func (q *FIFOClientQueue) Init() {
-	q.requestQueue = q.requestQueue.Init()
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	q.elements = make([]interface{}, 0, q.capacity)
 }
 
 func (q *FIFOClientQueue) Push(element interface{}) error {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
-	if q.requestQueue.Len() >= q.capacity && q.capacity > 0 {
+	if len(q.elements) >= q.capacity && q.capacity > 0 {
 		return fmt.Errorf("request queue is full, cannot push new element")
 	}
-	q.requestQueue.PushBack(element)
+	q.elements = append(q.elements, element)
 	return nil
 }
 
 func (q *FIFOClientQueue) Peek() interface{} {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
-	el := q.requestQueue.Front()
-	if el == nil {
+	if len(q.elements) == 0 {
 		return nil
 	}
-	return el.Value
+	return q.elements[0]
 }
 
 func (q *FIFOClientQueue) Pop() interface{} {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
-	result := q.requestQueue.Front()
-	if result != nil {
-		return q.requestQueue.Remove(result)
+	if len(q.elements) == 0 {
+		return nil
 	}
-	return nil
+	result := q.elements[0]
+	q.elements = q.elements[1:]
+	return result
 }
 
 func (q *FIFOClientQueue) Size() int {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
-	return q.requestQueue.Len()
+	return len(q.elements)
 }
 
 func (q *FIFOClientQueue) IsFull() bool {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
-	return q.requestQueue.Len() >= q.capacity && q.capacity > 0
+	return len(q.elements) >= q.capacity && q.capacity > 0
 }
 
 func (q *FIFOClientQueue) IsEmpty() bool {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
-	return q.requestQueue.Len() == 0
+	return len(q.elements) == 0
 }
 
 // NewFIFOClientQueue creates a new FIFOClientQueue with the given capacity.
 //
-// A FIFOQueue is backed by a linked list, and the capacity represents the maximum capacity of the queue.
+// A FIFOQueue is backed by a slice, and the capacity represents the maximum capacity of the queue.
 // Passing capacity = 0 will create a queue without a maximum capacity.
 // The capacity cannot change after creation.
 func NewFIFOClientQueue(capacity int) *FIFOClientQueue {
 	return &FIFOClientQueue{
-		requestQueue: list.New(),
-		capacity:     capacity,
+		elements: make([]interface{}, 0, capacity),
+		capacity: capacity,
 	}
 }
 
@@ -126,9 +127,9 @@ type ServerQueueMap interface {
 	Add(clientID string, queue RequestQueue)
 }
 
-// FIFOQueueMap is a default implementation of ServerQueueMap for OCPP-J servers.
+// FIFOQueueMap is a default implementation of ServerQueueMap.
+// A FIFOQueueMap is backed by a map[string]RequestQueue. The data structure is thread-safe.
 //
-// A FIFOQueueMap is backed by a map[string]RequestQueue.
 // When calling the GetOrCreate function, if no entry for a key was found in the map,
 // a new RequestQueue with the given capacity will be created.
 type FIFOQueueMap struct {
