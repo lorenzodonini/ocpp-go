@@ -4,16 +4,19 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/lorenzodonini/ocpp-go/ws"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/sirupsen/logrus"
+
+	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 const (
@@ -24,6 +27,8 @@ const (
 	envVarClientCertificate    = "CLIENT_CERTIFICATE_PATH"
 	envVarClientCertificateKey = "CLIENT_CERTIFICATE_KEY_PATH"
 )
+
+var log *logrus.Logger
 
 func setupChargePoint(chargePointID string) ocpp16.ChargePoint {
 	return ocpp16.NewChargePoint(chargePointID, nil, nil)
@@ -162,6 +167,7 @@ func main() {
 	chargePoint.SetReservationHandler(handler)
 	chargePoint.SetRemoteTriggerHandler(handler)
 	chargePoint.SetSmartChargingHandler(handler)
+	ocppj.SetLogger(log)
 	// Connects to central system
 	err := chargePoint.Start(csUrl)
 	if err != nil {
@@ -176,10 +182,12 @@ func main() {
 }
 
 func init() {
-	log.SetLevel(log.InfoLevel)
+	log = logrus.New()
+	log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+	log.SetLevel(logrus.InfoLevel)
 }
 
 // Utility functions
-func logDefault(feature string) *log.Entry {
+func logDefault(feature string) *logrus.Entry {
 	return log.WithField("message", feature)
 }

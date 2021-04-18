@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 var (
@@ -179,6 +181,6 @@ func (handler *CentralSystemHandler) OnFirmwareStatusNotification(chargePointId 
 
 // Utility functions
 
-func logDefault(chargePointId string, feature string) *log.Entry {
-	return log.WithFields(log.Fields{"client": chargePointId, "message": feature})
+func logDefault(chargePointId string, feature string) *logrus.Entry {
+	return log.WithFields(logrus.Fields{"client": chargePointId, "message": feature})
 }
