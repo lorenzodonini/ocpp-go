@@ -2,6 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"time"
+
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -10,11 +15,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	log "github.com/sirupsen/logrus"
-	"io"
-	"net/http"
-	"os"
-	"time"
 )
 
 // ConnectorInfo contains some simple state about a single connector.

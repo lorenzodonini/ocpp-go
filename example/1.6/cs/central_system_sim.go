@@ -3,6 +3,13 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -10,12 +17,8 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
-	log "github.com/sirupsen/logrus"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -28,6 +31,7 @@ const (
 	envVarServerCertificateKey = "SERVER_CERTIFICATE_KEY_PATH"
 )
 
+var log *logrus.Logger
 var centralSystem ocpp16.CentralSystem
 
 func setupCentralSystem() ocpp16.CentralSystem {
@@ -222,6 +226,7 @@ func main() {
 		log.WithField("client", chargePointId).Info("charge point disconnected")
 		delete(handler.chargePoints, chargePointId)
 	})
+	ocppj.SetLogger(log)
 	// Run central system
 	log.Infof("starting central system on port %v", listenPort)
 	centralSystem.Start(listenPort, "/{ws}")
@@ -229,5 +234,7 @@ func main() {
 }
 
 func init() {
-	log.SetLevel(log.InfoLevel)
+	log = logrus.New()
+	log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+	log.SetLevel(logrus.InfoLevel)
 }
