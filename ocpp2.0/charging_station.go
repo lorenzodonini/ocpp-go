@@ -3,8 +3,6 @@ package ocpp2
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
@@ -49,6 +47,21 @@ type chargingStation struct {
 	errorHandler         chan error
 	callbacks            callbackqueue.CallbackQueue
 	stopC                chan struct{}
+	errC                 chan error // external error channel
+}
+
+func (cs *chargingStation) error(err error) {
+	if cs.errC != nil {
+		cs.errC <- err
+	}
+}
+
+// Errors returns a channel for error messages. If it doesn't exist it es created.
+func (cs *chargingStation) Errors() <-chan error {
+	if cs.errC == nil {
+		cs.errC = make(chan error, 1)
+	}
+	return cs.errC
 }
 
 // Callback invoked whenever a queued request is canceled, due to timeout.
@@ -269,14 +282,14 @@ func (cs *chargingStation) asyncCallbackHandler() {
 			if callback, ok := cs.callbacks.Dequeue("main"); ok {
 				callback(confirmation, nil)
 			} else {
-				log.Errorf("no callback available for incoming response %v", confirmation.GetFeatureName())
+				cs.error(fmt.Errorf("no callback available for incoming response %v", confirmation.GetFeatureName()))
 			}
 		case protoError := <-cs.errorHandler:
 			// Get and invoke callback
 			if callback, ok := cs.callbacks.Dequeue("main"); ok {
 				callback(nil, protoError)
 			} else {
-				log.Errorf("no callback available for incoming error %v", protoError.Error())
+				cs.error(fmt.Errorf("no callback available for incoming error %w", protoError))
 			}
 		case _, _ = <-cs.stopC:
 			return
@@ -285,17 +298,25 @@ func (cs *chargingStation) asyncCallbackHandler() {
 }
 
 func (cs *chargingStation) sendResponse(response ocpp.Response, err error, requestId string) {
-	if response != nil {
-		err := cs.client.SendResponse(requestId, response)
-		if err != nil {
-			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
-			//TODO: handle error somehow
-		}
-	} else {
+	// send error response
+	if err != nil {
 		err = cs.client.SendError(requestId, ocppj.ProtocolError, err.Error(), nil)
 		if err != nil {
-			log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
+			cs.error(fmt.Errorf("replying cs to request %s with 'protocol error': %w", requestId, err))
 		}
+		return
+	}
+
+	if response == nil {
+		err = fmt.Errorf("empty response to request %s", requestId)
+		cs.error(err)
+		return
+	}
+
+	// send response
+	err = cs.client.SendResponse(requestId, response)
+	if err != nil {
+		cs.error(fmt.Errorf("replying to request %s with 'protocol error': %w", requestId, err))
 	}
 }
 
@@ -314,18 +335,16 @@ func (cs *chargingStation) Stop() {
 }
 
 func (cs *chargingStation) notImplementedError(requestId string, action string) {
-	log.WithField("request", requestId).Errorf("cannot handle call from CSMS. Sending CallError instead")
 	err := cs.client.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
-		log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
+		cs.error(fmt.Errorf("replying csms to request %v with error: %w", requestId, err))
 	}
 }
 
 func (cs *chargingStation) notSupportedError(requestId string, action string) {
-	log.WithField("request", requestId).Errorf("cannot handle call from CSMS. Sending CallError instead")
 	err := cs.client.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charging station", action), nil)
 	if err != nil {
-		log.WithField("request", requestId).Errorf("unknown error %v while replying to message with CallError", err)
+		cs.error(fmt.Errorf("replying csms to request %s with 'not supported': %w", requestId, err))
 	}
 }
 

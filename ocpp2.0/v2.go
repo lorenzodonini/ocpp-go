@@ -3,7 +3,6 @@ package ocpp2
 
 import (
 	"github.com/gorilla/websocket"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -119,6 +118,9 @@ type ChargingStation interface {
 	// Stops the charging station routine, disconnecting it from the CSMS.
 	// Any pending requests are discarded.
 	Stop()
+	// Errors returns a channel for error messages. If it doesn't exist it es created.
+	// The channel is closed by the charging station when stopped.
+	Errors() <-chan error
 }
 
 // Creates a new OCPP 2.0 charging station client.
@@ -302,6 +304,8 @@ type CSMS interface {
 
 	// The function blocks forever, so it is suggested to wrap it in a goroutine, in case other functionality needs to be executed on the main program thread.
 	Start(listenPort int, listenPath string)
+	// Errors returns a channel for error messages. If it doesn't exist it es created.
+	Errors() <-chan error
 }
 
 // Creates a new OCPP 2.0 CSMS.
@@ -328,10 +332,4 @@ func NewCSMS(endpoint *ocppj.Server, server ws.WsServer) CSMS {
 	cs.server.SetResponseHandler(cs.handleIncomingResponse)
 	cs.server.SetErrorHandler(cs.handleIncomingError)
 	return &cs
-}
-
-func init() {
-	log.New()
-	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
-	log.SetLevel(log.InfoLevel)
 }
