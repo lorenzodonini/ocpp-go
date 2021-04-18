@@ -406,7 +406,7 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Re
 	}
 
 	if confirmation == nil {
-		err = fmt.Errorf("empty confirmation to request %s", requestId)
+		err = fmt.Errorf("empty confirmation to %s for request %s", chargePointId, requestId)
 		cs.error(err)
 		return
 	}

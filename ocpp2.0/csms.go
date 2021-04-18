@@ -23,7 +23,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
-	log "github.com/sirupsen/logrus"
 )
 
 type csms struct {
@@ -45,6 +44,7 @@ type csms struct {
 	displayHandler       display.CSMSHandler
 	dataHandler          data.CSMSHandler
 	callbackQueue        callbackqueue.CallbackQueue
+	errC                 chan error
 }
 
 func newCSMS(server *ocppj.Server) csms {
@@ -55,6 +55,19 @@ func newCSMS(server *ocppj.Server) csms {
 		server:        server,
 		callbackQueue: callbackqueue.New(),
 	}
+}
+
+func (cs *csms) error(err error) {
+	if cs.errC != nil {
+		cs.errC <- err
+	}
+}
+
+func (cs *csms) Errors() <-chan error {
+	if cs.errC == nil {
+		cs.errC = make(chan error, 1)
+	}
+	return cs.errC
 }
 
 func (cs *csms) CancelReservation(clientId string, callback func(*reservation.CancelReservationResponse, error), reservationId int, props ...func(request *reservation.CancelReservationRequest)) error {
@@ -437,42 +450,40 @@ func (cs *csms) Start(listenPort int, listenPath string) {
 }
 
 func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, err error, requestId string) {
-	if response != nil {
-		err := cs.server.SendResponse(chargingStationID, requestId, response)
+	if err != nil {
+		err := cs.server.SendError(chargingStationID, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
 		if err != nil {
-			//TODO: handle error somehow
-			log.Print(err)
+			err = fmt.Errorf("replying cs %s to request %s with 'protocol error': %w", chargingStationID, requestId, err)
+			cs.error(err)
 		}
-	} else {
-		err := cs.server.SendError(chargingStationID, requestId, ocppj.ProtocolError, "Couldn't generate valid response", nil)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"client":  chargingStationID,
-				"request": requestId,
-			}).Errorf("unknown error %v while replying to message with CallError", err)
-		}
+		return
+	}
+	if response == nil {
+		err = fmt.Errorf("empty response to %s for request %s", chargingStationID, requestId)
+		cs.error(err)
+		return
+	}
+	// send response
+	err = cs.server.SendResponse(chargingStationID, requestId, response)
+	if err != nil {
+		err = fmt.Errorf("replying cs %s to request %s: %w", chargingStationID, requestId, err)
+		cs.error(err)
 	}
 }
 
 func (cs *csms) notImplementedError(chargingStationID string, requestId string, action string) {
-	log.Warnf("Cannot handle call %v from charging station %v. Sending CallError instead", requestId, chargingStationID)
 	err := cs.server.SendError(chargingStationID, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"client":  chargingStationID,
-			"request": requestId,
-		}).Errorf("unknown error %v while replying to message with CallError", err)
+		err = fmt.Errorf("replying cs %s to request %s with 'not implemented': %w", chargingStationID, requestId, err)
+		cs.error(err)
 	}
 }
 
 func (cs *csms) notSupportedError(chargingStationID string, requestId string, action string) {
-	log.Warnf("Cannot handle call %v from charging station %v. Sending CallError instead", requestId, chargingStationID)
 	err := cs.server.SendError(chargingStationID, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on CSMS", action), nil)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"client":  chargingStationID,
-			"request": requestId,
-		}).Errorf("unknown error %v while replying to message with CallError", err)
+		err = fmt.Errorf("replying cs %s to request %s with 'not supported': %w", chargingStationID, requestId, err)
+		cs.error(err)
 	}
 }
 
@@ -586,10 +597,8 @@ func (cs *csms) handleIncomingResponse(chargingStationID string, response ocpp.R
 	if callback, ok := cs.callbackQueue.Dequeue(chargingStationID); ok {
 		callback(response, nil)
 	} else {
-		log.WithFields(log.Fields{
-			"client":  chargingStationID,
-			"request": requestId,
-		}).Errorf("no handler available for Call Result of type %v", response.GetFeatureName())
+		err := fmt.Errorf("no handler available for call of type %v from client %s for request %s", response.GetFeatureName(), chargingStationID, requestId)
+		cs.error(err)
 	}
 }
 
@@ -597,10 +606,6 @@ func (cs *csms) handleIncomingError(chargingStationID string, err *ocpp.Error, d
 	if callback, ok := cs.callbackQueue.Dequeue(chargingStationID); ok {
 		callback(nil, err)
 	} else {
-		//TODO: print details
-		log.WithFields(log.Fields{
-			"client":  chargingStationID,
-			"request": err.MessageId,
-		}).Errorf("no handler available for Call Error %v", err.Code)
+		cs.error(fmt.Errorf("no handler available for call error %w from client %s", err, chargingStationID))
 	}
 }
