@@ -2,6 +2,10 @@ package ocpp2
 
 import (
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/availability"
@@ -21,7 +25,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
-	log "github.com/sirupsen/logrus"
 )
 
 type chargingStation struct {
@@ -44,6 +47,15 @@ type chargingStation struct {
 	dataHandler          data.ChargingStationHandler
 	responseHandler      chan ocpp.Response
 	errorHandler         chan error
+	callbacks            callbackqueue.CallbackQueue
+	stopC                chan struct{}
+}
+
+// Callback invoked whenever a queued request is canceled, due to timeout.
+// By default, the callback returns a GenericError to the caller, who sent the original request.
+func (cs *chargingStation) onRequestTimeout(rID string, action string, request ocpp.Request) {
+	err := ocpp.NewError(ocppj.GenericError, "request timed out, no response received from server", rID)
+	cs.errorHandler <- err
 }
 
 func (cs *chargingStation) BootNotification(reason provisioning.BootReason, model string, vendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationResponse, error) {
@@ -206,17 +218,28 @@ func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, err
 	if _, found := cs.client.GetProfileForFeature(featureName); !found {
 		return nil, fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send request", featureName)
 	}
-	err := cs.client.SendRequest(request)
+
+	// Wraps an asynchronous response
+	type asyncResponse struct {
+		r ocpp.Response
+		e error
+	}
+	// Create channel and pass it to a callback function, for retrieving asynchronous response
+	asyncResponseC := make(chan asyncResponse, 1)
+	send := func() error {
+		return cs.client.SendRequest(request)
+	}
+	err := cs.callbacks.TryQueue("main", send, func(confirmation ocpp.Response, err error) {
+		asyncResponseC <- asyncResponse{r: confirmation, e: err}
+	})
 	if err != nil {
 		return nil, err
 	}
-	//TODO: timeouts
-	select {
-	case response := <-cs.responseHandler:
-		return response, nil
-	case err = <-cs.errorHandler:
-		return nil, err
+	asyncResult, ok := <-asyncResponseC
+	if !ok {
+		return nil, fmt.Errorf("internal error while receiving result for %v request", request.GetFeatureName())
 	}
+	return asyncResult.r, asyncResult.e
 }
 
 func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(response ocpp.Response, err error)) error {
@@ -230,19 +253,35 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 	default:
 		return fmt.Errorf("unsupported action %v on charging station, cannot send request", featureName)
 	}
-	err := cs.client.SendRequest(request)
-	if err == nil {
-		// Retrieve result asynchronously
-		go func() {
-			select {
-			case response := <-cs.responseHandler:
-				callback(response, nil)
-			case protoError := <-cs.errorHandler:
-				callback(nil, protoError)
-			}
-		}()
+	// Response will be retrieved asynchronously via asyncHandler
+	send := func() error {
+		return cs.client.SendRequest(request)
 	}
+	err := cs.callbacks.TryQueue("main", send, callback)
 	return err
+}
+
+func (cs *chargingStation) asyncCallbackHandler() {
+	for {
+		select {
+		case confirmation := <-cs.responseHandler:
+			// Get and invoke callback
+			if callback, ok := cs.callbacks.Dequeue("main"); ok {
+				callback(confirmation, nil)
+			} else {
+				log.Errorf("no callback available for incoming response %v", confirmation.GetFeatureName())
+			}
+		case protoError := <-cs.errorHandler:
+			// Get and invoke callback
+			if callback, ok := cs.callbacks.Dequeue("main"); ok {
+				callback(nil, protoError)
+			} else {
+				log.Errorf("no callback available for incoming error %v", protoError.Error())
+			}
+		case _, _ = <-cs.stopC:
+			return
+		}
+	}
 }
 
 func (cs *chargingStation) sendResponse(response ocpp.Response, err error, requestId string) {
@@ -261,8 +300,13 @@ func (cs *chargingStation) sendResponse(response ocpp.Response, err error, reque
 }
 
 func (cs *chargingStation) Start(csmsUrl string) error {
-	// TODO: implement auto-reconnect logic
-	return cs.client.Start(csmsUrl)
+	cs.stopC = make(chan struct{}, 1)
+	// Async response handler receives incoming responses/errors and triggers callbacks
+	err := cs.client.Start(csmsUrl)
+	if err == nil {
+		go cs.asyncCallbackHandler()
+	}
+	return err
 }
 
 func (cs *chargingStation) Stop() {

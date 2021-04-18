@@ -3,6 +3,9 @@ package ocpp2
 
 import (
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/authorization"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/availability"
@@ -23,7 +26,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
-	log "github.com/sirupsen/logrus"
 )
 
 // -------------------- v2.0 Charging Station --------------------
@@ -159,11 +161,14 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) C
 			dialer.Subprotocols = append(dialer.Subprotocols, types.V2Subprotocol)
 		}
 	})
+	cs := chargingStation{responseHandler: make(chan ocpp.Response, 1), errorHandler: make(chan error, 1), callbacks: callbackqueue.New()}
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
+		// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
+		dispatcher.SetOnRequestCanceled(cs.onRequestTimeout)
 		endpoint = ocppj.NewClient(id, client, dispatcher, nil, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
-	cs := chargingStation{client: endpoint, responseHandler: make(chan ocpp.Response), errorHandler: make(chan error)}
+	cs.client = endpoint
 	cs.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
 		cs.responseHandler <- confirmation
 	})
