@@ -61,14 +61,14 @@ func (c *Client) SetErrorHandler(handler func(err *ocpp.Error, details interface
 }
 
 // Connects to the given serverURL and starts running the I/O loop for the underlying connection.
-// The write routine runs on a separate goroutine, while the read routine runs on the caller's routine.
-// This means, the function is blocking for as long as the Client is connected to the Server.
 //
-// Whenever the connection is ended, the function returns.
+// If the connection is established successfully, the function returns control to the caller immediately.
+// The read/write routines are run on dedicated goroutines, so the main thread can perform other operations.
 //
-// Call this function in a separate goroutine, to perform other operations on the main thread.
+// In case of disconnection, the client handles re-connection automatically.
+// The client will attempt to re-connect to the server forever, until it is stopped by invoking the Stop method.
 //
-// An error may be returned, if the connection failed or if it broke unexpectedly.
+// An error may be returned, if establishing the connection failed.
 func (c *Client) Start(serverURL string) error {
 	// Set internal message handler
 	c.client.SetMessageHandler(c.ocppMessageHandler)
