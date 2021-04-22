@@ -364,7 +364,13 @@ func (cs *centralSystem) SetNewChargePointHandler(handler func(chargePointId str
 }
 
 func (cs *centralSystem) SetChargePointDisconnectedHandler(handler func(chargePointId string)) {
-	cs.server.SetDisconnectedClientHandler(handler)
+	cs.server.SetDisconnectedClientHandler(func(clientID string) {
+		for cb, ok := cs.callbackQueue.Dequeue(clientID); ok; cb, ok = cs.callbackQueue.Dequeue(clientID) {
+			err := ocpp.NewError(ocppj.GenericError, "client disconnected, no response received from client", "")
+			cb(nil, err)
+		}
+		handler(clientID)
+	})
 }
 
 func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
@@ -401,7 +407,6 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Re
 			err = fmt.Errorf("replying cp %s to request %s with 'protocol error': %w", chargePointId, requestId, err)
 			cs.error(err)
 		}
-
 		return
 	}
 
