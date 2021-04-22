@@ -36,6 +36,7 @@ type MockWebsocketServer struct {
 	MessageHandler            func(ws ws.Channel, data []byte) error
 	NewClientHandler          func(ws ws.Channel)
 	DisconnectedClientHandler func(ws ws.Channel)
+	errC                      chan error
 }
 
 func (websocketServer *MockWebsocketServer) Start(port int, listenPath string) {
@@ -64,6 +65,19 @@ func (websocketServer *MockWebsocketServer) SetDisconnectedClientHandler(handler
 }
 
 func (websocketServer *MockWebsocketServer) AddSupportedSubprotocol(subProto string) {
+}
+
+func (websocketServer *MockWebsocketServer) Errors() <-chan error {
+	if websocketServer.errC == nil {
+		websocketServer.errC = make(chan error, 1)
+	}
+	return websocketServer.errC
+}
+
+func (websocketServer *MockWebsocketServer) ThrowError(err error) {
+	if websocketServer.errC != nil {
+		websocketServer.errC <- err
+	}
 }
 
 func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client interface{}) {

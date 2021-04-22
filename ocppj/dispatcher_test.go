@@ -48,6 +48,8 @@ func (s *ServerDispatcherTestSuite) TestSendRequest() {
 	}).Return(nil)
 	s.dispatcher.Start()
 	require.True(t, s.dispatcher.IsRunning())
+	// Simulate client connection
+	s.dispatcher.CreateClient(clientID)
 	// Create and send mock request
 	req := newMockRequest("somevalue")
 	call, err := s.endpoint.CreateCall(req)
@@ -102,6 +104,8 @@ func (s *ServerDispatcherTestSuite) TestRequestCanceled() {
 	})
 	s.dispatcher.Start()
 	require.True(t, s.dispatcher.IsRunning())
+	// Simulate client connection
+	s.dispatcher.CreateClient(clientID)
 	// Send mock request
 	err = s.dispatcher.SendRequest(clientID, bundle)
 	require.NoError(t, err)
@@ -120,6 +124,22 @@ func (s *ServerDispatcherTestSuite) TestRequestCanceled() {
 	assert.True(t, q.IsEmpty())
 }
 
+func (s *ServerDispatcherTestSuite) TestCreateClient() {
+	t := s.T()
+	// Setup
+	clientID := "client1"
+	s.dispatcher.Start()
+	require.True(t, s.dispatcher.IsRunning())
+	// No client state created yet
+	_, ok := s.queueMap.Get(clientID)
+	assert.False(t, ok)
+	// Create client state
+	s.dispatcher.CreateClient(clientID)
+	_, ok = s.queueMap.Get(clientID)
+	assert.True(t, ok)
+	assert.False(t, s.state.HasPendingRequest(clientID))
+}
+
 func (s *ServerDispatcherTestSuite) TestDeleteClient() {
 	t := s.T()
 	// Setup
@@ -132,6 +152,8 @@ func (s *ServerDispatcherTestSuite) TestDeleteClient() {
 	}).Return(nil)
 	s.dispatcher.Start()
 	require.True(t, s.dispatcher.IsRunning())
+	// Simulate client connection
+	s.dispatcher.CreateClient(clientID)
 	// Create and send mock request
 	req := newMockRequest("somevalue")
 	call, err := s.endpoint.CreateCall(req)
