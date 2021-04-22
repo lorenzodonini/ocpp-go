@@ -317,10 +317,14 @@ type ServerDispatcher interface {
 	//
 	// If an onRequestCanceled callback is set, it won't be triggered by stopping the dispatcher.
 	Stop()
-	// Notifies that an external event (typically network-related) should stop
-	// dispatching requests for a specific client.
+	// Notifies that it is now possible to dispatch requests for a new client.
 	//
-	// Internal queues for that client will be cleared and no further requests will be accepted.
+	// Internal queues are created and requests for the client are now accepted.
+	CreateClient(clientID string)
+	// Notifies that a client was invalidated (typically caused by a network event).
+	//
+	// The dispatcher will stop dispatching requests for that specific client.
+	// Internal queues for that client are cleared and no further requests will be accepted.
 	// Undelivered pending requests are also cleared.
 	// The OnRequestCanceled callback will be invoked for each discarded request.
 	DeleteClient(clientID string)
@@ -357,6 +361,8 @@ func (d *DefaultServerDispatcher) Start() {
 }
 
 func (d *DefaultServerDispatcher) IsRunning() bool {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 	return d.requestChannel != nil
 }
 
@@ -368,9 +374,11 @@ func (d *DefaultServerDispatcher) Stop() {
 	// TODO: clear pending requests?
 }
 
+func (d *DefaultServerDispatcher) CreateClient(clientID string) {
+	_ = d.queueMap.GetOrCreate(clientID)
+}
+
 func (d *DefaultServerDispatcher) DeleteClient(clientID string) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
 	d.queueMap.Remove(clientID)
 	d.requestChannel <- clientID
 }
@@ -391,7 +399,10 @@ func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle
 	if d.network == nil {
 		return fmt.Errorf("cannot send request %v, no network server was set", req.Call.UniqueId)
 	}
-	q := d.queueMap.GetOrCreate(clientID)
+	q, ok := d.queueMap.Get(clientID)
+	if !ok {
+		return fmt.Errorf("cannot send request %s, no client %s exists", req.Call.UniqueId, clientID)
+	}
 	if err := q.Push(req); err != nil {
 		return err
 	}
@@ -452,7 +463,11 @@ func (d *DefaultServerDispatcher) messagePump() {
 
 func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) {
 	// Get first element in queue
-	q, _ := d.queueMap.Get(clientID)
+	q, ok := d.queueMap.Get(clientID)
+	if !ok {
+		log.Errorf("failed to dispatch next request for client %s, no request queue available", clientID)
+		return
+	}
 	el := q.Peek()
 	bundle, _ := el.(RequestBundle)
 	jsonMessage := bundle.Data
