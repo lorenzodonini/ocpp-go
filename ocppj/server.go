@@ -88,12 +88,8 @@ func (s *Server) SetDisconnectedClientHandler(handler func(clientID string)) {
 // An error may be returned, if the websocket server couldn't be started.
 func (s *Server) Start(listenPort int, listenPath string) {
 	// Set internal message handler
-	s.server.SetNewClientHandler(func(ws ws.Channel) {
-		if s.newClientHandler != nil {
-			s.newClientHandler(ws.GetID())
-		}
-	})
-	s.server.SetDisconnectedClientHandler(s.onDisconnected)
+	s.server.SetNewClientHandler(s.onClientConnected)
+	s.server.SetDisconnectedClientHandler(s.onClientDisconnected)
 	s.server.SetMessageHandler(s.ocppMessageHandler)
 	s.dispatcher.Start()
 	// Serve & run
@@ -231,7 +227,16 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 	return nil
 }
 
-func (s *Server) onDisconnected(ws ws.Channel) {
+func (s *Server) onClientConnected(ws ws.Channel) {
+	// Create state for connected client
+	s.dispatcher.CreateClient(ws.GetID())
+	// Invoke callback
+	if s.newClientHandler != nil {
+		s.newClientHandler(ws.GetID())
+	}
+}
+
+func (s *Server) onClientDisconnected(ws ws.Channel) {
 	// Clear state for disconnected client
 	s.dispatcher.DeleteClient(ws.GetID())
 	s.RequestState.ClearClientPendingRequest(ws.GetID())
