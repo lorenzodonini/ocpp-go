@@ -274,7 +274,19 @@ func (cp *chargePoint) asyncCallbackHandler() {
 				cp.error(err)
 			}
 		case _, _ = <-cp.stopC:
+			// Handler stopped, cleanup callbacks.
+			// No callback invocation, since the user manually stopped the client.
+			cp.clearCallbacks(false)
 			return
+		}
+	}
+}
+
+func (cp *chargePoint) clearCallbacks(invokeCallback bool) {
+	for cb, ok := cp.callbacks.Dequeue("main"); ok; cb, ok = cp.callbacks.Dequeue("main") {
+		if invokeCallback {
+			err := ocpp.NewError(ocppj.GenericError, "client stopped, no response received from server", "")
+			cb(nil, err)
 		}
 	}
 }
