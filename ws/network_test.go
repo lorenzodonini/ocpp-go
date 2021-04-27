@@ -44,8 +44,8 @@ func (s *NetworkTestSuite) TearDownSuite() {
 }
 
 func (s *NetworkTestSuite) SetupTest() {
-	s.server = NewWebsocketServer(s.T(), nil)
-	s.client = NewWebsocketClient(s.T(), nil)
+	s.server = newWebsocketServer(s.T(), nil)
+	s.client = newWebsocketClient(s.T(), nil)
 }
 
 func (s *NetworkTestSuite) TearDownTest() {
@@ -55,7 +55,7 @@ func (s *NetworkTestSuite) TearDownTest() {
 
 func (s *NetworkTestSuite) TestClientConnectionFailed() {
 	t := s.T()
-	s.server = NewWebsocketServer(t, nil)
+	s.server = newWebsocketServer(t, nil)
 	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.Fail(t, "should not accept new clients")
 	})
@@ -88,7 +88,7 @@ func (s *NetworkTestSuite) TestClientConnectionFailedTimeout() {
 	// Set timeouts for test
 	s.client.timeoutConfig.HandshakeTimeout = 2 * time.Second
 	// Setup
-	s.server = NewWebsocketServer(t, nil)
+	s.server = newWebsocketServer(t, nil)
 	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.Fail(t, "should not accept new clients")
 	})
@@ -125,7 +125,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	serverOnDisconnected := make(chan bool, 1)
 	clientOnDisconnected := make(chan bool, 1)
 	reconnected := make(chan bool, 1)
-	s.server = NewWebsocketServer(t, nil)
+	s.server = newWebsocketServer(t, nil)
 	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.NotNil(t, ws)
 		conn := s.server.connections[ws.GetID()]
