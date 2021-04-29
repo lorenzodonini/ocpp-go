@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"crypto/tls"
 	"fmt"
 	"reflect"
 	"testing"
@@ -28,6 +29,10 @@ type MockWebSocket struct {
 
 func (websocket MockWebSocket) GetID() string {
 	return websocket.id
+}
+
+func (websocket MockWebSocket) GetTLSConnectionState() *tls.ConnectionState {
+	return nil
 }
 
 func NewMockWebSocket(id string) MockWebSocket {
