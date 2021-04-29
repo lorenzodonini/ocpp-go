@@ -87,6 +87,7 @@ func NewClientTimeoutConfig() ClientTimeoutConfig {
 // Channel represents a bi-directional communication channel, which provides at least a unique ID.
 type Channel interface {
 	GetID() string
+	GetTLSConnectionState() *tls.ConnectionState
 }
 
 // WebSocket is a wrapper for a single websocket channel.
@@ -94,16 +95,22 @@ type Channel interface {
 //
 // Don't use a websocket directly, but refer to WsServer and WsClient.
 type WebSocket struct {
-	connection  *websocket.Conn
-	id          string
-	outQueue    chan []byte
-	closeSignal chan error // used by the readPump to notify the closed connection to the writePump
-	pingMessage chan []byte
+	connection         *websocket.Conn
+	id                 string
+	outQueue           chan []byte
+	closeSignal        chan error // used by the readPump to notify the closed connection to the writePump
+	pingMessage        chan []byte
+	tlsConnectionState *tls.ConnectionState
 }
 
 // Retrieves the unique Identifier of the websocket (typically, the URL suffix).
 func (websocket *WebSocket) GetID() string {
 	return websocket.id
+}
+
+// Returns the TLS connection state of the connection, if any.
+func (websocket *WebSocket) GetTLSConnectionState() *tls.ConnectionState {
+	return websocket.tlsConnectionState
 }
 
 // ConnectionError is a websocket
@@ -384,7 +391,14 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		server.error(fmt.Errorf("upgrade failed: %w", err))
 		return
 	}
-	ws := WebSocket{connection: conn, id: url.Path, outQueue: make(chan []byte), closeSignal: make(chan error, 1), pingMessage: make(chan []byte, 1)}
+	ws := WebSocket{
+		connection:         conn,
+		id:                 url.Path,
+		outQueue:           make(chan []byte),
+		closeSignal:        make(chan error, 1),
+		pingMessage:        make(chan []byte, 1),
+		tlsConnectionState: r.TLS,
+	}
 	server.connections[url.Path] = &ws
 	// Read and write routines are started in separate goroutines and function will return immediately
 	go server.writePump(&ws)
@@ -784,7 +798,13 @@ func (client *Client) Start(url string) error {
 		return err
 	}
 
-	client.webSocket = WebSocket{connection: ws, id: url, outQueue: make(chan []byte), closeSignal: make(chan error, 1)}
+	client.webSocket = WebSocket{
+		connection:         ws,
+		id:                 url,
+		outQueue:           make(chan []byte),
+		closeSignal:        make(chan error, 1),
+		tlsConnectionState: resp.TLS,
+	}
 	client.setConnected(true)
 	//Start reader and write routine
 	go client.writePump()
