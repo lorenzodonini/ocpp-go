@@ -128,7 +128,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	s.server = newWebsocketServer(t, nil)
 	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.NotNil(t, ws)
-		conn := s.server.connections[ws.GetID()]
+		conn := s.server.connections[ws.ID()]
 		require.NotNil(t, conn)
 	})
 	s.server.SetDisconnectedClientHandler(func(ws Channel) {

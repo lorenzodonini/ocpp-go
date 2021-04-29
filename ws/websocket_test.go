@@ -41,7 +41,7 @@ func newWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 			response, err := onMessage(data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = wsServer.Write(ws.GetID(), data)
+				err = wsServer.Write(ws.ID(), data)
 				assert.Nil(t, err)
 			}
 		}
@@ -89,7 +89,7 @@ func TestWebsocketEcho(t *testing.T) {
 		return data, nil
 	})
 	wsServer.SetNewClientHandler(func(ws Channel) {
-		tlsState := ws.GetTLSConnectionState()
+		tlsState := ws.TLSConnectionState()
 		assert.Nil(t, tlsState)
 	})
 	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
@@ -144,7 +144,7 @@ func TestTLSWebsocketEcho(t *testing.T) {
 		return data, nil
 	})
 	wsServer.SetNewClientHandler(func(ws Channel) {
-		tlsState := ws.GetTLSConnectionState()
+		tlsState := ws.TLSConnectionState()
 		assert.NotNil(t, tlsState)
 	})
 	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
@@ -274,7 +274,7 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 	wsServer := newWebsocketServer(t, nil)
 	wsServer.SetNewClientHandler(func(ws Channel) {
 		assert.NotNil(t, ws)
-		conn := wsServer.connections[ws.GetID()]
+		conn := wsServer.connections[ws.ID()]
 		assert.NotNil(t, conn)
 		// Simulate connection closed as soon client is connected
 		err := conn.connection.Close()

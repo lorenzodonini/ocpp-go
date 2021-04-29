@@ -21,11 +21,11 @@ type MockWebSocket struct {
 	id string
 }
 
-func (websocket MockWebSocket) GetID() string {
+func (websocket MockWebSocket) ID() string {
 	return websocket.id
 }
 
-func (websocket MockWebSocket) GetTLSConnectionState() *tls.ConnectionState {
+func (websocket MockWebSocket) TLSConnectionState() *tls.ConnectionState {
 	return nil
 }
 
@@ -207,7 +207,7 @@ func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 			response, err := onMessage(data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = wsServer.Write(ws.GetID(), data)
+				err = wsServer.Write(ws.ID(), data)
 				assert.Nil(t, err)
 			}
 		}

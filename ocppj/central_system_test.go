@@ -220,8 +220,8 @@ func (suite *OcppJTestSuite) TestCentralSystemNewClientHandler() {
 	t := suite.T()
 	mockClientID := "1234"
 	connectedC := make(chan bool, 1)
-	suite.centralSystem.SetNewClientHandler(func(clientID string) {
-		assert.Equal(t, mockClientID, clientID)
+	suite.centralSystem.SetNewClientHandler(func(client ws.Channel) {
+		assert.Equal(t, mockClientID, client.ID())
 		connectedC <- true
 	})
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return()
@@ -242,12 +242,12 @@ func (suite *OcppJTestSuite) TestCentralSystemDisconnectedHandler() {
 	mockClientID := "1234"
 	connectedC := make(chan bool, 1)
 	disconnectedC := make(chan bool, 1)
-	suite.centralSystem.SetNewClientHandler(func(clientID string) {
-		assert.Equal(t, mockClientID, clientID)
+	suite.centralSystem.SetNewClientHandler(func(client ws.Channel) {
+		assert.Equal(t, mockClientID, client.ID())
 		connectedC <- true
 	})
-	suite.centralSystem.SetDisconnectedClientHandler(func(clientID string) {
-		assert.Equal(t, mockClientID, clientID)
+	suite.centralSystem.SetDisconnectedClientHandler(func(client ws.Channel) {
+		assert.Equal(t, mockClientID, client.ID())
 		disconnectedC <- true
 	})
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return()
@@ -270,8 +270,8 @@ func (suite *OcppJTestSuite) TestCentralSystemRequestHandler() {
 	mockUniqueId := "5678"
 	mockValue := "someValue"
 	mockRequest := fmt.Sprintf(`[2,"%v","%v",{"mockValue":"%v"}]`, mockUniqueId, MockFeatureName, mockValue)
-	suite.centralSystem.SetRequestHandler(func(chargePointId string, request ocpp.Request, requestId string, action string) {
-		assert.Equal(t, mockChargePointId, chargePointId)
+	suite.centralSystem.SetRequestHandler(func(chargePoint ws.Channel, request ocpp.Request, requestId string, action string) {
+		assert.Equal(t, mockChargePointId, chargePoint.ID())
 		assert.Equal(t, mockUniqueId, requestId)
 		assert.Equal(t, MockFeatureName, action)
 		assert.NotNil(t, request)
@@ -292,8 +292,8 @@ func (suite *OcppJTestSuite) TestCentralSystemConfirmationHandler() {
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.centralSystem.SetResponseHandler(func(chargePointId string, confirmation ocpp.Response, requestId string) {
-		assert.Equal(t, mockChargePointId, chargePointId)
+	suite.centralSystem.SetResponseHandler(func(chargePoint ws.Channel, confirmation ocpp.Response, requestId string) {
+		assert.Equal(t, mockChargePointId, chargePoint.ID())
 		assert.Equal(t, mockUniqueId, requestId)
 		assert.NotNil(t, confirmation)
 	})
@@ -320,8 +320,8 @@ func (suite *OcppJTestSuite) TestCentralSystemErrorHandler() {
 	mockErrorDetails["details"] = "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, mockUniqueId, mockErrorCode, mockErrorDescription, mockValue)
-	suite.centralSystem.SetErrorHandler(func(chargePointId string, err *ocpp.Error, details interface{}) {
-		assert.Equal(t, mockChargePointId, chargePointId)
+	suite.centralSystem.SetErrorHandler(func(chargePoint ws.Channel, err *ocpp.Error, details interface{}) {
+		assert.Equal(t, mockChargePointId, chargePoint.ID())
 		assert.Equal(t, mockUniqueId, err.MessageId)
 		assert.Equal(t, mockErrorCode, err.Code)
 		assert.Equal(t, mockErrorDescription, err.Description)
