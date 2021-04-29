@@ -88,8 +88,8 @@ func NewClientTimeoutConfig() ClientTimeoutConfig {
 
 // Channel represents a bi-directional communication channel, which provides at least a unique ID.
 type Channel interface {
-	GetID() string
-	GetTLSConnectionState() *tls.ConnectionState
+	ID() string
+	TLSConnectionState() *tls.ConnectionState
 }
 
 // WebSocket is a wrapper for a single websocket channel.
@@ -106,12 +106,12 @@ type WebSocket struct {
 }
 
 // Retrieves the unique Identifier of the websocket (typically, the URL suffix).
-func (websocket *WebSocket) GetID() string {
+func (websocket *WebSocket) ID() string {
 	return websocket.id
 }
 
 // Returns the TLS connection state of the connection, if any.
-func (websocket *WebSocket) GetTLSConnectionState() *tls.ConnectionState {
+func (websocket *WebSocket) TLSConnectionState() *tls.ConnectionState {
 	return websocket.tlsConnectionState
 }
 
@@ -457,7 +457,7 @@ func (server *Server) readPump(ws *WebSocket) {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
-				server.error(fmt.Errorf("read failed for %s: %w", ws.GetID(), err))
+				server.error(fmt.Errorf("read failed for %s: %w", ws.ID(), err))
 			}
 			// Notify writePump of error. Disconnection will be handled there
 			ws.closeSignal <- err
@@ -471,7 +471,7 @@ func (server *Server) readPump(ws *WebSocket) {
 			var channel Channel = ws
 			err = server.messageHandler(channel, message)
 			if err != nil {
-				server.error(fmt.Errorf("handling failed for %s: %w", ws.GetID(), err))
+				server.error(fmt.Errorf("handling failed for %s: %w", ws.ID(), err))
 				continue
 			}
 		}
@@ -503,14 +503,14 @@ func (server *Server) writePump(ws *WebSocket) {
 
 			err := conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				server.error(fmt.Errorf("write failed for %s: %w", ws.GetID(), err))
+				server.error(fmt.Errorf("write failed for %s: %w", ws.ID(), err))
 				return
 			}
 		case ping := <-ws.pingMessage:
 			_ = conn.SetWriteDeadline(time.Now().Add(server.timeoutConfig.WriteWait))
 			err := conn.WriteMessage(websocket.PongMessage, ping)
 			if err != nil {
-				server.error(fmt.Errorf("write failed for %s: %w", ws.GetID(), err))
+				server.error(fmt.Errorf("write failed for %s: %w", ws.ID(), err))
 				return
 			}
 		case closed, ok := <-ws.closeSignal:
