@@ -2,6 +2,8 @@
 package ocpp16
 
 import (
+	"crypto/tls"
+
 	"github.com/gorilla/websocket"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
@@ -16,6 +18,13 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
+
+type ChargePointConnection interface {
+	ID() string
+	TLSConnectionState() *tls.ConnectionState
+}
+
+type ChargePointConnectionHandler func(chargePoint ChargePointConnection)
 
 // -------------------- v1.6 Charge Point --------------------
 
@@ -226,9 +235,9 @@ type CentralSystem interface {
 	// Registers a handler for incoming smart charging profile messages.
 	SetSmartChargingHandler(handler smartcharging.CentralSystemHandler)
 	// Registers a handler for new incoming charge point connections.
-	SetNewChargePointHandler(handler func(chargePointId string))
+	SetNewChargePointHandler(handler ChargePointConnectionHandler)
 	// Registers a handler for charge point disconnections.
-	SetChargePointDisconnectedHandler(handler func(chargePointId string))
+	SetChargePointDisconnectedHandler(handler ChargePointConnectionHandler)
 	// Sends an asynchronous request to the charge point.
 	// The charge point will respond with a confirmation message, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.
@@ -262,8 +271,14 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.WsServer) CentralSystem 
 		endpoint = ocppj.NewServer(server, nil, nil, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
 	cs := newCentralSystem(endpoint)
-	cs.server.SetRequestHandler(cs.handleIncomingRequest)
-	cs.server.SetResponseHandler(cs.handleIncomingConfirmation)
-	cs.server.SetErrorHandler(cs.handleIncomingError)
+	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {
+		cs.handleIncomingRequest(client, request, requestId, action)
+	})
+	cs.server.SetResponseHandler(func(client ws.Channel, response ocpp.Response, requestId string) {
+		cs.handleIncomingConfirmation(client, response, requestId)
+	})
+	cs.server.SetErrorHandler(func(client ws.Channel, err *ocpp.Error, details interface{}) {
+		cs.handleIncomingError(client, err, details)
+	})
 	return &cs
 }

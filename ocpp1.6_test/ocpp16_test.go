@@ -27,11 +27,11 @@ type MockWebSocket struct {
 	id string
 }
 
-func (websocket MockWebSocket) GetID() string {
+func (websocket MockWebSocket) ID() string {
 	return websocket.id
 }
 
-func (websocket MockWebSocket) GetTLSConnectionState() *tls.ConnectionState {
+func (websocket MockWebSocket) TLSConnectionState() *tls.ConnectionState {
 	return nil
 }
 
@@ -426,7 +426,7 @@ func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 			response, err := onMessage(data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = wsServer.Write(ws.GetID(), data)
+				err = wsServer.Write(ws.ID(), data)
 				assert.Nil(t, err)
 			}
 		}
@@ -473,8 +473,8 @@ type expectedChargePointOptions struct {
 
 func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener core.CentralSystemHandler, options expectedCentralSystemOptions) {
 	t := suite.T()
-	suite.centralSystem.SetNewChargePointHandler(func(chargePointId string) {
-		assert.Equal(t, options.clientId, chargePointId)
+	suite.centralSystem.SetNewChargePointHandler(func(chargePoint ocpp16.ChargePointConnection) {
+		assert.Equal(t, options.clientId, chargePoint.ID())
 	})
 	suite.centralSystem.SetCoreHandler(coreListener)
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
@@ -575,9 +575,9 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
 	coreListener := MockChargePointCoreListener{}
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
-	suite.ocppjCentralSystem.SetErrorHandler(func(chargePointId string, err *ocpp.Error, details interface{}) {
+	suite.ocppjCentralSystem.SetErrorHandler(func(chargePoint ws.Channel, err *ocpp.Error, details interface{}) {
 		assert.Equal(t, messageId, err.MessageId)
-		assert.Equal(t, wsId, chargePointId)
+		assert.Equal(t, wsId, chargePoint.ID())
 		assert.Equal(t, ocppj.NotSupported, err.Code)
 		assert.Equal(t, errorDescription, err.Description)
 		assert.Nil(t, details)
