@@ -1,9 +1,11 @@
 package diagnostics
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Customer Information (CSMS -> CS) --------------------
@@ -42,7 +44,8 @@ type CustomerInformationRequest struct {
 // This field definition of the CustomerInformation response payload, sent by the Charging Station to the CSMS in response to a CustomerInformationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type CustomerInformationResponse struct {
-	Status CustomerInformationStatus `json:"status" validate:"required,customerInformationStatus"`
+	Status     CustomerInformationStatus `json:"status" validate:"required,customerInformationStatus"`
+	StatusInfo *types.StatusInfo         `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // CSMS can request a Charging Station to clear its Authorization Cache.
@@ -76,7 +79,7 @@ func NewCustomerInformationRequest(requestId int, report bool, clear bool) *Cust
 	return &CustomerInformationRequest{RequestID: requestId, Report: report, Clear: clear}
 }
 
-// Creates a new CustomerInformationResponse, containing all required fields. There are no optional fields for this message.
+// Creates a new CustomerInformationResponse, containing all required fields. Additional optional fields may be set afterwards.
 func NewCustomerInformationResponse(status CustomerInformationStatus) *CustomerInformationResponse {
 	return &CustomerInformationResponse{Status: status}
 }

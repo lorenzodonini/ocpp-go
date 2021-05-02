@@ -2,22 +2,24 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/data"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/data"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestDataTransferRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{data.DataTransferRequest{VendorId: "12345"}, true},
-		{data.DataTransferRequest{VendorId: "12345", MessageId: "6789"}, true},
-		{data.DataTransferRequest{VendorId: "12345", MessageId: "6789", Data: "mockData"}, true},
+		{data.DataTransferRequest{VendorID: "12345"}, true},
+		{data.DataTransferRequest{VendorID: "12345", MessageID: "6789"}, true},
+		{data.DataTransferRequest{VendorID: "12345", MessageID: "6789", Data: "mockData"}, true},
 		{data.DataTransferRequest{}, false},
-		{data.DataTransferRequest{VendorId: ">255............................................................................................................................................................................................................................................................"}, false},
-		{data.DataTransferRequest{VendorId: "12345", MessageId: ">50................................................"}, false},
+		{data.DataTransferRequest{VendorID: ">255............................................................................................................................................................................................................................................................"}, false},
+		{data.DataTransferRequest{VendorID: "12345", MessageID: ">50................................................"}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -52,7 +54,7 @@ func (suite *OcppV2TestSuite) TestDataTransferFromChargePointE2EMocked() {
 		request, ok := args.Get(1).(*data.DataTransferRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
-		assert.Equal(t, vendorId, request.VendorId)
+		assert.Equal(t, vendorId, request.VendorID)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
@@ -83,7 +85,7 @@ func (suite *OcppV2TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 		request, ok := args.Get(0).(*data.DataTransferRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
-		assert.Equal(t, vendorId, request.VendorId)
+		assert.Equal(t, vendorId, request.VendorID)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)

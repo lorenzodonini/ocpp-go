@@ -1,14 +1,16 @@
 package display
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
-// -------------------- Clear Display (CSMS -> CS) --------------------
+// -------------------- Clear Display Message (CSMS -> CS) --------------------
 
-const ClearDisplayFeatureName = "ClearDisplay"
+const ClearDisplayMessageFeatureName = "ClearDisplayMessage"
 
 // Status returned in response to ClearDisplayRequest.
 type ClearMessageStatus string
@@ -30,13 +32,14 @@ func isValidClearMessageStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the ClearDisplay request payload sent by the CSMS to the Charging Station.
 type ClearDisplayRequest struct {
-	ID int `json:"id" validate:"required,gte=0"`
+	ID int `json:"id"` // Id of the message that SHALL be removed from the Charging Station.
 }
 
 // This field definition of the ClearDisplay response payload, sent by the Charging Station to the CSMS in response to a ClearDisplayRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ClearDisplayResponse struct {
-	Status ClearMessageStatus `json:"status" validate:"required,clearMessageStatus"`
+	Status     ClearMessageStatus `json:"status" validate:"required,clearMessageStatus"`
+	StatusInfo *types.StatusInfo  `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // The CSMS asks the Charging Station to clear a display message that has been configured in the Charging Station to be cleared/removed.
@@ -45,7 +48,7 @@ type ClearDisplayResponse struct {
 type ClearDisplayFeature struct{}
 
 func (f ClearDisplayFeature) GetFeatureName() string {
-	return ClearDisplayFeatureName
+	return ClearDisplayMessageFeatureName
 }
 
 func (f ClearDisplayFeature) GetRequestType() reflect.Type {
@@ -57,11 +60,11 @@ func (f ClearDisplayFeature) GetResponseType() reflect.Type {
 }
 
 func (r ClearDisplayRequest) GetFeatureName() string {
-	return ClearDisplayFeatureName
+	return ClearDisplayMessageFeatureName
 }
 
 func (c ClearDisplayResponse) GetFeatureName() string {
-	return ClearDisplayFeatureName
+	return ClearDisplayMessageFeatureName
 }
 
 // Creates a new ClearDisplayRequest, containing all required fields. There are no optional fields for this message.
@@ -69,7 +72,7 @@ func NewClearDisplayRequest(id int) *ClearDisplayRequest {
 	return &ClearDisplayRequest{ID: id}
 }
 
-// Creates a new ClearDisplayResponse, containing all required fields. There are no optional fields for this message.
+// Creates a new ClearDisplayResponse, containing all required fields. Optional fields may be set afterwards.
 func NewClearDisplayResponse(status ClearMessageStatus) *ClearDisplayResponse {
 	return &ClearDisplayResponse{Status: status}
 }

@@ -2,11 +2,13 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // Test
@@ -17,7 +19,6 @@ func (suite *OcppV2TestSuite) TestGetBaseReportRequestValidation() {
 		{provisioning.GetBaseReportRequest{ReportBase: provisioning.ReportTypeConfigurationInventory}, true},
 		{provisioning.GetBaseReportRequest{RequestID: 42}, false},
 		{provisioning.GetBaseReportRequest{}, false},
-		{provisioning.GetBaseReportRequest{RequestID: -1, ReportBase: provisioning.ReportTypeConfigurationInventory}, false},
 		{provisioning.GetBaseReportRequest{RequestID: 42, ReportBase: "invalidReportType"}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)

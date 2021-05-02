@@ -123,8 +123,8 @@ func (cs *chargingStation) DataTransfer(vendorId string, props ...func(request *
 	}
 }
 
-func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareStatus, requestID int, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationResponse, error) {
-	request := firmware.NewFirmwareStatusNotificationRequest(status, requestID)
+func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationResponse, error) {
+	request := firmware.NewFirmwareStatusNotificationRequest(status)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -136,8 +136,8 @@ func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareSt
 	}
 }
 
-func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateResponse, error) {
-	request := iso15118.NewGet15118EVCertificateRequest(schemaVersion, exiRequest)
+func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, action iso15118.CertificateAction, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateResponse, error) {
+	request := iso15118.NewGet15118EVCertificateRequest(schemaVersion, action, exiRequest)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -699,7 +699,7 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.authorizationHandler.OnClearCache(request.(*authorization.ClearCacheRequest))
 	case smartcharging.ClearChargingProfileFeatureName:
 		response, err = cs.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
-	case display.ClearDisplayFeatureName:
+	case display.ClearDisplayMessageFeatureName:
 		response, err = cs.displayHandler.OnClearDisplay(request.(*display.ClearDisplayRequest))
 	case diagnostics.ClearVariableMonitoringFeatureName:
 		response, err = cs.diagnosticsHandler.OnClearVariableMonitoring(request.(*diagnostics.ClearVariableMonitoringRequest))

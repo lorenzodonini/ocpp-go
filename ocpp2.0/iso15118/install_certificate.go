@@ -1,24 +1,47 @@
 package iso15118
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Clear Display (CSMS -> CS) --------------------
 
 const InstallCertificateFeatureName = "InstallCertificate"
 
+// Charging Station indicates if installation was successful.
+type InstallCertificateStatus string
+
+const (
+	CertificateStatusAccepted InstallCertificateStatus = "Accepted"
+	CertificateStatusRejected InstallCertificateStatus = "Rejected"
+	CertificateStatusFailed   InstallCertificateStatus = "Failed"
+)
+
+func isValidInstallCertificateStatus(fl validator.FieldLevel) bool {
+	status := InstallCertificateStatus(fl.Field().String())
+	switch status {
+	case CertificateStatusAccepted, CertificateStatusRejected, CertificateStatusFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 // The field definition of the InstallCertificate request payload sent by the CSMS to the Charging Station.
 type InstallCertificateRequest struct {
-	CertificateType types.CertificateUse `json:"certificateType" validate:"required,certificateUse"`
-	Certificate     string               `json:"certificate" validate:"required,max=800"`
+	CertificateType types.CertificateUse `json:"certificateType" validate:"required,certificateUse"` // Indicates the certificate type that is sent.
+	Certificate     string               `json:"certificate" validate:"required,max=5500"`           // A PEM encoded X.509 certificate.
 }
 
 // This field definition of the InstallCertificate response payload, sent by the Charging Station to the CSMS in response to a InstallCertificateRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type InstallCertificateResponse struct {
-	Status types.CertificateStatus `json:"status" validate:"required,certificateStatus"`
+	Status     InstallCertificateStatus `json:"status" validate:"required,installCertificateStatus"`
+	StatusInfo *types.StatusInfo        `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // The CSMS requests the Charging Station to install a new certificate by sending an InstallCertificateRequest.
@@ -53,6 +76,10 @@ func NewInstallCertificateRequest(certificateType types.CertificateUse, certific
 }
 
 // Creates a new InstallCertificateResponse, containing all required fields. There are no optional fields for this message.
-func NewInstallCertificateResponse(status types.CertificateStatus) *InstallCertificateResponse {
+func NewInstallCertificateResponse(status InstallCertificateStatus) *InstallCertificateResponse {
 	return &InstallCertificateResponse{Status: status}
+}
+
+func init() {
+	_ = types.Validate.RegisterValidation("installCertificateStatus", isValidInstallCertificateStatus)
 }

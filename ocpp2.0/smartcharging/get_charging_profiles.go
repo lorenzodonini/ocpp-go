@@ -1,9 +1,11 @@
 package smartcharging
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Get Charging Profiles (CSMS -> Charging Station) --------------------
@@ -33,13 +35,13 @@ func isValidGetChargingProfileStatus(fl validator.FieldLevel) bool {
 type ChargingProfileCriterion struct {
 	ChargingProfilePurpose types.ChargingProfilePurposeType `json:"chargingProfilePurpose,omitempty" validate:"omitempty,chargingProfilePurpose"`
 	StackLevel             *int                             `json:"stackLevel,omitempty" validate:"omitempty,gte=0"`
-	ChargingProfileID      []int                            `json:"chargingProfileId,omitempty" validate:"omitempty,dive,gte=0"` // This field SHALL NOT contain more ids than set in ChargingProfileEntries.maxLimit
+	ChargingProfileID      []int                            `json:"chargingProfileId,omitempty" validate:"omitempty"` // This field SHALL NOT contain more ids than set in ChargingProfileEntries.maxLimit
 	ChargingLimitSource    []types.ChargingLimitSourceType  `json:"chargingLimitSource,omitempty" validate:"omitempty,max=4,dive,chargingLimitSource"`
 }
 
 // The field definition of the GetChargingProfiles request payload sent by the CSMS to the Charging Station.
 type GetChargingProfilesRequest struct {
-	RequestID       *int                     `json:"requestId,omitempty" validate:"omitempty,gte=0"`
+	RequestID       int                      `json:"requestId"`
 	EvseID          *int                     `json:"evseId,omitempty" validate:"omitempty,gte=0"`
 	ChargingProfile ChargingProfileCriterion `json:"chargingProfile" validate:"required"`
 }
@@ -47,7 +49,8 @@ type GetChargingProfilesRequest struct {
 // This field definition of the GetChargingProfiles response payload, sent by the Charging Station to the CSMS in response to a GetChargingProfilesRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetChargingProfilesResponse struct {
-	Status GetChargingProfileStatus `json:"status" validate:"required,getChargingProfileStatus"`
+	Status     GetChargingProfileStatus `json:"status" validate:"required,getChargingProfileStatus"`
+	StatusInfo *types.StatusInfo        `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // The CSMS MAY ask a Charging Station to report all, or a subset of all the install Charging Profiles from the different possible sources, by sending a GetChargingProfilesRequest.
@@ -80,7 +83,7 @@ func NewGetChargingProfilesRequest(chargingProfile ChargingProfileCriterion) *Ge
 	return &GetChargingProfilesRequest{ChargingProfile: chargingProfile}
 }
 
-// Creates a new GetChargingProfilesResponse, containing all required fields. There are no optional fields for this message.
+// Creates a new GetChargingProfilesResponse, containing all required fields. Optional fields may be set afterwards.
 func NewGetChargingProfilesResponse(status GetChargingProfileStatus) *GetChargingProfilesResponse {
 	return &GetChargingProfilesResponse{Status: status}
 }

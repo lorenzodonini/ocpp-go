@@ -1090,7 +1090,6 @@ func (suite *OcppV2TestSuite) SetupTest() {
 	smartChargingProfile := smartcharging.Profile
 	tariffProfile := tariffcost.Profile
 	transactionsProfile := transactions.Profile
-	// TODO: init additional profiles
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient

@@ -1,8 +1,9 @@
 package iso15118
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Get Certificate Status (CS -> CSMS) --------------------
@@ -19,6 +20,7 @@ type GetCertificateStatusRequest struct {
 type GetCertificateStatusResponse struct {
 	Status     types.GenericStatus `json:"status" validate:"required,genericStatus"`
 	OcspResult string              `json:"ocspResult,omitempty" validate:"omitempty,max=5500"`
+	StatusInfo *types.StatusInfo   `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // For 15118 certificate installation on EVs, the Charging Station requests the CSMS to provide the OCSP certificate

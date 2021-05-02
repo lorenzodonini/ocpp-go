@@ -1,8 +1,9 @@
 package smartcharging
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Cleared Charging Limit (CS -> CSMS) --------------------

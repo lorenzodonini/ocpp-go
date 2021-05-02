@@ -1,9 +1,11 @@
 package authorization
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Clear Cache (CSMS -> CS) --------------------
@@ -35,7 +37,8 @@ type ClearCacheRequest struct {
 // This field definition of the ClearCache response payload, sent by the Charging Station to the CSMS in response to a ClearCacheRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ClearCacheResponse struct {
-	Status ClearCacheStatus `json:"status" validate:"required,cacheStatus"`
+	Status     ClearCacheStatus  `json:"status" validate:"required,cacheStatus"`
+	StatusInfo *types.StatusInfo `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // CSMS can request a Charging Station to clear its Authorization Cache.

@@ -1,9 +1,11 @@
 package provisioning
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Boot Notification (CS -> CSMS) --------------------
@@ -59,7 +61,7 @@ type ModemType struct {
 
 // The physical system where an Electrical Vehicle (EV) can be charged.
 type ChargingStationType struct {
-	SerialNumber    string     `json:"serialNumber,omitempty" validate:"max=20"`
+	SerialNumber    string     `json:"serialNumber,omitempty" validate:"max=25"`
 	Model           string     `json:"model" validate:"required,max=20"`
 	VendorName      string     `json:"vendorName" validate:"required,max=50"`
 	FirmwareVersion string     `json:"firmwareVersion,omitempty" validate:"max=50"`
@@ -78,6 +80,7 @@ type BootNotificationResponse struct {
 	CurrentTime *types.DateTime    `json:"currentTime" validate:"required"`
 	Interval    int                `json:"interval" validate:"gte=0"`
 	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
+	StatusInfo  *types.StatusInfo  `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // After each (re)boot, a Charging Station SHALL send a request to the CSMS with information about its configuration (e.g. version, vendor, etc.).

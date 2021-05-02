@@ -1,12 +1,14 @@
 package iso15118
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
-// -------------------- Clear Display (CSMS -> CS) --------------------
+// -------------------- Delete Certificate (CSMS -> CS) --------------------
 
 const DeleteCertificateFeatureName = "DeleteCertificate"
 
@@ -37,7 +39,8 @@ type DeleteCertificateRequest struct {
 // This field definition of the DeleteCertificate response payload, sent by the Charging Station to the CSMS in response to a DeleteCertificateRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type DeleteCertificateResponse struct {
-	Status DeleteCertificateStatus `json:"status" validate:"required,deleteCertificateStatus"`
+	Status     DeleteCertificateStatus `json:"status" validate:"required,deleteCertificateStatus"`
+	StatusInfo *types.StatusInfo       `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // The CSMS requests the Charging Station to delete a specific installed certificate by sending a DeleteCertificateRequest.
@@ -69,7 +72,7 @@ func NewDeleteCertificateRequest(certificateHashData types.CertificateHashData) 
 	return &DeleteCertificateRequest{CertificateHashData: certificateHashData}
 }
 
-// Creates a new DeleteCertificateResponse, containing all required fields. There are no optional fields for this message.
+// Creates a new DeleteCertificateResponse, containing all required fields. Optional fields may be set afterwards.
 func NewDeleteCertificateResponse(status DeleteCertificateStatus) *DeleteCertificateResponse {
 	return &DeleteCertificateResponse{Status: status}
 }

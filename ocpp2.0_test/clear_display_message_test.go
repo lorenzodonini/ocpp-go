@@ -2,24 +2,25 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/display"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/display"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestClearDisplayRequestValidation() {
+func (suite *OcppV2TestSuite) TestClearDisplayMessageRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{display.ClearDisplayRequest{ID: 42}, true},
-		{display.ClearDisplayRequest{}, false},
-		{display.ClearDisplayRequest{ID: -1}, false},
+		{display.ClearDisplayRequest{}, true},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
 
-func (suite *OcppV2TestSuite) TestClearDisplayConfirmationValidation() {
+func (suite *OcppV2TestSuite) TestClearDisplayMessageResponseValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{display.ClearDisplayResponse{Status: display.ClearMessageStatusAccepted}, true},
@@ -30,14 +31,14 @@ func (suite *OcppV2TestSuite) TestClearDisplayConfirmationValidation() {
 	ExecuteGenericTestTable(t, confirmationTable)
 }
 
-func (suite *OcppV2TestSuite) TestClearDisplayE2EMocked() {
+func (suite *OcppV2TestSuite) TestClearDisplayMessageE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	displayMessageId := 42
 	status := display.ClearMessageStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v}]`, messageId, display.ClearDisplayFeatureName, displayMessageId)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v}]`, messageId, display.ClearDisplayMessageFeatureName, displayMessageId)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
 	clearDisplayConfirmation := display.NewClearDisplayResponse(status)
 	channel := NewMockWebSocket(wsId)
@@ -67,10 +68,10 @@ func (suite *OcppV2TestSuite) TestClearDisplayE2EMocked() {
 	assert.True(t, result)
 }
 
-func (suite *OcppV2TestSuite) TestClearDisplayInvalidEndpoint() {
+func (suite *OcppV2TestSuite) TestClearDisplayMessageInvalidEndpoint() {
 	messageId := defaultMessageId
 	displayMessageId := 42
 	clearDisplayRequest := display.NewClearDisplayRequest(displayMessageId)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v}]`, messageId, display.ClearDisplayFeatureName, displayMessageId)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v}]`, messageId, display.ClearDisplayMessageFeatureName, displayMessageId)
 	testUnsupportedRequestFromChargingStation(suite, clearDisplayRequest, requestJson, messageId)
 }

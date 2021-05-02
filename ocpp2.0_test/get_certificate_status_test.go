@@ -2,11 +2,13 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/iso15118"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/iso15118"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // Test
@@ -27,6 +29,7 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusConfirmationValidation() {
 		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted}, true},
 		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusRejected}, true},
 		{iso15118.GetCertificateStatusResponse{Status: "invalidGenericStatus"}, false},
+		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted, OcspResult: newLongString(5501)}, false},
 		{iso15118.GetCertificateStatusResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)

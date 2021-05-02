@@ -2,7 +2,10 @@ package ocpp2_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/availability"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -11,12 +14,13 @@ import (
 func (suite *OcppV2TestSuite) TestChangeAvailabilityRequestValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{availability.ChangeAvailabilityRequest{EvseID: 0, OperationalStatus: availability.OperationalStatusOperative}, true},
-		{availability.ChangeAvailabilityRequest{EvseID: 0, OperationalStatus: availability.OperationalStatusInoperative}, true},
-		{availability.ChangeAvailabilityRequest{EvseID: 0}, false},
+		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusOperative, Evse: &types.EVSE{ID: 1, ConnectorID: newInt(1)}}, true},
+		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusInoperative, Evse: &types.EVSE{ID: 1}}, true},
+		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusInoperative}, true},
 		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusOperative}, true},
+		{availability.ChangeAvailabilityRequest{}, false},
 		{availability.ChangeAvailabilityRequest{OperationalStatus: "invalidAvailabilityType"}, false},
-		{availability.ChangeAvailabilityRequest{EvseID: -1, OperationalStatus: availability.OperationalStatusOperative}, false},
+		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusOperative, Evse: &types.EVSE{ID: -1}}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -39,10 +43,11 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	evseID := 1
+	evse := types.EVSE{ID: 1, ConnectorID: newInt(1)}
 	operationalStatus := availability.OperationalStatusOperative
 	status := availability.ChangeAvailabilityStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"operationalStatus":"%v"}]`, messageId, availability.ChangeAvailabilityFeatureName, evseID, operationalStatus)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"operationalStatus":"%v","evse":{"id":%v,"connectorId":%v}}]`,
+		messageId, availability.ChangeAvailabilityFeatureName, operationalStatus, evse.ID, *evse.ConnectorID)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
 	changeAvailabilityConfirmation := availability.NewChangeAvailabilityResponse(status)
 	channel := NewMockWebSocket(wsId)
@@ -51,7 +56,9 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
 	handler.On("OnChangeAvailability", mock.Anything).Return(changeAvailabilityConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*availability.ChangeAvailabilityRequest)
 		require.True(t, ok)
-		assert.Equal(t, evseID, request.EvseID)
+		require.NotNil(t, request.Evse)
+		assert.Equal(t, evse.ID, request.Evse.ID)
+		assert.Equal(t, *evse.ConnectorID, *request.Evse.ConnectorID)
 		assert.Equal(t, operationalStatus, request.OperationalStatus)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
@@ -66,7 +73,9 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
-	}, evseID, operationalStatus)
+	}, operationalStatus, func(req *availability.ChangeAvailabilityRequest) {
+		req.Evse = &evse
+	})
 	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
@@ -74,9 +83,11 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestChangeAvailabilityInvalidEndpoint() {
 	messageId := defaultMessageId
-	evseID := 1
+	evse := types.EVSE{ID: 1, ConnectorID: newInt(1)}
 	operationalStatus := availability.OperationalStatusOperative
-	changeAvailabilityRequest := availability.NewChangeAvailabilityRequest(evseID, operationalStatus)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"operationalStatus":"%v"}]`, messageId, availability.ChangeAvailabilityFeatureName, evseID, operationalStatus)
+	changeAvailabilityRequest := availability.NewChangeAvailabilityRequest(operationalStatus)
+	changeAvailabilityRequest.Evse = &evse
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"operationalStatus":"%v","evse":{"id":%v,"connectorId":%v}}]`,
+		messageId, availability.ChangeAvailabilityFeatureName, operationalStatus, evse.ID, *evse.ConnectorID)
 	testUnsupportedRequestFromChargingStation(suite, changeAvailabilityRequest, requestJson, messageId)
 }

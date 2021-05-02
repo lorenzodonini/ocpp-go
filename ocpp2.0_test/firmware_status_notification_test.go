@@ -2,21 +2,23 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/firmware"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/firmware"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{firmware.FirmwareStatusNotificationRequest{Status: firmware.FirmwareStatusDownloaded, RequestID: 42}, true},
+		{firmware.FirmwareStatusNotificationRequest{Status: firmware.FirmwareStatusDownloaded, RequestID: newInt(42)}, true},
 		{firmware.FirmwareStatusNotificationRequest{Status: firmware.FirmwareStatusDownloaded}, true},
-		{firmware.FirmwareStatusNotificationRequest{RequestID: 42}, false},
+		{firmware.FirmwareStatusNotificationRequest{RequestID: newInt(42)}, false},
 		{firmware.FirmwareStatusNotificationRequest{}, false},
-		{firmware.FirmwareStatusNotificationRequest{Status: firmware.FirmwareStatusDownloaded, RequestID: -1}, false},
+		{firmware.FirmwareStatusNotificationRequest{Status: firmware.FirmwareStatusDownloaded, RequestID: newInt(-1)}, false},
 		{firmware.FirmwareStatusNotificationRequest{Status: "invalidFirmwareStatus"}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
@@ -47,7 +49,7 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 		request, ok := args.Get(1).(*firmware.FirmwareStatusNotificationRequest)
 		require.True(t, ok)
 		assert.Equal(t, status, request.Status)
-		assert.Equal(t, requestID, request.RequestID)
+		assert.Equal(t, requestID, *request.RequestID)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
@@ -55,16 +57,19 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargingStation.FirmwareStatusNotification(status, requestID)
+	response, err := suite.chargingStation.FirmwareStatusNotification(status, func(request *firmware.FirmwareStatusNotificationRequest) {
+		request.RequestID = &requestID
+	})
 	assert.Nil(t, err)
-	assert.NotNil(t, confirmation)
+	assert.NotNil(t, response)
 }
 
 func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationInvalidEndpoint() {
 	messageId := defaultMessageId
 	status := firmware.FirmwareStatusDownloaded
 	requestID := 42
-	firmwareStatusRequest := firmware.NewFirmwareStatusNotificationRequest(status, requestID)
+	firmwareStatusRequest := firmware.NewFirmwareStatusNotificationRequest(status)
+	firmwareStatusRequest.RequestID = &requestID
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"status":"%v","requestId":%v}]`, messageId, firmware.FirmwareStatusNotificationFeatureName, status, requestID)
 	testUnsupportedRequestFromCentralSystem(suite, firmwareStatusRequest, requestJson, messageId)
 }
