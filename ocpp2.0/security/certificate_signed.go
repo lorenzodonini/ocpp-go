@@ -1,9 +1,11 @@
 package security
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Certificate Signed (CSMS -> CS) --------------------
@@ -30,17 +32,20 @@ func isValidCertificateSignedStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the CertificateSignedRequest PDU sent by the CSMS to the Charging Station.
 type CertificateSignedRequest struct {
-	Cert              []string                    `json:"cert" validate:"required,min=1,dive,max=800"`
+	CertificateChain  string                      `json:"certificateChain" validate:"required,max=10000"`
 	TypeOfCertificate types.CertificateSigningUse `json:"typeOfCertificate,omitempty" validate:"omitempty,certificateSigningUse"`
 }
 
 // The field definition of the CertificateSignedResponse payload sent by the Charging Station to the CSMS in response to a CertificateSignedRequest.
 type CertificateSignedResponse struct {
-	Status CertificateSignedStatus `json:"status" validate:"required,certificateSignedStatus"`
+	Status     CertificateSignedStatus `json:"status" validate:"required,certificateSignedStatus"`
+	StatusInfo *types.StatusInfo       `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
-// During the a certificate update procedure, the CSMS sends a new certificate, signed by a CA, to the Charging Station with a CertificateSignedRequest.
-// The Charging Station verifies the signed certificate, installs it locally and responds with a CertificateSignedResponse to the the CSMS with the status Accepted or Rejected.
+// During the a certificate update procedure, the CSMS sends a new certificate, signed by a CA,
+// to the Charging Station with a CertificateSignedRequest.
+// The Charging Station verifies the signed certificate, installs it locally and responds with
+// a CertificateSignedResponse to the the CSMS with the status Accepted or Rejected.
 type CertificateSignedFeature struct{}
 
 func (f CertificateSignedFeature) GetFeatureName() string {
@@ -64,8 +69,8 @@ func (c CertificateSignedResponse) GetFeatureName() string {
 }
 
 // Creates a new CertificateSignedRequest, containing all required fields. Additional optional fields may be set afterwards.
-func NewCertificateSignedRequest(certificate []string) *CertificateSignedRequest {
-	return &CertificateSignedRequest{Cert: certificate}
+func NewCertificateSignedRequest(certificateChain string) *CertificateSignedRequest {
+	return &CertificateSignedRequest{CertificateChain: certificateChain}
 }
 
 // Creates a new CertificateSignedResponse, containing all required fields. There are no optional fields for this message.

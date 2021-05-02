@@ -2,27 +2,28 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/smartcharging"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/smartcharging"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestClearChargingProfileRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{smartcharging.ClearChargingProfileRequest{EvseID: newInt(1), ChargingProfile: &smartcharging.ClearChargingProfileType{ID: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, StackLevel: 1}}, true},
-		{smartcharging.ClearChargingProfileRequest{EvseID: newInt(1), ChargingProfile: &smartcharging.ClearChargingProfileType{ID: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile}}, true},
-		{smartcharging.ClearChargingProfileRequest{EvseID: newInt(1), ChargingProfile: &smartcharging.ClearChargingProfileType{ID: 1}}, true},
-		{smartcharging.ClearChargingProfileRequest{ChargingProfile: &smartcharging.ClearChargingProfileType{ID: 1}}, true},
-		{smartcharging.ClearChargingProfileRequest{ChargingProfile: &smartcharging.ClearChargingProfileType{}}, true},
+		{smartcharging.ClearChargingProfileRequest{ChargingProfileID: newInt(1), ChargingProfileCriteria: &smartcharging.ClearChargingProfileType{EvseID: newInt(1), ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, StackLevel: newInt(1)}}, true},
+		{smartcharging.ClearChargingProfileRequest{ChargingProfileID: newInt(1), ChargingProfileCriteria: &smartcharging.ClearChargingProfileType{EvseID: newInt(1), ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile}}, true},
+		{smartcharging.ClearChargingProfileRequest{ChargingProfileID: newInt(1), ChargingProfileCriteria: &smartcharging.ClearChargingProfileType{EvseID: newInt(1)}}, true},
+		{smartcharging.ClearChargingProfileRequest{ChargingProfileCriteria: &smartcharging.ClearChargingProfileType{EvseID: newInt(1)}}, true},
+		{smartcharging.ClearChargingProfileRequest{ChargingProfileCriteria: &smartcharging.ClearChargingProfileType{}}, true},
 		{smartcharging.ClearChargingProfileRequest{}, true},
-		{smartcharging.ClearChargingProfileRequest{EvseID: newInt(-1)}, false},
-		{smartcharging.ClearChargingProfileRequest{ChargingProfile: &smartcharging.ClearChargingProfileType{ID: -1}}, false},
-		{smartcharging.ClearChargingProfileRequest{ChargingProfile: &smartcharging.ClearChargingProfileType{ChargingProfilePurpose: "invalidChargingProfilePurposeType"}}, false},
-		{smartcharging.ClearChargingProfileRequest{ChargingProfile: &smartcharging.ClearChargingProfileType{StackLevel: -1}}, false},
+		{smartcharging.ClearChargingProfileRequest{ChargingProfileCriteria: &smartcharging.ClearChargingProfileType{EvseID: newInt(-1)}}, false},
+		{smartcharging.ClearChargingProfileRequest{ChargingProfileCriteria: &smartcharging.ClearChargingProfileType{ChargingProfilePurpose: "invalidChargingProfilePurposeType"}}, false},
+		{smartcharging.ClearChargingProfileRequest{ChargingProfileCriteria: &smartcharging.ClearChargingProfileType{StackLevel: newInt(-1)}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -30,9 +31,11 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileRequestValidation() {
 func (suite *OcppV2TestSuite) TestClearChargingProfileConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
+		{smartcharging.ClearChargingProfileResponse{Status: smartcharging.ClearChargingProfileStatusAccepted, StatusInfo: types.NewStatusInfo("200", "ok")}, true},
 		{smartcharging.ClearChargingProfileResponse{Status: smartcharging.ClearChargingProfileStatusAccepted}, true},
 		{smartcharging.ClearChargingProfileResponse{Status: "invalidClearChargingProfileStatus"}, false},
 		{smartcharging.ClearChargingProfileResponse{}, false},
+		{smartcharging.ClearChargingProfileResponse{StatusInfo: types.NewStatusInfo("", "")}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
 }
@@ -42,13 +45,15 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	chargingProfileId := 1
-	evseID := 1
-	chargingProfilePurpose := types.ChargingProfilePurposeChargingStationMaxProfile
-	stackLevel := 1
+	chargingProfileId := newInt(1)
+	chargingProfileCriteria := smartcharging.ClearChargingProfileType{
+		EvseID:                 newInt(1),
+		ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile,
+		StackLevel:             newInt(1),
+	}
 	status := smartcharging.ClearChargingProfileStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"chargingProfile":{"id":%v,"chargingProfilePurpose":"%v","stackLevel":%v}}]`,
-		messageId, smartcharging.ClearChargingProfileFeatureName, evseID, chargingProfileId, chargingProfilePurpose, stackLevel)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargingProfileId":%v,"chargingProfileCriteria":{"evseId":%v,"chargingProfilePurpose":"%v","stackLevel":%v}}]`,
+		messageId, smartcharging.ClearChargingProfileFeatureName, *chargingProfileId, *chargingProfileCriteria.EvseID, chargingProfileCriteria.ChargingProfilePurpose, *chargingProfileCriteria.StackLevel)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
 	clearChargingProfileConfirmation := smartcharging.NewClearChargingProfileResponse(status)
 	channel := NewMockWebSocket(wsId)
@@ -58,10 +63,10 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 		request, ok := args.Get(0).(*smartcharging.ClearChargingProfileRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
-		assert.Equal(t, evseID, *request.EvseID)
-		assert.Equal(t, chargingProfileId, request.ChargingProfile.ID)
-		assert.Equal(t, chargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
-		assert.Equal(t, stackLevel, request.ChargingProfile.StackLevel)
+		assert.Equal(t, *chargingProfileId, *request.ChargingProfileID)
+		assert.Equal(t, *chargingProfileCriteria.EvseID, *request.ChargingProfileCriteria.EvseID)
+		assert.Equal(t, chargingProfileCriteria.ChargingProfilePurpose, request.ChargingProfileCriteria.ChargingProfilePurpose)
+		assert.Equal(t, *chargingProfileCriteria.StackLevel, *request.ChargingProfileCriteria.StackLevel)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
@@ -76,8 +81,8 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
 	}, func(request *smartcharging.ClearChargingProfileRequest) {
-		request.EvseID = &evseID
-		request.ChargingProfile = &smartcharging.ClearChargingProfileType{ID: chargingProfileId, ChargingProfilePurpose: chargingProfilePurpose, StackLevel: stackLevel}
+		request.ChargingProfileID = chargingProfileId
+		request.ChargingProfileCriteria = &chargingProfileCriteria
 	})
 	require.Nil(t, err)
 	result := <-resultChannel
@@ -86,14 +91,16 @@ func (suite *OcppV2TestSuite) TestClearChargingProfileE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestClearChargingProfileInvalidEndpoint() {
 	messageId := defaultMessageId
-	evseID := 1
 	chargingProfileId := 1
-	stackLevel := 1
-	chargingProfilePurpose := types.ChargingProfilePurposeChargingStationMaxProfile
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"chargingProfile":{"id":%v,"chargingProfilePurpose":"%v","stackLevel":%v}}]`,
-		messageId, smartcharging.ClearChargingProfileFeatureName, evseID, chargingProfileId, chargingProfilePurpose, stackLevel)
+	chargingProfileCriteria := smartcharging.ClearChargingProfileType{
+		EvseID:                 newInt(1),
+		ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile,
+		StackLevel:             newInt(1),
+	}
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargingProfileId":%v,"chargingProfileCriteria":{"evseId":%v,"chargingProfilePurpose":"%v","stackLevel":%v}}]`,
+		messageId, smartcharging.ClearChargingProfileFeatureName, chargingProfileId, *chargingProfileCriteria.EvseID, chargingProfileCriteria.ChargingProfilePurpose, *chargingProfileCriteria.StackLevel)
 	clearChargingProfileRequest := smartcharging.NewClearChargingProfileRequest()
-	clearChargingProfileRequest.EvseID = &evseID
-	clearChargingProfileRequest.ChargingProfile = &smartcharging.ClearChargingProfileType{ID: chargingProfileId, ChargingProfilePurpose: chargingProfilePurpose, StackLevel: stackLevel}
+	clearChargingProfileRequest.ChargingProfileID = &chargingProfileId
+	clearChargingProfileRequest.ChargingProfileCriteria = &chargingProfileCriteria
 	testUnsupportedRequestFromChargingStation(suite, clearChargingProfileRequest, requestJson, messageId)
 }

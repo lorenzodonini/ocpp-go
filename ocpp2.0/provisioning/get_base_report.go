@@ -1,9 +1,11 @@
 package provisioning
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Get Base Report (CSMS -> CS) --------------------
@@ -31,14 +33,15 @@ func isValidReportBaseType(fl validator.FieldLevel) bool {
 
 // The field definition of the GetBaseReport request payload sent by the CSMS to the Charging Station.
 type GetBaseReportRequest struct {
-	RequestID  int            `json:"requestId" validate:"gte=0"`
+	RequestID  int            `json:"requestId"`
 	ReportBase ReportBaseType `json:"reportBase" validate:"required,reportBaseType"`
 }
 
 // This field definition of the GetBaseReport response payload, sent by the Charging Station to the CSMS in response to a GetBaseReportRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetBaseReportResponse struct {
-	Status types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus"`
+	Status     types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus"`
+	StatusInfo *types.StatusInfo              `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // The CSO may trigger the CSMS to request a report from a Charging Station.

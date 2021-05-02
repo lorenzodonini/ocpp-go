@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"strings"
 	"time"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/display"
@@ -15,6 +16,16 @@ func newInt(i int) *int {
 
 func newFloat(f float64) *float64 {
 	return &f
+}
+
+// Generates a new dummy string of the specified length.
+func newLongString(length int) string {
+	reps := length / 32
+	s := strings.Repeat("................................", reps)
+	for i := len(s); i < length; i++ {
+		s += "."
+	}
+	return s
 }
 
 func newBool(b bool) *bool {

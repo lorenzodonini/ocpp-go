@@ -2,12 +2,14 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
+	"time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"time"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // Tests
@@ -26,7 +28,7 @@ func (suite *OcppV2TestSuite) TestBootNotificationRequestValidation() {
 		{provisioning.BootNotificationRequest{ChargingStation: provisioning.ChargingStationType{Model: "test", VendorName: "test"}}, false},
 		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{Model: ">20..................", VendorName: "test"}}, false},
 		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{Model: "test", VendorName: ">50................................................"}}, false},
-		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{SerialNumber: ">20..................", Model: "test", VendorName: "test"}}, false},
+		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{SerialNumber: ">25.......................", Model: "test", VendorName: "test"}}, false},
 		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{Model: "test", VendorName: "test", FirmwareVersion: ">50................................................"}}, false},
 		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{Model: "test", VendorName: "test", Modem: &provisioning.ModemType{Iccid: ">20.................."}}}, false},
 		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{Model: "test", VendorName: "test", Modem: &provisioning.ModemType{Imsi: ">20.................."}}}, false},

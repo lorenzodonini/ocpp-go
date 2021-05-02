@@ -2,11 +2,13 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/iso15118"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/iso15118"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 func (suite *OcppV2TestSuite) TestInstallCertificateRequestValidation() {
@@ -22,7 +24,7 @@ func (suite *OcppV2TestSuite) TestInstallCertificateRequestValidation() {
 		{iso15118.InstallCertificateRequest{Certificate: "0xdeadbeef"}, false},
 		{iso15118.InstallCertificateRequest{}, false},
 		{iso15118.InstallCertificateRequest{CertificateType: "invalidCertificateUse", Certificate: "0xdeadbeef"}, false},
-		{iso15118.InstallCertificateRequest{CertificateType: types.V2GRootCertificate, Certificate: ">800............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}, false},
+		{iso15118.InstallCertificateRequest{CertificateType: types.V2GRootCertificate, Certificate: newLongString(5501)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -30,9 +32,11 @@ func (suite *OcppV2TestSuite) TestInstallCertificateRequestValidation() {
 func (suite *OcppV2TestSuite) TestInstallCertificateConfirmationValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{iso15118.InstallCertificateResponse{Status: types.CertificateStatusAccepted}, true},
+		{iso15118.InstallCertificateResponse{Status: iso15118.CertificateStatusAccepted}, true},
+		{iso15118.InstallCertificateResponse{Status: iso15118.CertificateStatusRejected}, true},
+		{iso15118.InstallCertificateResponse{Status: iso15118.CertificateStatusFailed}, true},
 		{iso15118.InstallCertificateResponse{}, false},
-		{iso15118.InstallCertificateResponse{Status: "invalidCertificateStatus"}, false},
+		{iso15118.InstallCertificateResponse{Status: "invalidInstallCertificateStatus"}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -44,7 +48,7 @@ func (suite *OcppV2TestSuite) TestInstallCertificateE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	certificateType := types.CSMSRootCertificate
-	status := types.CertificateStatusAccepted
+	status := iso15118.CertificateStatusAccepted
 	certificate := "0xdeadbeef"
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateType":"%v","certificate":"%v"}]`, messageId, iso15118.InstallCertificateFeatureName, certificateType, certificate)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)

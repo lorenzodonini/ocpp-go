@@ -1,27 +1,52 @@
 package authorization
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Authorize (CS -> CSMS) --------------------
 
 const AuthorizeFeatureName = "Authorize"
 
+// The Certificate status information.
+type AuthorizeCertificateStatus string
+
+const (
+	CertificateStatusAccepted               AuthorizeCertificateStatus = "Accepted"
+	CertificateStatusSignatureError         AuthorizeCertificateStatus = "SignatureError"
+	CertificateStatusCertificateExpired     AuthorizeCertificateStatus = "CertificateExpired"
+	CertificateStatusCertificateRevoked     AuthorizeCertificateStatus = "CertificateRevoked"
+	CertificateStatusNoCertificateAvailable AuthorizeCertificateStatus = "NoCertificateAvailable"
+	CertificateStatusCertChainError         AuthorizeCertificateStatus = "CertChainError"
+	CertificateStatusContractCancelled      AuthorizeCertificateStatus = "ContractCancelled"
+)
+
+func isValidAuthorizeCertificateStatus(fl validator.FieldLevel) bool {
+	status := AuthorizeCertificateStatus(fl.Field().String())
+	switch status {
+	case CertificateStatusAccepted, CertificateStatusCertChainError, CertificateStatusCertificateExpired, CertificateStatusSignatureError, CertificateStatusNoCertificateAvailable, CertificateStatusCertificateRevoked, CertificateStatusContractCancelled:
+		return true
+	default:
+		return false
+	}
+}
+
 // The field definition of the Authorize request payload sent by the Charging Station to the CSMS.
 type AuthorizeRequest struct {
-	EvseID              []int                       `json:"evseId,omitempty"`
+	Certificate         string                      `json:"certificate,omitempty" validate:"max=5500"`
 	IdToken             types.IdToken               `json:"idToken" validate:"required"`
-	CertificateHashData []types.OCSPRequestDataType `json:"15118CertificateHashData,omitempty" validate:"max=4"`
+	CertificateHashData []types.OCSPRequestDataType `json:"15118CertificateHashData,omitempty" validate:"max=4,dive"`
 }
 
 // This field definition of the Authorize response payload, sent by the Charging Station to the CSMS in response to an AuthorizeRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type AuthorizeResponse struct {
-	CertificateStatus types.CertificateStatus `json:"certificateStatus,omitempty" validate:"omitempty,certificateStatus"`
-	EvseID            []int                   `json:"evseId,omitempty"`
-	IdTokenInfo       types.IdTokenInfo       `json:"idTokenInfo" validate:"required"`
+	CertificateStatus AuthorizeCertificateStatus `json:"certificateStatus,omitempty" validate:"omitempty,authorizeCertificateStatus"`
+	IdTokenInfo       types.IdTokenInfo          `json:"idTokenInfo" validate:"required"`
 }
 
 // Before the owner of an electric vehicle can start or stop charging, the Charging Station has to authorize the operation.
@@ -62,4 +87,8 @@ func NewAuthorizationRequest(idToken string, tokenType types.IdTokenType) *Autho
 // Creates a new AuthorizeResponse. There are no optional fields for this message.
 func NewAuthorizationResponse(idTokenInfo types.IdTokenInfo) *AuthorizeResponse {
 	return &AuthorizeResponse{IdTokenInfo: idTokenInfo}
+}
+
+func init() {
+	_ = types.Validate.RegisterValidation("authorizeCertificateStatus", isValidAuthorizeCertificateStatus)
 }

@@ -2,12 +2,14 @@
 package types
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
 
 const (
-	V2Subprotocol = "ocpp2.0"
+	V2Subprotocol   = "ocpp2.0"
+	V201Subprotocol = "ocpp2.0.1"
 )
 
 type PropertyViolation struct {
@@ -82,15 +84,16 @@ type IdToken struct {
 type GenericDeviceModelStatus string
 
 const (
-	GenericDeviceModelStatusAccepted     GenericDeviceModelStatus = "Accepted"
-	GenericDeviceModelStatusRejected     GenericDeviceModelStatus = "Rejected"
-	GenericDeviceModelStatusNotSupported GenericDeviceModelStatus = "NotSupported"
+	GenericDeviceModelStatusAccepted       GenericDeviceModelStatus = "Accepted"
+	GenericDeviceModelStatusRejected       GenericDeviceModelStatus = "Rejected"
+	GenericDeviceModelStatusNotSupported   GenericDeviceModelStatus = "NotSupported"
+	GenericDeviceModelStatusEmptyResultSet GenericDeviceModelStatus = "EmptyResultSet" // If the combination of received criteria result in an empty result set.
 )
 
 func isValidGenericDeviceModelStatus(fl validator.FieldLevel) bool {
 	status := GenericDeviceModelStatus(fl.Field().String())
 	switch status {
-	case GenericDeviceModelStatusAccepted, GenericDeviceModelStatusRejected, GenericDeviceModelStatusNotSupported:
+	case GenericDeviceModelStatusAccepted, GenericDeviceModelStatusRejected, GenericDeviceModelStatusNotSupported, GenericDeviceModelStatusEmptyResultSet:
 		return true
 	default:
 		return false
@@ -149,29 +152,6 @@ type CertificateHashData struct {
 	IssuerNameHash string            `json:"issuerNameHash" validate:"required,max=128"`
 	IssuerKeyHash  string            `json:"issuerKeyHash" validate:"required,max=128"`
 	SerialNumber   string            `json:"serialNumber" validate:"required,max=20"`
-}
-
-// CertificateStatus
-type CertificateStatus string
-
-const (
-	CertificateStatusAccepted               CertificateStatus = "Accepted"
-	CertificateStatusSignatureError         CertificateStatus = "SignatureError"
-	CertificateStatusCertificateExpired     CertificateStatus = "CertificateExpired"
-	CertificateStatusCertificateRevoked     CertificateStatus = "CertificateRevoked"
-	CertificateStatusNoCertificateAvailable CertificateStatus = "NoCertificateAvailable"
-	CertificateStatusCertChainError         CertificateStatus = "CertChainError"
-	CertificateStatusContractCancelled      CertificateStatus = "ContractCancelled"
-)
-
-func isValidCertificateStatus(fl validator.FieldLevel) bool {
-	status := CertificateStatus(fl.Field().String())
-	switch status {
-	case CertificateStatusAccepted, CertificateStatusCertChainError, CertificateStatusCertificateExpired, CertificateStatusSignatureError, CertificateStatusNoCertificateAvailable, CertificateStatusCertificateRevoked, CertificateStatusContractCancelled:
-		return true
-	default:
-		return false
-	}
 }
 
 // Certificate15118EVStatus
@@ -724,7 +704,6 @@ func init() {
 	_ = Validate.RegisterValidation("genericDeviceModelStatus", isValidGenericDeviceModelStatus)
 	_ = Validate.RegisterValidation("genericStatus", isValidGenericStatus)
 	_ = Validate.RegisterValidation("hashAlgorithm", isValidHashAlgorithmType)
-	_ = Validate.RegisterValidation("certificateStatus", isValidCertificateStatus)
 	_ = Validate.RegisterValidation("messageFormat", isValidMessageFormatType)
 	_ = Validate.RegisterValidation("authorizationStatus", isValidAuthorizationStatus)
 	_ = Validate.RegisterValidation("attribute", isValidAttribute)

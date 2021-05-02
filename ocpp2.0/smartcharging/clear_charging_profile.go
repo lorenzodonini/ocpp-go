@@ -1,9 +1,11 @@
 package smartcharging
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Clear Charging Profile (CSMS -> CS) --------------------
@@ -19,9 +21,9 @@ const (
 )
 
 type ClearChargingProfileType struct {
-	ID                     int                              `json:"id,omitempty" validate:"gte=0"`
+	EvseID                 *int                             `json:"evseId,omitempty" validate:"omitempty,gte=0"`
 	ChargingProfilePurpose types.ChargingProfilePurposeType `json:"chargingProfilePurpose,omitempty" validate:"omitempty,chargingProfilePurpose"`
-	StackLevel             int                              `json:"stackLevel,omitempty" validate:"omitempty,gt=0"`
+	StackLevel             *int                             `json:"stackLevel,omitempty" validate:"omitempty,gt=0"`
 }
 
 func isValidClearChargingProfileStatus(fl validator.FieldLevel) bool {
@@ -36,14 +38,15 @@ func isValidClearChargingProfileStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the ClearChargingProfile request payload sent by the CSMS to the Charging Station.
 type ClearChargingProfileRequest struct {
-	EvseID          *int                      `json:"evseId,omitempty" validate:"omitempty,gte=0"`
-	ChargingProfile *ClearChargingProfileType `json:"chargingProfile,omitempty" validate:"omitempty,dive"`
+	ChargingProfileID       *int                      `json:"chargingProfileId,omitempty" validate:"omitempty"`
+	ChargingProfileCriteria *ClearChargingProfileType `json:"chargingProfileCriteria,omitempty" validate:"omitempty"`
 }
 
 // This field definition of the ClearChargingProfile response payload, sent by the Charging Station to the CSMS in response to a ClearChargingProfileRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ClearChargingProfileResponse struct {
-	Status ClearChargingProfileStatus `json:"status" validate:"required,clearChargingProfileStatus"`
+	Status     ClearChargingProfileStatus `json:"status" validate:"required,clearChargingProfileStatus"`
+	StatusInfo *types.StatusInfo          `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // If the CSMS wishes to clear some or all of the charging profiles that were previously sent the Charging Station,

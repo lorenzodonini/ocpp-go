@@ -1,9 +1,11 @@
 package availability
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"gopkg.in/go-playground/validator.v9"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // -------------------- Change Availability (CSMS -> CS) --------------------
@@ -49,14 +51,15 @@ func isValidChangeAvailabilityStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the ChangeAvailability request payload sent by the CSMS to the Charging Station.
 type ChangeAvailabilityRequest struct {
-	EvseID            int               `json:"evseId" validate:"gte=0"`
 	OperationalStatus OperationalStatus `json:"operationalStatus" validate:"required,operationalStatus"`
+	Evse              *types.EVSE       `json:"evse,omitempty" validate:"omitempty"`
 }
 
 // This field definition of the ChangeAvailability response payload, sent by the Charging Station to the CSMS in response to a ChangeAvailabilityRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ChangeAvailabilityResponse struct {
-	Status ChangeAvailabilityStatus `json:"status" validate:"required,changeAvailabilityStatus"`
+	Status     ChangeAvailabilityStatus `json:"status" validate:"required,changeAvailabilityStatus"`
+	StatusInfo *types.StatusInfo        `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // CSMS can request a Charging Station to change its availability.
@@ -86,12 +89,12 @@ func (c ChangeAvailabilityResponse) GetFeatureName() string {
 	return ChangeAvailabilityFeatureName
 }
 
-// Creates a new ChangeAvailabilityRequest, containing all required fields. There are no optional fields for this message.
-func NewChangeAvailabilityRequest(evseID int, operationalStatus OperationalStatus) *ChangeAvailabilityRequest {
-	return &ChangeAvailabilityRequest{EvseID: evseID, OperationalStatus: operationalStatus}
+// Creates a new ChangeAvailabilityRequest, containing all required fields. Optional fields may be set afterwards.
+func NewChangeAvailabilityRequest(operationalStatus OperationalStatus) *ChangeAvailabilityRequest {
+	return &ChangeAvailabilityRequest{OperationalStatus: operationalStatus}
 }
 
-// Creates a new ChangeAvailabilityResponse, containing all required fields. There are no optional fields for this message.
+// Creates a new ChangeAvailabilityResponse, containing all required fields. Optional fields may be set afterwards.
 func NewChangeAvailabilityResponse(status ChangeAvailabilityStatus) *ChangeAvailabilityResponse {
 	return &ChangeAvailabilityResponse{Status: status}
 }

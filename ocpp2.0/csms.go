@@ -86,8 +86,8 @@ func (cs *csms) CancelReservation(clientId string, callback func(*reservation.Ca
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), certificate []string, props ...func(*security.CertificateSignedRequest)) error {
-	request := security.NewCertificateSignedRequest(certificate)
+func (cs *csms) CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), certificateChain string, props ...func(*security.CertificateSignedRequest)) error {
+	request := security.NewCertificateSignedRequest(certificateChain)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -101,8 +101,8 @@ func (cs *csms) CertificateSigned(clientId string, callback func(*security.Certi
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) ChangeAvailability(clientId string, callback func(*availability.ChangeAvailabilityResponse, error), evseID int, operationalStatus availability.OperationalStatus, props ...func(request *availability.ChangeAvailabilityRequest)) error {
-	request := availability.NewChangeAvailabilityRequest(evseID, operationalStatus)
+func (cs *csms) ChangeAvailability(clientId string, callback func(*availability.ChangeAvailabilityResponse, error), operationalStatus availability.OperationalStatus, props ...func(request *availability.ChangeAvailabilityRequest)) error {
+	request := availability.NewChangeAvailabilityRequest(operationalStatus)
 	for _, fn := range props {
 		fn(request)
 	}
@@ -758,7 +758,7 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		availability.ChangeAvailabilityFeatureName,
 		authorization.ClearCacheFeatureName,
 		smartcharging.ClearChargingProfileFeatureName,
-		display.ClearDisplayFeatureName,
+		display.ClearDisplayMessageFeatureName,
 		diagnostics.ClearVariableMonitoringFeatureName,
 		tariffcost.CostUpdatedFeatureName,
 		diagnostics.CustomerInformationFeatureName,

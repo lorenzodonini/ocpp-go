@@ -2,11 +2,13 @@ package ocpp2_test
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/smartcharging"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/smartcharging"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 )
 
 // Test
@@ -19,19 +21,17 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesRequestValidation() {
 		ChargingLimitSource:    []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS},
 	}
 	var requestTable = []GenericTestEntry{
-		{smartcharging.GetChargingProfilesRequest{RequestID: newInt(42), EvseID: newInt(1), ChargingProfile: validChargingProfileCriterion}, true},
-		{smartcharging.GetChargingProfilesRequest{RequestID: newInt(42), ChargingProfile: validChargingProfileCriterion}, true},
+		{smartcharging.GetChargingProfilesRequest{RequestID: 42, EvseID: newInt(1), ChargingProfile: validChargingProfileCriterion}, true},
+		{smartcharging.GetChargingProfilesRequest{RequestID: 42, ChargingProfile: validChargingProfileCriterion}, true},
 		{smartcharging.GetChargingProfilesRequest{EvseID: newInt(1), ChargingProfile: validChargingProfileCriterion}, true},
 		{smartcharging.GetChargingProfilesRequest{ChargingProfile: validChargingProfileCriterion}, true},
 		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{}}, true},
 		{smartcharging.GetChargingProfilesRequest{}, true},
-		{smartcharging.GetChargingProfilesRequest{RequestID: newInt(42), EvseID: newInt(-1), ChargingProfile: validChargingProfileCriterion}, false},
-		{smartcharging.GetChargingProfilesRequest{RequestID: newInt(-1), EvseID: newInt(1), ChargingProfile: validChargingProfileCriterion}, false},
+		{smartcharging.GetChargingProfilesRequest{RequestID: 42, EvseID: newInt(-1), ChargingProfile: validChargingProfileCriterion}, false},
 		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: "invalidChargingProfilePurpose", StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS}}}, false},
 		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(-1), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS}}}, false},
 		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS, types.ChargingLimitSourceCSO, types.ChargingLimitSourceSO, types.ChargingLimitSourceOther, types.ChargingLimitSourceEMS}}}, false},
 		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{"invalidChargingLimitSource"}}}, false},
-		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{-1}, ChargingLimitSource: []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS}}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -73,7 +73,7 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 		request, ok := args.Get(0).(*smartcharging.GetChargingProfilesRequest)
 		require.True(t, ok)
 		require.NotNil(t, request)
-		assert.Equal(t, requestID, *request.RequestID)
+		assert.Equal(t, requestID, request.RequestID)
 		assert.Equal(t, evseID, *request.EvseID)
 		assert.Equal(t, chargingProfileCriterion.ChargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
 		assert.Equal(t, *chargingProfileCriterion.StackLevel, *request.ChargingProfile.StackLevel)
@@ -100,7 +100,7 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 		chargingProfileCriterion,
 		func(request *smartcharging.GetChargingProfilesRequest) {
 			request.EvseID = &evseID
-			request.RequestID = &requestID
+			request.RequestID = requestID
 		})
 	require.Nil(t, err)
 	result := <-resultChannel
@@ -121,6 +121,6 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesInvalidEndpoint() {
 		messageId, smartcharging.GetChargingProfilesFeatureName, requestID, evseID, chargingProfileCriterion.ChargingProfilePurpose, *chargingProfileCriterion.StackLevel, chargingProfileCriterion.ChargingProfileID[0], chargingProfileCriterion.ChargingProfileID[1], chargingProfileCriterion.ChargingLimitSource[0])
 	getChargingProfilesRequest := smartcharging.NewGetChargingProfilesRequest(chargingProfileCriterion)
 	getChargingProfilesRequest.EvseID = &evseID
-	getChargingProfilesRequest.RequestID = &requestID
+	getChargingProfilesRequest.RequestID = requestID
 	testUnsupportedRequestFromChargingStation(suite, getChargingProfilesRequest, requestJson, messageId)
 }
