@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -206,6 +207,9 @@ type WsServer interface {
 	// By default, if the Origin header is present in the request, and the Origin host is not equal
 	// to the Host request header, the websocket handshake fails.
 	SetCheckOriginHandler(handler func(r *http.Request) bool)
+	// Addr gives the address on which the server is listening, useful if, for
+	// example, the port is system-defined (set to 0).
+	Addr() *net.TCPAddr
 }
 
 // Default implementation of a Websocket server.
@@ -224,6 +228,7 @@ type Server struct {
 	upgrader            websocket.Upgrader
 	errC                chan error
 	connMutex           sync.RWMutex
+	addr                *net.TCPAddr
 }
 
 // Creates a new simple websocket server (the websockets are not secured).
@@ -307,6 +312,10 @@ func (server *Server) Errors() <-chan error {
 	return server.errC
 }
 
+func (server *Server) Addr() *net.TCPAddr {
+	return server.addr
+}
+
 func (server *Server) Start(port int, listenPath string) {
 	router := mux.NewRouter()
 	router.HandleFunc(listenPath, func(w http.ResponseWriter, r *http.Request) {
@@ -316,17 +325,29 @@ func (server *Server) Start(port int, listenPath string) {
 	if server.httpServer == nil {
 		server.httpServer = &http.Server{}
 	}
+
 	addr := fmt.Sprintf(":%v", port)
 	server.httpServer.Addr = addr
 	server.httpServer.Handler = router
+
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		server.error(fmt.Errorf("failed to listen: %w", err))
+		return
+	}
+
+	server.addr = ln.Addr().(*net.TCPAddr)
+
+	defer ln.Close()
+
 	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
-		if err := server.httpServer.ListenAndServeTLS(server.tlsCertificatePath, server.tlsCertificateKey); err != http.ErrServerClosed {
-			server.error(fmt.Errorf("failed to listen: %w", err))
-		}
+		err = server.httpServer.ServeTLS(ln, server.tlsCertificatePath, server.tlsCertificateKey)
 	} else {
-		if err := server.httpServer.ListenAndServe(); err != http.ErrServerClosed {
-			server.error(fmt.Errorf("failed to listen: %w", err))
-		}
+		err = server.httpServer.Serve(ln)
+	}
+
+	if err != http.ErrServerClosed {
+		server.error(fmt.Errorf("failed to listen: %w", err))
 	}
 }
 
