@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"path"
 	"sync"
 	"time"
 
@@ -419,9 +420,12 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		server.error(fmt.Errorf("upgrade failed: %w", err))
 		return
 	}
+
+	// The id of the charge point is the final path element
+	id := path.Base(url.Path)
 	ws := WebSocket{
 		connection:         conn,
-		id:                 url.Path,
+		id:                 id,
 		outQueue:           make(chan []byte, 1),
 		closeSignal:        make(chan error, 1),
 		pingMessage:        make(chan []byte, 1),
