@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -109,7 +110,7 @@ func TestWebsocketEcho(t *testing.T) {
 		// Wait for messages to be exchanged, then close connection
 		sig, _ := <-triggerC
 		assert.True(t, sig)
-		err := wsServer.Write(testPath, message)
+		err := wsServer.Write(path.Base(testPath), message)
 		require.Nil(t, err)
 		sig, _ = <-triggerC
 		assert.True(t, sig)
@@ -187,7 +188,7 @@ func TestTLSWebsocketEcho(t *testing.T) {
 		// Wait for messages to be exchanged, then close connection
 		sig, _ := <-triggerC
 		assert.True(t, sig)
-		err := wsServer.Write(testPath, message)
+		err := wsServer.Write(path.Base(testPath), message)
 		require.NoError(t, err)
 		sig, _ = <-triggerC
 		assert.True(t, sig)
@@ -818,12 +819,12 @@ func TestClientErrors(t *testing.T) {
 	r, _ := <-triggerC
 	require.True(t, r)
 	// Send a dummy message and expect error on client side
-	err = wsServer.Write(testPath, []byte("dummy message"))
+	err = wsServer.Write(path.Base(testPath), []byte("dummy message"))
 	require.NotNil(t, t, err)
 	r, _ = <-triggerC
 	assert.True(t, r)
 	// Send unexpected close message and wait for error to be thrown
-	conn := wsServer.connections[testPath]
+	conn := wsServer.connections[path.Base(testPath)]
 	require.NotNil(t, conn)
 	err = conn.connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
 	assert.NoError(t, err)
