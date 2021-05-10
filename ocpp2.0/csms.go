@@ -23,6 +23,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 type csms struct {
@@ -419,12 +420,16 @@ func (cs *csms) SetDataHandler(handler data.CSMSHandler) {
 	cs.dataHandler = handler
 }
 
-func (cs *csms) SetNewChargingStationHandler(handler func(chargingStationID string)) {
-	cs.server.SetNewClientHandler(handler)
+func (cs *csms) SetNewChargingStationHandler(handler ChargingStationConnectionHandler) {
+	cs.server.SetNewClientHandler(func(chargingStation ws.Channel) {
+		handler(chargingStation)
+	})
 }
 
-func (cs *csms) SetChargingStationDisconnectedHandler(handler func(chargingStationID string)) {
-	cs.server.SetDisconnectedClientHandler(handler)
+func (cs *csms) SetChargingStationDisconnectedHandler(handler ChargingStationConnectionHandler) {
+	cs.server.SetDisconnectedClientHandler(func(chargingStation ws.Channel) {
+		handler(chargingStation)
+	})
 }
 
 func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(response ocpp.Response, err error)) error {
@@ -487,11 +492,11 @@ func (cs *csms) notSupportedError(chargingStationID string, requestId string, ac
 	}
 }
 
-func (cs *csms) handleIncomingRequest(chargingStationID string, request ocpp.Request, requestId string, action string) {
+func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection, request ocpp.Request, requestId string, action string) {
 	profile, found := cs.server.GetProfileForFeature(action)
 	// Check whether action is supported and a listener for it exists
 	if !found {
-		cs.notImplementedError(chargingStationID, requestId, action)
+		cs.notImplementedError(chargingStation.ID(), requestId, action)
 		return
 	} else {
 		supported := true
@@ -562,7 +567,7 @@ func (cs *csms) handleIncomingRequest(chargingStationID string, request ocpp.Req
 			}
 		}
 		if !supported {
-			cs.notSupportedError(chargingStationID, requestId, action)
+			cs.notSupportedError(chargingStation.ID(), requestId, action)
 			return
 		}
 	}
@@ -572,40 +577,40 @@ func (cs *csms) handleIncomingRequest(chargingStationID string, request ocpp.Req
 	go func() {
 		switch action {
 		case provisioning.BootNotificationFeatureName:
-			response, err = cs.provisioningHandler.OnBootNotification(chargingStationID, request.(*provisioning.BootNotificationRequest))
+			response, err = cs.provisioningHandler.OnBootNotification(chargingStation.ID(), request.(*provisioning.BootNotificationRequest))
 		case authorization.AuthorizeFeatureName:
-			response, err = cs.authorizationHandler.OnAuthorize(chargingStationID, request.(*authorization.AuthorizeRequest))
+			response, err = cs.authorizationHandler.OnAuthorize(chargingStation.ID(), request.(*authorization.AuthorizeRequest))
 		case smartcharging.ClearedChargingLimitFeatureName:
-			response, err = cs.smartChargingHandler.OnClearedChargingLimit(chargingStationID, request.(*smartcharging.ClearedChargingLimitRequest))
+			response, err = cs.smartChargingHandler.OnClearedChargingLimit(chargingStation.ID(), request.(*smartcharging.ClearedChargingLimitRequest))
 		case data.DataTransferFeatureName:
-			response, err = cs.dataHandler.OnDataTransfer(chargingStationID, request.(*data.DataTransferRequest))
+			response, err = cs.dataHandler.OnDataTransfer(chargingStation.ID(), request.(*data.DataTransferRequest))
 		case firmware.FirmwareStatusNotificationFeatureName:
-			response, err = cs.firmwareHandler.OnFirmwareStatusNotification(chargingStationID, request.(*firmware.FirmwareStatusNotificationRequest))
+			response, err = cs.firmwareHandler.OnFirmwareStatusNotification(chargingStation.ID(), request.(*firmware.FirmwareStatusNotificationRequest))
 		case iso15118.Get15118EVCertificateFeatureName:
-			response, err = cs.iso15118Handler.OnGet15118EVCertificate(chargingStationID, request.(*iso15118.Get15118EVCertificateRequest))
+			response, err = cs.iso15118Handler.OnGet15118EVCertificate(chargingStation.ID(), request.(*iso15118.Get15118EVCertificateRequest))
 		case iso15118.GetCertificateStatusFeatureName:
-			response, err = cs.iso15118Handler.OnGetCertificateStatus(chargingStationID, request.(*iso15118.GetCertificateStatusRequest))
+			response, err = cs.iso15118Handler.OnGetCertificateStatus(chargingStation.ID(), request.(*iso15118.GetCertificateStatusRequest))
 		default:
-			cs.notSupportedError(chargingStationID, requestId, action)
+			cs.notSupportedError(chargingStation.ID(), requestId, action)
 			return
 		}
-		cs.sendResponse(chargingStationID, response, err, requestId)
+		cs.sendResponse(chargingStation.ID(), response, err, requestId)
 	}()
 }
 
-func (cs *csms) handleIncomingResponse(chargingStationID string, response ocpp.Response, requestId string) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargingStationID); ok {
+func (cs *csms) handleIncomingResponse(chargingStation ChargingStationConnection, response ocpp.Response, requestId string) {
+	if callback, ok := cs.callbackQueue.Dequeue(chargingStation.ID()); ok {
 		callback(response, nil)
 	} else {
-		err := fmt.Errorf("no handler available for call of type %v from client %s for request %s", response.GetFeatureName(), chargingStationID, requestId)
+		err := fmt.Errorf("no handler available for call of type %v from client %s for request %s", response.GetFeatureName(), chargingStation.ID(), requestId)
 		cs.error(err)
 	}
 }
 
-func (cs *csms) handleIncomingError(chargingStationID string, err *ocpp.Error, details interface{}) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargingStationID); ok {
+func (cs *csms) handleIncomingError(chargingStation ChargingStationConnection, err *ocpp.Error, details interface{}) {
+	if callback, ok := cs.callbackQueue.Dequeue(chargingStation.ID()); ok {
 		callback(nil, err)
 	} else {
-		cs.error(fmt.Errorf("no handler available for call error %w from client %s", err, chargingStationID))
+		cs.error(fmt.Errorf("no handler available for call error %w from client %s", err, chargingStation.ID()))
 	}
 }

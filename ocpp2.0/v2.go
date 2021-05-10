@@ -2,6 +2,8 @@
 package ocpp2
 
 import (
+	"crypto/tls"
+
 	"github.com/gorilla/websocket"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
@@ -26,6 +28,13 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
+
+type ChargingStationConnection interface {
+	ID() string
+	TLSConnectionState() *tls.ConnectionState
+}
+
+type ChargingStationConnectionHandler func(chargePoint ChargingStationConnection)
 
 // -------------------- v2.0 Charging Station --------------------
 
@@ -291,9 +300,9 @@ type CSMS interface {
 	// Registers a handler for incoming data transfer messages
 	SetDataHandler(handler data.CSMSHandler)
 	// Registers a handler for new incoming Charging station connections.
-	SetNewChargingStationHandler(handler func(chargePointId string))
+	SetNewChargingStationHandler(handler ChargingStationConnectionHandler)
 	// Registers a handler for Charging station disconnections.
-	SetChargingStationDisconnectedHandler(handler func(chargePointId string))
+	SetChargingStationDisconnectedHandler(handler ChargingStationConnectionHandler)
 	// Sends an asynchronous request to a Charging Station, identified by the clientId.
 	// The charging station will respond with a confirmation message, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.
@@ -328,8 +337,14 @@ func NewCSMS(endpoint *ocppj.Server, server ws.WsServer) CSMS {
 		endpoint = ocppj.NewServer(server, dispatcher, nil, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
 	cs := newCSMS(endpoint)
-	cs.server.SetRequestHandler(cs.handleIncomingRequest)
-	cs.server.SetResponseHandler(cs.handleIncomingResponse)
-	cs.server.SetErrorHandler(cs.handleIncomingError)
+	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {
+		cs.handleIncomingRequest(client, request, requestId, action)
+	})
+	cs.server.SetResponseHandler(func(client ws.Channel, response ocpp.Response, requestId string) {
+		cs.handleIncomingResponse(client, response, requestId)
+	})
+	cs.server.SetErrorHandler(func(client ws.Channel, err *ocpp.Error, details interface{}) {
+		cs.handleIncomingError(client, err, details)
+	})
 	return &cs
 }
