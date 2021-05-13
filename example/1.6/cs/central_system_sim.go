@@ -217,14 +217,14 @@ func main() {
 	centralSystem.SetRemoteTriggerHandler(handler)
 	centralSystem.SetSmartChargingHandler(handler)
 	// Add handlers for dis/connection of charge points
-	centralSystem.SetNewChargePointHandler(func(chargePointId string) {
-		handler.chargePoints[chargePointId] = &ChargePointState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
-		log.WithField("client", chargePointId).Info("new charge point connected")
-		go exampleRoutine(chargePointId, handler)
+	centralSystem.SetNewChargePointHandler(func(chargePoint ocpp16.ChargePointConnection) {
+		handler.chargePoints[chargePoint.ID()] = &ChargePointState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
+		log.WithField("client", chargePoint.ID()).Info("new charge point connected")
+		go exampleRoutine(chargePoint.ID(), handler)
 	})
-	centralSystem.SetChargePointDisconnectedHandler(func(chargePointId string) {
-		log.WithField("client", chargePointId).Info("charge point disconnected")
-		delete(handler.chargePoints, chargePointId)
+	centralSystem.SetChargePointDisconnectedHandler(func(chargePoint ocpp16.ChargePointConnection) {
+		log.WithField("client", chargePoint.ID()).Info("charge point disconnected")
+		delete(handler.chargePoints, chargePoint.ID())
 	})
 	ocppj.SetLogger(log)
 	// Run central system
