@@ -47,6 +47,7 @@ func (suite *OcppJTestSuite) TestServerStoppedError() {
 	// Stop server
 	suite.centralSystem.Stop()
 	// Send message. Expected error
+	time.Sleep(20 * time.Millisecond)
 	assert.False(t, suite.serverDispatcher.IsRunning())
 	req := newMockRequest("somevalue")
 	err := suite.centralSystem.SendRequest(mockChargePointId, req)
