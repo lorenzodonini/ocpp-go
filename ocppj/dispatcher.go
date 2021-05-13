@@ -142,7 +142,6 @@ func (d *DefaultClientDispatcher) Stop() {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 	close(d.requestChannel)
-	d.requestChannel = nil
 	// TODO: clear pending requests?
 }
 
@@ -370,7 +369,6 @@ func (d *DefaultServerDispatcher) Stop() {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 	close(d.requestChannel)
-	d.requestChannel = nil
 	// TODO: clear pending requests?
 }
 
