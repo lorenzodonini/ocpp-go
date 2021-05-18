@@ -21,7 +21,7 @@ func (suite *OcppV16TestSuite) TestReserveNowRequestValidation() {
 		{reservation.ReserveNowRequest{ConnectorId: 1, ExpiryDate: types.NewDateTime(time.Now())}, false},
 		{reservation.ReserveNowRequest{ConnectorId: 1, IdTag: "12345"}, false},
 		{reservation.ReserveNowRequest{ConnectorId: -1, ExpiryDate: types.NewDateTime(time.Now()), IdTag: "12345", ReservationId: 42}, false},
-		{reservation.ReserveNowRequest{ConnectorId: 1, ExpiryDate: types.NewDateTime(time.Now()), IdTag: "12345", ReservationId: -1}, false},
+		{reservation.ReserveNowRequest{ConnectorId: 1, ExpiryDate: types.NewDateTime(time.Now()), IdTag: "12345", ReservationId: -1}, true},
 		{reservation.ReserveNowRequest{ConnectorId: 1, ExpiryDate: types.NewDateTime(time.Now()), IdTag: ">20.................."}, false},
 		{reservation.ReserveNowRequest{ConnectorId: 1, ExpiryDate: types.NewDateTime(time.Now()), IdTag: "12345", ReservationId: 42, ParentIdTag: ">20.................."}, false},
 	}

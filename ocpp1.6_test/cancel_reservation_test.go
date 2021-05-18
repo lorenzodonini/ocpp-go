@@ -14,7 +14,7 @@ func (suite *OcppV16TestSuite) TestCancelReservationRequestValidation() {
 	var requestTable = []GenericTestEntry{
 		{reservation.CancelReservationRequest{ReservationId: 42}, true},
 		{reservation.CancelReservationRequest{}, true},
-		{reservation.CancelReservationRequest{ReservationId: -1}, false},
+		{reservation.CancelReservationRequest{ReservationId: -1}, true},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }

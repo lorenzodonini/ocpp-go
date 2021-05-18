@@ -19,7 +19,7 @@ func (suite *OcppV16TestSuite) TestClearChargingProfileRequestValidation() {
 		{smartcharging.ClearChargingProfileRequest{Id: newInt(1)}, true},
 		{smartcharging.ClearChargingProfileRequest{}, true},
 		{smartcharging.ClearChargingProfileRequest{ConnectorId: newInt(-1)}, false},
-		{smartcharging.ClearChargingProfileRequest{Id: newInt(-1)}, false},
+		{smartcharging.ClearChargingProfileRequest{Id: newInt(-1)}, true},
 		{smartcharging.ClearChargingProfileRequest{ChargingProfilePurpose: "invalidChargingProfilePurposeType"}, false},
 		{smartcharging.ClearChargingProfileRequest{StackLevel: newInt(-1)}, false},
 	}
