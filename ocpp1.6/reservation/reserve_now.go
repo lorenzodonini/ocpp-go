@@ -37,7 +37,7 @@ type ReserveNowRequest struct {
 	ExpiryDate    *types.DateTime `json:"expiryDate" validate:"required"`
 	IdTag         string          `json:"idTag" validate:"required,max=20"`
 	ParentIdTag   string          `json:"parentIdTag,omitempty" validate:"max=20"`
-	ReservationId int             `json:"reservationId" validate:"gte=0"`
+	ReservationId int             `json:"reservationId"`
 }
 
 // This field definition of the ReserveNow confirmation payload, sent by the Charge Point to the Central System in response to a ReserveNowRequest.

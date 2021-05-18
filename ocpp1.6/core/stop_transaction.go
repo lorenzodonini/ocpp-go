@@ -42,7 +42,7 @@ type StopTransactionRequest struct {
 	IdTag           string             `json:"idTag,omitempty" validate:"max=20"`
 	MeterStop       int                `json:"meterStop" validate:"gte=0"`
 	Timestamp       *types.DateTime    `json:"timestamp" validate:"required"`
-	TransactionId   int                `json:"transactionId" validate:"gte=0"`
+	TransactionId   int                `json:"transactionId"`
 	Reason          Reason             `json:"reason,omitempty" validate:"omitempty,reason"`
 	TransactionData []types.MeterValue `json:"transactionData,omitempty" validate:"omitempty,dive"`
 }

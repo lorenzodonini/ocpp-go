@@ -30,7 +30,7 @@ func isValidCancelReservationStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the CancelReservation request payload sent by the Central System to the Charge Point.
 type CancelReservationRequest struct {
-	ReservationId int `json:"reservationId" validate:"gte=0"`
+	ReservationId int `json:"reservationId"`
 }
 
 // This field definition of the CancelReservation confirmation payload, sent by the Charge Point to the Central System in response to a CancelReservationRequest.
