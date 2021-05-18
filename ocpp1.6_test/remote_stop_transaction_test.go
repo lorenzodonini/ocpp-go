@@ -15,7 +15,7 @@ func (suite *OcppV16TestSuite) TestRemoteStopTransactionRequestValidation() {
 	var requestTable = []GenericTestEntry{
 		{core.RemoteStopTransactionRequest{TransactionId: 1}, true},
 		{core.RemoteStopTransactionRequest{}, true},
-		{core.RemoteStopTransactionRequest{TransactionId: -1}, false},
+		{core.RemoteStopTransactionRequest{TransactionId: -1}, true},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
