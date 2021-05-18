@@ -11,7 +11,7 @@ const RemoteStopTransactionFeatureName = "RemoteStopTransaction"
 
 // The field definition of the RemoteStopTransaction request payload sent by the Central System to the Charge Point.
 type RemoteStopTransactionRequest struct {
-	TransactionId int `json:"transactionId" validate:"gte=0"`
+	TransactionId int `json:"transactionId"`
 }
 
 // This field definition of the RemoteStopTransaction confirmation payload, sent by the Charge Point to the Central System in response to a RemoteStopTransactionRequest.

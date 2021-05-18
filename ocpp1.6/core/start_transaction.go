@@ -14,14 +14,14 @@ type StartTransactionRequest struct {
 	ConnectorId   int             `json:"connectorId" validate:"gt=0"`
 	IdTag         string          `json:"idTag" validate:"required,max=20"`
 	MeterStart    int             `json:"meterStart" validate:"gte=0"`
-	ReservationId *int            `json:"reservationId,omitempty" validate:"omitempty,gte=0"`
+	ReservationId *int            `json:"reservationId,omitempty" validate:"omitempty"`
 	Timestamp     *types.DateTime `json:"timestamp" validate:"required"`
 }
 
 // This field definition of the StartTransactionConfirmation payload sent by the Central System to the Charge Point in response to a StartTransactionRequest.
 type StartTransactionConfirmation struct {
 	IdTagInfo     *types.IdTagInfo `json:"idTagInfo" validate:"required"`
-	TransactionId int              `json:"transactionId" validate:"gte=0"`
+	TransactionId int              `json:"transactionId"`
 }
 
 // The Charge Point SHALL send a StartTransactionRequest to the Central System to inform about a transaction that has been started.
