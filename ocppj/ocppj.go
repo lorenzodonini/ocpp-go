@@ -214,23 +214,35 @@ func getValueLength(value interface{}) int {
 	}
 }
 
-func errorFromValidation(validationErrors validator.ValidationErrors, messageId string) *ocpp.Error {
+func occurenceViolation(fieldError validator.FieldError, messageId, messageType string) *ocpp.Error {
+	return ocpp.NewError(OccurrenceConstraintViolation, fmt.Sprintf("Field %s required but not found in %s", fieldError.Namespace(), messageType), messageId)
+}
+
+func propertyConstraintViolation(fieldError validator.FieldError, details, messageId, messageType string) *ocpp.Error {
+	return ocpp.NewError(
+		PropertyConstraintViolation,
+		fmt.Sprintf("Field %s must be %s %s, but was %d in %s", fieldError.Namespace(), details, fieldError.Param(), getValueLength(fieldError.Value()), messageType),
+		messageId,
+	)
+}
+
+func errorFromValidation(validationErrors validator.ValidationErrors, messageId string, messageType string) *ocpp.Error {
 	for _, el := range validationErrors {
 		switch el.ActualTag() {
 		case "required":
-			return ocpp.NewError(OccurrenceConstraintViolation, fmt.Sprintf("Field %v required but not found", el.Namespace()), messageId)
+			return occurenceViolation(el, messageId, messageType)
 		case "max":
-			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be maximum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
+			return propertyConstraintViolation(el, "maximum", messageId, messageType)
 		case "min":
-			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be minimum %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
+			return propertyConstraintViolation(el, "minimum", messageId, messageType)
 		case "gte":
-			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be >= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
+			return propertyConstraintViolation(el, ">=", messageId, messageType)
 		case "gt":
-			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be > %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
+			return propertyConstraintViolation(el, ">", messageId, messageType)
 		case "lte":
-			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be <= %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
+			return propertyConstraintViolation(el, "<=", messageId, messageType)
 		case "lt":
-			return ocpp.NewError(PropertyConstraintViolation, fmt.Sprintf("Field %v must be < %v, but was %v", el.Namespace(), el.Param(), getValueLength(el.Value())), messageId)
+			return propertyConstraintViolation(el, "<", messageId, messageType)
 		}
 	}
 	return ocpp.NewError(GenericError, fmt.Sprintf("%v", validationErrors.Error()), messageId)
@@ -338,7 +350,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		err = Validate.Struct(call)
 		if err != nil {
-			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId)
+			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, action+"Request")
 		}
 		return &call, nil
 	} else if typeId == CALL_RESULT {
@@ -359,7 +371,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		err = Validate.Struct(callResult)
 		if err != nil {
-			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId)
+			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, request.GetFeatureName()+"Confirmation")
 		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
@@ -386,7 +398,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		err := Validate.Struct(callError)
 		if err != nil {
-			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId)
+			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, "Error")
 		}
 		return &callError, nil
 	} else {

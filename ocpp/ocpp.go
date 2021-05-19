@@ -46,7 +46,7 @@ func NewError(errorCode ErrorCode, description string, messageId string) *Error 
 }
 
 func (err *Error) Error() string {
-	return fmt.Sprintf("ocpp %v - %v", err.Code, err.Description)
+	return fmt.Sprintf("ocpp message (%s): %v - %v", err.MessageId, err.Code, err.Description)
 }
 
 // -------------------- Profile --------------------
