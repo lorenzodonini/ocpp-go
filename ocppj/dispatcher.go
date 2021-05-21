@@ -341,6 +341,7 @@ type DefaultServerDispatcher struct {
 	onRequestCancel     func(string, string, string, ocpp.Request)
 	network             ws.WsServer
 	mutex               sync.RWMutex
+	stopped             chan struct{}
 }
 
 // NewDefaultServerDispatcher creates a new DefaultServerDispatcher struct.
@@ -356,6 +357,7 @@ func NewDefaultServerDispatcher(queueMap ServerQueueMap) *DefaultServerDispatche
 
 func (d *DefaultServerDispatcher) Start() {
 	d.requestChannel = make(chan string, 1)
+	d.stopped = make(chan struct{})
 	go d.messagePump()
 }
 
@@ -378,7 +380,10 @@ func (d *DefaultServerDispatcher) CreateClient(clientID string) {
 
 func (d *DefaultServerDispatcher) DeleteClient(clientID string) {
 	d.queueMap.Remove(clientID)
-	d.requestChannel <- clientID
+	select {
+	case <-d.stopped:
+	case d.requestChannel <- clientID:
+	}
 }
 
 func (d *DefaultServerDispatcher) SetNetworkServer(server ws.WsServer) {
@@ -423,6 +428,7 @@ func (d *DefaultServerDispatcher) messagePump() {
 			if !ok {
 				d.queueMap.Init()
 				d.requestChannel = nil
+				close(d.stopped)
 				log.Info("stopped processing requests")
 				return
 			}
