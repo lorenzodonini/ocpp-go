@@ -619,6 +619,7 @@ type Client struct {
 	onReconnected  func()
 	mutex          sync.Mutex
 	errC           chan error
+	stopped        chan struct{}
 }
 
 // Creates a new simple websocket client (the channel is not secured).
@@ -772,7 +773,11 @@ func (client *Client) handleReconnection() {
 	delay := client.timeoutConfig.ReconnectBackoff
 	for {
 		// Wait before reconnecting
-		time.Sleep(delay)
+		select {
+		case <-time.After(delay):
+		case <-client.stopped:
+			return
+		}
 		err := client.Start(client.webSocket.id)
 		if err == nil {
 			// Re-connection was successful
@@ -842,6 +847,7 @@ func (client *Client) Start(url string) error {
 		closeSignal:        make(chan error, 1),
 		tlsConnectionState: resp.TLS,
 	}
+	client.stopped = make(chan struct{})
 	client.setConnected(true)
 	//Start reader and write routine
 	go client.writePump()
@@ -853,6 +859,7 @@ func (client *Client) Stop() {
 	client.setConnected(false)
 	close(client.webSocket.outQueue)
 
+	close(client.stopped)
 	if client.errC != nil {
 		close(client.errC)
 		client.errC = nil
