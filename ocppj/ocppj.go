@@ -214,35 +214,43 @@ func getValueLength(value interface{}) int {
 	}
 }
 
-func occurenceViolation(fieldError validator.FieldError, messageId, messageType string) *ocpp.Error {
-	return ocpp.NewError(OccurrenceConstraintViolation, fmt.Sprintf("Field %s required but not found in %s", fieldError.Namespace(), messageType), messageId)
+func occurenceViolation(fieldError validator.FieldError, messageId, feature string) *ocpp.Error {
+	description := fmt.Sprintf("Field %s required but not found", fieldError.Namespace())
+	if feature != "" {
+		description = fmt.Sprintf("%s for feature %s", description, feature)
+	}
+	return ocpp.NewError(OccurrenceConstraintViolation, description, messageId)
 }
 
-func propertyConstraintViolation(fieldError validator.FieldError, details, messageId, messageType string) *ocpp.Error {
+func propertyConstraintViolation(fieldError validator.FieldError, details, messageId, feature string) *ocpp.Error {
+	description := fmt.Sprintf("Field %s must be %s %s, but was %d", fieldError.Namespace(), details, fieldError.Param(), getValueLength(fieldError.Value()))
+	if feature != "" {
+		description = fmt.Sprintf("%s for feature %s", description, feature)
+	}
 	return ocpp.NewError(
 		PropertyConstraintViolation,
-		fmt.Sprintf("Field %s must be %s %s, but was %d in %s", fieldError.Namespace(), details, fieldError.Param(), getValueLength(fieldError.Value()), messageType),
+		description,
 		messageId,
 	)
 }
 
-func errorFromValidation(validationErrors validator.ValidationErrors, messageId string, messageType string) *ocpp.Error {
+func errorFromValidation(validationErrors validator.ValidationErrors, messageId string, feature string) *ocpp.Error {
 	for _, el := range validationErrors {
 		switch el.ActualTag() {
 		case "required":
-			return occurenceViolation(el, messageId, messageType)
+			return occurenceViolation(el, messageId, feature)
 		case "max":
-			return propertyConstraintViolation(el, "maximum", messageId, messageType)
+			return propertyConstraintViolation(el, "maximum", messageId, feature)
 		case "min":
-			return propertyConstraintViolation(el, "minimum", messageId, messageType)
+			return propertyConstraintViolation(el, "minimum", messageId, feature)
 		case "gte":
-			return propertyConstraintViolation(el, ">=", messageId, messageType)
+			return propertyConstraintViolation(el, ">=", messageId, feature)
 		case "gt":
-			return propertyConstraintViolation(el, ">", messageId, messageType)
+			return propertyConstraintViolation(el, ">", messageId, feature)
 		case "lte":
-			return propertyConstraintViolation(el, "<=", messageId, messageType)
+			return propertyConstraintViolation(el, "<=", messageId, feature)
 		case "lt":
-			return propertyConstraintViolation(el, "<", messageId, messageType)
+			return propertyConstraintViolation(el, "<", messageId, feature)
 		}
 	}
 	return ocpp.NewError(GenericError, fmt.Sprintf("%v", validationErrors.Error()), messageId)
@@ -350,7 +358,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		err = Validate.Struct(call)
 		if err != nil {
-			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, action+"Request")
+			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, action)
 		}
 		return &call, nil
 	} else if typeId == CALL_RESULT {
@@ -371,7 +379,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		err = Validate.Struct(callResult)
 		if err != nil {
-			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, request.GetFeatureName()+"Confirmation")
+			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, request.GetFeatureName())
 		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
@@ -398,7 +406,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		err := Validate.Struct(callError)
 		if err != nil {
-			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, "Error")
+			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, "")
 		}
 		return &callError, nil
 	} else {
