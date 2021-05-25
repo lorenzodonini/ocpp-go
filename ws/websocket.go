@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"path"
 	"sync"
 	"time"
@@ -610,6 +611,7 @@ type WsClient interface {
 // Use the NewClient or NewTLSClient functions to create a new client.
 type Client struct {
 	webSocket      WebSocket
+	url            url.URL
 	messageHandler func(data []byte) error
 	dialOptions    []func(*websocket.Dialer)
 	header         http.Header
@@ -778,7 +780,7 @@ func (client *Client) handleReconnection() {
 		case <-client.stopped:
 			return
 		}
-		err := client.Start(client.webSocket.id)
+		err := client.Start(client.url.String())
 		if err == nil {
 			// Re-connection was successful
 			if client.onReconnected != nil {
@@ -814,7 +816,12 @@ func (client *Client) Write(data []byte) error {
 	return nil
 }
 
-func (client *Client) Start(url string) error {
+func (client *Client) Start(urlStr string) error {
+	url, err := url.Parse(urlStr)
+	if err != nil {
+		return err
+	}
+
 	dialer := websocket.Dialer{
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
@@ -825,7 +832,7 @@ func (client *Client) Start(url string) error {
 		option(&dialer)
 	}
 	// Connect
-	ws, resp, err := dialer.Dial(url, client.header)
+	ws, resp, err := dialer.Dial(urlStr, client.header)
 	if err != nil {
 		if resp != nil {
 			httpError := HttpConnectionError{Message: err.Error(), HttpStatus: resp.Status, HttpCode: resp.StatusCode}
@@ -840,9 +847,12 @@ func (client *Client) Start(url string) error {
 		return err
 	}
 
+	// The id of the charge point is the final path element
+	id := path.Base(url.Path)
+	client.url = *url
 	client.webSocket = WebSocket{
 		connection:         ws,
-		id:                 url,
+		id:                 id,
 		outQueue:           make(chan []byte),
 		closeSignal:        make(chan error, 1),
 		tlsConnectionState: resp.TLS,
