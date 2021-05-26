@@ -341,6 +341,14 @@ func (server *Server) Start(port int, listenPath string) {
 
 	defer ln.Close()
 
+	server.httpServer.RegisterOnShutdown(func() {
+		server.connMutex.Lock()
+		for _, ws := range server.connections {
+			ws.connection.Close()
+		}
+		server.connMutex.Unlock()
+	})
+
 	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
 		err = server.httpServer.ServeTLS(ln, server.tlsCertificatePath, server.tlsCertificateKey)
 	} else {
