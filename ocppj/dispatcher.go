@@ -49,7 +49,7 @@ type ClientDispatcher interface {
 	// Calling Stop on the dispatcher will not trigger this callback.
 	//
 	// If no callback is set, a request will still be removed from the dispatcher when a timeout occurs.
-	SetOnRequestCanceled(cb func(string, string, ocpp.Request))
+	SetOnRequestCanceled(cb CanceledRequestHandler)
 	// Sets the network client, so the dispatcher may send requests using the networking layer directly.
 	//
 	// This needs to be set before calling the Start method. If not, sending requests will fail.
@@ -81,6 +81,8 @@ type pendingRequest struct {
 	startTime time.Time
 }
 
+type CanceledRequestHandler func(id string, action string, request ocpp.Request)
+
 // DefaultClientDispatcher is a default implementation of the ClientDispatcher interface.
 //
 // The dispatcher implements the ClientState as well for simplicity.
@@ -92,7 +94,7 @@ type DefaultClientDispatcher struct {
 	pendingRequestState ClientState
 	network             ws.WsClient
 	mutex               sync.RWMutex
-	onRequestCancel     func(string, string, ocpp.Request)
+	onRequestCancel     CanceledRequestHandler
 	timer               *time.Timer
 	paused              bool
 	timeout             time.Duration
@@ -112,7 +114,7 @@ func NewDefaultClientDispatcher(queue RequestQueue) *DefaultClientDispatcher {
 	}
 }
 
-func (d *DefaultClientDispatcher) SetOnRequestCanceled(cb func(string, string, ocpp.Request)) {
+func (d *DefaultClientDispatcher) SetOnRequestCanceled(cb CanceledRequestHandler) {
 	d.onRequestCancel = cb
 }
 
