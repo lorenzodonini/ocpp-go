@@ -60,6 +60,11 @@ func (c *Client) SetErrorHandler(handler func(err *ocpp.Error, details interface
 	c.errorHandler = handler
 }
 
+// Registers the handler to be called on timeout.
+func (c *Client) SetOnRequestCanceled(handler CanceledRequestHandler) {
+	c.dispatcher.SetOnRequestCanceled(handler)
+}
+
 // Connects to the given serverURL and starts running the I/O loop for the underlying connection.
 //
 // If the connection is established successfully, the function returns control to the caller immediately.

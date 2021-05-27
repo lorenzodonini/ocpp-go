@@ -144,13 +144,15 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 		}
 	})
 	cp := chargePoint{confirmationHandler: make(chan ocpp.Response, 1), errorHandler: make(chan error, 1), callbacks: callbackqueue.New()}
+
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
-		// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
-		dispatcher.SetOnRequestCanceled(cp.onRequestTimeout)
 		endpoint = ocppj.NewClient(id, client, dispatcher, nil, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
+	// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
+	endpoint.SetOnRequestCanceled(cp.onRequestTimeout)
 	cp.client = endpoint
+
 	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
 		cp.confirmationHandler <- confirmation
 	})

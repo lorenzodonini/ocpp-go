@@ -173,13 +173,16 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) C
 		}
 	})
 	cs := chargingStation{responseHandler: make(chan ocpp.Response, 1), errorHandler: make(chan error, 1), callbacks: callbackqueue.New()}
+
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
-		// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
-		dispatcher.SetOnRequestCanceled(cs.onRequestTimeout)
 		endpoint = ocppj.NewClient(id, client, dispatcher, nil, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
+
+	// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
+	endpoint.SetOnRequestCanceled(cs.onRequestTimeout)
 	cs.client = endpoint
+
 	cs.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
 		cs.responseHandler <- confirmation
 	})
