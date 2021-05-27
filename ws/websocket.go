@@ -171,6 +171,8 @@ type WsServer interface {
 	// Shuts down a running websocket server.
 	// All open channels will be forcefully closed, and the previously called Start function will return.
 	Stop()
+	// Closes a specific websocket connection
+	StopConnection(id string, closeError websocket.CloseError) error
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	// The channel is closed by the server when stopped.
 	Errors() <-chan error
@@ -363,6 +365,21 @@ func (server *Server) Stop() {
 		close(server.errC)
 		server.errC = nil
 	}
+}
+
+func (server *Server) StopConnection(id string, closeError websocket.CloseError) error {
+	server.connMutex.RLock()
+	ws, ok := server.connections[id]
+	server.connMutex.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("couldn't stop websocket connection. No connection with id %s is open", id)
+	}
+	return ws.connection.WriteControl(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(closeError.Code, closeError.Text),
+		time.Now().Add(server.timeoutConfig.WriteWait),
+	)
 }
 
 func (server *Server) Write(webSocketId string, data []byte) error {
