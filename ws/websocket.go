@@ -458,6 +458,17 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		tlsConnectionState: r.TLS,
 	}
 	server.connMutex.Lock()
+	// If we already have an ID, close with a PolicyViolation
+	if _, idExists := server.connections[ws.id]; idExists {
+		server.connMutex.Unlock()
+		conn.WriteControl(
+			websocket.CloseMessage,
+			websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "a connection with this ID already exists"),
+			time.Now().Add(server.timeoutConfig.WriteWait),
+		)
+		conn.Close()
+		return
+	}
 	server.connections[ws.id] = &ws
 	server.connMutex.Unlock()
 	// Read and write routines are started in separate goroutines and function will return immediately
