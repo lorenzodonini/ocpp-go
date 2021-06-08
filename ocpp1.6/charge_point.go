@@ -2,6 +2,7 @@ package ocpp16
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -28,6 +29,7 @@ type chargePoint struct {
 	callbacks            callbackqueue.CallbackQueue
 	stopC                chan struct{}
 	errC                 chan error // external error channel
+	incomingWaitGroup    sync.WaitGroup
 }
 
 func (cp *chargePoint) error(err error) {
@@ -328,8 +330,9 @@ func (cp *chargePoint) Start(centralSystemUrl string) error {
 }
 
 func (cp *chargePoint) Stop() {
-	cp.client.Stop()
 	close(cp.stopC)
+	cp.incomingWaitGroup.Wait()
+	cp.client.Stop()
 
 	if cp.errC != nil {
 		close(cp.errC)
@@ -354,6 +357,13 @@ func (cp *chargePoint) notSupportedError(requestId string, action string) {
 }
 
 func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
+	cp.incomingWaitGroup.Add(1)
+	defer cp.incomingWaitGroup.Done()
+	select {
+	case <-cp.stopC:
+		return
+	default:
+	}
 	profile, found := cp.client.GetProfileForFeature(action)
 	// Check whether action is supported and a handler for it exists
 	if !found {
