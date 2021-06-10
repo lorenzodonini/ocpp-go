@@ -72,7 +72,7 @@ func (handler *ChargePointHandler) OnChangeConfiguration(request *core.ChangeCon
 		logDefault(request.GetFeatureName()).Errorf("couldn't change configuration for readonly parameter %v", configKey.Key)
 		return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusRejected), nil
 	}
-	configKey.Value = request.Value
+	configKey.Value = &request.Value
 	handler.configuration[request.Key] = configKey
 	logDefault(request.GetFeatureName()).Infof("changed configuration for parameter %v to %v", configKey.Key, configKey.Value)
 	return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusAccepted), nil
@@ -94,7 +94,7 @@ func (handler *ChargePointHandler) OnGetConfiguration(request *core.GetConfigura
 	for _, key := range request.Key {
 		configKey, ok := handler.configuration[key]
 		if !ok {
-			unknownKeys = append(unknownKeys, configKey.Value)
+			unknownKeys = append(unknownKeys, *configKey.Value)
 		} else {
 			resultKeys = append(resultKeys, configKey)
 		}
