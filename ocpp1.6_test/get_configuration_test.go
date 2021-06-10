@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -24,15 +25,18 @@ func (suite *OcppV16TestSuite) TestGetConfigurationRequestValidation() {
 
 func (suite *OcppV16TestSuite) TestGetConfigurationConfirmationValidation() {
 	t := suite.T()
+	value1 := "value1"
+	value2 := "value2"
+	longValue := ">500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."
 	var confirmationTable = []GenericTestEntry{
-		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}}}, true},
-		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}, {Key: "key2", Readonly: false, Value: "value2"}}}, true},
-		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}}, UnknownKey: []string{"keyX"}}, true},
-		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: false, Value: "value1"}}, UnknownKey: []string{"keyX", "keyY"}}, true},
+		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: &value1}}}, true},
+		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: &value1}, {Key: "key2", Readonly: false, Value: &value2}}}, true},
+		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: &value1}}, UnknownKey: []string{"keyX"}}, true},
+		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: false, Value: &value1}}, UnknownKey: []string{"keyX", "keyY"}}, true},
 		{core.GetConfigurationConfirmation{UnknownKey: []string{"keyX"}}, true},
 		{core.GetConfigurationConfirmation{UnknownKey: []string{">50................................................"}}, false},
-		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: ">50................................................", Readonly: true, Value: "value1"}}}, false},
-		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: ">500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}}}, false},
+		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: ">50................................................", Readonly: true, Value: &value1}}}, false},
+		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: &longValue}}}, false},
 		//{ocpp16.GetConfigurationConfirmation{ConfigurationKey: []ocpp16.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}, {Key: "key1", Readonly: false, Value: "value2"}}}, false},
 	}
 	//TODO: additional test cases TBD. See get_configuration.go
@@ -46,13 +50,15 @@ func (suite *OcppV16TestSuite) TestGetConfigurationE2EMocked() {
 	wsUrl := "someUrl"
 	key1 := "key1"
 	key2 := "key2"
+	someValue := "someValue"
+	someOtherValue := "someOtherValue"
 	requestKeys := []string{key1, key2}
-	resultKey1 := core.ConfigurationKey{Key: key1, Readonly: true, Value: "someValue"}
-	resultKey2 := core.ConfigurationKey{Key: key1, Readonly: true, Value: "someOtherValue"}
+	resultKey1 := core.ConfigurationKey{Key: key1, Readonly: true, Value: &someValue}
+	resultKey2 := core.ConfigurationKey{Key: key1, Readonly: true, Value: &someOtherValue}
 	resultKeys := []core.ConfigurationKey{resultKey1, resultKey2}
 	unknownKeys := []string{"keyX", "keyY"}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"key":["%v","%v"]}]`, messageId, core.GetConfigurationFeatureName, key1, key2)
-	responseJson := fmt.Sprintf(`[3,"%v",{"configurationKey":[{"key":"%v","readonly":%v,"value":"%v"},{"key":"%v","readonly":%v,"value":"%v"}],"unknownKey":["%v","%v"]}]`, messageId, resultKey1.Key, resultKey1.Readonly, resultKey1.Value, resultKey2.Key, resultKey2.Readonly, resultKey2.Value, unknownKeys[0], unknownKeys[1])
+	responseJson := fmt.Sprintf(`[3,"%v",{"configurationKey":[{"key":"%v","readonly":%v,"value":"%v"},{"key":"%v","readonly":%v,"value":"%v"}],"unknownKey":["%v","%v"]}]`, messageId, resultKey1.Key, resultKey1.Readonly, *resultKey1.Value, resultKey2.Key, resultKey2.Readonly, *resultKey2.Value, unknownKeys[0], unknownKeys[1])
 	getConfigurationConfirmation := core.NewGetConfigurationConfirmation(resultKeys)
 	getConfigurationConfirmation.UnknownKey = unknownKeys
 	channel := NewMockWebSocket(wsId)
