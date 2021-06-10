@@ -212,21 +212,23 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 		log.Error(err)
 		return err
 	}
-	switch message.GetMessageTypeId() {
-	case CALL:
-		call := message.(*Call)
-		s.requestHandler(wsChannel, call.Payload, call.UniqueId, call.Action)
-	case CALL_RESULT:
-		callResult := message.(*CallResult)
-		s.dispatcher.CompleteRequest(wsChannel.ID(), callResult.GetUniqueId())
-		if s.responseHandler != nil {
-			s.responseHandler(wsChannel, callResult.Payload, callResult.UniqueId)
-		}
-	case CALL_ERROR:
-		callError := message.(*CallError)
-		s.dispatcher.CompleteRequest(wsChannel.ID(), callError.GetUniqueId())
-		if s.errorHandler != nil {
-			s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+	if message != nil {
+		switch message.GetMessageTypeId() {
+		case CALL:
+			call := message.(*Call)
+			s.requestHandler(wsChannel, call.Payload, call.UniqueId, call.Action)
+		case CALL_RESULT:
+			callResult := message.(*CallResult)
+			s.dispatcher.CompleteRequest(wsChannel.ID(), callResult.GetUniqueId())
+			if s.responseHandler != nil {
+				s.responseHandler(wsChannel, callResult.Payload, callResult.UniqueId)
+			}
+		case CALL_ERROR:
+			callError := message.(*CallError)
+			s.dispatcher.CompleteRequest(wsChannel.ID(), callError.GetUniqueId())
+			if s.errorHandler != nil {
+				s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+			}
 		}
 	}
 	return nil
