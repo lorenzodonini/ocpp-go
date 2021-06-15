@@ -27,6 +27,9 @@ func (cq *CallbackQueue) TryQueue(id string, try func() error, callback func(con
 		// pop off last element
 		callbacks := cq.callbacks[id]
 		cq.callbacks[id] = callbacks[:len(callbacks)-1]
+		if len(cq.callbacks[id]) == 0 {
+			delete(cq.callbacks, id)
+		}
 
 		return err
 	}
