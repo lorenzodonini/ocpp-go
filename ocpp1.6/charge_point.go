@@ -227,11 +227,15 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) 
 	if err != nil {
 		return nil, err
 	}
-	asyncResult, ok := <-asyncResponseC
-	if !ok {
-		return nil, fmt.Errorf("internal error while receiving result for %v request", request.GetFeatureName())
+	select {
+	case asyncResult, ok := <-asyncResponseC:
+		if !ok {
+			return nil, fmt.Errorf("internal error while receiving result for %v request", request.GetFeatureName())
+		}
+		return asyncResult.r, asyncResult.e
+	case <-cp.stopC:
+		return nil, fmt.Errorf("client stopped while waiting for response to %v", request.GetFeatureName())
 	}
-	return asyncResult.r, asyncResult.e
 }
 
 func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
