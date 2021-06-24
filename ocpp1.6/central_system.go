@@ -405,9 +405,10 @@ func (cs *centralSystem) Start(listenPort int, listenPath string) {
 func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
 	// send error response
 	if err != nil {
-		err := cs.server.SendError(chargePointId, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
+		cs.error(fmt.Errorf("error handling request: %w", err))
+		err := cs.server.SendError(chargePointId, requestId, ocppj.InternalError, "Error handling request", nil)
 		if err != nil {
-			err = fmt.Errorf("replying cp %s to request %s with 'protocol error': %w", chargePointId, requestId, err)
+			err = fmt.Errorf("error replying cp %s to request %s with 'internal error': %w", chargePointId, requestId, err)
 			cs.error(err)
 		}
 		return
@@ -422,7 +423,7 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Re
 	// send confirmation response
 	err = cs.server.SendResponse(chargePointId, requestId, confirmation)
 	if err != nil {
-		err = fmt.Errorf("replying cp %s to request %s: %w", chargePointId, requestId, err)
+		err = fmt.Errorf("error replying cp %s to request %s: %w", chargePointId, requestId, err)
 		cs.error(err)
 	}
 }
