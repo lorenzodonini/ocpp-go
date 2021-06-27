@@ -236,6 +236,60 @@ func TestServerStartErrors(t *testing.T) {
 	wsServer.Stop()
 }
 
+func TestServerStopConnection(t *testing.T) {
+	triggerC := make(chan struct{}, 1)
+	disconnectedClientC := make(chan struct{}, 1)
+	disconnectedServerC := make(chan struct{}, 1)
+	closeError := websocket.CloseError{
+		Code: websocket.CloseGoingAway,
+		Text: "CloseClientConnection",
+	}
+	wsServer := newWebsocketServer(t, nil)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		triggerC <- struct{}{}
+	})
+	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
+		disconnectedServerC <- struct{}{}
+	})
+	wsClient := newWebsocketClient(t, func(data []byte) ([]byte, error) {
+		strMsg := string(data)
+		fmt.Println(strMsg)
+		return nil, nil
+	})
+	wsClient.SetDisconnectedHandler(func(err error) {
+		require.IsType(t, &closeError, err)
+		closeErr, _ := err.(*websocket.CloseError)
+		assert.Equal(t, closeError.Code, closeErr.Code)
+		assert.Equal(t, closeError.Text, closeErr.Text)
+		disconnectedClientC <- struct{}{}
+	})
+	// Start server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(100 * time.Millisecond)
+	// Connect client
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	err := wsClient.Start(u.String())
+	require.NoError(t, err)
+	// Wait for client to connect
+	_, ok := <-triggerC
+	require.True(t, ok)
+	// Close connection and wait for client to be closed
+	err = wsServer.StopConnection(path.Base(testPath), closeError)
+	require.NoError(t, err)
+	_, ok = <-disconnectedClientC
+	require.True(t, ok)
+	_, ok = <-disconnectedServerC
+	require.True(t, ok)
+	assert.False(t, wsClient.IsConnected())
+	time.Sleep(100 * time.Millisecond)
+	assert.Empty(t, wsServer.connections)
+	// Client will attempt to reconnect under the hood, but test finishes before this can happen
+	// Cleanup
+	wsClient.Stop()
+	wsServer.Stop()
+}
+
 func TestWebsocketClientConnectionBreak(t *testing.T) {
 	newClient := make(chan bool)
 	disconnected := make(chan bool)
