@@ -171,7 +171,7 @@ type WsServer interface {
 	// Shuts down a running websocket server.
 	// All open channels will be forcefully closed, and the previously called Start function will return.
 	Stop()
-	// Closes a specific websocket connection
+	// Closes a specific websocket connection.
 	StopConnection(id string, closeError websocket.CloseError) error
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	// The channel is closed by the server when stopped.
