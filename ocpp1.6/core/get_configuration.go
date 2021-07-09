@@ -62,7 +62,7 @@ func NewGetConfigurationRequest(keys []string) *GetConfigurationRequest {
 	return &GetConfigurationRequest{Key: keys}
 }
 
-// Creates a new ClearCacheConfirmation, containing all required fields. Optional fields may be set afterwards.
+// Creates a new GetConfigurationConfirmation, containing all required fields. Optional fields may be set afterwards.
 func NewGetConfigurationConfirmation(configurationKey []ConfigurationKey) *GetConfigurationConfirmation {
 	return &GetConfigurationConfirmation{ConfigurationKey: configurationKey}
 }
