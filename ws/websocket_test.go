@@ -252,8 +252,6 @@ func TestServerStopConnection(t *testing.T) {
 		disconnectedServerC <- struct{}{}
 	})
 	wsClient := newWebsocketClient(t, func(data []byte) ([]byte, error) {
-		strMsg := string(data)
-		fmt.Println(strMsg)
 		return nil, nil
 	})
 	wsClient.SetDisconnectedHandler(func(err error) {
@@ -288,6 +286,61 @@ func TestServerStopConnection(t *testing.T) {
 	// Cleanup
 	wsClient.Stop()
 	wsServer.Stop()
+}
+
+func TestWebsocketServerStopAllConnections(t *testing.T) {
+	triggerC := make(chan struct{}, 1)
+	numClients := 5
+	disconnectedClientC := make(chan struct{}, numClients)
+	disconnectedServerC := make(chan struct{}, 1)
+	wsServer := newWebsocketServer(t, nil)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		triggerC <- struct{}{}
+	})
+	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
+		disconnectedServerC <- struct{}{}
+	})
+	// Start server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(100 * time.Millisecond)
+	// Connect clients
+	clients := []WsClient{}
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	for i := 0; i < numClients; i++ {
+		wsClient := newWebsocketClient(t, func(data []byte) ([]byte, error) {
+			return nil, nil
+		})
+		wsClient.SetDisconnectedHandler(func(err error) {
+			require.IsType(t, &websocket.CloseError{}, err)
+			closeErr, _ := err.(*websocket.CloseError)
+			assert.Equal(t, websocket.CloseNormalClosure, closeErr.Code)
+			assert.Equal(t, "", closeErr.Text)
+			disconnectedClientC <- struct{}{}
+		})
+		u := url.URL{Scheme: "ws", Host: host, Path: fmt.Sprintf("%v-%v", testPath, i)}
+		err := wsClient.Start(u.String())
+		require.NoError(t, err)
+		clients = append(clients, wsClient)
+		// Wait for client to connect
+		_, ok := <-triggerC
+		require.True(t, ok)
+	}
+	// Stop server and wait for clients to disconnect
+	wsServer.Stop()
+	for disconnects := 0; disconnects < numClients; disconnects++ {
+		_, ok := <-disconnectedClientC
+		require.True(t, ok)
+		_, ok = <-disconnectedServerC
+		require.True(t, ok)
+	}
+	// Check disconnection status
+	for _, c := range clients {
+		assert.False(t, c.IsConnected())
+		// Client will attempt to reconnect under the hood, but test finishes before this can happen
+		c.Stop()
+	}
+	time.Sleep(100 * time.Millisecond)
+	assert.Empty(t, wsServer.connections)
 }
 
 func TestWebsocketClientConnectionBreak(t *testing.T) {
