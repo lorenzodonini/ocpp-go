@@ -239,6 +239,43 @@ func TestServerStartErrors(t *testing.T) {
 	wsServer.Stop()
 }
 
+func TestClientDuplicateConnection(t *testing.T) {
+	wsServer := newWebsocketServer(t, nil)
+	wsServer.SetNewClientHandler(func(ws Channel) {
+	})
+	// Start server
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(100 * time.Millisecond)
+	// Connect client 1
+	wsClient1 := newWebsocketClient(t, func(data []byte) ([]byte, error) {
+		return nil, nil
+	})
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	err := wsClient1.Start(u.String())
+	require.NoError(t, err)
+	// Try to connect client 2
+	disconnectC := make(chan struct{})
+	wsClient2 := newWebsocketClient(t, func(data []byte) ([]byte, error) {
+		return nil, nil
+	})
+	wsClient2.SetDisconnectedHandler(func(err error) {
+		require.IsType(t, &websocket.CloseError{}, err)
+		wsErr, _ := err.(*websocket.CloseError)
+		assert.Equal(t, websocket.ClosePolicyViolation, wsErr.Code)
+		assert.Equal(t, "client already exists", wsErr.Text)
+		disconnectC <- struct{}{}
+	})
+	err = wsClient2.Start(u.String())
+	require.NoError(t, err)
+	// Expect connection to be closed immediately
+	_, ok := <-disconnectC
+	assert.True(t, ok)
+	// Cleanup
+	wsClient1.Stop()
+	wsServer.Stop()
+}
+
 func TestServerStopConnection(t *testing.T) {
 	triggerC := make(chan struct{}, 1)
 	disconnectedClientC := make(chan struct{}, 1)
