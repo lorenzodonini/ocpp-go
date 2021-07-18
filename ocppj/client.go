@@ -11,13 +11,15 @@ import (
 // During message exchange, the two roles may be reversed (depending on the message direction), but a client struct remains associated to a charge point/charging station.
 type Client struct {
 	Endpoint
-	client          ws.WsClient
-	Id              string
-	requestHandler  func(request ocpp.Request, requestId string, action string)
-	responseHandler func(response ocpp.Response, requestId string)
-	errorHandler    func(err *ocpp.Error, details interface{})
-	dispatcher      ClientDispatcher
-	RequestState    ClientState
+	client                ws.WsClient
+	Id                    string
+	requestHandler        func(request ocpp.Request, requestId string, action string)
+	responseHandler       func(response ocpp.Response, requestId string)
+	errorHandler          func(err *ocpp.Error, details interface{})
+	onDisconnectedHandler func(err error)
+	onReconnectedHandler  func()
+	dispatcher            ClientDispatcher
+	RequestState          ClientState
 }
 
 // Creates a new Client endpoint.
@@ -63,6 +65,14 @@ func (c *Client) SetErrorHandler(handler func(err *ocpp.Error, details interface
 // Registers the handler to be called on timeout.
 func (c *Client) SetOnRequestCanceled(handler CanceledRequestHandler) {
 	c.dispatcher.SetOnRequestCanceled(handler)
+}
+
+func (c *Client) SetOnDisconnectedHandler(handler func(err error)) {
+	c.onDisconnectedHandler = handler
+}
+
+func (c *Client) SetOnReconnectedHandler(handler func()) {
+	c.onReconnectedHandler = handler
 }
 
 // Connects to the given serverURL and starts running the I/O loop for the underlying connection.
@@ -223,8 +233,14 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 func (c *Client) onDisconnected(err error) {
 	log.Error("disconnected from server", err)
 	c.dispatcher.Pause()
+	if c.onDisconnectedHandler != nil {
+		c.onDisconnectedHandler(err)
+	}
 }
 
 func (c *Client) onReconnected() {
 	c.dispatcher.Resume()
+	if c.onReconnectedHandler != nil {
+		c.onReconnectedHandler()
+	}
 }
