@@ -401,26 +401,28 @@ func (server *Server) Write(webSocketId string, data []byte) error {
 }
 
 func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
+	responseHeader := http.Header{}
 	url := r.URL
-	// Check if requested subprotocol is supported
+	// Negotiate sub-protocol
 	clientSubprotocols := websocket.Subprotocols(r)
-	supported := false
-	if len(server.upgrader.Subprotocols) == 0 {
-		// All subProtocols are accepted
-		supported = true
-	}
-	for _, supportedProto := range server.upgrader.Subprotocols {
-		for _, requestedProto := range clientSubprotocols {
+	negotiatedSuprotocol := ""
+out:
+	for _, requestedProto := range clientSubprotocols {
+		if len(server.upgrader.Subprotocols) == 0 {
+			// All subProtocols are accepted, pick first
+			negotiatedSuprotocol = requestedProto
+			break
+		}
+		// Check if requested suprotocol is supported by server
+		for _, supportedProto := range server.upgrader.Subprotocols {
 			if requestedProto == supportedProto {
-				supported = true
-				break
+				negotiatedSuprotocol = requestedProto
+				break out
 			}
 		}
 	}
-	if !supported {
-		server.error(fmt.Errorf("unsupported subprotocol: %v", clientSubprotocols))
-		http.Error(w, "unsupported subprotocol", http.StatusBadRequest)
-		return
+	if negotiatedSuprotocol != "" {
+		responseHeader.Add("Sec-WebSocket-Protocol", negotiatedSuprotocol)
 	}
 	// Handle client authentication
 	if server.basicAuthHandler != nil {
@@ -440,7 +442,7 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// Upgrade websocket
-	conn, err := server.upgrader.Upgrade(w, r, nil)
+	conn, err := server.upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
 		server.error(fmt.Errorf("upgrade failed: %w", err))
 		return
@@ -457,6 +459,16 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		pingMessage:        make(chan []byte, 1),
 		tlsConnectionState: r.TLS,
 	}
+	// If unsupported subprotocol, terminate the connection immediately
+	if negotiatedSuprotocol == "" {
+		server.error(fmt.Errorf("unsupported subprotocols %v for new client %v (%v)", clientSubprotocols, id, r.RemoteAddr))
+		_ = conn.WriteControl(websocket.CloseMessage,
+			websocket.FormatCloseMessage(websocket.CloseProtocolError, "invalid or unsupported subprotocol"),
+			time.Now().Add(server.timeoutConfig.WriteWait))
+		_ = conn.Close()
+		return
+	}
+	// Check whether client exists
 	server.connMutex.Lock()
 	// If we already have an ID, close with a PolicyViolation
 	if _, idExists := server.connections[ws.id]; idExists {
