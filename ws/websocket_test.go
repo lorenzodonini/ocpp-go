@@ -263,7 +263,8 @@ func TestClientDuplicateConnection(t *testing.T) {
 		require.IsType(t, &websocket.CloseError{}, err)
 		wsErr, _ := err.(*websocket.CloseError)
 		assert.Equal(t, websocket.ClosePolicyViolation, wsErr.Code)
-		assert.Equal(t, "client already exists", wsErr.Text)
+		assert.Equal(t, "a connection with this ID already exists", wsErr.Text)
+		wsClient2.SetDisconnectedHandler(nil)
 		disconnectC <- struct{}{}
 	})
 	err = wsClient2.Start(u.String())
@@ -482,6 +483,9 @@ func TestValidBasicAuth(t *testing.T) {
 	wsClient := NewTLSClient(&tls.Config{
 		RootCAs: certPool,
 	})
+	wsClient.AddOption(func(dialer *websocket.Dialer) {
+		dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
+	})
 	// Add basic auth
 	wsClient.SetBasicAuth(authUsername, authPassword)
 	// Test connection
@@ -679,6 +683,9 @@ func TestValidClientTLSCertificate(t *testing.T) {
 		RootCAs:      certPool,
 		Certificates: []tls.Certificate{loadedCert},
 	})
+	wsClient.AddOption(func(dialer *websocket.Dialer) {
+		dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
+	})
 	// Test connection
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
@@ -736,6 +743,9 @@ func TestInvalidClientTLSCertificate(t *testing.T) {
 		RootCAs:      certPool,                      // Contains server certificate as allowed server CA
 		Certificates: []tls.Certificate{loadedCert}, // Contains self-signed client certificate. Will be rejected by server
 	})
+	wsClient.AddOption(func(dialer *websocket.Dialer) {
+		dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
+	})
 	// Test connection
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
@@ -775,6 +785,7 @@ func TestUnsupportedSubprotocol(t *testing.T) {
 		wsErr, _ := err.(*websocket.CloseError)
 		assert.Equal(t, websocket.CloseProtocolError, wsErr.Code)
 		assert.Equal(t, "invalid or unsupported subprotocol", wsErr.Text)
+		wsClient.SetDisconnectedHandler(nil)
 		disconnectC <- struct{}{}
 	})
 	// Set invalid subprotocol
