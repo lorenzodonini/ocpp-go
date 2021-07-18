@@ -53,6 +53,9 @@ func newWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 
 func newWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *Client {
 	wsClient := NewClient()
+	wsClient.AddOption(func(dialer *websocket.Dialer) {
+		dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
+	})
 	wsClient.SetMessageHandler(func(data []byte) error {
 		assert.NotNil(t, data)
 		if onMessage != nil {
@@ -727,7 +730,16 @@ func TestUnsupportedSubprotocol(t *testing.T) {
 	go wsServer.Start(serverPort, serverPath)
 	time.Sleep(1 * time.Second)
 
+	// Setup client
+	disconnectC := make(chan struct{})
 	wsClient := newWebsocketClient(t, nil)
+	wsClient.SetDisconnectedHandler(func(err error) {
+		require.IsType(t, &websocket.CloseError{}, err)
+		wsErr, _ := err.(*websocket.CloseError)
+		assert.Equal(t, websocket.CloseProtocolError, wsErr.Code)
+		assert.Equal(t, "invalid or unsupported subprotocol", wsErr.Text)
+		disconnectC <- struct{}{}
+	})
 	// Set invalid subprotocol
 	wsClient.AddOption(func(dialer *websocket.Dialer) {
 		dialer.Subprotocols = []string{"unsupportedSubProto"}
@@ -736,7 +748,10 @@ func TestUnsupportedSubprotocol(t *testing.T) {
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 	err := wsClient.Start(u.String())
-	assert.NotNil(t, err)
+	assert.NoError(t, err)
+	// Expect connection to be closed directly after start
+	_, ok := <-disconnectC
+	assert.True(t, ok)
 	// Cleanup
 	wsServer.Stop()
 }
