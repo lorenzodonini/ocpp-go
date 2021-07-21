@@ -1,6 +1,7 @@
 package ocppj
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -108,7 +109,7 @@ func (c *Client) Stop() {
 // - the endpoint doesn't support the feature
 //
 // - the output queue is full
-func (c *Client) SendRequest(request ocpp.Request) error {
+func (c *Client) SendRequestCtx(ctx context.Context, request ocpp.Request) error {
 	if !c.dispatcher.IsRunning() {
 		return fmt.Errorf("ocppj client is not started, couldn't send request")
 	}
@@ -125,12 +126,16 @@ func (c *Client) SendRequest(request ocpp.Request) error {
 		return err
 	}
 	// Message will be processed by dispatcher. A dedicated mechanism allows to delegate the message queue handling.
-	if err := c.dispatcher.SendRequest(RequestBundle{Call: call, Data: jsonMessage}); err != nil {
+	if err := c.dispatcher.SendRequest(RequestBundle{Call: call, Data: jsonMessage, Ctx: ctx}); err != nil {
 		log.Errorf("request %v - %v: %v", call.UniqueId, call.Action, err)
 		return err
 	}
 	log.Debugf("enqueued request %v - %v", call.UniqueId, call.Action)
 	return nil
+}
+
+func (c *Client) SendRequest(request ocpp.Request) error {
+	return c.SendRequestCtx(context.Background(), request)
 }
 
 // Sends an OCPP Response to the server.
