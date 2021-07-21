@@ -168,6 +168,20 @@ func (d *DefaultClientDispatcher) SendRequest(req interface{}) error {
 
 func (d *DefaultClientDispatcher) messagePump() {
 	rdy := true // Ready to transmit at the beginning
+	cancelled := func() {
+		if d.pendingRequestState.HasPendingRequest() {
+			// Current request timed out. Removing request and triggering cancel callback
+			el := d.requestQueue.Peek()
+			bundle, _ := el.(RequestBundle)
+			d.CompleteRequest(bundle.Call.UniqueId)
+			if d.onRequestCancel != nil {
+				d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
+			}
+		}
+		// No request is currently pending -> set timer to high number
+		d.timer.Reset(defaultTimeoutTick)
+	}
+	var reqContextDone <-chan struct{}
 	for {
 		select {
 		case _, ok := <-d.requestChannel:
@@ -177,22 +191,15 @@ func (d *DefaultClientDispatcher) messagePump() {
 				d.requestChannel = nil
 				return
 			}
+		case <-reqContextDone:
+			// user cancelled request
+			cancelled()
 		case _, ok := <-d.timer.C:
 			// Timeout elapsed
 			if !ok {
 				continue
 			}
-			if d.pendingRequestState.HasPendingRequest() {
-				// Current request timed out. Removing request and triggering cancel callback
-				el := d.requestQueue.Peek()
-				bundle, _ := el.(RequestBundle)
-				d.CompleteRequest(bundle.Call.UniqueId)
-				if d.onRequestCancel != nil {
-					d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
-				}
-			}
-			// No request is currently pending -> set timer to high number
-			d.timer.Reset(defaultTimeoutTick)
+			cancelled()
 		case rdy = <-d.readyForDispatch:
 			// Ready flag set, keep going
 		}
@@ -206,22 +213,32 @@ func (d *DefaultClientDispatcher) messagePump() {
 		}
 		// Only dispatch request if able to send and request queue isn't empty
 		if rdy && !d.requestQueue.IsEmpty() {
-			d.dispatchNextRequest()
-			rdy = false
-			// Set timer
-			if !d.timer.Stop() {
-				<-d.timer.C
+			if done, ok := d.dispatchNextRequest(); ok {
+				rdy = false
+				// Set timer
+				if !d.timer.Stop() {
+					<-d.timer.C
+				}
+				d.timer.Reset(d.timeout)
+				reqContextDone = done
 			}
-			d.timer.Reset(d.timeout)
 		}
 	}
 }
 
-func (d *DefaultClientDispatcher) dispatchNextRequest() {
+func (d *DefaultClientDispatcher) dispatchNextRequest() (<-chan struct{}, bool) {
 	// Get first element in queue
 	el := d.requestQueue.Peek()
 	bundle, _ := el.(RequestBundle)
 	jsonMessage := bundle.Data
+	select {
+	case <-bundle.Ctx.Done():
+		if d.onRequestCancel != nil {
+			d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
+		}
+		return nil, false
+	default:
+	}
 	d.pendingRequestState.AddPendingRequest(bundle.Call.UniqueId, bundle.Call.Payload)
 	// Attempt to send over network
 	err := d.network.Write(jsonMessage)
@@ -232,6 +249,7 @@ func (d *DefaultClientDispatcher) dispatchNextRequest() {
 			d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
 		}
 	}
+	return bundle.Ctx.Done(), true
 }
 
 func (d *DefaultClientDispatcher) Pause() {

@@ -2,6 +2,7 @@
 package ocpp16
 
 import (
+	"context"
 	"crypto/tls"
 
 	"github.com/gorilla/websocket"
@@ -86,7 +87,7 @@ type ChargePoint interface {
 	// The central system will respond with a confirmation messages, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.
 	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
-	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
+	SendRequestAsync(ctx context.Context, request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
 	// Connects to the central system and starts the charge point routine.
 	// The function doesn't block and returns right away, after having attempted to open a connection to the central system.
 	// If the connection couldn't be opened, an error is returned.
