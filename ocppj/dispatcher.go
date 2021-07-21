@@ -38,7 +38,7 @@ type ClientDispatcher interface {
 	// and process it later, asynchronously, or write it directly to the networking layer.
 	//
 	// If no network client was set, or the request couldn't be processed, an error is returned.
-	SendRequest(req interface{}) error
+	SendRequest(req RequestBundle) error
 	// Notifies the dispatcher that a request has been completed (i.e. a response was received).
 	// The dispatcher takes care of removing the request marked by the requestID from
 	// the pending requests. It will then attempt to process the next queued request.
@@ -155,7 +155,7 @@ func (d *DefaultClientDispatcher) SetPendingRequestState(state ClientState) {
 	d.pendingRequestState = state
 }
 
-func (d *DefaultClientDispatcher) SendRequest(req interface{}) error {
+func (d *DefaultClientDispatcher) SendRequest(req RequestBundle) error {
 	if d.network == nil {
 		return fmt.Errorf("cannot SendRequest, no network client was set")
 	}
