@@ -427,12 +427,6 @@ out:
 	// Handle client authentication
 	if server.basicAuthHandler != nil {
 		username, password, ok := r.BasicAuth()
-		if !ok {
-			server.error(fmt.Errorf("basic auth failed: credentials not found"))
-			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
 		ok = server.basicAuthHandler(username, password)
 		if !ok {
 			server.error(fmt.Errorf("basic auth failed: credentials invalid"))
