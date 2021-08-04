@@ -11,7 +11,7 @@ const GetConfigurationFeatureName = "GetConfiguration"
 // Contains information about a specific configuration key. It is returned in GetConfigurationConfirmation
 type ConfigurationKey struct {
 	Key      string  `json:"key" validate:"required,max=50"`
-	Readonly bool    `json:"readonly"`
+	Readonly bool    `json:"readonly" validate:"required,max=5"`
 	Value    *string `json:"value,omitempty" validate:"max=500"`
 }
 
