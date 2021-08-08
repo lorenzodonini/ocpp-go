@@ -289,6 +289,15 @@ type ServerDispatcher interface {
 	// Returns true, if the dispatcher is currently running, false otherwise.
 	// If the dispatcher is paused, the function still returns true.
 	IsRunning() bool
+	// Sets the maximum timeout to be considered after sending a request.
+	// If a response to the request is not received within the specified period, the request
+	// is discarded and an error is returned to the caller.
+	//
+	// One timeout per client runs in the background.
+	// The timeout is reset whenever a response comes in, the connection is closed, or the server is stopped.
+	//
+	// This function must be called before starting the dispatcher, otherwise it may lead to unexpected behavior.
+	SetTimeout(timeout time.Duration)
 	// Dispatches a request for a specific client. Depending on the implementation, this may first queue
 	// a request and process it later (asynchronously), or write it directly to the networking layer.
 	//
@@ -340,6 +349,9 @@ type DefaultServerDispatcher struct {
 	requestChannel      chan string
 	readyForDispatch    chan string
 	pendingRequestState ServerState
+	timeout             time.Duration
+	timerC              chan string
+	stoppedC            chan struct{}
 	onRequestCancel     func(string, string, string, ocpp.Request)
 	network             ws.WsServer
 	mutex               sync.RWMutex
@@ -358,6 +370,8 @@ func NewDefaultServerDispatcher(queueMap ServerQueueMap) *DefaultServerDispatche
 
 func (d *DefaultServerDispatcher) Start() {
 	d.requestChannel = make(chan string, 1)
+	d.timerC = make(chan string, 10)
+	d.stoppedC = make(chan struct{}, 1)
 	go d.messagePump()
 }
 
@@ -370,8 +384,13 @@ func (d *DefaultServerDispatcher) IsRunning() bool {
 func (d *DefaultServerDispatcher) Stop() {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
+	close(d.stoppedC)
 	close(d.requestChannel)
 	// TODO: clear pending requests?
+}
+
+func (d *DefaultServerDispatcher) SetTimeout(timeout time.Duration) {
+	d.timeout = timeout
 }
 
 func (d *DefaultServerDispatcher) CreateClient(clientID string) {
@@ -443,7 +462,21 @@ func (d *DefaultServerDispatcher) messagePump() {
 				rdy = true
 				clientReadyMap[clientID] = rdy
 			}
-			//TODO: check for response timeout
+		case clientID, ok = <-d.timerC:
+			// Timeout elapsed
+			if !ok {
+				continue
+			}
+			if d.pendingRequestState.HasPendingRequest(clientID) {
+				// Current request for client timed out. Removing request and triggering cancel callback
+				q, _ := d.queueMap.Get(clientID)
+				bundle, _ := q.Peek().(RequestBundle)
+				log.Infof("request %v for client %v timed out", bundle.Call.UniqueId, clientID)
+				d.CompleteRequest(clientID, bundle.Call.UniqueId)
+				if d.onRequestCancel != nil {
+					d.onRequestCancel(clientID, bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
+				}
+			}
 		case clientID = <-d.readyForDispatch:
 			// Client can now transmit again
 			clientQueue, rdy = d.queueMap.Get(clientID)
@@ -454,6 +487,7 @@ func (d *DefaultServerDispatcher) messagePump() {
 		// Only dispatch request if able to send and request queue isn't empty
 		if rdy && !clientQueue.IsEmpty() {
 			d.dispatchNextRequest(clientID)
+			go d.waitForTimeout(clientID)
 			// Update ready state
 			rdy = false
 			clientReadyMap[clientID] = rdy
@@ -481,6 +515,21 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) {
 		if d.onRequestCancel != nil {
 			d.onRequestCancel(clientID, callID, bundle.Call.Action, bundle.Call.Payload)
 		}
+	}
+}
+
+func (d *DefaultServerDispatcher) waitForTimeout(clientID string) {
+	select {
+	case _, _ = <-time.After(d.timeout):
+		// Timeout triggered, notifying messagePump
+		d.mutex.RLock()
+		defer d.mutex.RUnlock()
+		if d.requestChannel != nil {
+			d.timerC <- clientID
+		}
+	case _ = <-d.stoppedC:
+		// Server was stoppedC, every pending timeout gets canceled
+		return
 	}
 }
 
