@@ -172,6 +172,51 @@ func (s *ServerDispatcherTestSuite) TestDeleteClient() {
 	assert.True(t, s.state.HasPendingRequest(clientID))
 }
 
+func (s *ServerDispatcherTestSuite) TestServerDispatcherTimeout() {
+	t := s.T()
+	// Setup
+	clientID := "client1"
+	canceled := make(chan bool, 1)
+	s.websocketServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
+		id, _ := args.Get(0).(string)
+		assert.Equal(t, clientID, id)
+	}).Return(nil)
+	// Create mock request
+	req := newMockRequest("somevalue")
+	call, err := s.endpoint.CreateCall(req)
+	require.NoError(t, err)
+	requestID := call.UniqueId
+	data, err := call.MarshalJSON()
+	require.NoError(t, err)
+	bundle := ocppj.RequestBundle{Call: call, Data: data}
+	// Set canceled callback
+	s.dispatcher.SetOnRequestCanceled(func(cID string, rID string, action string, request ocpp.Request) {
+		assert.Equal(t, clientID, cID)
+		assert.Equal(t, requestID, rID)
+		assert.Equal(t, MockFeatureName, action)
+		assert.Equal(t, req, request)
+		canceled <- true
+	})
+	// Set timeout and start
+	timeout := time.Second * 1
+	s.dispatcher.SetTimeout(timeout)
+	s.dispatcher.Start()
+	require.True(t, s.dispatcher.IsRunning())
+	// Simulate client connection
+	s.dispatcher.CreateClient(clientID)
+	// Send mock request
+	startTime := time.Now()
+	err = s.dispatcher.SendRequest(clientID, bundle)
+	require.NoError(t, err)
+	// Wait for timeout, canceled callback will be invoked
+	_, ok := <-canceled
+	assert.True(t, ok)
+	elapsed := time.Since(startTime)
+	assert.GreaterOrEqual(t, elapsed.Seconds(), timeout.Seconds())
+	clientQ, _ := s.queueMap.Get(clientID)
+	assert.True(t, clientQ.IsEmpty())
+}
+
 type ClientDispatcherTestSuite struct {
 	suite.Suite
 	mutex           sync.Mutex
