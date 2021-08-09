@@ -210,15 +210,23 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 			c.requestHandler(call.Payload, call.UniqueId, call.Action)
 		case CALL_RESULT:
 			callResult := message.(*CallResult)
-			c.dispatcher.CompleteRequest(callResult.GetUniqueId()) // Remove current request from queue and send next one
-			if c.responseHandler != nil {
-				c.responseHandler(callResult.Payload, callResult.UniqueId)
+			done := c.dispatcher.CompleteRequest(callResult.GetUniqueId()) // Remove current request from queue and send next one
+			select {
+			case <-done:
+			default:
+				if c.responseHandler != nil {
+					c.responseHandler(callResult.Payload, callResult.UniqueId)
+				}
 			}
 		case CALL_ERROR:
 			callError := message.(*CallError)
-			c.dispatcher.CompleteRequest(callError.GetUniqueId()) // Remove current request from queue and send next one
-			if c.errorHandler != nil {
-				c.errorHandler(ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+			done := c.dispatcher.CompleteRequest(callError.GetUniqueId()) // Remove current request from queue and send next one
+			select {
+			case <-done:
+			default:
+				if c.errorHandler != nil {
+					c.errorHandler(ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+				}
 			}
 		}
 	}

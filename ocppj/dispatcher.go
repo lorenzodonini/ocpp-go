@@ -43,7 +43,7 @@ type ClientDispatcher interface {
 	// Notifies the dispatcher that a request has been completed (i.e. a response was received).
 	// The dispatcher takes care of removing the request marked by the requestID from
 	// the pending requests. It will then attempt to process the next queued request.
-	CompleteRequest(requestID string)
+	CompleteRequest(requestID string) <-chan struct{}
 	// Sets a callback to be invoked when a request gets canceled, due to network timeouts.
 	// The callback passes the original message ID, feature name and request struct of the failed request.
 	//
@@ -280,22 +280,23 @@ func (d *DefaultClientDispatcher) Resume() {
 	}
 }
 
-func (d *DefaultClientDispatcher) CompleteRequest(requestId string) {
+func (d *DefaultClientDispatcher) CompleteRequest(requestId string) <-chan struct{} {
 	el := d.requestQueue.Peek()
 	if el == nil {
 		log.Errorf("attempting to pop front of queue, but queue is empty")
-		return
+		return nil
 	}
 	bundle, _ := el.(RequestBundle)
 	if bundle.Call.UniqueId != requestId {
 		log.Errorf("internal state mismatch: received response for %v but expected response for %v", requestId, bundle.Call.UniqueId)
-		return
+		return nil
 	}
-	d.requestQueue.Pop()
+	request := d.requestQueue.Pop().(RequestBundle)
 	d.pendingRequestState.DeletePendingRequest(requestId)
 	log.Debugf("removed request %v from front of queue", bundle.Call.UniqueId)
 	// Signal that next message in queue may be sent
 	d.readyForDispatch <- true
+	return request.Ctx.Done()
 }
 
 // ServerDispatcher contains the state and logic for handling outgoing messages on a server endpoint.
