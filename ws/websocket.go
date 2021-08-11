@@ -90,6 +90,7 @@ func NewClientTimeoutConfig() ClientTimeoutConfig {
 // Channel represents a bi-directional communication channel, which provides at least a unique ID.
 type Channel interface {
 	ID() string
+	RemoteAddr() net.Addr
 	TLSConnectionState() *tls.ConnectionState
 }
 
@@ -110,6 +111,11 @@ type WebSocket struct {
 // Retrieves the unique Identifier of the websocket (typically, the URL suffix).
 func (websocket *WebSocket) ID() string {
 	return websocket.id
+}
+
+// Returns the address of the remote peer.
+func (websocket *WebSocket) RemoteAddr() net.Addr {
+	return websocket.connection.RemoteAddr()
 }
 
 // Returns the TLS connection state of the connection, if any.
