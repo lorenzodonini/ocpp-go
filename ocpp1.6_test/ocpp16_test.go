@@ -3,6 +3,7 @@ package ocpp16_test
 import (
 	"crypto/tls"
 	"fmt"
+	"net"
 	"reflect"
 	"testing"
 
@@ -29,6 +30,13 @@ type MockWebSocket struct {
 
 func (websocket MockWebSocket) ID() string {
 	return websocket.id
+}
+
+func (websocket MockWebSocket) RemoteAddr() net.Addr {
+	return &net.TCPAddr{
+		IP:   net.ParseIP("127.0.0.1"),
+		Port: 80,
+	}
 }
 
 func (websocket MockWebSocket) TLSConnectionState() *tls.ConnectionState {
