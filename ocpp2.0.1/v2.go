@@ -3,6 +3,7 @@ package ocpp2
 
 import (
 	"crypto/tls"
+	"net"
 
 	"github.com/gorilla/websocket"
 
@@ -31,6 +32,7 @@ import (
 
 type ChargingStationConnection interface {
 	ID() string
+	RemoteAddr() net.Addr
 	TLSConnectionState() *tls.ConnectionState
 }
 
