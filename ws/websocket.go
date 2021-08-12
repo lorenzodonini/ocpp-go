@@ -950,11 +950,16 @@ func (client *Client) Start(urlStr string) error {
 }
 
 func (client *Client) Stop() {
-	if client.IsConnected() {
-		client.setConnected(false)
+	client.mutex.Lock()
+	if client.connected {
+		client.connected = false
 		// Send signal for gracefully shutting down the connection
-		client.webSocket.closeC <- websocket.CloseError{Code: websocket.CloseNormalClosure, Text: ""}
+		select {
+		case client.webSocket.closeC <- websocket.CloseError{Code: websocket.CloseNormalClosure, Text: ""}:
+		default:
+		}
 	}
+	client.mutex.Unlock()
 	// Notify reconnection goroutine to stop (if any)
 	close(client.reconnectC)
 	if client.errC != nil {
