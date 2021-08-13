@@ -864,6 +864,7 @@ func (client *Client) handleReconnection() {
 			}
 			return
 		}
+		client.error(fmt.Errorf("reconnection failed: %w", err))
 		// Re-connection failed, double the delay
 		delay *= 2
 		if delay >= client.timeoutConfig.ReconnectMaxBackoff {
