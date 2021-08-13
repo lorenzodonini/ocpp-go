@@ -1,6 +1,7 @@
 package ocppj
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -120,7 +121,7 @@ func (s *Server) Stop() {
 // - the endpoint doesn't support the feature
 //
 // - the output queue is full
-func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
+func (s *Server) SendRequestCtx(ctx context.Context, clientID string, request ocpp.Request) error {
 	if !s.dispatcher.IsRunning() {
 		return fmt.Errorf("ocppj server is not started, couldn't send request")
 	}
@@ -137,12 +138,16 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 		return err
 	}
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
-	if err := s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage}); err != nil {
+	if err := s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage, ctx}); err != nil {
 		log.Errorf("request %v - %v for client %v: %v", call.UniqueId, call.Action, clientID, err)
 		return err
 	}
 	log.Debugf("enqueued request %v - %v for client %v", call.UniqueId, call.Action, clientID)
 	return nil
+}
+
+func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
+	return s.SendRequestCtx(context.Background(), clientID, request)
 }
 
 // Sends an OCPP Response to a client, identified by the clientID parameter.
@@ -219,15 +224,23 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			s.requestHandler(wsChannel, call.Payload, call.UniqueId, call.Action)
 		case CALL_RESULT:
 			callResult := message.(*CallResult)
-			s.dispatcher.CompleteRequest(wsChannel.ID(), callResult.GetUniqueId())
-			if s.responseHandler != nil {
-				s.responseHandler(wsChannel, callResult.Payload, callResult.UniqueId)
+			done := s.dispatcher.CompleteRequest(wsChannel.ID(), callResult.GetUniqueId())
+			select {
+			case <-done:
+			default:
+				if s.responseHandler != nil {
+					s.responseHandler(wsChannel, callResult.Payload, callResult.UniqueId)
+				}
 			}
 		case CALL_ERROR:
 			callError := message.(*CallError)
-			s.dispatcher.CompleteRequest(wsChannel.ID(), callError.GetUniqueId())
-			if s.errorHandler != nil {
-				s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+			done := s.dispatcher.CompleteRequest(wsChannel.ID(), callError.GetUniqueId())
+			select {
+			case <-done:
+			default:
+				if s.errorHandler != nil {
+					s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+				}
 			}
 		}
 	}
