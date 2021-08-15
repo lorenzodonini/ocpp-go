@@ -105,8 +105,8 @@ func (s *Server) Start(listenPort int, listenPath string) {
 // Stops the server.
 // This clears all pending requests and causes the Start function to return.
 func (s *Server) Stop() {
-	s.server.Stop()
 	s.dispatcher.Stop()
+	s.server.Stop()
 }
 
 // Sends an OCPP Request to a client, identified by the clientID parameter.

@@ -36,7 +36,7 @@ func (s *ServerDispatcherTestSuite) SetupTest() {
 	s.dispatcher.SetNetworkServer(&s.websocketServer)
 }
 
-func (s *ServerDispatcherTestSuite) TestSendRequest() {
+func (s *ServerDispatcherTestSuite) TestServerSendRequest() {
 	t := s.T()
 	// Setup
 	clientID := "client1"
@@ -46,6 +46,11 @@ func (s *ServerDispatcherTestSuite) TestSendRequest() {
 		assert.Equal(t, clientID, id)
 		sent <- true
 	}).Return(nil)
+	timeout := time.Second * 1
+	s.dispatcher.SetTimeout(timeout)
+	s.dispatcher.SetOnRequestCanceled(func(cID string, rID string, action string, request ocpp.Request) {
+		t.Fail()
+	})
 	s.dispatcher.Start()
 	require.True(t, s.dispatcher.IsRunning())
 	// Simulate client connection
@@ -73,14 +78,18 @@ func (s *ServerDispatcherTestSuite) TestSendRequest() {
 	s.dispatcher.CompleteRequest(clientID, requestID)
 	assert.False(t, s.state.HasPendingRequest(clientID))
 	assert.True(t, q.IsEmpty())
+	// Assert that no timeout is invoked
+	time.Sleep(1300 * time.Millisecond)
 }
 
-func (s *ServerDispatcherTestSuite) TestRequestCanceled() {
+func (s *ServerDispatcherTestSuite) TestServerRequestCanceled() {
 	t := s.T()
 	// Setup
 	clientID := "client1"
 	canceled := make(chan bool, 1)
 	writeC := make(chan bool, 1)
+	// Mock write error to trigger onRequestCanceled
+	// This never starts a timeout
 	s.websocketServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
 		id, _ := args.Get(0).(string)
 		assert.Equal(t, clientID, id)
@@ -239,7 +248,7 @@ func (c *ClientDispatcherTestSuite) SetupTest() {
 	c.dispatcher.SetNetworkClient(&c.websocketClient)
 }
 
-func (c *ClientDispatcherTestSuite) TestSendRequest() {
+func (c *ClientDispatcherTestSuite) TestClientSendRequest() {
 	t := c.T()
 	// Setup
 	sent := make(chan bool, 1)
@@ -272,7 +281,7 @@ func (c *ClientDispatcherTestSuite) TestSendRequest() {
 
 }
 
-func (c *ClientDispatcherTestSuite) TestRequestCanceled() {
+func (c *ClientDispatcherTestSuite) TestClientRequestCanceled() {
 	t := c.T()
 	// Setup
 	canceled := make(chan bool, 1)
@@ -313,7 +322,7 @@ func (c *ClientDispatcherTestSuite) TestRequestCanceled() {
 	assert.True(t, c.queue.IsEmpty())
 }
 
-func (c *ClientDispatcherTestSuite) TestDispatcherTimeout() {
+func (c *ClientDispatcherTestSuite) TestClientDispatcherTimeout() {
 	t := c.T()
 	// Setup
 	writeC := make(chan bool, 1)
@@ -352,7 +361,7 @@ func (c *ClientDispatcherTestSuite) TestDispatcherTimeout() {
 	assert.True(t, c.queue.IsEmpty())
 }
 
-func (c *ClientDispatcherTestSuite) TestPauseDispatcher() {
+func (c *ClientDispatcherTestSuite) TestClientPauseDispatcher() {
 	t := c.T()
 	// Create mock request
 	timeout := make(chan bool, 1)
@@ -398,7 +407,7 @@ func (c *ClientDispatcherTestSuite) TestPauseDispatcher() {
 	assert.True(t, c.queue.IsEmpty())
 }
 
-func (c *ClientDispatcherTestSuite) TestSendWhilePausedDispatcher() {
+func (c *ClientDispatcherTestSuite) TestClientSendPausedDispatcher() {
 	t := c.T()
 	// Create mock request
 	c.websocketClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
