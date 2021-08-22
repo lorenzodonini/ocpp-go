@@ -414,5 +414,8 @@ func NewCSMS(endpoint *ocppj.Server, server ws.WsServer) CSMS {
 	cs.server.SetErrorHandler(func(client ws.Channel, err *ocpp.Error, details interface{}) {
 		cs.handleIncomingError(client, err, details)
 	})
+	cs.server.SetCanceledRequestHandler(func(clientID string, requestID string, request ocpp.Request, err *ocpp.Error) {
+		cs.handleCanceledRequest(clientID, request, err)
+	})
 	return &cs
 }

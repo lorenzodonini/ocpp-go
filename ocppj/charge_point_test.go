@@ -598,10 +598,11 @@ func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 		require.NotNil(t, call)
 		requestID = call.UniqueId
 	}).Return(nil)
-	suite.clientDispatcher.SetOnRequestCanceled(func(rID string, action string, request ocpp.Request) {
+	suite.clientDispatcher.SetOnRequestCanceled(func(rID string, request ocpp.Request, err *ocpp.Error) {
 		assert.Equal(t, requestID, rID)
-		assert.Equal(t, MockFeatureName, action)
+		assert.Equal(t, MockFeatureName, request.GetFeatureName())
 		assert.Equal(t, req, request)
+		assert.Error(t, err)
 		timeoutC <- true
 	})
 	// Sets a low response timeout for testing purposes

@@ -66,8 +66,7 @@ func (cs *chargingStation) Errors() <-chan error {
 
 // Callback invoked whenever a queued request is canceled, due to timeout.
 // By default, the callback returns a GenericError to the caller, who sent the original request.
-func (cs *chargingStation) onRequestTimeout(rID string, action string, request ocpp.Request) {
-	err := ocpp.NewError(ocppj.GenericError, "request timed out, no response received from server", rID)
+func (cs *chargingStation) onRequestTimeout(_ string, _ ocpp.Request, err *ocpp.Error) {
 	cs.errorHandler <- err
 }
 
