@@ -44,13 +44,13 @@ type ClientDispatcher interface {
 	// The dispatcher takes care of removing the request marked by the requestID from
 	// the pending requests. It will then attempt to process the next queued request.
 	CompleteRequest(requestID string)
-	// Sets a callback to be invoked when a request gets canceled, due to network timeouts.
-	// The callback passes the original message ID, feature name and request struct of the failed request.
+	// Sets a callback to be invoked when a request gets canceled, due to network timeouts or internal errors.
+	// The callback passes the original message ID and request struct of the failed request, along with an error.
 	//
 	// Calling Stop on the dispatcher will not trigger this callback.
 	//
 	// If no callback is set, a request will still be removed from the dispatcher when a timeout occurs.
-	SetOnRequestCanceled(cb CanceledRequestHandler)
+	SetOnRequestCanceled(cb func(requestID string, request ocpp.Request, err *ocpp.Error))
 	// Sets the network client, so the dispatcher may send requests using the networking layer directly.
 	//
 	// This needs to be set before calling the Start method. If not, sending requests will fail.
@@ -82,8 +82,6 @@ type pendingRequest struct {
 	startTime time.Time
 }
 
-type CanceledRequestHandler func(id string, action string, request ocpp.Request)
-
 // DefaultClientDispatcher is a default implementation of the ClientDispatcher interface.
 //
 // The dispatcher implements the ClientState as well for simplicity.
@@ -95,7 +93,7 @@ type DefaultClientDispatcher struct {
 	pendingRequestState ClientState
 	network             ws.WsClient
 	mutex               sync.RWMutex
-	onRequestCancel     CanceledRequestHandler
+	onRequestCancel     func(requestID string, request ocpp.Request, err *ocpp.Error)
 	timer               *time.Timer
 	paused              bool
 	timeout             time.Duration
@@ -115,7 +113,7 @@ func NewDefaultClientDispatcher(queue RequestQueue) *DefaultClientDispatcher {
 	}
 }
 
-func (d *DefaultClientDispatcher) SetOnRequestCanceled(cb CanceledRequestHandler) {
+func (d *DefaultClientDispatcher) SetOnRequestCanceled(cb func(requestID string, request ocpp.Request, err *ocpp.Error)) {
 	d.onRequestCancel = cb
 }
 
@@ -189,7 +187,8 @@ func (d *DefaultClientDispatcher) messagePump() {
 				bundle, _ := el.(RequestBundle)
 				d.CompleteRequest(bundle.Call.UniqueId)
 				if d.onRequestCancel != nil {
-					d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
+					d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Payload,
+						ocpp.NewError(GenericError, "Request timed out", bundle.Call.UniqueId))
 				}
 			}
 			// No request is currently pending -> set timer to high number
@@ -230,7 +229,8 @@ func (d *DefaultClientDispatcher) dispatchNextRequest() {
 		//TODO: handle retransmission instead of skipping request altogether
 		d.CompleteRequest(bundle.Call.GetUniqueId())
 		if d.onRequestCancel != nil {
-			d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
+			d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Payload,
+				ocpp.NewError(InternalError, err.Error(), bundle.Call.UniqueId))
 		}
 	}
 }
@@ -310,12 +310,13 @@ type ServerDispatcher interface {
 	// that client's pending requests. It will then attempt to process the next queued request.
 	CompleteRequest(clientID string, requestID string)
 	// Sets a callback to be invoked when a request gets canceled, due to network timeouts.
-	// The callback passes the original client ID, message ID, feature name and request struct of the failed request.
+	// The callback passes the original client ID, message ID, and request struct of the failed request,
+	// along with an error.
 	//
 	// Calling Stop on the dispatcher will not trigger this callback.
 	//
 	// If no callback is set, a request will still be removed from the dispatcher when a timeout occurs.
-	SetOnRequestCanceled(cb func(string, string, string, ocpp.Request))
+	SetOnRequestCanceled(cb CanceledRequestHandler)
 	// Sets the network server, so the dispatcher may send requests using the networking layer directly.
 	//
 	// This needs to be set before calling the Start method. If not, sending requests will fail.
@@ -354,10 +355,13 @@ type DefaultServerDispatcher struct {
 	timerC              chan string
 	running             bool
 	stoppedC            chan struct{}
-	onRequestCancel     func(string, string, string, ocpp.Request)
+	onRequestCancel     CanceledRequestHandler
 	network             ws.WsServer
 	mutex               sync.RWMutex
 }
+
+// Handler function to be invoked when a request gets canceled (either due to timeout or to other external factors).
+type CanceledRequestHandler func(clientID string, requestID string, request ocpp.Request, err *ocpp.Error)
 
 // Utility struct for passing a client context around and cancel pending requests.
 type clientTimeoutContext struct {
@@ -375,6 +379,7 @@ func NewDefaultServerDispatcher(queueMap ServerQueueMap) *DefaultServerDispatche
 		queueMap:         queueMap,
 		requestChannel:   nil,
 		readyForDispatch: make(chan string, 1),
+		timeout:          defaultMessageTimeout,
 	}
 	d.pendingRequestState = NewServerState(&d.mutex)
 	return d
@@ -422,7 +427,7 @@ func (d *DefaultServerDispatcher) SetNetworkServer(server ws.WsServer) {
 	d.network = server
 }
 
-func (d *DefaultServerDispatcher) SetOnRequestCanceled(cb func(string, string, string, ocpp.Request)) {
+func (d *DefaultServerDispatcher) SetOnRequestCanceled(cb CanceledRequestHandler) {
 	d.onRequestCancel = cb
 }
 
@@ -490,6 +495,7 @@ func (d *DefaultServerDispatcher) messagePump() {
 				continue
 			}
 			// Canceling timeout context
+			log.Debugf("timeout for client %v, canceling message", clientID)
 			clientCtx, _ = clientContextMap[clientID]
 			if clientCtx.isActive() {
 				clientCtx.cancel()
@@ -499,10 +505,11 @@ func (d *DefaultServerDispatcher) messagePump() {
 				// Current request for client timed out. Removing request and triggering cancel callback
 				q, _ := d.queueMap.Get(clientID)
 				bundle, _ := q.Peek().(RequestBundle)
-				log.Infof("request %v for client %v timed out", bundle.Call.UniqueId, clientID)
 				d.CompleteRequest(clientID, bundle.Call.UniqueId)
+				log.Infof("request %v for %v timed out", bundle.Call.UniqueId, clientID)
 				if d.onRequestCancel != nil {
-					d.onRequestCancel(clientID, bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
+					d.onRequestCancel(clientID, bundle.Call.UniqueId, bundle.Call.Payload,
+						ocpp.NewError(GenericError, "Request timed out", bundle.Call.UniqueId))
 				}
 			}
 		case clientID = <-d.readyForDispatch:
@@ -518,9 +525,10 @@ func (d *DefaultServerDispatcher) messagePump() {
 				// Ready to transmit
 				rdy = true
 			}
+			log.Debugf("%v ready to transmit again", clientID)
 		}
 		// Only dispatch request if able to send and request queue isn't empty
-		if rdy && !clientQueue.IsEmpty() {
+		if rdy && clientQueue != nil && !clientQueue.IsEmpty() {
 			// Send request & set new context
 			clientCtx = d.dispatchNextRequest(clientID)
 			clientContextMap[clientID] = clientCtx
@@ -537,7 +545,7 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) (clientCt
 	// Get first element in queue
 	q, ok := d.queueMap.Get(clientID)
 	if !ok {
-		log.Errorf("failed to dispatch next request for client %s, no request queue available", clientID)
+		log.Errorf("failed to dispatch next request for %s, no request queue available", clientID)
 		return
 	}
 	el := q.Peek()
@@ -551,7 +559,8 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) (clientCt
 		//TODO: handle retransmission instead of removing pending request
 		d.CompleteRequest(clientID, callID)
 		if d.onRequestCancel != nil {
-			d.onRequestCancel(clientID, callID, bundle.Call.Action, bundle.Call.Payload)
+			d.onRequestCancel(clientID, bundle.Call.UniqueId, bundle.Call.Payload,
+				ocpp.NewError(InternalError, err.Error(), bundle.Call.UniqueId))
 		}
 		return
 	}
@@ -560,20 +569,25 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) (clientCt
 		ctx, cancel := context.WithTimeout(context.TODO(), d.timeout)
 		clientCtx = clientTimeoutContext{ctx: ctx, cancel: cancel}
 	}
+	log.Infof("dispatched request %s for %s", callID, clientID)
 	return
 }
 
 func (d *DefaultServerDispatcher) waitForTimeout(clientID string, clientCtx clientTimeoutContext) {
 	defer clientCtx.cancel()
+	log.Debugf("started timeout timer for %s", clientID)
 	select {
 	case _, _ = <-clientCtx.ctx.Done():
-		if clientCtx.ctx.Err() == context.DeadlineExceeded {
+		err := clientCtx.ctx.Err()
+		if err == context.DeadlineExceeded {
 			// Timeout triggered, notifying messagePump
 			d.mutex.RLock()
 			defer d.mutex.RUnlock()
-			if d.requestChannel != nil {
+			if d.running {
 				d.timerC <- clientID
 			}
+		} else {
+			log.Debugf("timeout canceled for %s", clientID)
 		}
 	case _ = <-d.stoppedC:
 		// Server was stopped, every pending timeout gets canceled
@@ -594,12 +608,12 @@ func (d *DefaultServerDispatcher) CompleteRequest(clientID string, requestID str
 	bundle, _ := el.(RequestBundle)
 	callID := bundle.Call.GetUniqueId()
 	if callID != requestID {
-		log.Errorf("internal state mismatch: received response for %v but expected response for %v", requestID, callID)
+		log.Errorf("internal state mismatch: processing response for %v but expected response for %v", requestID, callID)
 		return
 	}
 	q.Pop()
 	d.pendingRequestState.DeletePendingRequest(clientID, requestID)
-	log.Debugf("removed request %v from front of queue", callID)
+	log.Debugf("completed request %s for %s", callID, clientID)
 	// Signal that next message in queue may be sent
 	d.readyForDispatch <- clientID
 }

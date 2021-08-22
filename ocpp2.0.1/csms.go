@@ -1004,3 +1004,13 @@ func (cs *csms) handleIncomingError(chargingStation ChargingStationConnection, e
 		cs.error(fmt.Errorf("no handler available for call error %w from client %s", err, chargingStation.ID()))
 	}
 }
+
+func (cs *csms) handleCanceledRequest(chargePointID string, request ocpp.Request, err *ocpp.Error) {
+	if callback, ok := cs.callbackQueue.Dequeue(chargePointID); ok {
+		callback(nil, err)
+	} else {
+		err := fmt.Errorf("no handler available for canceled request %s for client %s: %w",
+			request.GetFeatureName(), chargePointID, err)
+		cs.error(err)
+	}
+}

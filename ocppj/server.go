@@ -75,6 +75,11 @@ func (s *Server) SetErrorHandler(handler ErrorHandler) {
 	s.errorHandler = handler
 }
 
+// Registers a handler for canceled request messages.
+func (s *Server) SetCanceledRequestHandler(handler CanceledRequestHandler) {
+	s.dispatcher.SetOnRequestCanceled(handler)
+}
+
 // Registers a handler for incoming client connections.
 func (s *Server) SetNewClientHandler(handler ClientHandler) {
 	s.newClientHandler = handler

@@ -38,8 +38,7 @@ func (cp *chargePoint) error(err error) {
 
 // Callback invoked whenever a queued request is canceled, due to timeout.
 // By default, the callback returns a GenericError to the caller, who sent the original request.
-func (cp *chargePoint) onRequestTimeout(rID string, action string, request ocpp.Request) {
-	err := ocpp.NewError(ocppj.GenericError, "request timed out, no response received from server", rID)
+func (cp *chargePoint) onRequestTimeout(_ string, _ ocpp.Request, err *ocpp.Error) {
 	cp.errorHandler <- err
 }
 
