@@ -1,9 +1,10 @@
 package core
 
 import (
+	"reflect"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
 )
 
 // -------------------- Stop Transaction (CP -> CS) --------------------
@@ -40,7 +41,7 @@ func isValidReason(fl validator.FieldLevel) bool {
 // The field definition of the StopTransaction request payload sent by the Charge Point to the Central System.
 type StopTransactionRequest struct {
 	IdTag           string             `json:"idTag,omitempty" validate:"max=20"`
-	MeterStop       int                `json:"meterStop" validate:"gte=0"`
+	MeterStop       int                `json:"meterStop"`
 	Timestamp       *types.DateTime    `json:"timestamp" validate:"required"`
 	TransactionId   int                `json:"transactionId"`
 	Reason          Reason             `json:"reason,omitempty" validate:"omitempty,reason"`
