@@ -2,12 +2,13 @@ package ocpp16_test
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"time"
 )
 
 // Test
@@ -25,7 +26,6 @@ func (suite *OcppV16TestSuite) TestStopTransactionRequestValidation() {
 		{core.StopTransactionRequest{MeterStop: 100}, false},
 		{core.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, Reason: "invalidReason"}, false},
 		{core.StopTransactionRequest{IdTag: ">20..................", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1}, false},
-		{core.StopTransactionRequest{MeterStop: -1, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1}, false},
 		{core.StopTransactionRequest{MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, TransactionData: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{}}}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
