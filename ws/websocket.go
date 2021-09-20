@@ -484,11 +484,11 @@ out:
 	server.connections[ws.id] = &ws
 	server.connMutex.Unlock()
 	// Read and write routines are started in separate goroutines and function will return immediately
+	go server.writePump(&ws)
 	if server.newClientHandler != nil {
 		var channel Channel = &ws
 		server.newClientHandler(channel)
 	}
-	go server.writePump(&ws)
 	go server.readPump(&ws)
 }
 
