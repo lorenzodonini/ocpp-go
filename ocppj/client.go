@@ -239,8 +239,8 @@ func (c *Client) onDisconnected(err error) {
 }
 
 func (c *Client) onReconnected() {
-	c.dispatcher.Resume()
 	if c.onReconnectedHandler != nil {
 		c.onReconnectedHandler()
 	}
+	c.dispatcher.Resume()
 }
