@@ -485,11 +485,11 @@ out:
 	server.connMutex.Unlock()
 	// Read and write routines are started in separate goroutines and function will return immediately
 	go server.writePump(&ws)
+	go server.readPump(&ws)
 	if server.newClientHandler != nil {
 		var channel Channel = &ws
 		server.newClientHandler(channel)
 	}
-	go server.readPump(&ws)
 }
 
 func (server *Server) readPump(ws *WebSocket) {
