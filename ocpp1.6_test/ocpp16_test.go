@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -558,7 +559,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	// Run request test, expecting an error
-	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocpp.Response, err error) {
+	err = suite.chargePoint.SendRequestAsync(context.Background(), request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
 	assert.Error(t, err)

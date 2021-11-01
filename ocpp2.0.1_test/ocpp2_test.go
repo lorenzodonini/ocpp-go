@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -992,7 +993,7 @@ func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request o
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	// Run request test
-	err = suite.chargingStation.SendRequestAsync(request, func(confirmation ocpp.Response, err error) {
+	err = suite.chargingStation.SendRequestAsync(context.Background(), request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
 	require.Error(t, err)

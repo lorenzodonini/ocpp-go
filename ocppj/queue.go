@@ -1,6 +1,7 @@
 package ocppj
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
@@ -10,6 +11,7 @@ import (
 type RequestBundle struct {
 	Call *Call
 	Data []byte
+	Ctx  context.Context
 }
 
 // RequestQueue can be arbitrarily implemented, as long as it conforms to the Queue interface.
