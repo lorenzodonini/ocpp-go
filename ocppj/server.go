@@ -2,6 +2,7 @@ package ocppj
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -19,6 +20,8 @@ type Server struct {
 	errorHandler              ErrorHandler
 	dispatcher                ServerDispatcher
 	RequestState              ServerState
+	waitGroup                 sync.WaitGroup
+	stopped                   chan struct{}
 }
 
 type ClientHandler func(client ws.Channel)
@@ -93,6 +96,7 @@ func (s *Server) SetDisconnectedClientHandler(handler ClientHandler) {
 // An error may be returned, if the websocket server couldn't be started.
 func (s *Server) Start(listenPort int, listenPath string) {
 	// Set internal message handler
+	s.stopped = make(chan struct{})
 	s.server.SetNewClientHandler(s.onClientConnected)
 	s.server.SetDisconnectedClientHandler(s.onClientDisconnected)
 	s.server.SetMessageHandler(s.ocppMessageHandler)
@@ -105,6 +109,8 @@ func (s *Server) Start(listenPort int, listenPath string) {
 // Stops the server.
 // This clears all pending requests and causes the Start function to return.
 func (s *Server) Stop() {
+	close(s.stopped)
+	s.waitGroup.Wait()
 	s.server.Stop()
 	s.dispatcher.Stop()
 }
@@ -235,8 +241,14 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 }
 
 func (s *Server) onClientConnected(ws ws.Channel) {
-	// Create state for connected client
-	s.dispatcher.CreateClient(ws.ID())
+	s.waitGroup.Add(1)
+	defer s.waitGroup.Done()
+	select {
+	case <-s.stopped:
+	default:
+		// Create state for connected client
+		s.dispatcher.CreateClient(ws.ID())
+	}
 	// Invoke callback
 	if s.newClientHandler != nil {
 		s.newClientHandler(ws)
@@ -244,8 +256,14 @@ func (s *Server) onClientConnected(ws ws.Channel) {
 }
 
 func (s *Server) onClientDisconnected(ws ws.Channel) {
-	// Clear state for disconnected client
-	s.dispatcher.DeleteClient(ws.ID())
+	s.waitGroup.Add(1)
+	defer s.waitGroup.Done()
+	select {
+	case <-s.stopped:
+	default:
+		// Clear state for disconnected client
+		s.dispatcher.DeleteClient(ws.ID())
+	}
 	s.RequestState.ClearClientPendingRequest(ws.ID())
 	// Invoke callback
 	if s.disconnectedClientHandler != nil {
