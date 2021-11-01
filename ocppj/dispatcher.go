@@ -1,6 +1,7 @@
 package ocppj
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -42,7 +43,7 @@ type ClientDispatcher interface {
 	// Notifies the dispatcher that a request has been completed (i.e. a response was received).
 	// The dispatcher takes care of removing the request marked by the requestID from
 	// the pending requests. It will then attempt to process the next queued request.
-	CompleteRequest(requestID string)
+	CompleteRequest(requestID string) <-chan struct{}
 	// Sets a callback to be invoked when a request gets canceled, due to network timeouts.
 	// The callback passes the original message ID, feature name and request struct of the failed request.
 	//
@@ -168,6 +169,20 @@ func (d *DefaultClientDispatcher) SendRequest(req RequestBundle) error {
 
 func (d *DefaultClientDispatcher) messagePump() {
 	rdy := true // Ready to transmit at the beginning
+	cancelled := func() {
+		if d.pendingRequestState.HasPendingRequest() {
+			// Current request timed out. Removing request and triggering cancel callback
+			el := d.requestQueue.Peek()
+			bundle, _ := el.(RequestBundle)
+			d.CompleteRequest(bundle.Call.UniqueId)
+			if d.onRequestCancel != nil {
+				d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
+			}
+		}
+		// No request is currently pending -> set timer to high number
+		d.timer.Reset(defaultTimeoutTick)
+	}
+	var reqContextDone <-chan struct{}
 	for {
 		select {
 		case _, ok := <-d.requestChannel:
@@ -177,22 +192,15 @@ func (d *DefaultClientDispatcher) messagePump() {
 				d.requestChannel = nil
 				return
 			}
+		case <-reqContextDone:
+			// user cancelled request
+			cancelled()
 		case _, ok := <-d.timer.C:
 			// Timeout elapsed
 			if !ok {
 				continue
 			}
-			if d.pendingRequestState.HasPendingRequest() {
-				// Current request timed out. Removing request and triggering cancel callback
-				el := d.requestQueue.Peek()
-				bundle, _ := el.(RequestBundle)
-				d.CompleteRequest(bundle.Call.UniqueId)
-				if d.onRequestCancel != nil {
-					d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
-				}
-			}
-			// No request is currently pending -> set timer to high number
-			d.timer.Reset(defaultTimeoutTick)
+			cancelled()
 		case rdy = <-d.readyForDispatch:
 			// Ready flag set, keep going
 		}
@@ -206,22 +214,36 @@ func (d *DefaultClientDispatcher) messagePump() {
 		}
 		// Only dispatch request if able to send and request queue isn't empty
 		if rdy && !d.requestQueue.IsEmpty() {
-			d.dispatchNextRequest()
-			rdy = false
-			// Set timer
-			if !d.timer.Stop() {
-				<-d.timer.C
+			if done, ok := d.dispatchNextRequest(); ok {
+				rdy = false
+				// Set timer
+				if !d.timer.Stop() {
+					<-d.timer.C
+				}
+				d.timer.Reset(d.timeout)
+				reqContextDone = done
 			}
-			d.timer.Reset(d.timeout)
 		}
 	}
 }
 
-func (d *DefaultClientDispatcher) dispatchNextRequest() {
+func (d *DefaultClientDispatcher) dispatchNextRequest() (<-chan struct{}, bool) {
 	// Get first element in queue
 	el := d.requestQueue.Peek()
 	bundle, _ := el.(RequestBundle)
 	jsonMessage := bundle.Data
+	ctx := bundle.Ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	select {
+	case <-ctx.Done():
+		if d.onRequestCancel != nil {
+			d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
+		}
+		return nil, false
+	default:
+	}
 	d.pendingRequestState.AddPendingRequest(bundle.Call.UniqueId, bundle.Call.Payload)
 	// Attempt to send over network
 	err := d.network.Write(jsonMessage)
@@ -232,6 +254,7 @@ func (d *DefaultClientDispatcher) dispatchNextRequest() {
 			d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Action, bundle.Call.Payload)
 		}
 	}
+	return ctx.Done(), true
 }
 
 func (d *DefaultClientDispatcher) Pause() {
@@ -257,22 +280,23 @@ func (d *DefaultClientDispatcher) Resume() {
 	}
 }
 
-func (d *DefaultClientDispatcher) CompleteRequest(requestId string) {
+func (d *DefaultClientDispatcher) CompleteRequest(requestId string) <-chan struct{} {
 	el := d.requestQueue.Peek()
 	if el == nil {
 		log.Errorf("attempting to pop front of queue, but queue is empty")
-		return
+		return nil
 	}
 	bundle, _ := el.(RequestBundle)
 	if bundle.Call.UniqueId != requestId {
 		log.Errorf("internal state mismatch: received response for %v but expected response for %v", requestId, bundle.Call.UniqueId)
-		return
+		return nil
 	}
-	d.requestQueue.Pop()
+	request := d.requestQueue.Pop().(RequestBundle)
 	d.pendingRequestState.DeletePendingRequest(requestId)
 	log.Debugf("removed request %v from front of queue", bundle.Call.UniqueId)
 	// Signal that next message in queue may be sent
 	d.readyForDispatch <- true
+	return request.Ctx.Done()
 }
 
 // ServerDispatcher contains the state and logic for handling outgoing messages on a server endpoint.

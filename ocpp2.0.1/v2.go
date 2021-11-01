@@ -2,6 +2,7 @@
 package ocpp2
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 
@@ -152,7 +153,7 @@ type ChargingStation interface {
 	// This result is propagated via a callback, called asynchronously.
 	//
 	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never invoked.
-	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
+	SendRequestAsync(ctx context.Context, request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
 	// Connects to the CSMS and starts the charging station routine.
 	// The function doesn't block and returns right away, after having attempted to open a connection to the CSMS.
 	// If the connection couldn't be opened, an error is returned.

@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
@@ -489,7 +490,7 @@ func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, err
 	return asyncResult.r, asyncResult.e
 }
 
-func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(response ocpp.Response, err error)) error {
+func (cs *chargingStation) SendRequestAsync(ctx context.Context, request ocpp.Request, callback func(response ocpp.Response, err error)) error {
 	featureName := request.GetFeatureName()
 	if _, found := cs.client.GetProfileForFeature(featureName); !found {
 		return fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send request", featureName)
@@ -526,7 +527,7 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 	}
 	// Response will be retrieved asynchronously via asyncHandler
 	send := func() error {
-		return cs.client.SendRequest(request)
+		return cs.client.SendRequestCtx(ctx, request)
 	}
 	err := cs.callbacks.TryQueue("main", send, callback)
 	return err

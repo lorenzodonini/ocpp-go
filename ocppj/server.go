@@ -1,6 +1,7 @@
 package ocppj
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -137,7 +138,7 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 		return err
 	}
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
-	if err := s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage}); err != nil {
+	if err := s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage, context.Background()}); err != nil {
 		log.Errorf("request %v - %v for client %v: %v", call.UniqueId, call.Action, clientID, err)
 		return err
 	}
