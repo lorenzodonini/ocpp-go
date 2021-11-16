@@ -21,6 +21,31 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type Logger interface {
+	RecvMessage(id string, data []byte)
+	SendMessage(id string, data []byte)
+}
+
+type VoidLogger struct{}
+
+func (*VoidLogger) RecvMessage(string, []byte) {}
+
+func (*VoidLogger) SendMessage(string, []byte) {}
+
+// The internal verbose logger
+var log Logger = &VoidLogger{}
+
+// Sets a custom Logger implementation, allowing the websocket package to log events.
+// By default, a VoidLogger is used, so no logs will be sent to any output.
+//
+// The function panics, if a nil logger is passed.
+func SetLogger(logger Logger) {
+	if logger == nil {
+		panic("cannot set a nil logger")
+	}
+	log = logger
+}
+
 const (
 	// Time allowed to write a message to the peer.
 	defaultWriteWait = 10 * time.Second
@@ -402,6 +427,7 @@ func (server *Server) Write(webSocketId string, data []byte) error {
 	if !ok {
 		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
 	}
+	log.SendMessage(webSocketId, data)
 	ws.outQueue <- data
 	return nil
 }
@@ -515,6 +541,7 @@ func (server *Server) readPump(ws *WebSocket) {
 
 		if server.messageHandler != nil {
 			var channel Channel = ws
+			log.RecvMessage(ws.ID(), message)
 			err = server.messageHandler(channel, message)
 			if err != nil {
 				server.error(fmt.Errorf("handling failed for %s: %w", ws.ID(), err))
@@ -832,6 +859,7 @@ func (client *Client) readPump() {
 		}
 
 		if client.messageHandler != nil {
+			log.RecvMessage(client.webSocket.ID(), message)
 			err = client.messageHandler(message)
 			if err != nil {
 				client.error(fmt.Errorf("handle failed: %w", err))
@@ -895,6 +923,7 @@ func (client *Client) Write(data []byte) error {
 	if !client.IsConnected() {
 		return fmt.Errorf("client is currently not connected, cannot send data")
 	}
+	log.SendMessage(client.webSocket.ID(), data)
 	client.webSocket.outQueue <- data
 	return nil
 }
