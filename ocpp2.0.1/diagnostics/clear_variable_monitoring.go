@@ -46,7 +46,7 @@ type ClearVariableMonitoringResponse struct {
 	ClearMonitoringResult []ClearMonitoringResult `json:"clearMonitoringResult" validate:"required,min=1,dive"` // List of result statuses per monitor.
 }
 
-// The CSMS asks the Charging Station to clear a display message that has been configured in the Charging Station to be cleared/removed.
+// The CSMS asks the Charging Station to clear/remove a display message that has been configured in the Charging Station.
 // The Charging station checks for a message with the requested ID and removes it.
 // The Charging station then responds with a ClearVariableMonitoringResponse. The response payload indicates whether the Charging Station was able to remove the message from display or not.
 type ClearVariableMonitoringFeature struct{}
