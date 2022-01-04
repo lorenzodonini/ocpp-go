@@ -7,9 +7,9 @@ import "github.com/lorenzodonini/ocpp-go/ocpp"
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Provisioning profile.
 type CSMSHandler interface {
 	// OnBootNotification is called on the CSMS whenever a BootNotificationRequest is received from a charging station.
-	OnBootNotification(chargingStationID string, request *BootNotificationRequest) (confirmation *BootNotificationResponse, err error)
+	OnBootNotification(chargingStationID string, request *BootNotificationRequest) (response *BootNotificationResponse, err error)
 	// OnNotifyReport is called on the CSMS whenever a NotifyReportRequest is received from a charging station.
-	OnNotifyReport(chargingStationID string, request *NotifyReportRequest) (confirmation *NotifyReportResponse, err error)
+	OnNotifyReport(chargingStationID string, request *NotifyReportRequest) (response *NotifyReportResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Provisioning profile.

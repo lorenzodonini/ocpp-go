@@ -19,6 +19,6 @@ func (c *CSMSHandler) OnDataTransfer(chargingStationID string, request *data.Dat
 		return nil, err
 	}
 	logDefault(chargingStationID, request.GetFeatureName()).
-		Infof("data received: %v, %v", dataSample.SampleString, dataSample.SampleString)
+		Infof("data received: %v, %v", dataSample.SampleString, dataSample.SampleValue)
 	return data.NewDataTransferResponse(data.DataTransferStatusAccepted), nil
 }

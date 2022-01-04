@@ -20,8 +20,8 @@ type NotifyDisplayMessagesRequest struct {
 type NotifyDisplayMessagesResponse struct {
 }
 
-// A CSO MAY request all the installed DisplayMessages configured via OCPP in a Charging Station. For this the CSO asks the CSMS to retrieve all messages (see NotifyDisplayMessages).
-// If the Charging Station responded with a NotifyDisplayMessagesResponse Accepted, it will then send these messages asynchronously to the CSMS.
+// A CSO MAY request all the installed DisplayMessages configured via OCPP in a Charging Station. For this the CSO asks the CSMS to retrieve all messages (see GetDisplayMessagesFeature).
+// If the Charging Station responded with a status Accepted, it will then send these messages asynchronously to the CSMS.
 //
 // The Charging Station sends one or more NotifyDisplayMessagesRequest message to the CSMS (depending on the amount of messages to be send).
 // The CSMS responds to every notification with a NotifyDisplayMessagesResponse message.
