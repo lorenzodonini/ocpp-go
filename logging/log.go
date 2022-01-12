@@ -1,4 +1,4 @@
-package ocpp
+package logging
 
 // Logger is the adapter interface that needs to be implemented, if the library should internally print logs.
 //
