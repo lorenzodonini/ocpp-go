@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/lorenzodonini/ocpp-go/logging"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -749,7 +751,7 @@ func (suite *OcppJTestSuite) TestLogger() {
 	logger := testLogger{c: make(chan string, 1)}
 	// Test with custom logger
 	ocppj.SetLogger(&logger)
-	defer ocppj.SetLogger(&ocpp.VoidLogger{})
+	defer ocppj.SetLogger(&logging.VoidLogger{})
 	// Expect an error
 	arr, err := ocppj.ParseRawJsonMessage([]byte("[3,\"1234\",{}]"))
 	require.NoError(t, err)

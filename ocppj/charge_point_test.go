@@ -51,7 +51,10 @@ func (suite *OcppJTestSuite) TestClientStoppedError() {
 	t := suite.T()
 	// Start client
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
-	suite.mockClient.On("Stop").Return(nil)
+	suite.mockClient.On("Stop").Return(nil).Run(func(args mock.Arguments) {
+		// Simulate websocket internal working
+		suite.mockClient.DisconnectedHandler(nil)
+	})
 	err := suite.chargePoint.Start("someUrl")
 	require.NoError(t, err)
 	// Stop client

@@ -759,14 +759,10 @@ func TestInvalidClientTLSCertificate(t *testing.T) {
 }
 
 func TestUnsupportedSubprotocol(t *testing.T) {
-	disconnected := make(chan bool)
 	wsServer := newWebsocketServer(t, nil)
 	wsServer.SetNewClientHandler(func(ws Channel) {
-		assert.Fail(t, "invalid subprotocol expected, but hit client handler instead")
-		t.Fail()
 	})
 	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
-		disconnected <- true
 	})
 	wsServer.AddSupportedSubprotocol(defaultSubProtocol)
 	assert.Len(t, wsServer.upgrader.Subprotocols, 1)

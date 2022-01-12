@@ -174,7 +174,13 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	assert.True(t, s.client.IsConnected())
 	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.ReconnectBackoff.Milliseconds())
 	// Cleanup
+	s.client.SetDisconnectedHandler(func(err error) {
+		assert.Nil(t, err)
+		clientOnDisconnected <- true
+	})
 	s.client.Stop()
+	result = <-clientOnDisconnected
+	require.True(t, result)
 	s.server.Stop()
 }
 
@@ -230,19 +236,19 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 	})
 	require.NoError(t, err)
 	// Attempt to send message
-	require.NoError(t, err)
 	result := <-clientOnDisconnected
 	require.True(t, result)
 	result = <-serverOnDisconnected
 	require.True(t, result)
 	// Reconnect time starts
-	s.proxy.RemoveToxic("readTimeout")
+	_ = s.proxy.RemoveToxic("readTimeout")
 	startTimeout := time.Now()
 	result = <-reconnected
 	require.True(t, result)
 	elapsed := time.Since(startTimeout)
 	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.ReconnectBackoff.Milliseconds())
 	// Cleanup
+	s.client.SetDisconnectedHandler(nil)
 	s.client.Stop()
 	s.server.Stop()
 }
@@ -313,6 +319,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	elapsed := time.Since(startTimeout)
 	assert.GreaterOrEqual(t, elapsed.Milliseconds(), s.client.timeoutConfig.ReconnectBackoff.Milliseconds())
 	// Cleanup
+	s.client.SetDisconnectedHandler(nil)
 	s.client.Stop()
 	s.server.Stop()
 }
