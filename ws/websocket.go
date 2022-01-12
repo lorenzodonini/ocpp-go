@@ -764,7 +764,7 @@ func (client *Client) writePump() {
 		ticker.Stop()
 		client.cleanup()
 		// Invoke callback
-		if client.onDisconnected != nil && err != nil {
+		if client.onDisconnected != nil {
 			client.onDisconnected(err)
 		}
 	}

@@ -101,8 +101,15 @@ func (c *Client) Start(serverURL string) error {
 // Stops the client.
 // The underlying I/O loop is stopped and all pending requests are cleared.
 func (c *Client) Stop() {
+	// Overwrite handler to intercept disconnected signal
+	cleanupC := make(chan struct{}, 1)
+	c.client.SetDisconnectedHandler(func(err error) {
+		cleanupC <- struct{}{}
+	})
 	c.client.Stop()
 	c.dispatcher.Stop()
+	// Wait for websocket to be cleaned up
+	<-cleanupC
 }
 
 // Sends an OCPP Request to the server.
