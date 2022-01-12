@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"reflect"
 
+	"github.com/lorenzodonini/ocpp-go/logging"
+
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -16,17 +18,18 @@ import (
 var Validate = validator.New()
 
 // The internal verbose logger
-var log ocpp.Logger = &ocpp.VoidLogger{}
+var log logging.Logger
 
 func init() {
 	_ = Validate.RegisterValidation("errorCode", IsErrorCodeValid)
+	log = &logging.VoidLogger{}
 }
 
 // Sets a custom Logger implementation, allowing the ocpp-j package to log events.
 // By default, a VoidLogger is used, so no logs will be sent to any output.
 //
 // The function panics, if a nil logger is passed.
-func SetLogger(logger ocpp.Logger) {
+func SetLogger(logger logging.Logger) {
 	if logger == nil {
 		panic("cannot set a nil logger")
 	}
