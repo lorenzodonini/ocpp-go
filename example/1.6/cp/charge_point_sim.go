@@ -167,7 +167,8 @@ func main() {
 	chargePoint.SetReservationHandler(handler)
 	chargePoint.SetRemoteTriggerHandler(handler)
 	chargePoint.SetSmartChargingHandler(handler)
-	ocppj.SetLogger(log)
+	ocppj.SetLogger(log.WithField("logger", "ocppj"))
+	ws.SetLogger(log.WithField("logger", "websocket"))
 	// Connects to central system
 	err := chargePoint.Start(csUrl)
 	if err != nil {
@@ -184,6 +185,7 @@ func main() {
 func init() {
 	log = logrus.New()
 	log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+	// Set this to DebugLevel if you want to retrieve verbose logs from the ocppj and websocket layers
 	log.SetLevel(logrus.InfoLevel)
 }
 

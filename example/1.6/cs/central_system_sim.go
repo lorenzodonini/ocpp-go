@@ -226,7 +226,8 @@ func main() {
 		log.WithField("client", chargePoint.ID()).Info("charge point disconnected")
 		delete(handler.chargePoints, chargePoint.ID())
 	})
-	ocppj.SetLogger(log)
+	ocppj.SetLogger(log.WithField("logger", "ocppj"))
+	ws.SetLogger(log.WithField("logger", "websocket"))
 	// Run central system
 	log.Infof("starting central system on port %v", listenPort)
 	centralSystem.Start(listenPort, "/{ws}")
@@ -236,5 +237,6 @@ func main() {
 func init() {
 	log = logrus.New()
 	log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+	// Set this to DebugLevel if you want to retrieve verbose logs from the ocppj and websocket layers
 	log.SetLevel(logrus.InfoLevel)
 }
