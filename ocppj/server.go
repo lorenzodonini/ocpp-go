@@ -142,11 +142,11 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 		return err
 	}
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
-	if err := s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage}); err != nil {
-		log.Errorf("request %v - %v for client %v: %v", call.UniqueId, call.Action, clientID, err)
+	if err = s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage}); err != nil {
+		log.Errorf("error dispatching request [%s, %s] to %s: %v", call.UniqueId, call.Action, clientID, err)
 		return err
 	}
-	log.Debugf("enqueued request %v - %v for client %v", call.UniqueId, call.Action, clientID)
+	log.Debugf("enqueued CALL [%s, %s] for %s", call.UniqueId, call.Action, clientID)
 	return nil
 }
 
@@ -173,7 +173,12 @@ func (s *Server) SendResponse(clientID string, requestId string, response ocpp.R
 	if err != nil {
 		return err
 	}
-	return s.server.Write(clientID, []byte(jsonMessage))
+	if err = s.server.Write(clientID, jsonMessage); err != nil {
+		log.Errorf("error sending response [%s] to %s: %v", callResult.UniqueId, clientID, err)
+		return err
+	}
+	log.Debugf("sent CALL RESULT [%s] for %s", callResult.UniqueId, clientID)
+	return nil
 }
 
 // Sends an OCPP Error to a client, identified by the clientID parameter.
@@ -194,7 +199,12 @@ func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.Err
 	if err != nil {
 		return err
 	}
-	return s.server.Write(clientID, []byte(jsonMessage))
+	if err = s.server.Write(clientID, jsonMessage); err != nil {
+		log.Errorf("error sending response error [%s] to %s: %v", callError.UniqueId, clientID, err)
+		return err
+	}
+	log.Debugf("sent CALL ERROR [%s] for %s", callError.UniqueId, clientID)
+	return nil
 }
 
 func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
@@ -221,15 +231,18 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 		switch message.GetMessageTypeId() {
 		case CALL:
 			call := message.(*Call)
+			log.Debugf("handling incoming CALL [%s, %s] from %s", call.UniqueId, call.Action, wsChannel.ID())
 			s.requestHandler(wsChannel, call.Payload, call.UniqueId, call.Action)
 		case CALL_RESULT:
 			callResult := message.(*CallResult)
+			log.Debugf("handling incoming CALL RESULT [%s] from %s", callResult.UniqueId, wsChannel.ID())
 			s.dispatcher.CompleteRequest(wsChannel.ID(), callResult.GetUniqueId())
 			if s.responseHandler != nil {
 				s.responseHandler(wsChannel, callResult.Payload, callResult.UniqueId)
 			}
 		case CALL_ERROR:
 			callError := message.(*CallError)
+			log.Debugf("handling incoming CALL RESULT [%s] from %s", callError.UniqueId, wsChannel.ID())
 			s.dispatcher.CompleteRequest(wsChannel.ID(), callError.GetUniqueId())
 			if s.errorHandler != nil {
 				s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
