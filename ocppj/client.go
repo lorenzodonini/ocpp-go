@@ -142,11 +142,11 @@ func (c *Client) SendRequest(request ocpp.Request) error {
 		return err
 	}
 	// Message will be processed by dispatcher. A dedicated mechanism allows to delegate the message queue handling.
-	if err := c.dispatcher.SendRequest(RequestBundle{Call: call, Data: jsonMessage}); err != nil {
-		log.Errorf("request %v - %v: %v", call.UniqueId, call.Action, err)
+	if err = c.dispatcher.SendRequest(RequestBundle{Call: call, Data: jsonMessage}); err != nil {
+		log.Errorf("error dispatching request [%s, %s]: %v", call.UniqueId, call.Action, err)
 		return err
 	}
-	log.Debugf("enqueued request %v - %v", call.UniqueId, call.Action)
+	log.Debugf("enqueued CALL [%s, %s]", call.UniqueId, call.Action)
 	return nil
 }
 
@@ -173,7 +173,12 @@ func (c *Client) SendResponse(requestId string, response ocpp.Response) error {
 	if err != nil {
 		return err
 	}
-	return c.client.Write(jsonMessage)
+	if err = c.client.Write(jsonMessage); err != nil {
+		log.Errorf("error sending response [%s]: %v", callResult.UniqueId, err)
+		return err
+	}
+	log.Debugf("sent CALL RESULT [%s]", callResult.UniqueId)
+	return nil
 }
 
 // Sends an OCPP Error to the server.
@@ -194,7 +199,12 @@ func (c *Client) SendError(requestId string, errorCode ocpp.ErrorCode, descripti
 	if err != nil {
 		return err
 	}
-	return c.client.Write(jsonMessage)
+	if err = c.client.Write(jsonMessage); err != nil {
+		log.Errorf("error sending response error [%s]: %v", callError.UniqueId, err)
+		return err
+	}
+	log.Debugf("sent CALL ERROR [%s]", callError.UniqueId)
+	return nil
 }
 
 func (c *Client) ocppMessageHandler(data []byte) error {
@@ -219,15 +229,18 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 		switch message.GetMessageTypeId() {
 		case CALL:
 			call := message.(*Call)
+			log.Debugf("handling incoming CALL [%s, %s]", call.UniqueId, call.Action)
 			c.requestHandler(call.Payload, call.UniqueId, call.Action)
 		case CALL_RESULT:
 			callResult := message.(*CallResult)
+			log.Debugf("handling incoming CALL RESULT [%s]", callResult.UniqueId)
 			c.dispatcher.CompleteRequest(callResult.GetUniqueId()) // Remove current request from queue and send next one
 			if c.responseHandler != nil {
 				c.responseHandler(callResult.Payload, callResult.UniqueId)
 			}
 		case CALL_ERROR:
 			callError := message.(*CallError)
+			log.Debugf("handling incoming CALL ERROR [%s]", callError.UniqueId)
 			c.dispatcher.CompleteRequest(callError.GetUniqueId()) // Remove current request from queue and send next one
 			if c.errorHandler != nil {
 				c.errorHandler(ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
