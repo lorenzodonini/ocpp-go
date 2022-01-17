@@ -82,6 +82,37 @@ func TestWebsocketSetConnected(t *testing.T) {
 	assert.False(t, wsClient.IsConnected())
 }
 
+func TestWebsocketGetReadTimeout(t *testing.T) {
+	wsServer := newWebsocketServer(t, func(data []byte) ([]byte, error) {
+		return nil, nil
+	})
+	wsClient := newWebsocketClient(t, func(data []byte) ([]byte, error) {
+		return nil, nil
+	})
+	// Test server timeout for default settings
+	serverTimeoutConfig := NewServerTimeoutConfig()
+	wsServer.SetTimeoutConfig(serverTimeoutConfig)
+	now := time.Now()
+	timeout := wsServer.getReadTimeout()
+	assert.GreaterOrEqual(t, timeout.Unix(), now.Add(serverTimeoutConfig.PingWait).Unix())
+	// Test server timeout for zero setting
+	serverTimeoutConfig.PingWait = 0
+	wsServer.SetTimeoutConfig(serverTimeoutConfig)
+	timeout = wsServer.getReadTimeout()
+	assert.Equal(t, time.Time{}, timeout)
+	// Test client timeout for default settings
+	clientTimeoutConfig := NewClientTimeoutConfig()
+	wsClient.SetTimeoutConfig(clientTimeoutConfig)
+	now = time.Now()
+	timeout = wsClient.getReadTimeout()
+	assert.GreaterOrEqual(t, timeout.Unix(), now.Add(clientTimeoutConfig.PongWait).Unix())
+	// Test client timeout for zero setting
+	clientTimeoutConfig.PongWait = 0
+	wsClient.SetTimeoutConfig(clientTimeoutConfig)
+	timeout = wsClient.getReadTimeout()
+	assert.Equal(t, time.Time{}, timeout)
+}
+
 func TestWebsocketEcho(t *testing.T) {
 	message := []byte("Hello WebSocket!")
 	triggerC := make(chan bool, 1)

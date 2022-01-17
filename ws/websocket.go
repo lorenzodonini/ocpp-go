@@ -515,16 +515,23 @@ out:
 	}
 }
 
+func (server *Server) getReadTimeout() time.Time {
+	if server.timeoutConfig.PingWait == 0 {
+		return time.Time{}
+	}
+	return time.Now().Add(server.timeoutConfig.PingWait)
+}
+
 func (server *Server) readPump(ws *WebSocket) {
 	conn := ws.connection
 
 	conn.SetPingHandler(func(appData string) error {
 		log.Debugf("ping received from %s", ws.ID())
 		ws.pingMessage <- []byte(appData)
-		err := conn.SetReadDeadline(time.Now().Add(server.timeoutConfig.PingWait))
+		err := conn.SetReadDeadline(server.getReadTimeout())
 		return err
 	})
-	_ = conn.SetReadDeadline(time.Now().Add(server.timeoutConfig.PingWait))
+	_ = conn.SetReadDeadline(server.getReadTimeout())
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -532,7 +539,7 @@ func (server *Server) readPump(ws *WebSocket) {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
 				server.error(fmt.Errorf("read failed unexpectedly for %s: %w", ws.ID(), err))
 			}
-			log.Debugf("handling read error %v for %s", err.Error(), ws.ID())
+			log.Debugf("handling read error for %s: %v", ws.ID(), err.Error())
 			// Notify writePump of error. Force close will be handled there
 			ws.forceCloseC <- err
 			return
@@ -546,7 +553,7 @@ func (server *Server) readPump(ws *WebSocket) {
 				continue
 			}
 		}
-		_ = conn.SetReadDeadline(time.Now().Add(server.timeoutConfig.PingWait))
+		_ = conn.SetReadDeadline(server.getReadTimeout())
 	}
 }
 
@@ -786,6 +793,13 @@ func (client *Client) SetHeaderValue(key string, value string) {
 	client.header.Set(key, value)
 }
 
+func (client *Client) getReadTimeout() time.Time {
+	if client.timeoutConfig.PongWait == 0 {
+		return time.Time{}
+	}
+	return time.Now().Add(client.timeoutConfig.PongWait)
+}
+
 func (client *Client) writePump() {
 	ticker := time.NewTicker(client.timeoutConfig.PingPeriod)
 	conn := client.webSocket.connection
@@ -851,10 +865,10 @@ func (client *Client) writePump() {
 
 func (client *Client) readPump() {
 	conn := client.webSocket.connection
-	_ = conn.SetReadDeadline(time.Now().Add(client.timeoutConfig.PongWait))
+	_ = conn.SetReadDeadline(client.getReadTimeout())
 	conn.SetPongHandler(func(string) error {
 		log.Debugf("pong received")
-		return conn.SetReadDeadline(time.Now().Add(client.timeoutConfig.PongWait))
+		return conn.SetReadDeadline(client.getReadTimeout())
 	})
 	for {
 		_, message, err := conn.ReadMessage()
