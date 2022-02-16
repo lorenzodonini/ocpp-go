@@ -295,6 +295,9 @@ func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*ocpp.Profil
 }
 
 func parseRawJsonRequest(raw interface{}, requestType reflect.Type) (ocpp.Request, error) {
+	if raw == nil {
+		raw = &struct{}{}
+	}
 	bytes, err := json.Marshal(raw)
 	if err != nil {
 		return nil, err
@@ -309,6 +312,9 @@ func parseRawJsonRequest(raw interface{}, requestType reflect.Type) (ocpp.Reques
 }
 
 func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (ocpp.Response, error) {
+	if raw == nil {
+		raw = &struct{}{}
+	}
 	bytes, err := json.Marshal(raw)
 	if err != nil {
 		return nil, err
