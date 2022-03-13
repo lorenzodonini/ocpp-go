@@ -26,3 +26,14 @@ func TestEnd2EndBasicAuth(t *testing.T) {
 	err := cs.Start("ws://localhost:7778")
 	require.Nil(t, err)
 }
+
+func TestEnd2EndFailedAuth(t *testing.T) {
+	go csms.Start(7778, "/{id}")
+	defer server.Stop()
+
+	server.SetBasicAuthHandler(func(username, password string) bool { return false })
+
+	err := cs.Start("ws://localhost:7778")
+	require.NotNil(t, err)
+	require.Equal(t, "websocket: bad handshake, http status: 401 Unauthorized", err.Error())
+}
