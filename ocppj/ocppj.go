@@ -406,11 +406,15 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		rawErrorCode := arr[2].(string)
 		errorCode := ocpp.ErrorCode(rawErrorCode)
+		errorDescription := ""
+		if arr[3] != nil {
+			errorDescription = arr[3].(string)
+		}
 		callError := CallError{
 			MessageTypeId:    CALL_ERROR,
 			UniqueId:         uniqueId,
 			ErrorCode:        errorCode,
-			ErrorDescription: arr[3].(string),
+			ErrorDescription: errorDescription,
 			ErrorDetails:     details,
 		}
 		err := Validate.Struct(callError)
