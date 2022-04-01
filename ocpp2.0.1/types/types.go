@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	V2Subprotocol   = "ocpp2.0.1"
-	V201Subprotocol = "ocpp2.0.1.1"
+	V2Subprotocol   = "ocpp2.0"
+	V201Subprotocol = "ocpp2.0.1"
 )
 
 type PropertyViolation struct {
