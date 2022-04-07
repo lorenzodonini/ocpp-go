@@ -407,8 +407,8 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		rawErrorCode := arr[2].(string)
 		errorCode := ocpp.ErrorCode(rawErrorCode)
 		errorDescription := ""
-		if arr[3] != nil {
-			errorDescription = arr[3].(string)
+		if v, ok := arr[3].(string); ok {
+			errorDescription = v
 		}
 		callError := CallError{
 			MessageTypeId:    CALL_ERROR,
