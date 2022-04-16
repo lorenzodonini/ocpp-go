@@ -78,6 +78,20 @@ func (suite *OcppJTestSuite) TestCentralSystemSendInvalidRequest() {
 	assert.NotNil(suite.T(), err)
 }
 
+func (suite *OcppJTestSuite) TestCentralSystemSendRequestNoValidation() {
+	mockChargePointId := "1234"
+	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
+	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
+	suite.centralSystem.Start(8887, "/{ws}")
+	suite.serverDispatcher.CreateClient(mockChargePointId)
+	mockRequest := newMockRequest("")
+	// Temporarily disable message validation
+	ocppj.SetMessageValidation(false)
+	defer ocppj.SetMessageValidation(true)
+	err := suite.centralSystem.SendRequest(mockChargePointId, mockRequest)
+	assert.Nil(suite.T(), err)
+}
+
 func (suite *OcppJTestSuite) TestServerSendInvalidJsonRequest() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
@@ -159,6 +173,23 @@ func (suite *OcppJTestSuite) TestCentralSystemSendInvalidConfirmation() {
 	// This is allowed. Endpoint doesn't keep track of incoming requests, but only outgoing ones
 	err := suite.centralSystem.SendResponse(mockChargePointId, mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
+}
+
+func (suite *OcppJTestSuite) TestCentralSystemSendConfirmationNoValidation() {
+	t := suite.T()
+	mockChargePointId := "0101"
+	mockUniqueId := "6789"
+	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.centralSystem.Start(8887, "/{ws}")
+	suite.serverDispatcher.CreateClient(mockChargePointId)
+	mockConfirmation := newMockConfirmation("")
+	// Temporarily disable message validation
+	ocppj.SetMessageValidation(false)
+	defer ocppj.SetMessageValidation(true)
+	// This is allowed. Endpoint doesn't keep track of incoming requests, but only outgoing ones
+	err := suite.centralSystem.SendResponse(mockChargePointId, mockUniqueId, mockConfirmation)
+	assert.Nil(t, err)
 }
 
 func (suite *OcppJTestSuite) TestCentralSystemSendConfirmationFailed() {
@@ -535,7 +566,8 @@ func (suite *OcppJTestSuite) TestServerRequestFlow() {
 				require.Nil(t, err)
 			} else {
 				// Send CallError
-				res := suite.centralSystem.CreateCallError(call.GetUniqueId(), ocppj.GenericError, fmt.Sprintf("error-%v", req.MockValue), nil)
+				res, err := suite.centralSystem.CreateCallError(call.GetUniqueId(), ocppj.GenericError, fmt.Sprintf("error-%v", req.MockValue), nil)
+				require.Nil(t, err)
 				data, err = res.MarshalJSON()
 				require.Nil(t, err)
 			}
