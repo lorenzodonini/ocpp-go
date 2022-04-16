@@ -307,6 +307,56 @@ Then run the following:
 docker-compose -f example/1.6/docker-compose.tls.yml up charge-point
 ```
 
+## Advanced Features
+
+The library offers several advanced features, especially at websocket and ocpp-j level.
+
+### Automatic message validation
+
+All incoming and outgoing messages are validated by default, using the [validator](gopkg.in/go-playground/validator) package.
+Constraints are defined on every request/response struct, as per OCPP specs.
+
+Validation may be disabled at a package level if needed:
+```go
+ocppj.SetMessageValidation(false)
+``` 
+
+Use at your own risk, as this will disable validation for all messages!
+
+> I will be evaluating the possibility to selectively disable validation for a specific message, 
+> e.g. by passing message options.
+
+### Verbose logging
+
+The `ws` and `ocppj` packages offer the possibility to enable verbose logs, via your logger of choice, e.g.:
+```go
+// Setup your own logger
+log = logrus.New()
+log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+log.SetLevel(logrus.DebugLevel) // Debug level needed to see all logs
+// Pass own logger to ws and ocppj packages
+ws.SetLogger(log.WithField("logger", "websocket"))
+ocppj.SetLogger(log.WithField("logger", "ocppj"))
+```
+The logger you pass needs to conform to the `logging.Logger` interface.
+Commonly used logging libraries, such as zap or logrus, adhere to this interface out-of-the-box.
+
+If you are using a logger, that isn't conform, you can simply write an adapter between the `Logger` interface and your own logging system.
+
+### Websocket ping-pong
+
+The websocket package currently supports client-initiated pings only. 
+
+If your setup requires the server to be the initiator of a ping-pong (e.g. for web-based charge points),
+you may disable ping-pong entirely and just rely on the heartbeat mechanism:
+```go
+cfg := ws.NewServerTimeoutConfig()
+cfg.PingWait = 0 // this instructs the server to wait forever
+websocketServer.SetTimeoutConfig(cfg)
+```
+
+> A server-initiated ping may be supported in a future release.
+
 ## OCPP 2.0 Usage
 
 Documentation will follow, once the protocol is fully implemented.
