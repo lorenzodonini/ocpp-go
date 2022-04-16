@@ -492,7 +492,8 @@ func (suite *OcppJTestSuite) TestCreateCallError() {
 		DetailString string
 	}
 	mockDetails := MockDetails{DetailString: mockDetailString}
-	callError := suite.chargePoint.CreateCallError(mockUniqueId, ocppj.GenericError, mockDescription, mockDetails)
+	callError, err := suite.chargePoint.CreateCallError(mockUniqueId, ocppj.GenericError, mockDescription, mockDetails)
+	assert.Nil(t, err)
 	assert.NotNil(t, callError)
 	CheckCallError(t, callError, mockUniqueId, ocppj.GenericError, mockDescription, mockDetails)
 }

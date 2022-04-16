@@ -87,6 +87,18 @@ func (suite *OcppJTestSuite) TestChargePointSendInvalidRequest() {
 	assert.NotNil(suite.T(), err)
 }
 
+func (suite *OcppJTestSuite) TestChargePointSendRequestNoValidation() {
+	suite.mockClient.On("Write", mock.Anything).Return(nil)
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
+	_ = suite.chargePoint.Start("someUrl")
+	mockRequest := newMockRequest("")
+	// Temporarily disable message validation
+	ocppj.SetMessageValidation(false)
+	defer ocppj.SetMessageValidation(true)
+	err := suite.chargePoint.SendRequest(mockRequest)
+	assert.Nil(suite.T(), err)
+}
+
 func (suite *OcppJTestSuite) TestChargePointSendInvalidJsonRequest() {
 	suite.mockClient.On("Write", mock.Anything).Return(nil)
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
@@ -144,6 +156,20 @@ func (suite *OcppJTestSuite) TestChargePointSendConfirmation() {
 	// This is allowed. Endpoint doesn't keep track of incoming requests, but only outgoing ones
 	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
 	assert.Nil(t, err)
+}
+
+func (suite *OcppJTestSuite) TestChargePointSendConfirmationNoValidation() {
+	mockUniqueId := "6789"
+	suite.mockClient.On("Write", mock.Anything).Return(nil)
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
+	_ = suite.chargePoint.Start("someUrl")
+	mockConfirmation := newMockConfirmation("")
+	// Temporarily disable message validation
+	ocppj.SetMessageValidation(false)
+	defer ocppj.SetMessageValidation(true)
+	// This is allowed. Endpoint doesn't keep track of incoming requests, but only outgoing ones
+	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
+	assert.Nil(suite.T(), err)
 }
 
 func (suite *OcppJTestSuite) TestChargePointSendInvalidConfirmation() {
@@ -419,7 +445,8 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 				require.Nil(t, err)
 			} else {
 				// Send CallError
-				res := suite.chargePoint.CreateCallError(call.GetUniqueId(), ocppj.GenericError, fmt.Sprintf("error-%v", req.MockValue), nil)
+				res, err := suite.chargePoint.CreateCallError(call.GetUniqueId(), ocppj.GenericError, fmt.Sprintf("error-%v", req.MockValue), nil)
+				require.Nil(t, err)
 				data, err = res.MarshalJSON()
 				require.Nil(t, err)
 			}

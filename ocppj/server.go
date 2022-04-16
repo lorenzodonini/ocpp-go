@@ -129,10 +129,6 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 	if !s.dispatcher.IsRunning() {
 		return fmt.Errorf("ocppj server is not started, couldn't send request")
 	}
-	err := Validate.Struct(request)
-	if err != nil {
-		return err
-	}
 	call, err := s.CreateCall(request.(ocpp.Request))
 	if err != nil {
 		return err
@@ -161,10 +157,6 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 //
 // - a network error occurred
 func (s *Server) SendResponse(clientID string, requestId string, response ocpp.Response) error {
-	err := Validate.Struct(response)
-	if err != nil {
-		return err
-	}
 	callResult, err := s.CreateCallResult(response, requestId)
 	if err != nil {
 		return err
@@ -190,8 +182,7 @@ func (s *Server) SendResponse(clientID string, requestId string, response ocpp.R
 //
 // - a network error occurred
 func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.ErrorCode, description string, details interface{}) error {
-	callError := s.CreateCallError(requestId, errorCode, description, details)
-	err := Validate.Struct(callError)
+	callError, err := s.CreateCallError(requestId, errorCode, description, details)
 	if err != nil {
 		return err
 	}
