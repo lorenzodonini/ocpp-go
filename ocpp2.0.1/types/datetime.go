@@ -22,6 +22,11 @@ func NewDateTime(time time.Time) *DateTime {
 	return &DateTime{Time: time}
 }
 
+// Creates a new DateTime struct, embedding a struct generated using time.Now().
+func Now() *DateTime {
+	return &DateTime{Time: time.Now()}
+}
+
 func (dt *DateTime) UnmarshalJSON(input []byte) error {
 	strInput := string(input)
 	strInput = strings.Trim(strInput, `"`)
