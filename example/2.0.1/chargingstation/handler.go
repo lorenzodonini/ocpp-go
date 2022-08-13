@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"time"
 )
 
 // ConnectorInfo contains some simple state about a single connector.
@@ -23,19 +23,19 @@ type EVSEInfo struct {
 	availability       availability.OperationalStatus
 	currentTransaction string
 	currentReservation int
-	connectors         []ConnectorInfo
+	connectors         map[int]ConnectorInfo
+	seqNo              int
 }
 
 // ChargingStationHandler contains some simple state that a charge point needs to keep.
 // In production this will typically be replaced by database/API calls.
 type ChargingStationHandler struct {
-	status               core.ChargePointStatus
 	availability         availability.OperationalStatus
 	evse                 map[int]*EVSEInfo
-	errorCode            core.ChargePointErrorCode
+	configuration        map[string]string
 	model                string
 	vendor               string
-	meterValue           int
+	meterValue           float64
 	localAuthList        []localauth.AuthorizationData
 	localAuthListVersion int
 	monitoringLevel      int
@@ -54,6 +54,12 @@ func (evse *EVSEInfo) getConnectorOfType(typ reservation.ConnectorType) int {
 		}
 	}
 	return -1
+}
+
+func (evse *EVSEInfo) nextSequence() int {
+	seq := evse.seqNo
+	evse.seqNo = seq + 1
+	return seq
 }
 
 var transactionID = 0
@@ -97,7 +103,9 @@ func updateConnectorStatus(stateHandler *ChargingStationHandler, evseID int, con
 		log.Errorf("couldn't update status for evse %d with invalid connector %d", evseID, connector)
 		return
 	} else {
-		evse.connectors[connector].status = status
+		conn := evse.connectors[connector]
+		conn.status = status
+		evse.connectors[connector] = conn
 		// Send asynchronous status update
 		response, err := chargingStation.StatusNotification(types.NewDateTime(time.Now()), status, evseID, connector)
 		checkError(err)

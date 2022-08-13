@@ -20,7 +20,9 @@ func (handler *ChargingStationHandler) OnChangeAvailability(request *availabilit
 			if !e.hasConnector(*reqEvse.ConnectorID) {
 				response = availability.NewChangeAvailabilityResponse(availability.ChangeAvailabilityStatusRejected)
 			} else {
-				e.connectors[*reqEvse.ConnectorID].availability = request.OperationalStatus
+				connector := e.connectors[*reqEvse.ConnectorID]
+				connector.availability = request.OperationalStatus
+				e.connectors[*reqEvse.ConnectorID] = connector
 				response = availability.NewChangeAvailabilityResponse(availability.ChangeAvailabilityStatusAccepted)
 			}
 			return

@@ -130,7 +130,7 @@ func isValidReason(fl validator.FieldLevel) bool {
 type Transaction struct {
 	TransactionID     string        `json:"transactionId" validate:"required,max=36"`
 	ChargingState     ChargingState `json:"chargingState,omitempty" validate:"omitempty,chargingState"`
-	TimeSpentCharging *int          `json:"timeSpentCharging,omitempty" validate:"omitempty"`
+	TimeSpentCharging *int          `json:"timeSpentCharging,omitempty" validate:"omitempty"` // Contains the total time that energy flowed from EVSE to EV during the transaction (in seconds).
 	StoppedReason     Reason        `json:"stoppedReason,omitempty" validate:"omitempty,stoppedReason"`
 	RemoteStartID     *int          `json:"remoteStartId,omitempty" validate:"omitempty"`
 }
