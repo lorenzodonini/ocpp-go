@@ -3,26 +3,28 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+
 	"github.com/sirupsen/logrus"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 const (
 	envVarClientID             = "CLIENT_ID"
-	envVarCentralSystemUrl     = "CENTRAL_SYSTEM_URL"
+	envVarCSMSUrl              = "CSMS_URL"
 	envVarTls                  = "TLS_ENABLED"
 	envVarCACertificate        = "CA_CERTIFICATE_PATH"
 	envVarClientCertificate    = "CLIENT_CERTIFICATE_PATH"
@@ -74,58 +76,110 @@ func setupTlsChargePoint(chargePointID string) ocpp2.ChargingStation {
 
 // exampleRoutine simulates a charge point flow, where
 func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *ChargingStationHandler) {
-	dummyClientIdTag := "12345"
-	chargingConnector := 1
+	dummyClientIdToken := types.IdToken{
+		IdToken: "12345",
+		Type:    types.IdTokenTypeKeyCode,
+	}
 	// Boot
-	bootConf, err := chargingStation.BootNotification(provisioning.BootReasonPowerUp, "model1", "vendor1")
+	bootResp, err := chargingStation.BootNotification(provisioning.BootReasonPowerUp, "model1", "vendor1")
 	checkError(err)
-	logDefault(bootConf.GetFeatureName()).Infof("status: %v, interval: %v, current time: %v", bootConf.Status, bootConf.Interval, bootConf.CurrentTime.String())
-	// Notify connector status
-	updateStatus(stateHandler, 0, core.ChargePointStatusAvailable)
+	logDefault(bootResp.GetFeatureName()).Infof("status: %v, interval: %v, current time: %v", bootResp.Status, bootResp.Interval, bootResp.CurrentTime.String())
+	// Notify EVSE status
+	for eID, e := range stateHandler.evse {
+		updateOperationalStatus(stateHandler, eID, availability.OperationalStatusOperative)
+		// Notify connector status
+		for cID := range e.connectors {
+			updateConnectorStatus(stateHandler, eID, cID, availability.ConnectorStatusAvailable)
+		}
+	}
 	// Wait for some time ...
 	time.Sleep(5 * time.Second)
 	// Simulate charging for connector 1
-	authResp, err := chargingStation.Authorize(dummyClientIdTag, types.IdTokenTypeKeyCode)
-	checkError(err)
-	logDefault(authResp.GetFeatureName()).Infof("status: %v %v", authResp.IdTokenInfo.Status, getExpiryDate(authResp.IdTokenInfo))
-	// Update connector status
-	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusPreparing)
+	// EV is plugged in
+	evseID := 1
+	evse := stateHandler.evse[evseID]
+	chargingConnector := 0
+	updateConnectorStatus(stateHandler, evseID, chargingConnector, availability.ConnectorStatusOccupied)
 	// Start transaction
-	startConf, err := chargingStation.StartTransaction(chargingConnector, dummyClientIdTag, stateHandler.meterValue, types.NewDateTime(time.Now()))
-	checkError(err)
-	logDefault(startConf.GetFeatureName()).Infof("status: %v, transaction %v %v", startConf.IdTagInfo.Status, startConf.TransactionId, getExpiryDate(startConf.IdTagInfo))
-	stateHandler.connectors[chargingConnector].currentTransaction = startConf.TransactionId
-	// Update connector status
-	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusCharging)
-	// Periodically send meter values
-	for i := 0; i < 5; i++ {
-		sampleInterval, ok := stateHandler.configuration.getInt(MeterValueSampleInterval)
-		if !ok {
-			sampleInterval = 5
-		}
-		time.Sleep(time.Second * time.Duration(sampleInterval))
-		stateHandler.meterValue += 10
-		sampledValue := types.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit: types.UnitOfMeasureWh, Format: types.ValueFormatRaw, Measurand: types.MeasurandEnergyActiveExportRegister, Context: types.ReadingContextSamplePeriodic, Location: types.LocationOutlet}
-		meterValue := types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{sampledValue}}
-		meterConf, err := chargingStation.MeterValues(chargingConnector, []types.MeterValue{meterValue})
-		checkError(err)
-		logDefault(meterConf.GetFeatureName()).Infof("sent updated %v", sampledValue.Measurand)
+	tx := transactions.Transaction{
+		TransactionID: pseudoUUID(),
+		ChargingState: transactions.ChargingStateEVConnected,
 	}
-	stateHandler.meterValue += 2
-	// Stop charging for connector 1
-	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusFinishing)
-	stopConf, err := chargingStation.StopTransaction(stateHandler.meterValue, types.NewDateTime(time.Now()), startConf.TransactionId, func(request *core.StopTransactionRequest) {
-		sampledValue := types.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit: types.UnitOfMeasureWh, Format: types.ValueFormatRaw, Measurand: types.MeasurandEnergyActiveExportRegister, Context: types.ReadingContextSamplePeriodic, Location: types.LocationOutlet}
-		meterValue := types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{sampledValue}}
-		request.TransactionData = []types.MeterValue{meterValue}
-		request.Reason = core.ReasonEVDisconnected
+	evseReq := types.EVSE{ID: evseID, ConnectorID: &chargingConnector}
+	txEventResp, err := chargingStation.TransactionEvent(transactions.TransactionEventStarted, types.Now(), transactions.TriggerReasonCablePluggedIn, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+		request.Evse = &evseReq
 	})
 	checkError(err)
-	logDefault(stopConf.GetFeatureName()).Infof("transaction %v stopped", startConf.TransactionId)
-	// Update connector status
-	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusAvailable)
+	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v started", tx.TransactionID)
+	stateHandler.evse[evseID].currentTransaction = tx.TransactionID
+	// Authorize
+	authResp, err := chargingStation.Authorize(dummyClientIdToken.IdToken, types.IdTokenTypeKeyCode)
+	checkError(err)
+	logDefault(authResp.GetFeatureName()).Infof("status: %v %v", authResp.IdTokenInfo.Status, getExpiryDate(&authResp.IdTokenInfo))
+	// Update transaction with auth info
+	txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonAuthorized, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+		request.Evse = &evseReq
+		request.IDToken = &dummyClientIdToken
+	})
+	checkError(err)
+	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v updated", tx.TransactionID)
+	// Update transaction after energy offering starts
+	txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonChargingStateChanged, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+		request.Evse = &evseReq
+		request.IDToken = &dummyClientIdToken
+	})
+	checkError(err)
+	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v updated", tx.TransactionID)
+	// Periodically send meter values
+	var sampleInterval time.Duration = 5
+	//sampleInterval, ok := stateHandler.configuration.getInt(MeterValueSampleInterval)
+	//if !ok {
+	//	sampleInterval = 5
+	//}
+	var sampledValue types.SampledValue
+	for i := 0; i < 5; i++ {
+		time.Sleep(time.Second * sampleInterval)
+		stateHandler.meterValue += 10
+		sampledValue = types.SampledValue{
+			Value:     stateHandler.meterValue,
+			Context:   types.ReadingContextSamplePeriodic,
+			Measurand: types.MeasurandEnergyActiveExportRegister,
+			Phase:     types.PhaseL3,
+			Location:  types.LocationOutlet,
+			UnitOfMeasure: &types.UnitOfMeasure{
+				Unit: "kWh",
+			},
+		}
+		meterValue := types.MeterValue{
+			Timestamp:    types.DateTime{Time: time.Now()},
+			SampledValue: []types.SampledValue{sampledValue},
+		}
+		// Send meter values
+		txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonMeterValuePeriodic, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+			request.MeterValue = []types.MeterValue{meterValue}
+			request.IDToken = &dummyClientIdToken
+		})
+		checkError(err)
+		logDefault(txEventResp.GetFeatureName()).Infof("transaction %v updated with periodic meter values", tx.TransactionID)
+		// Increase meter value
+		stateHandler.meterValue += 2
+	}
+	// Stop charging for connector 1
+	updateConnectorStatus(stateHandler, evseID, chargingConnector, availability.ConnectorStatusAvailable)
+	// Send transaction end data
+	sampledValue.Context = types.ReadingContextTransactionEnd
+	sampledValue.Value = stateHandler.meterValue
+	tx.StoppedReason = transactions.ReasonEVDisconnected
+	txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventEnded, types.Now(), transactions.TriggerReasonEVCommunicationLost, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+		request.Evse = &evseReq
+		request.IDToken = &dummyClientIdToken
+		request.MeterValue = []types.MeterValue{}
+	})
+	checkError(err)
+	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v stopped", tx.TransactionID)
 	// Wait for some time ...
 	time.Sleep(5 * time.Minute)
+	// End simulation
 }
 
 // Start function
@@ -136,9 +190,9 @@ func main() {
 		log.Printf("no %v environment variable found, exiting...", envVarClientID)
 		return
 	}
-	csUrl, ok := os.LookupEnv(envVarCentralSystemUrl)
+	csmsUrl, ok := os.LookupEnv(envVarCSMSUrl)
 	if !ok {
-		log.Printf("no %v environment variable found, exiting...", envVarCentralSystemUrl)
+		log.Printf("no %v environment variable found, exiting...", envVarCSMSUrl)
 		return
 	}
 	// Check if TLS enabled
@@ -151,34 +205,55 @@ func main() {
 		chargingStation = setupChargePoint(id)
 	}
 	// Setup some basic state management
-	connectors := map[int]*ConnectorInfo{
-		1: {status: core.ChargePointStatusAvailable, availability: core.AvailabilityTypeOperative, currentTransaction: 0},
+	evse := EVSEInfo{
+		availability:       availability.OperationalStatusOperative,
+		currentTransaction: "",
+		currentReservation: 0,
+		connectors: map[int]ConnectorInfo{
+			0: {
+				status:       availability.ConnectorStatusAvailable,
+				availability: availability.OperationalStatusOperative,
+				typ:          reservation.ConnectorTypeCType2,
+			},
+		},
+		seqNo: 0,
 	}
 	handler := &ChargingStationHandler{
-		status:               core.ChargePointStatusAvailable,
-		connectors:           connectors,
-		configuration:        getDefaultConfig(),
-		errorCode:            core.NoError,
+		model:                "model1",
+		vendor:               "vendor1",
+		availability:         availability.OperationalStatusOperative,
+		evse:                 map[int]*EVSEInfo{1: &evse},
 		localAuthList:        []localauth.AuthorizationData{},
-		localAuthListVersion: 0}
-	// Support callbacks for all OCPP 1.6 profiles
-	chargingStation.SetCoreHandler(handler)
-	chargingStation.SetFirmwareManagementHandler(handler)
+		localAuthListVersion: 0,
+		monitoringLevel:      0,
+		meterValue:           0,
+	}
+	// Support callbacks for all OCPP 2.0.1 profiles
+	chargingStation.SetAvailabilityHandler(handler)
+	chargingStation.SetAuthorizationHandler(handler)
+	chargingStation.SetDataHandler(handler)
+	chargingStation.SetDiagnosticsHandler(handler)
+	chargingStation.SetDisplayHandler(handler)
+	chargingStation.SetFirmwareHandler(handler)
+	chargingStation.SetISO15118Handler(handler)
 	chargingStation.SetLocalAuthListHandler(handler)
+	chargingStation.SetProvisioningHandler(handler)
+	chargingStation.SetRemoteControlHandler(handler)
 	chargingStation.SetReservationHandler(handler)
-	chargingStation.SetRemoteTriggerHandler(handler)
 	chargingStation.SetSmartChargingHandler(handler)
+	chargingStation.SetTariffCostHandler(handler)
+	chargingStation.SetTransactionsHandler(handler)
 	ocppj.SetLogger(log)
 	// Connects to central system
-	err := chargingStation.Start(csUrl)
+	err := chargingStation.Start(csmsUrl)
 	if err != nil {
-		log.Errorln(err)
+		log.Error(err)
 	} else {
-		log.Infof("connected to central system at %v", csUrl)
+		log.Infof("connected to CSMS at %v", csmsUrl)
 		exampleRoutine(chargingStation, handler)
 		// Disconnect
 		chargingStation.Stop()
-		log.Infof("disconnected from central system")
+		log.Infof("disconnected from CSMS")
 	}
 }
 

@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
+	"math/rand"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/remotecontrol"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"math/rand"
-	"time"
 )
 
 func (handler *ChargingStationHandler) OnRequestStartTransaction(request *remotecontrol.RequestStartTransactionRequest) (response *remotecontrol.RequestStartTransactionResponse, err error) {
@@ -46,7 +45,9 @@ func (handler *ChargingStationHandler) OnRequestStopTransaction(request *remotec
 			// Find the currently occupied connector
 			for i, c := range evse.connectors {
 				if c.status == availability.ConnectorStatusOccupied {
-					evse.connectors[i].status = availability.ConnectorStatusAvailable
+					connector := evse.connectors[i]
+					connector.status = availability.ConnectorStatusAvailable
+					evse.connectors[i] = connector
 					break
 				}
 			}
@@ -75,7 +76,7 @@ func (handler *ChargingStationHandler) OnTriggerMessage(request *remotecontrol.T
 			reqID := rand.Int()
 			_, e := chargingStation.LogStatusNotification(diagnostics.UploadLogStatusUploading, reqID)
 			checkError(e)
-			logDefault(firmware.DiagnosticsStatusNotificationFeatureName).Info("diagnostics status notified")
+			logDefault(diagnostics.LogStatusNotificationFeatureName).Info("diagnostics status notified")
 		}()
 		status = remotecontrol.TriggerMessageStatusAccepted
 	case remotecontrol.MessageTriggerFirmwareStatusNotification:
@@ -89,7 +90,7 @@ func (handler *ChargingStationHandler) OnTriggerMessage(request *remotecontrol.T
 			logDefault(availability.HeartbeatFeatureName).Infof("clock synchronized: %v", resp.CurrentTime.FormatTimestamp())
 		}()
 		status = remotecontrol.TriggerMessageStatusAccepted
-	case core.MeterValuesFeatureName:
+	case remotecontrol.MessageTriggerMeterValues:
 		// Schedule meter values update
 		//TODO: schedule meter values message
 		break

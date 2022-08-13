@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -10,15 +11,15 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/display"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/remotecontrol"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
-	types2 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
@@ -83,10 +84,10 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	time.Sleep(2 * time.Second)
 	// Reserve a connector
 	reservationID := 42
-	clientIDTokenType := types2.IdTokenTypeKeyCode
+	clientIDTokenType := types.IdTokenTypeKeyCode
 	clientIdTag := "l33t"
 	connectorID := 1
-	expiryDate := types2.NewDateTime(time.Now().Add(1 * time.Hour))
+	expiryDate := types.NewDateTime(time.Now().Add(1 * time.Hour))
 	cb1 := func(confirmation *reservation.ReserveNowResponse, err error) {
 		if err != nil {
 			logDefault(chargePointID, reservation.ReserveNowFeatureName).Errorf("error on request: %v", err)
@@ -137,34 +138,35 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	time.Sleep(5 * time.Second)
 	setVariableData := []provisioning.SetVariableData{
 		{
-			AttributeType:  types2.AttributeTarget,
+			AttributeType:  types.AttributeTarget,
 			AttributeValue: "10",
-			Component:      types2.Component{Name: "OCPPCommCtrlr"},
-			Variable:       types2.Variable{Name: "HeartbeatInterval"},
+			Component:      types.Component{Name: "OCPPCommCtrlr"},
+			Variable:       types.Variable{Name: "HeartbeatInterval"},
 		},
 		{
-			AttributeType:  types2.AttributeTarget,
+			AttributeType:  types.AttributeTarget,
 			AttributeValue: "true",
-			Component:      types2.Component{Name: "AuthCtrlr"},
-			Variable:       types2.Variable{Name: "Enabled"},
+			Component:      types.Component{Name: "AuthCtrlr"},
+			Variable:       types.Variable{Name: "Enabled"},
 		},
 	}
 	// Change meter sampling values time
-	cb4 := func(confirmation *provisioning.SetVariablesResponse, err error) {
+	cb4 := func(response *provisioning.SetVariablesResponse, err error) {
 		if err != nil {
 			logDefault(chargePointID, provisioning.SetVariablesFeatureName).Errorf("error on request: %v", err)
+			return
 		}
-		for _, r := range confirmation.SetVariableResult {
+		for _, r := range response.SetVariableResult {
 			if r.AttributeStatus == provisioning.SetVariableStatusNotSupported {
-				logDefault(chargePointID, confirmation.GetFeatureName()).Warnf("couldn't update variable %v for component %v: unsupported", r.Variable.Name, r.Component.Name)
+				logDefault(chargePointID, response.GetFeatureName()).Warnf("couldn't update variable %v for component %v: unsupported", r.Variable.Name, r.Component.Name)
 			} else if r.AttributeStatus == provisioning.SetVariableStatusUnknownComponent {
-				logDefault(chargePointID, confirmation.GetFeatureName()).Warnf("couldn't update variable for unknown component %v", r.Component.Name)
+				logDefault(chargePointID, response.GetFeatureName()).Warnf("couldn't update variable for unknown component %v", r.Component.Name)
 			} else if r.AttributeStatus == provisioning.SetVariableStatusUnknownVariable {
-				logDefault(chargePointID, confirmation.GetFeatureName()).Warnf("couldn't update unknown variable %v for component %v", r.Variable.Name, r.Component.Name)
+				logDefault(chargePointID, response.GetFeatureName()).Warnf("couldn't update unknown variable %v for component %v", r.Variable.Name, r.Component.Name)
 			} else if r.AttributeStatus == provisioning.SetVariableStatusRejected {
-				logDefault(chargePointID, confirmation.GetFeatureName()).Warnf("couldn't update variable %v for key: %v", r.Variable.Name, r.Component.Name)
+				logDefault(chargePointID, response.GetFeatureName()).Warnf("couldn't update variable %v for key: %v", r.Variable.Name, r.Component.Name)
 			} else {
-				logDefault(chargePointID, confirmation.GetFeatureName()).Infof("updated variable %v for component %v", r.Variable.Name, r.Component.Name)
+				logDefault(chargePointID, response.GetFeatureName()).Infof("updated variable %v for component %v", r.Variable.Name, r.Component.Name)
 			}
 		}
 	}
@@ -177,16 +179,16 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	// Wait for some time
 	time.Sleep(5 * time.Second)
 	// Trigger a heartbeat message
-	cb5 := func(confirmation *remotecontrol.TriggerMessageResponse, err error) {
+	cb5 := func(response *remotecontrol.TriggerMessageResponse, err error) {
 		if err != nil {
 			logDefault(chargePointID, remotecontrol.TriggerMessageFeatureName).Errorf("error on request: %v", err)
-		} else if confirmation.Status == remotecontrol.TriggerMessageStatusAccepted {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v triggered successfully", availability.HeartbeatFeatureName)
-		} else if confirmation.Status == remotecontrol.TriggerMessageStatusRejected {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v trigger was rejected", availability.HeartbeatFeatureName)
+		} else if response.Status == remotecontrol.TriggerMessageStatusAccepted {
+			logDefault(chargePointID, response.GetFeatureName()).Infof("%v triggered successfully", availability.HeartbeatFeatureName)
+		} else if response.Status == remotecontrol.TriggerMessageStatusRejected {
+			logDefault(chargePointID, response.GetFeatureName()).Infof("%v trigger was rejected", availability.HeartbeatFeatureName)
 		}
 	}
-	e = csms.TriggerMessage(chargePointID, cb5, core.HeartbeatFeatureName)
+	e = csms.TriggerMessage(chargePointID, cb5, remotecontrol.MessageTriggerHeartbeat)
 	if e != nil {
 		logDefault(chargePointID, remotecontrol.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -195,16 +197,16 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	// Wait for some time
 	time.Sleep(5 * time.Second)
 	// Trigger a diagnostics status notification
-	cb6 := func(confirmation *remotecontrol.TriggerMessageResponse, err error) {
+	cb6 := func(response *remotecontrol.TriggerMessageResponse, err error) {
 		if err != nil {
 			logDefault(chargePointID, remotecontrol.TriggerMessageFeatureName).Errorf("error on request: %v", err)
-		} else if confirmation.Status == remotecontrol.TriggerMessageStatusAccepted {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v triggered successfully", diagnostics.LogStatusNotificationFeatureName)
-		} else if confirmation.Status == remotecontrol.TriggerMessageStatusRejected {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v trigger was rejected", diagnostics.LogStatusNotificationFeatureName)
+		} else if response.Status == remotecontrol.TriggerMessageStatusAccepted {
+			logDefault(chargePointID, response.GetFeatureName()).Infof("%v triggered successfully", diagnostics.LogStatusNotificationFeatureName)
+		} else if response.Status == remotecontrol.TriggerMessageStatusRejected {
+			logDefault(chargePointID, response.GetFeatureName()).Infof("%v trigger was rejected", diagnostics.LogStatusNotificationFeatureName)
 		}
 	}
-	e = csms.TriggerMessage(chargePointID, cb6, diagnostics.LogStatusNotificationFeatureName)
+	e = csms.TriggerMessage(chargePointID, cb6, remotecontrol.MessageTriggerLogStatusNotification)
 	if e != nil {
 		logDefault(chargePointID, remotecontrol.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -212,7 +214,37 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 
 	// Wait for some time
 	time.Sleep(5 * time.Second)
-	// Trigger a
+	// Set a custom display message
+	cb7 := func(response *display.SetDisplayMessageResponse, err error) {
+		if err != nil {
+			logDefault(chargePointID, display.SetDisplayMessageFeatureName).Errorf("error on request: %v", err)
+		} else if response.Status == display.DisplayMessageStatusAccepted {
+			logDefault(chargePointID, response.GetFeatureName()).Info("display message set successfully")
+		} else {
+			logDefault(chargePointID, response.GetFeatureName()).Errorf("failed to set display message: %v", response.Status)
+		}
+	}
+	var currentTx int
+	for txID := range handler.chargingStations[chargePointID].transactions {
+		currentTx = txID
+		break
+	}
+	e = csms.SetDisplayMessage(chargePointID, cb7, display.MessageInfo{
+		ID:            42,
+		Priority:      display.MessagePriorityInFront,
+		State:         display.MessageStateCharging,
+		TransactionID: fmt.Sprintf("%d", currentTx),
+		Message: types.MessageContent{
+			Format:   types.MessageFormatUTF8,
+			Language: "en-US",
+			Content:  "Hello world!",
+		},
+	})
+	if e != nil {
+		logDefault(chargePointID, display.SetDisplayMessageFeatureName).Errorf("couldn't send message: %v", e)
+		return
+	}
+	// Finish simulation
 }
 
 // Start function
