@@ -7,24 +7,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-      - uses: docker/setup-buildx-action@v1
+        uses: actions/checkout@v3
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Release Central System 1.6 example
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           push: true
           tags: ldonini/ocpp1.6-central-system:${{ github.event.release.tag_name }}
           file: example/1.6/cs/Dockerfile
           context: .
       - name: Release Charge Point 1.6 example
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           push: true
           tags: ldonini/ocpp1.6-charge-point:${{ github.event.release.tag_name }}
           file: example/1.6/cp/Dockerfile
+          context: .
+      - name: Release CSMS 2.0.1 example
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: ldonini/ocpp2.0.1-csms:${{ github.event.release.tag_name }}
+          file: example/2.0.1/csms/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          context: .
+      - name: Release charging station 2.0.1 example
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: ldonini/ocpp2.0.1-chargingstation:${{ github.event.release.tag_name }}
+          file: example/2.0.1/chargingstation/Dockerfile
+          platforms: linux/amd64,linux/arm64
           context: .
