@@ -4,7 +4,7 @@ mkdir -p certs/csms
 mkdir -p certs/chargingstation
 cd certs
 # Create CA
-openssl req -new -x509 -nodes -days 120 -extensions v3_ca -keyout ca.key -out ca.crt -subj "/CN=ocpp-go-example"
+openssl req -new -x509 -nodes -sha256 -days 120 -extensions v3_ca -keyout ca.key -out ca.crt -subj "/CN=ocpp-go-example"
 # Generate self-signed CSMS certificate
 openssl genrsa -out csms/csms.key 4096
 openssl req -new -out csms/csms.csr -key csms/csms.key -config ../openssl-csms.conf -sha256
