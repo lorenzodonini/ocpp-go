@@ -33,11 +33,11 @@ const (
 
 var log *logrus.Logger
 
-func setupChargePoint(chargePointID string) ocpp2.ChargingStation {
-	return ocpp2.NewChargingStation(chargePointID, nil, nil)
+func setupChargingStation(chargingStationID string) ocpp2.ChargingStation {
+	return ocpp2.NewChargingStation(chargingStationID, nil, nil)
 }
 
-func setupTlsChargePoint(chargePointID string) ocpp2.ChargingStation {
+func setupTlsChargingStation(chargingStationID string) ocpp2.ChargingStation {
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Fatal(err)
@@ -71,10 +71,11 @@ func setupTlsChargePoint(chargePointID string) ocpp2.ChargingStation {
 		RootCAs:      certPool,
 		Certificates: clientCertificates,
 	})
-	return ocpp2.NewChargingStation(chargePointID, nil, client)
+	return ocpp2.NewChargingStation(chargingStationID, nil, client)
 }
 
-// exampleRoutine simulates a charge point flow, where
+// exampleRoutine simulates a charging station flow, where a dummy transaction is started.
+// The simulation runs for about 5 minutes.
 func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *ChargingStationHandler) {
 	dummyClientIdToken := types.IdToken{
 		IdToken: "12345",
@@ -198,11 +199,11 @@ func main() {
 	// Check if TLS enabled
 	t, _ := os.LookupEnv(envVarTls)
 	tlsEnabled, _ := strconv.ParseBool(t)
-	// Prepare OCPP 1.6 charge point (chargePoint variable is defined in handler.go)
+	// Prepare OCPP 2.0.1 charging station (chargingStation variable is defined in handler.go)
 	if tlsEnabled {
-		chargingStation = setupTlsChargePoint(id)
+		chargingStation = setupTlsChargingStation(id)
 	} else {
-		chargingStation = setupChargePoint(id)
+		chargingStation = setupChargingStation(id)
 	}
 	// Setup some basic state management
 	evse := EVSEInfo{
