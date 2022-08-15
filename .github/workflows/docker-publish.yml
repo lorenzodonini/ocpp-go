@@ -45,7 +45,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: ldonini/ocpp2.0.1-chargingstation:latest
+          tags: ldonini/ocpp2.0.1-charging-station:latest
           file: example/2.0.1/chargingstation/Dockerfile
           platforms: linux/amd64,linux/arm64
           context: .
