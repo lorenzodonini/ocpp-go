@@ -78,8 +78,8 @@ func setupTlsCentralSystem() ocpp2.CSMS {
 	return ocpp2.NewCSMS(nil, server)
 }
 
-// Run for every connected Charge Point, to simulate some functionality
-func exampleRoutine(chargePointID string, handler *CSMSHandler) {
+// Run for every connected Charging Station, to simulate some functionality
+func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 	// Wait for some time
 	time.Sleep(2 * time.Second)
 	// Reserve a connector
@@ -90,16 +90,16 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	expiryDate := types.NewDateTime(time.Now().Add(1 * time.Hour))
 	cb1 := func(confirmation *reservation.ReserveNowResponse, err error) {
 		if err != nil {
-			logDefault(chargePointID, reservation.ReserveNowFeatureName).Errorf("error on request: %v", err)
+			logDefault(chargingStationID, reservation.ReserveNowFeatureName).Errorf("error on request: %v", err)
 		} else if confirmation.Status == reservation.ReserveNowStatusAccepted {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("connector %v reserved for client %v until %v (reservation ID %d)", connectorID, clientIdTag, expiryDate.FormatTimestamp(), reservationID)
+			logDefault(chargingStationID, confirmation.GetFeatureName()).Infof("connector %v reserved for client %v until %v (reservation ID %d)", connectorID, clientIdTag, expiryDate.FormatTimestamp(), reservationID)
 		} else {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("couldn't reserve connector %v: %v", connectorID, confirmation.Status)
+			logDefault(chargingStationID, confirmation.GetFeatureName()).Infof("couldn't reserve connector %v: %v", connectorID, confirmation.Status)
 		}
 	}
-	e := csms.ReserveNow(chargePointID, cb1, reservationID, expiryDate, clientIDTokenType)
+	e := csms.ReserveNow(chargingStationID, cb1, reservationID, expiryDate, clientIDTokenType)
 	if e != nil {
-		logDefault(chargePointID, reservation.ReserveNowFeatureName).Errorf("couldn't send message: %v", e)
+		logDefault(chargingStationID, reservation.ReserveNowFeatureName).Errorf("couldn't send message: %v", e)
 		return
 	}
 	// Wait for some time
@@ -107,16 +107,16 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	// Cancel the reservation
 	cb2 := func(confirmation *reservation.CancelReservationResponse, err error) {
 		if err != nil {
-			logDefault(chargePointID, reservation.CancelReservationFeatureName).Errorf("error on request: %v", err)
+			logDefault(chargingStationID, reservation.CancelReservationFeatureName).Errorf("error on request: %v", err)
 		} else if confirmation.Status == reservation.CancelReservationStatusAccepted {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("reservation %v canceled successfully", reservationID)
+			logDefault(chargingStationID, confirmation.GetFeatureName()).Infof("reservation %v canceled successfully", reservationID)
 		} else {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("couldn't cancel reservation %v", reservationID)
+			logDefault(chargingStationID, confirmation.GetFeatureName()).Infof("couldn't cancel reservation %v", reservationID)
 		}
 	}
-	e = csms.CancelReservation(chargePointID, cb2, reservationID)
+	e = csms.CancelReservation(chargingStationID, cb2, reservationID)
 	if e != nil {
-		logDefault(chargePointID, reservation.ReserveNowFeatureName).Errorf("couldn't send message: %v", e)
+		logDefault(chargingStationID, reservation.ReserveNowFeatureName).Errorf("couldn't send message: %v", e)
 		return
 	}
 	// Wait for some time
@@ -124,14 +124,14 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	// Get current local list version
 	cb3 := func(confirmation *localauth.GetLocalListVersionResponse, err error) {
 		if err != nil {
-			logDefault(chargePointID, localauth.GetLocalListVersionFeatureName).Errorf("error on request: %v", err)
+			logDefault(chargingStationID, localauth.GetLocalListVersionFeatureName).Errorf("error on request: %v", err)
 		} else {
-			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("current local list version: %v", confirmation.VersionNumber)
+			logDefault(chargingStationID, confirmation.GetFeatureName()).Infof("current local list version: %v", confirmation.VersionNumber)
 		}
 	}
-	e = csms.GetLocalListVersion(chargePointID, cb3)
+	e = csms.GetLocalListVersion(chargingStationID, cb3)
 	if e != nil {
-		logDefault(chargePointID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
+		logDefault(chargingStationID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
 		return
 	}
 	// Wait for some time
@@ -153,26 +153,26 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	// Change meter sampling values time
 	cb4 := func(response *provisioning.SetVariablesResponse, err error) {
 		if err != nil {
-			logDefault(chargePointID, provisioning.SetVariablesFeatureName).Errorf("error on request: %v", err)
+			logDefault(chargingStationID, provisioning.SetVariablesFeatureName).Errorf("error on request: %v", err)
 			return
 		}
 		for _, r := range response.SetVariableResult {
 			if r.AttributeStatus == provisioning.SetVariableStatusNotSupported {
-				logDefault(chargePointID, response.GetFeatureName()).Warnf("couldn't update variable %v for component %v: unsupported", r.Variable.Name, r.Component.Name)
+				logDefault(chargingStationID, response.GetFeatureName()).Warnf("couldn't update variable %v for component %v: unsupported", r.Variable.Name, r.Component.Name)
 			} else if r.AttributeStatus == provisioning.SetVariableStatusUnknownComponent {
-				logDefault(chargePointID, response.GetFeatureName()).Warnf("couldn't update variable for unknown component %v", r.Component.Name)
+				logDefault(chargingStationID, response.GetFeatureName()).Warnf("couldn't update variable for unknown component %v", r.Component.Name)
 			} else if r.AttributeStatus == provisioning.SetVariableStatusUnknownVariable {
-				logDefault(chargePointID, response.GetFeatureName()).Warnf("couldn't update unknown variable %v for component %v", r.Variable.Name, r.Component.Name)
+				logDefault(chargingStationID, response.GetFeatureName()).Warnf("couldn't update unknown variable %v for component %v", r.Variable.Name, r.Component.Name)
 			} else if r.AttributeStatus == provisioning.SetVariableStatusRejected {
-				logDefault(chargePointID, response.GetFeatureName()).Warnf("couldn't update variable %v for key: %v", r.Variable.Name, r.Component.Name)
+				logDefault(chargingStationID, response.GetFeatureName()).Warnf("couldn't update variable %v for key: %v", r.Variable.Name, r.Component.Name)
 			} else {
-				logDefault(chargePointID, response.GetFeatureName()).Infof("updated variable %v for component %v", r.Variable.Name, r.Component.Name)
+				logDefault(chargingStationID, response.GetFeatureName()).Infof("updated variable %v for component %v", r.Variable.Name, r.Component.Name)
 			}
 		}
 	}
-	e = csms.SetVariables(chargePointID, cb4, setVariableData)
+	e = csms.SetVariables(chargingStationID, cb4, setVariableData)
 	if e != nil {
-		logDefault(chargePointID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
+		logDefault(chargingStationID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
 		return
 	}
 
@@ -181,16 +181,16 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	// Trigger a heartbeat message
 	cb5 := func(response *remotecontrol.TriggerMessageResponse, err error) {
 		if err != nil {
-			logDefault(chargePointID, remotecontrol.TriggerMessageFeatureName).Errorf("error on request: %v", err)
+			logDefault(chargingStationID, remotecontrol.TriggerMessageFeatureName).Errorf("error on request: %v", err)
 		} else if response.Status == remotecontrol.TriggerMessageStatusAccepted {
-			logDefault(chargePointID, response.GetFeatureName()).Infof("%v triggered successfully", availability.HeartbeatFeatureName)
+			logDefault(chargingStationID, response.GetFeatureName()).Infof("%v triggered successfully", availability.HeartbeatFeatureName)
 		} else if response.Status == remotecontrol.TriggerMessageStatusRejected {
-			logDefault(chargePointID, response.GetFeatureName()).Infof("%v trigger was rejected", availability.HeartbeatFeatureName)
+			logDefault(chargingStationID, response.GetFeatureName()).Infof("%v trigger was rejected", availability.HeartbeatFeatureName)
 		}
 	}
-	e = csms.TriggerMessage(chargePointID, cb5, remotecontrol.MessageTriggerHeartbeat)
+	e = csms.TriggerMessage(chargingStationID, cb5, remotecontrol.MessageTriggerHeartbeat)
 	if e != nil {
-		logDefault(chargePointID, remotecontrol.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
+		logDefault(chargingStationID, remotecontrol.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return
 	}
 
@@ -199,16 +199,16 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	// Trigger a diagnostics status notification
 	cb6 := func(response *remotecontrol.TriggerMessageResponse, err error) {
 		if err != nil {
-			logDefault(chargePointID, remotecontrol.TriggerMessageFeatureName).Errorf("error on request: %v", err)
+			logDefault(chargingStationID, remotecontrol.TriggerMessageFeatureName).Errorf("error on request: %v", err)
 		} else if response.Status == remotecontrol.TriggerMessageStatusAccepted {
-			logDefault(chargePointID, response.GetFeatureName()).Infof("%v triggered successfully", diagnostics.LogStatusNotificationFeatureName)
+			logDefault(chargingStationID, response.GetFeatureName()).Infof("%v triggered successfully", diagnostics.LogStatusNotificationFeatureName)
 		} else if response.Status == remotecontrol.TriggerMessageStatusRejected {
-			logDefault(chargePointID, response.GetFeatureName()).Infof("%v trigger was rejected", diagnostics.LogStatusNotificationFeatureName)
+			logDefault(chargingStationID, response.GetFeatureName()).Infof("%v trigger was rejected", diagnostics.LogStatusNotificationFeatureName)
 		}
 	}
-	e = csms.TriggerMessage(chargePointID, cb6, remotecontrol.MessageTriggerLogStatusNotification)
+	e = csms.TriggerMessage(chargingStationID, cb6, remotecontrol.MessageTriggerLogStatusNotification)
 	if e != nil {
-		logDefault(chargePointID, remotecontrol.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
+		logDefault(chargingStationID, remotecontrol.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return
 	}
 
@@ -217,19 +217,19 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 	// Set a custom display message
 	cb7 := func(response *display.SetDisplayMessageResponse, err error) {
 		if err != nil {
-			logDefault(chargePointID, display.SetDisplayMessageFeatureName).Errorf("error on request: %v", err)
+			logDefault(chargingStationID, display.SetDisplayMessageFeatureName).Errorf("error on request: %v", err)
 		} else if response.Status == display.DisplayMessageStatusAccepted {
-			logDefault(chargePointID, response.GetFeatureName()).Info("display message set successfully")
+			logDefault(chargingStationID, response.GetFeatureName()).Info("display message set successfully")
 		} else {
-			logDefault(chargePointID, response.GetFeatureName()).Errorf("failed to set display message: %v", response.Status)
+			logDefault(chargingStationID, response.GetFeatureName()).Errorf("failed to set display message: %v", response.Status)
 		}
 	}
 	var currentTx int
-	for txID := range handler.chargingStations[chargePointID].transactions {
+	for txID := range handler.chargingStations[chargingStationID].transactions {
 		currentTx = txID
 		break
 	}
-	e = csms.SetDisplayMessage(chargePointID, cb7, display.MessageInfo{
+	e = csms.SetDisplayMessage(chargingStationID, cb7, display.MessageInfo{
 		ID:            42,
 		Priority:      display.MessagePriorityInFront,
 		State:         display.MessageStateCharging,
@@ -241,7 +241,7 @@ func exampleRoutine(chargePointID string, handler *CSMSHandler) {
 		},
 	})
 	if e != nil {
-		logDefault(chargePointID, display.SetDisplayMessageFeatureName).Errorf("couldn't send message: %v", e)
+		logDefault(chargingStationID, display.SetDisplayMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return
 	}
 	// Finish simulation
@@ -279,15 +279,15 @@ func main() {
 	csms.SetReservationHandler(handler)
 	csms.SetTariffCostHandler(handler)
 	csms.SetTransactionsHandler(handler)
-	// Add handlers for dis/connection of charge points
-	csms.SetNewChargingStationHandler(func(chargePoint ocpp2.ChargingStationConnection) {
-		handler.chargingStations[chargePoint.ID()] = &ChargingStationState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
-		log.WithField("client", chargePoint.ID()).Info("new charging station connected")
-		go exampleRoutine(chargePoint.ID(), handler)
+	// Add handlers for dis/connection of charging stations
+	csms.SetNewChargingStationHandler(func(chargingStation ocpp2.ChargingStationConnection) {
+		handler.chargingStations[chargingStation.ID()] = &ChargingStationState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
+		log.WithField("client", chargingStation.ID()).Info("new charging station connected")
+		go exampleRoutine(chargingStation.ID(), handler)
 	})
-	csms.SetChargingStationDisconnectedHandler(func(chargePoint ocpp2.ChargingStationConnection) {
-		log.WithField("client", chargePoint.ID()).Info("charging station disconnected")
-		delete(handler.chargingStations, chargePoint.ID())
+	csms.SetChargingStationDisconnectedHandler(func(chargingStation ocpp2.ChargingStationConnection) {
+		log.WithField("client", chargingStation.ID()).Info("charging station disconnected")
+		delete(handler.chargingStations, chargingStation.ID())
 	})
 	ocppj.SetLogger(log)
 	// Run CSMS
