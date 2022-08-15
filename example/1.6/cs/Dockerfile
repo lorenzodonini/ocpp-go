@@ -9,7 +9,7 @@ COPY . .
 # Fetch dependencies.
 RUN go mod download
 # Build the binary.
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/central_system example/1.6/cs/*.go
+RUN go build -ldflags="-w -s" -o /go/bin/central_system example/1.6/cs/*.go
 
 ############################
 # STEP 2 build a small image
