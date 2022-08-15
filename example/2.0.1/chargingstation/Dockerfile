@@ -9,7 +9,7 @@ COPY . .
 # Fetch dependencies.
 RUN go mod download
 # Build the binary.
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/charging_station example/2.0.1/chargingstation/*.go
+RUN go build -ldflags="-w -s" -o /go/bin/charging_station example/2.0.1/chargingstation/*.go
 
 ############################
 # STEP 2 build a small image
@@ -23,4 +23,4 @@ COPY --from=builder /go/bin/charging_station /bin/charging_station
 # Ignore the warning.
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/* && update-ca-certificates
 
-CMD [ "charge_point" ]
+CMD [ "charging_station" ]

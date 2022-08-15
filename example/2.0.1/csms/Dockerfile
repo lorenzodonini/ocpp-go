@@ -9,7 +9,7 @@ COPY . .
 # Fetch dependencies.
 RUN go mod download
 # Build the binary.
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/csms example/2.0.1/csms/*.go
+RUN go build -ldflags="-w -s" -o /go/bin/csms example/2.0.1/csms/*.go
 
 ############################
 # STEP 2 build a small image

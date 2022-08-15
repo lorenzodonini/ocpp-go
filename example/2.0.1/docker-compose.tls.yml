@@ -1,0 +1,45 @@
+version: '3'
+services:
+  csms:
+    build:
+      context: ../..
+      dockerfile: csms/Dockerfile
+    image: ldonini/ocpp2.0.1-csms:latest
+    container_name: csms
+    volumes:
+      - ./certs/csms:/usr/local/share/certs
+      - ./certs/ca.crt:/usr/local/share/certs/ca.crt
+    environment:
+      - SERVER_LISTEN_PORT=443
+      - TLS_ENABLED=true
+      - CA_CERTIFICATE_PATH=/usr/local/share/certs/ca.crt
+      - SERVER_CERTIFICATE_PATH=/usr/local/share/certs/csms.crt
+      - SERVER_CERTIFICATE_KEY_PATH=/usr/local/share/certs/csms.key
+    ports:
+      - "443:443"
+    networks:
+      - sim
+    tty: true
+  charging-station:
+    build:
+      context: ../..
+      dockerfile: chargingstation/Dockerfile
+    image: ldonini/ocpp2.0.1-chargingstation:latest
+    container_name: charging-station
+    volumes:
+      - ./certs/chargingstation:/usr/local/share/certs
+      - ./certs/ca.crt:/usr/local/share/certs/ca.crt
+    environment:
+      - CLIENT_ID=chargingStationSim
+      - CSMS_URL=wss://csms:443
+      - TLS_ENABLED=true
+      - CA_CERTIFICATE_PATH=/usr/local/share/certs/ca.crt
+      - CLIENT_CERTIFICATE_PATH=/usr/local/share/certs/charging-station.crt
+      - CLIENT_CERTIFICATE_KEY_PATH=/usr/local/share/certs/charging-station.key
+    networks:
+      - sim
+    tty: true
+
+networks:
+  sim:
+    driver: bridge
