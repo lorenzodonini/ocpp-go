@@ -2,19 +2,20 @@ package ocpp16_test
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"time"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestGetDiagnosticsRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10), StartTime: types.NewDateTime(time.Now()), EndTime: types.NewDateTime(time.Now())}, true},
+		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10), StartTime: types.NewDateTime(time.Now()), StopTime: types.NewDateTime(time.Now())}, true},
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10), StartTime: types.NewDateTime(time.Now())}, true},
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10)}, true},
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10)}, true},
@@ -48,9 +49,9 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 	retries := newInt(10)
 	retryInterval := newInt(600)
 	startTime := types.NewDateTime(time.Now().Add(-10 * time.Hour * 24))
-	endTime := types.NewDateTime(time.Now())
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"location":"%v","retries":%v,"retryInterval":%v,"startTime":"%v","endTime":"%v"}]`,
-		messageId, firmware.GetDiagnosticsFeatureName, location, *retries, *retryInterval, startTime.FormatTimestamp(), endTime.FormatTimestamp())
+	stopTime := types.NewDateTime(time.Now())
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"location":"%v","retries":%v,"retryInterval":%v,"startTime":"%v","stopTime":"%v"}]`,
+		messageId, firmware.GetDiagnosticsFeatureName, location, *retries, *retryInterval, startTime.FormatTimestamp(), stopTime.FormatTimestamp())
 	responseJson := fmt.Sprintf(`[3,"%v",{"fileName":"%v"}]`, messageId, fileName)
 	getDiagnosticsConfirmation := firmware.NewGetDiagnosticsConfirmation()
 	getDiagnosticsConfirmation.FileName = fileName
@@ -67,7 +68,7 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 		require.NotNil(t, request.RetryInterval)
 		assert.Equal(t, *retryInterval, *request.RetryInterval)
 		assertDateTimeEquality(t, *startTime, *request.StartTime)
-		assertDateTimeEquality(t, *endTime, *request.EndTime)
+		assertDateTimeEquality(t, *stopTime, *request.StopTime)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	suite.chargePoint.SetFirmwareManagementHandler(firmwareListener)
@@ -86,7 +87,7 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 		request.RetryInterval = retryInterval
 		request.Retries = retries
 		request.StartTime = startTime
-		request.EndTime = endTime
+		request.StopTime = stopTime
 	})
 	require.Nil(t, err)
 	result := <-resultChannel
@@ -99,9 +100,9 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsInvalidEndpoint() {
 	retries := 10
 	retryInterval := 600
 	startTime := types.NewDateTime(time.Now().Add(-10 * time.Hour * 24))
-	endTime := types.NewDateTime(time.Now())
+	stopTime := types.NewDateTime(time.Now())
 	localListVersionRequest := firmware.NewGetDiagnosticsRequest(location)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"location":"%v","retries":%v,"retryInterval":%v,"startTime":"%v","endTime":"%v"}]`,
-		messageId, firmware.GetDiagnosticsFeatureName, location, retries, retryInterval, startTime.FormatTimestamp(), endTime.FormatTimestamp())
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"location":"%v","retries":%v,"retryInterval":%v,"startTime":"%v","stopTime":"%v"}]`,
+		messageId, firmware.GetDiagnosticsFeatureName, location, retries, retryInterval, startTime.FormatTimestamp(), stopTime.FormatTimestamp())
 	testUnsupportedRequestFromChargePoint(suite, localListVersionRequest, requestJson, messageId)
 }

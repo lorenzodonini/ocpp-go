@@ -1,8 +1,9 @@
 package firmware
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 // -------------------- Get Diagnostics (CS -> CP) --------------------
@@ -15,7 +16,7 @@ type GetDiagnosticsRequest struct {
 	Retries       *int            `json:"retries,omitempty" validate:"omitempty,gte=0"`
 	RetryInterval *int            `json:"retryInterval,omitempty" validate:"omitempty,gte=0"`
 	StartTime     *types.DateTime `json:"startTime,omitempty"`
-	EndTime       *types.DateTime `json:"endTime,omitempty"`
+	StopTime      *types.DateTime `json:"stopTime,omitempty"`
 }
 
 // This field definition of the GetDiagnostics confirmation payload, sent by the Charge Point to the Central System in response to a GetDiagnosticsRequest.
