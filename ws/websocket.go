@@ -750,6 +750,7 @@ func NewClient() *Client {
 	}
 }
 
+// DefaultSubProtocol creates a dialer option that adds the ocpp1.6 subprotocol
 func DefaultSubProtocol() func(dialer *websocket.Dialer) {
 	return func(dialer *websocket.Dialer) {
 		// Look for v1.6 subprotocol and add it, if not found
