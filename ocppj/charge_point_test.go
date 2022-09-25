@@ -19,7 +19,7 @@ import (
 
 func (suite *OcppJTestSuite) TestNewClient() {
 	clientID := "mock_id"
-	c := ocppj.NewClient(clientID, nil, nil, nil)
+	c := ocppj.NewClient(clientID, suite.mockClient, nil, nil)
 	assert.NotNil(suite.T(), c)
 	assert.Equal(suite.T(), clientID, c.Id)
 }
