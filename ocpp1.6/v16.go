@@ -135,7 +135,7 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 	if client == nil {
 		client = ws.NewClient()
 	}
-	client.AddOption(ws.DefaultSubProtocol())
+	client.SetRequestedSubProtocol(types.V16Subprotocol)
 	cp := chargePoint{confirmationHandler: make(chan ocpp.Response, 1), errorHandler: make(chan error, 1), callbacks: callbackqueue.New()}
 
 	if endpoint == nil {

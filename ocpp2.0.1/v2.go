@@ -5,8 +5,6 @@ import (
 	"crypto/tls"
 	"net"
 
-	"github.com/gorilla/websocket"
-
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/authorization"
@@ -196,19 +194,7 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) C
 	if client == nil {
 		client = ws.NewClient()
 	}
-	client.AddOption(func(dialer *websocket.Dialer) {
-		// Look for v2.0.1 subprotocol and add it, if not found
-		alreadyExists := false
-		for _, proto := range dialer.Subprotocols {
-			if proto == types.V201Subprotocol {
-				alreadyExists = true
-				break
-			}
-		}
-		if !alreadyExists {
-			dialer.Subprotocols = append(dialer.Subprotocols, types.V201Subprotocol)
-		}
-	})
+	client.SetRequestedSubProtocol(types.V201Subprotocol)
 	cs := chargingStation{responseHandler: make(chan ocpp.Response, 1), errorHandler: make(chan error, 1), callbacks: callbackqueue.New()}
 
 	if endpoint == nil {
