@@ -743,23 +743,27 @@ type Client struct {
 // Additional options may be added using the AddOption function.
 // Basic authentication can be set using the SetBasicAuth function.
 func NewClient() *Client {
-	dialOptions := []func(*websocket.Dialer){
-		func(dialer *websocket.Dialer) {
-			// Look for v1.6 subprotocol and add it, if not found
-			alreadyExists := false
-			for _, proto := range dialer.Subprotocols {
-				if proto == defaultSubProtocol {
-					alreadyExists = true
-					break
-				}
-			}
-			if !alreadyExists {
-				dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
-			}
-		},
+	return &Client{
+		dialOptions:   []func(*websocket.Dialer){DefaultSubProtocol()},
+		timeoutConfig: NewClientTimeoutConfig(),
+		header:        http.Header{},
 	}
+}
 
-	return &Client{dialOptions: dialOptions, timeoutConfig: NewClientTimeoutConfig(), header: http.Header{}}
+func DefaultSubProtocol() func(dialer *websocket.Dialer) {
+	return func(dialer *websocket.Dialer) {
+		// Look for v1.6 subprotocol and add it, if not found
+		alreadyExists := false
+		for _, proto := range dialer.Subprotocols {
+			if proto == defaultSubProtocol {
+				alreadyExists = true
+				break
+			}
+		}
+		if !alreadyExists {
+			dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
+		}
+	}
 }
 
 // NewTLSClient creates a new secure websocket client. If supported by the server, the websocket channel will use TLS.

@@ -5,8 +5,6 @@ import (
 	"crypto/tls"
 	"net"
 
-	"github.com/gorilla/websocket"
-
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -34,12 +32,15 @@ type ChargePointConnectionHandler func(chargePoint ChargePointConnection)
 // You can instantiate a default Charge Point struct by calling NewClient.
 //
 // The logic for incoming messages needs to be implemented, and the message handlers need to be registered with the charge point:
-// 	handler := &ChargePointHandler{}
+//
+//	handler := &ChargePointHandler{}
 //	client.SetCoreHandler(handler)
+//
 // Refer to the ChargePointHandler interfaces in the respective core, firmware, localauth, remotetrigger, reservation and smartcharging profiles for the implementation requirements.
 //
 // A charge point can be started and stopped using the Start and Stop functions.
 // While running, messages can be sent to the Central system by calling the Charge point's functions, e.g.
+//
 //	bootConf, err := client.BootNotification("model1", "vendor1")
 //
 // All messages are synchronous blocking, and return either the response from the Central system or an error.
@@ -109,10 +110,12 @@ type ChargePoint interface {
 // The id parameter is required to uniquely identify the charge point.
 //
 // The endpoint and client parameters may be omitted, in order to use a default configuration:
-//   client := NewClient("someUniqueId", nil, nil)
+//
+//	client := NewClient("someUniqueId", nil, nil)
 //
 // Additional networking parameters (e.g. TLS or proxy configuration) may be passed, by creating a custom client.
 // Here is an example for a client using TLS configuration with a self-signed certificate:
+//
 //	certPool := x509.NewCertPool()
 //	data, err := ioutil.ReadFile("serverSelfSignedCertFilename")
 //	if err != nil {
@@ -132,19 +135,7 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 	if client == nil {
 		client = ws.NewClient()
 	}
-	client.AddOption(func(dialer *websocket.Dialer) {
-		// Look for v1.6 subprotocol and add it, if not found
-		alreadyExists := false
-		for _, proto := range dialer.Subprotocols {
-			if proto == types.V16Subprotocol {
-				alreadyExists = true
-				break
-			}
-		}
-		if !alreadyExists {
-			dialer.Subprotocols = append(dialer.Subprotocols, types.V16Subprotocol)
-		}
-	})
+	client.AddOption(ws.DefaultSubProtocol())
 	cp := chargePoint{confirmationHandler: make(chan ocpp.Response, 1), errorHandler: make(chan error, 1), callbacks: callbackqueue.New()}
 
 	if endpoint == nil {
@@ -171,18 +162,22 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 // You can instantiate a default Central System struct by calling the NewServer function.
 //
 // The logic for handling incoming messages needs to be implemented, and the message handlers need to be registered with the central system:
+//
 //	handler := &CentralSystemHandler{}
 //	server.SetCoreHandler(handler)
+//
 // Refer to the CentralSystemHandler interfaces in the respective core, firmware, localauth, remotetrigger, reservation and smartcharging profiles for the implementation requirements.
 //
 // A Central system can be started by using the Start function.
 // To be notified of incoming (dis)connections from charge points refer to the SetNewClientHandler and SetChargePointDisconnectedHandler functions.
 //
 // While running, messages can be sent to a charge point by calling the Central system's functions, e.g.:
+//
 //	callback := func(conf *ChangeAvailabilityConfirmation, err error) {
 //		// handle the response...
 //	}
 //	changeAvailabilityConf, err := server.ChangeAvailability("cs0001", callback, 1, AvailabilityTypeOperative)
+//
 // All messages are sent asynchronously and do not block the caller.
 type CentralSystem interface {
 	// Instructs a charge point to change its availability. The target availability can be set for a single connector of for the whole charge point.
@@ -259,12 +254,14 @@ type CentralSystem interface {
 // Creates a new OCPP 1.6 central system.
 //
 // The endpoint and server parameters may be omitted, in order to use a default configuration:
-//   client := NewServer(nil, nil)
+//
+//	client := NewServer(nil, nil)
 //
 // It is recommended to use the default configuration, unless a custom networking / ocppj layer is required.
 // The default ocppj endpoint supports all OCPP 1.6 profiles out-of-the-box.
 //
 // If you need a TLS server, you may use the following:
+//
 //	cs := NewServer(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
 func NewCentralSystem(endpoint *ocppj.Server, server ws.WsServer) CentralSystem {
 	if server == nil {
