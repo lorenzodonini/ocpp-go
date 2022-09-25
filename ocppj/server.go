@@ -31,6 +31,7 @@ type ErrorHandler func(client ws.Channel, err *ocpp.Error, details interface{})
 // a custom state handler and a list of profiles may be passed.
 //
 // You may create a simple new server by using these default values:
+//
 //	s := ocppj.NewServer(ws.NewServer(), nil, nil)
 //
 // The dispatcher's associated ClientState will be set during initialization.
@@ -129,7 +130,7 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 	if !s.dispatcher.IsRunning() {
 		return fmt.Errorf("ocppj server is not started, couldn't send request")
 	}
-	call, err := s.CreateCall(request.(ocpp.Request))
+	call, err := s.CreateCall(request)
 	if err != nil {
 		return err
 	}

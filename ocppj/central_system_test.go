@@ -292,7 +292,7 @@ func (suite *OcppJTestSuite) TestCentralSystemDisconnectedHandler() {
 	assert.True(t, ok)
 	// Simulate client disconnection
 	suite.mockServer.DisconnectedClientHandler(channel)
-	ok, _ = <-disconnectedC
+	ok = <-disconnectedC
 	assert.True(t, ok)
 }
 
@@ -490,7 +490,7 @@ func (suite *OcppJTestSuite) TestParallelRequests() {
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	for i := 0; i < messagesToQueue; i++ {
 		go func() {
-			req := newMockRequest(fmt.Sprintf("someReq"))
+			req := newMockRequest("someReq")
 			err := suite.centralSystem.SendRequest(mockChargePointId, req)
 			require.Nil(t, err)
 		}()
