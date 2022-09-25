@@ -9,7 +9,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -157,18 +157,22 @@ func (e HttpConnectionError) Error() string {
 // The offered API are of asynchronous nature, and each incoming connection/message is handled using callbacks.
 //
 // To create a new ws server, use:
+//
 //	server := NewServer()
 //
 // If you need a TLS ws server instead, use:
+//
 //	server := NewTLSServer("cert.pem", "privateKey.pem")
 //
 // To support client basic authentication, use:
+//
 //	server.SetBasicAuthHandler(func (user, pass) bool {
 //		ok := authenticate(user, pass) // ... check for user and pass correctness
 //		return ok
 //	})
 //
 // To specify supported sub-protocols, use:
+//
 //	server.AddSupportedSubprotocol("ocpp1.6")
 //
 // If you need to set a specific timeout configuration, refer to the SetTimeoutConfig method.
@@ -273,6 +277,7 @@ func NewServer() *Server {
 //
 // It is recommended to pass a valid TLSConfig for the server to use.
 // For example to require client certificate verification:
+//
 //	tlsConfig := &tls.Config{
 //		ClientAuth: tls.RequireAndVerifyClientCert,
 //		ClientCAs: clientCAs,
@@ -589,7 +594,7 @@ func (server *Server) writePump(ws *WebSocket) {
 				return
 			}
 			log.Debugf("pong sent to %s", ws.ID())
-		case closeErr, _ := <-ws.closeC:
+		case closeErr := <-ws.closeC:
 			log.Debugf("closing connection to %s", ws.ID())
 			// Closing connection gracefully
 			if err := conn.WriteControl(
@@ -634,9 +639,11 @@ func (server *Server) cleanupConnection(ws *WebSocket) {
 // The offered API are of asynchronous nature, and each incoming message is handled using callbacks.
 //
 // To create a new ws client, use:
+//
 //	client := NewClient()
 //
 // If you need a TLS ws client instead, use:
+//
 //	certPool, err := x509.SystemCertPool()
 //	if err != nil {
 //		log.Fatal(err)
@@ -647,11 +654,13 @@ func (server *Server) cleanupConnection(ws *WebSocket) {
 //	})
 //
 // To add additional dial options, use:
+//
 //	client.AddOption(func(*websocket.Dialer) {
 //		// Your option ...
 //	)}
 //
 // To add basic HTTP authentication, use:
+//
 //	client.SetBasicAuth("username","password")
 //
 // If you need to set a specific timeout configuration, refer to the SetTimeoutConfig method.
@@ -743,6 +752,7 @@ func NewClient() *Client {
 // Basic authentication can be set using the SetBasicAuth function.
 //
 // To set a client certificate, you may do:
+//
 //	certificate, _ := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
 //	clientCertificates := []tls.Certificate{certificate}
 //	client := ws.NewTLSClient(&tls.Config{
@@ -753,6 +763,7 @@ func NewClient() *Client {
 // You can set any other TLS option within the same constructor as well.
 // For example, if you wish to test connecting to a server having a
 // self-signed certificate (do not use in production!), pass:
+//
 //	InsecureSkipVerify: true
 func NewTLSClient(tlsConfig *tls.Config) *Client {
 	client := &Client{dialOptions: []func(*websocket.Dialer){}, timeoutConfig: NewClientTimeoutConfig(), header: http.Header{}}
@@ -815,7 +826,7 @@ func (client *Client) writePump() {
 
 	for {
 		select {
-		case data, _ := <-client.webSocket.outQueue:
+		case data := <-client.webSocket.outQueue:
 			// Send data
 			log.Debugf("sending data")
 			_ = conn.SetWriteDeadline(time.Now().Add(client.timeoutConfig.WriteWait))
@@ -837,7 +848,7 @@ func (client *Client) writePump() {
 				return
 			}
 			log.Debugf("ping sent")
-		case closeErr, _ := <-client.webSocket.closeC:
+		case closeErr := <-client.webSocket.closeC:
 			log.Debugf("closing connection")
 			// Closing connection gracefully
 			if err := conn.WriteControl(
@@ -977,7 +988,7 @@ func (client *Client) Start(urlStr string) error {
 			httpError := HttpConnectionError{Message: err.Error(), HttpStatus: resp.Status, HttpCode: resp.StatusCode}
 			// Parse http response details
 			defer resp.Body.Close()
-			body, _ := ioutil.ReadAll(resp.Body)
+			body, _ := io.ReadAll(resp.Body)
 			if body != nil {
 				httpError.Details = string(body)
 			}

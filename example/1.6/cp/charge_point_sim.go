@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"time"
@@ -42,7 +41,7 @@ func setupTlsChargePoint(chargePointID string) ocpp16.ChargePoint {
 	// Load CA cert
 	caPath, ok := os.LookupEnv(envVarCACertificate)
 	if ok {
-		caCert, err := ioutil.ReadFile(caPath)
+		caCert, err := os.ReadFile(caPath)
 		if err != nil {
 			log.Warn(err)
 		} else if !certPool.AppendCertsFromPEM(caCert) {

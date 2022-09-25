@@ -262,7 +262,7 @@ func (suite *OcppJTestSuite) TestCentralSystemNewClientHandler() {
 	// Simulate client connection
 	channel := NewMockWebSocket(mockClientID)
 	suite.mockServer.NewClientHandler(channel)
-	ok, _ := <-connectedC
+	ok := <-connectedC
 	assert.True(t, ok)
 	// Client state was created
 	_, ok = suite.serverRequestMap.Get(mockClientID)
@@ -288,7 +288,7 @@ func (suite *OcppJTestSuite) TestCentralSystemDisconnectedHandler() {
 	// Simulate client connection
 	channel := NewMockWebSocket(mockClientID)
 	suite.mockServer.NewClientHandler(channel)
-	ok, _ := <-connectedC
+	ok := <-connectedC
 	assert.True(t, ok)
 	// Simulate client disconnection
 	suite.mockServer.DisconnectedClientHandler(channel)

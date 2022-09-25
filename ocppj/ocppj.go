@@ -78,6 +78,7 @@ var messageIdGenerator = func() string {
 // The function is invoked automatically when creating a new Call.
 //
 // Settings this overrides the default behavior, which is:
+//
 //	fmt.Sprintf("%v", rand.Uint32())
 func SetMessageIdGenerator(generator func() string) {
 	if generator != nil {
@@ -223,11 +224,11 @@ func ocppMessageToJson(message interface{}) ([]byte, error) {
 }
 
 func getValueLength(value interface{}) int {
-	switch value.(type) {
+	switch value := value.(type) {
 	case int:
-		return value.(int)
+		return value
 	case string:
-		return len(value.(string))
+		return len(value)
 	default:
 		return 0
 	}

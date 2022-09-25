@@ -29,8 +29,8 @@ func (dt *DateTime) UnmarshalJSON(input []byte) error {
 	strInput := string(input)
 	strInput = strings.Trim(strInput, `"`)
 	if DateTimeFormat == "" {
-		defaultTime := time.Time{}
-		err := json.Unmarshal(input, defaultTime)
+		var defaultTime time.Time
+		err := json.Unmarshal(input, &defaultTime)
 		if err != nil {
 			return err
 		}
@@ -67,17 +67,4 @@ func FormatTimestamp(t time.Time) string {
 
 func DateTimeIsNull(dateTime *DateTime) bool {
 	return dateTime != nil && dateTime.IsZero()
-}
-
-func validateDateTimeGt(dateTime *DateTime, than time.Time) bool {
-	return dateTime != nil && dateTime.After(than)
-}
-
-func validateDateTimeNow(dateTime DateTime) bool {
-	dur := time.Now().Sub(dateTime.Time).Minutes()
-	return dur < 1
-}
-
-func validateDateTimeLt(dateTime DateTime, than time.Time) bool {
-	return dateTime.Before(than)
 }

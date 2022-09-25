@@ -276,7 +276,7 @@ func (cp *chargePoint) asyncCallbackHandler() {
 				err := fmt.Errorf("no handler available for error %v", protoError.Error())
 				cp.error(err)
 			}
-		case _, _ = <-cp.stopC:
+		case <-cp.stopC:
 			// Handler stopped, cleanup callbacks.
 			// No callback invocation, since the user manually stopped the client.
 			cp.clearCallbacks(false)
@@ -397,9 +397,9 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		}
 	}
 	// Process request
-	var confirmation ocpp.Response = nil
+	var confirmation ocpp.Response
 	cp.client.GetProfileForFeature(action)
-	var err error = nil
+	var err error
 	switch action {
 	case core.ChangeAvailabilityFeatureName:
 		confirmation, err = cp.coreHandler.OnChangeAvailability(request.(*core.ChangeAvailabilityRequest))

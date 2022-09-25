@@ -10,7 +10,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"net"
 	"net/http"
@@ -142,7 +141,7 @@ func TestWebsocketEcho(t *testing.T) {
 	// Start flow routine
 	go func() {
 		// Wait for messages to be exchanged, then close connection
-		sig, _ := <-triggerC
+		sig := <-triggerC
 		assert.True(t, sig)
 		err := wsServer.Write(path.Base(testPath), message)
 		require.Nil(t, err)
@@ -206,7 +205,7 @@ func TestTLSWebsocketEcho(t *testing.T) {
 	})
 	wsClient.AddOption(func(dialer *websocket.Dialer) {
 		certPool := x509.NewCertPool()
-		data, err := ioutil.ReadFile(certFilename)
+		data, err := os.ReadFile(certFilename)
 		assert.Nil(t, err)
 		ok := certPool.AppendCertsFromPEM(data)
 		assert.True(t, ok)
@@ -220,7 +219,7 @@ func TestTLSWebsocketEcho(t *testing.T) {
 	// Start flow routine
 	go func() {
 		// Wait for messages to be exchanged, then close connection
-		sig, _ := <-triggerC
+		sig := <-triggerC
 		assert.True(t, sig)
 		err := wsServer.Write(path.Base(testPath), message)
 		require.NoError(t, err)
@@ -265,7 +264,7 @@ func TestServerStartErrors(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	// Starting server again throws error
 	wsServer.Start(serverPort, serverPath)
-	r, _ := <-triggerC
+	r := <-triggerC
 	require.True(t, r)
 	wsServer.Stop()
 }
@@ -507,7 +506,7 @@ func TestValidBasicAuth(t *testing.T) {
 
 	// Create TLS client
 	certPool := x509.NewCertPool()
-	data, err := ioutil.ReadFile(certFilename)
+	data, err := os.ReadFile(certFilename)
 	require.Nil(t, err)
 	ok := certPool.AppendCertsFromPEM(data)
 	require.True(t, ok)
@@ -560,7 +559,7 @@ func TestInvalidBasicAuth(t *testing.T) {
 
 	// Create TLS client
 	certPool := x509.NewCertPool()
-	data, err := ioutil.ReadFile(certFilename)
+	data, err := os.ReadFile(certFilename)
 	require.Nil(t, err)
 	ok := certPool.AppendCertsFromPEM(data)
 	require.True(t, ok)
@@ -685,7 +684,7 @@ func TestValidClientTLSCertificate(t *testing.T) {
 
 	// Create TLS server with self-signed certificate
 	certPool := x509.NewCertPool()
-	data, err := ioutil.ReadFile(clientCertFilename)
+	data, err := os.ReadFile(clientCertFilename)
 	require.Nil(t, err)
 	ok := certPool.AppendCertsFromPEM(data)
 	require.True(t, ok)
@@ -704,7 +703,7 @@ func TestValidClientTLSCertificate(t *testing.T) {
 
 	// Create TLS client
 	certPool = x509.NewCertPool()
-	data, err = ioutil.ReadFile(serverCertFilename)
+	data, err = os.ReadFile(serverCertFilename)
 	require.Nil(t, err)
 	ok = certPool.AppendCertsFromPEM(data)
 	require.True(t, ok)
@@ -745,7 +744,7 @@ func TestInvalidClientTLSCertificate(t *testing.T) {
 
 	// Create TLS server with self-signed certificate
 	certPool := x509.NewCertPool()
-	data, err := ioutil.ReadFile(serverCertFilename)
+	data, err := os.ReadFile(serverCertFilename)
 	require.Nil(t, err)
 	ok := certPool.AppendCertsFromPEM(data)
 	require.True(t, ok)
@@ -764,7 +763,7 @@ func TestInvalidClientTLSCertificate(t *testing.T) {
 
 	// Create TLS client
 	certPool = x509.NewCertPool()
-	data, err = ioutil.ReadFile(serverCertFilename)
+	data, err = os.ReadFile(serverCertFilename)
 	require.Nil(t, err)
 	ok = certPool.AppendCertsFromPEM(data)
 	require.True(t, ok)
@@ -931,7 +930,7 @@ func TestServerErrors(t *testing.T) {
 				if ok {
 					assert.Error(t, err)
 				}
-			case _, _ = <-finishC:
+			case <-finishC:
 				return
 			}
 		}
@@ -942,7 +941,7 @@ func TestServerErrors(t *testing.T) {
 	// Will trigger an out-of-bound error
 	time.Sleep(50 * time.Millisecond)
 	wsServer.Stop()
-	r, _ := <-triggerC
+	r := <-triggerC
 	assert.True(t, r)
 	// Start server for real
 	wsServer.httpServer = &http.Server{}
@@ -997,7 +996,7 @@ func TestClientErrors(t *testing.T) {
 				if ok {
 					assert.Error(t, err)
 				}
-			case _, _ = <-finishC:
+			case <-finishC:
 				return
 			}
 		}
@@ -1013,7 +1012,7 @@ func TestClientErrors(t *testing.T) {
 	err = wsClient.Start(u.String())
 	require.NoError(t, err)
 	// Wait for new client callback
-	r, _ := <-triggerC
+	r := <-triggerC
 	require.True(t, r)
 	// Send a dummy message and expect error on client side
 	err = wsServer.Write(path.Base(testPath), []byte("dummy message"))
