@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -199,8 +200,8 @@ func NewTransactionEventResponse() *TransactionEventResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("transactionEvent", isValidTransactionEvent)
-	_ = types.Validate.RegisterValidation("triggerReason", isValidTriggerReason)
-	_ = types.Validate.RegisterValidation("chargingState", isValidChargingState)
-	_ = types.Validate.RegisterValidation("stoppedReason", isValidReason)
+	validate.MustRegisterValidation("transactionEvent", isValidTransactionEvent)
+	validate.MustRegisterValidation("triggerReason", isValidTriggerReason)
+	validate.MustRegisterValidation("chargingState", isValidChargingState)
+	validate.MustRegisterValidation("stoppedReason", isValidReason)
 }

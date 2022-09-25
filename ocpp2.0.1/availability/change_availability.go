@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Change Availability (CSMS -> CS) --------------------
@@ -100,6 +101,6 @@ func NewChangeAvailabilityResponse(status ChangeAvailabilityStatus) *ChangeAvail
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("operationalStatus", isValidOperationalStatus)
-	_ = types.Validate.RegisterValidation("changeAvailabilityStatus", isValidChangeAvailabilityStatus)
+	validate.MustRegisterValidation("operationalStatus", isValidOperationalStatus)
+	validate.MustRegisterValidation("changeAvailabilityStatus", isValidChangeAvailabilityStatus)
 }

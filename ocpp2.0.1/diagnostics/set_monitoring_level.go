@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Set Monitoring Level (CSMS -> CS) --------------------
@@ -87,5 +88,5 @@ func NewSetMonitoringLevelResponse(status types.GenericDeviceModelStatus) *SetMo
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("monitoringBase", isValidMonitoringBase)
+	validate.MustRegisterValidation("monitoringBase", isValidMonitoringBase)
 }

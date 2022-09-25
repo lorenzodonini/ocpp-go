@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -212,10 +213,10 @@ func NewSetNetworkProfileResponse(status SetNetworkProfileStatus) *SetNetworkPro
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("ocppVersion", isValidOCPPVersion)
-	_ = types.Validate.RegisterValidation("ocppTransport", isValidOCPPTransport)
-	_ = types.Validate.RegisterValidation("ocppInterface", isValidOCPPInterface)
-	_ = types.Validate.RegisterValidation("vpnType", isValidVPNType)
-	_ = types.Validate.RegisterValidation("apnAuthentication", isValidAPNAuthentication)
-	_ = types.Validate.RegisterValidation("setNetworkProfileStatus", isValidSetNetworkProfileStatus)
+	validate.MustRegisterValidation("ocppVersion", isValidOCPPVersion)
+	validate.MustRegisterValidation("ocppTransport", isValidOCPPTransport)
+	validate.MustRegisterValidation("ocppInterface", isValidOCPPInterface)
+	validate.MustRegisterValidation("vpnType", isValidVPNType)
+	validate.MustRegisterValidation("apnAuthentication", isValidAPNAuthentication)
+	validate.MustRegisterValidation("setNetworkProfileStatus", isValidSetNetworkProfileStatus)
 }

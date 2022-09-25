@@ -1,9 +1,10 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Data Transfer (CP -> CS / CS -> CP) --------------------
@@ -79,5 +80,5 @@ func NewDataTransferConfirmation(status DataTransferStatus) *DataTransferConfirm
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("dataTransferStatus", isValidDataTransferStatus)
+	validate.MustRegisterValidation("dataTransferStatus", isValidDataTransferStatus)
 }

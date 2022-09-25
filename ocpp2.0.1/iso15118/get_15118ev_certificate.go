@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Get 15118EV Certificate (CS -> CSMS) --------------------
@@ -81,5 +82,5 @@ func NewGet15118EVCertificateResponse(status types.Certificate15118EVStatus, exi
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("certificateAction", isValidCertificateAction)
+	validate.MustRegisterValidation("certificateAction", isValidCertificateAction)
 }

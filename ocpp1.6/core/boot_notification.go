@@ -1,9 +1,11 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Boot Notification (CP -> CS) --------------------
@@ -91,5 +93,5 @@ func NewBootNotificationConfirmation(currentTime *types.DateTime, interval int, 
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("registrationStatus", isValidRegistrationStatus)
+	validate.MustRegisterValidation("registrationStatus", isValidRegistrationStatus)
 }

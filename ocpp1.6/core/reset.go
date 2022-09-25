@@ -1,9 +1,10 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Reset (CS -> CP) --------------------
@@ -62,8 +63,8 @@ type ResetConfirmation struct {
 // At receipt of a soft reset, the Charge Point SHALL stop ongoing transactions gracefully and send StopTransactionRequest for every ongoing transaction.
 // It should then restart the application software (if possible, otherwise restart the processor/controller).
 // At receipt of a hard reset the Charge Point SHALL restart (all) the hardware, it is not required to gracefully stop ongoing transaction.
-//If possible the Charge Point sends a StopTransactionRequest for previously ongoing transactions after having restarted and having been accepted by the Central System via a BootNotificationConfirmation.
-//This is a last resort solution for a not correctly functioning Charge Points, by sending a "hard" reset, (queued) information might get lost.
+// If possible the Charge Point sends a StopTransactionRequest for previously ongoing transactions after having restarted and having been accepted by the Central System via a BootNotificationConfirmation.
+// This is a last resort solution for a not correctly functioning Charge Points, by sending a "hard" reset, (queued) information might get lost.
 type ResetFeature struct{}
 
 func (f ResetFeature) GetFeatureName() string {
@@ -97,6 +98,6 @@ func NewResetConfirmation(status ResetStatus) *ResetConfirmation {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("resetType", isValidResetType)
-	_ = types.Validate.RegisterValidation("resetStatus", isValidResetStatus)
+	validate.MustRegisterValidation("resetType", isValidResetType)
+	validate.MustRegisterValidation("resetStatus", isValidResetStatus)
 }

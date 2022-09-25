@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Publish Firmware (CSMS -> CS) --------------------
@@ -102,5 +103,5 @@ func NewUpdateFirmwareResponse(status UpdateFirmwareStatus) *UpdateFirmwareRespo
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("updateFirmwareStatus", isValidUpdateFirmwareStatus)
+	validate.MustRegisterValidation("updateFirmwareStatus", isValidUpdateFirmwareStatus)
 }

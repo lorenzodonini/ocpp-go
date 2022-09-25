@@ -1,9 +1,10 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Unlock Connector (CS -> CP) --------------------
@@ -81,5 +82,5 @@ func NewUnlockConnectorConfirmation(status UnlockStatus) *UnlockConnectorConfirm
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("unlockStatus", isValidUnlockStatus)
+	validate.MustRegisterValidation("unlockStatus", isValidUnlockStatus)
 }

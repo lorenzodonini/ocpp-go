@@ -1,9 +1,11 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Status Notification (CP -> CS) --------------------
@@ -132,6 +134,6 @@ func NewStatusNotificationConfirmation() *StatusNotificationConfirmation {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("chargePointErrorCode", isValidChargePointErrorCode)
-	_ = types.Validate.RegisterValidation("chargePointStatus", isValidChargePointStatus)
+	validate.MustRegisterValidation("chargePointErrorCode", isValidChargePointErrorCode)
+	validate.MustRegisterValidation("chargePointStatus", isValidChargePointStatus)
 }

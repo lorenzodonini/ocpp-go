@@ -1,11 +1,12 @@
 package remotetrigger
 
 import (
+	"reflect"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
 )
 
 // -------------------- Trigger Message (CS -> CP) --------------------
@@ -110,6 +111,6 @@ func NewTriggerMessageConfirmation(status TriggerMessageStatus) *TriggerMessageC
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("triggerMessageStatus", isValidTriggerMessageStatus)
-	_ = types.Validate.RegisterValidation("messageTrigger", isValidMessageTrigger)
+	validate.MustRegisterValidation("triggerMessageStatus", isValidTriggerMessageStatus)
+	validate.MustRegisterValidation("messageTrigger", isValidMessageTrigger)
 }

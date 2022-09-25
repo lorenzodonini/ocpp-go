@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -104,5 +105,5 @@ func NewSetVariableMonitoringResponse(result []SetMonitoringResult) *SetVariable
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("setMonitoringStatus", isValidSetMonitoringStatus)
+	validate.MustRegisterValidation("setMonitoringStatus", isValidSetMonitoringStatus)
 }

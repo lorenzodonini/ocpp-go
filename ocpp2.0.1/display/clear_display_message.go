@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Clear Display Message (CSMS -> CS) --------------------
@@ -78,5 +79,5 @@ func NewClearDisplayResponse(status ClearMessageStatus) *ClearDisplayResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("clearMessageStatus", isValidClearMessageStatus)
+	validate.MustRegisterValidation("clearMessageStatus", isValidClearMessageStatus)
 }

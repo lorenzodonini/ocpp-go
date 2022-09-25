@@ -1,9 +1,10 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Change Configuration (CS -> CP) --------------------
@@ -85,5 +86,5 @@ func NewChangeConfigurationConfirmation(status ConfigurationStatus) *ChangeConfi
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("configurationStatus", isValidConfigurationStatus)
+	validate.MustRegisterValidation("configurationStatus", isValidConfigurationStatus)
 }

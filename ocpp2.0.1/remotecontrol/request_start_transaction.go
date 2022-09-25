@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -48,9 +49,9 @@ type RequestStartTransactionResponse struct {
 
 // The CSMS may remotely start a transaction for a user.
 // This functionality may be triggered by:
-//	- a CSO, to help out a user, that is having trouble starting a transaction
-//	- a third-party event (e.g. mobile app)
-//  - a previously set ChargingProfile
+//   - a CSO, to help out a user, that is having trouble starting a transaction
+//   - a third-party event (e.g. mobile app)
+//   - a previously set ChargingProfile
 //
 // The CSMS sends a RequestStartTransactionRequest to the Charging Station.
 // The Charging Stations will reply with a RequestStartTransactionResponse.
@@ -87,5 +88,5 @@ func NewRequestStartTransactionResponse(status RequestStartStopStatus) *RequestS
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("requestStartStopStatus", isValidRequestStartStopStatus)
+	validate.MustRegisterValidation("requestStartStopStatus", isValidRequestStartStopStatus)
 }

@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -103,6 +104,6 @@ func NewResetResponse(status ResetStatus) *ResetResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("resetType", isValidResetType)
-	_ = types.Validate.RegisterValidation("resetStatus", isValidResetStatus)
+	validate.MustRegisterValidation("resetType", isValidResetType)
+	validate.MustRegisterValidation("resetStatus", isValidResetStatus)
 }

@@ -1,9 +1,10 @@
 package firmware
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Diagnostics Status Notification (CP -> CS) --------------------
@@ -75,5 +76,5 @@ func NewDiagnosticsStatusNotificationConfirmation() *DiagnosticsStatusNotificati
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("diagnosticsStatus", isValidDiagnosticsStatus)
+	validate.MustRegisterValidation("diagnosticsStatus", isValidDiagnosticsStatus)
 }

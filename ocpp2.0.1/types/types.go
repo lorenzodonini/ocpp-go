@@ -2,9 +2,8 @@
 package types
 
 import (
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
-
-	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
 
 const (
@@ -697,30 +696,28 @@ type MeterValue struct {
 
 // Validator used for validating all OCPP 2.0 messages.
 // Any additional custom validations must be added to this object for automatic validation.
-var Validate = ocppj.Validate
-
 func init() {
-	_ = Validate.RegisterValidation("idTokenType", isValidIdTokenType)
-	_ = Validate.RegisterValidation("genericDeviceModelStatus", isValidGenericDeviceModelStatus)
-	_ = Validate.RegisterValidation("genericStatus", isValidGenericStatus)
-	_ = Validate.RegisterValidation("hashAlgorithm", isValidHashAlgorithmType)
-	_ = Validate.RegisterValidation("messageFormat", isValidMessageFormatType)
-	_ = Validate.RegisterValidation("authorizationStatus", isValidAuthorizationStatus)
-	_ = Validate.RegisterValidation("attribute", isValidAttribute)
-	_ = Validate.RegisterValidation("chargingProfilePurpose", isValidChargingProfilePurpose)
-	_ = Validate.RegisterValidation("chargingProfileKind", isValidChargingProfileKind)
-	_ = Validate.RegisterValidation("recurrencyKind", isValidRecurrencyKind)
-	_ = Validate.RegisterValidation("chargingRateUnit", isValidChargingRateUnit)
-	_ = Validate.RegisterValidation("chargingLimitSource", isValidChargingLimitSource)
-	_ = Validate.RegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
-	_ = Validate.RegisterValidation("readingContext", isValidReadingContext)
-	_ = Validate.RegisterValidation("measurand", isValidMeasurand)
-	_ = Validate.RegisterValidation("phase", isValidPhase)
-	_ = Validate.RegisterValidation("location", isValidLocation)
-	_ = Validate.RegisterValidation("signatureMethod", isValidSignatureMethod)
-	_ = Validate.RegisterValidation("encodingMethod", isValidEncodingMethod)
-	_ = Validate.RegisterValidation("certificateSigningUse", isValidCertificateSigningUse)
-	_ = Validate.RegisterValidation("certificateUse", isValidCertificateUse)
-	_ = Validate.RegisterValidation("15118EVCertificate", isValidCertificate15118EVStatus)
-	_ = Validate.RegisterValidation("costKind", isValidCostKind)
+	validate.MustRegisterValidation("idTokenType", isValidIdTokenType)
+	validate.MustRegisterValidation("genericDeviceModelStatus", isValidGenericDeviceModelStatus)
+	validate.MustRegisterValidation("genericStatus", isValidGenericStatus)
+	validate.MustRegisterValidation("hashAlgorithm", isValidHashAlgorithmType)
+	validate.MustRegisterValidation("messageFormat", isValidMessageFormatType)
+	validate.MustRegisterValidation("authorizationStatus", isValidAuthorizationStatus)
+	validate.MustRegisterValidation("attribute", isValidAttribute)
+	validate.MustRegisterValidation("chargingProfilePurpose", isValidChargingProfilePurpose)
+	validate.MustRegisterValidation("chargingProfileKind", isValidChargingProfileKind)
+	validate.MustRegisterValidation("recurrencyKind", isValidRecurrencyKind)
+	validate.MustRegisterValidation("chargingRateUnit", isValidChargingRateUnit)
+	validate.MustRegisterValidation("chargingLimitSource", isValidChargingLimitSource)
+	validate.MustRegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
+	validate.MustRegisterValidation("readingContext", isValidReadingContext)
+	validate.MustRegisterValidation("measurand", isValidMeasurand)
+	validate.MustRegisterValidation("phase", isValidPhase)
+	validate.MustRegisterValidation("location", isValidLocation)
+	validate.MustRegisterValidation("signatureMethod", isValidSignatureMethod)
+	validate.MustRegisterValidation("encodingMethod", isValidEncodingMethod)
+	validate.MustRegisterValidation("certificateSigningUse", isValidCertificateSigningUse)
+	validate.MustRegisterValidation("certificateUse", isValidCertificateUse)
+	validate.MustRegisterValidation("15118EVCertificate", isValidCertificate15118EVStatus)
+	validate.MustRegisterValidation("costKind", isValidCostKind)
 }

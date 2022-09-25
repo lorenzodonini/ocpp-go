@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Get Charging Profiles (CSMS -> Charging Station) --------------------
@@ -89,5 +90,5 @@ func NewGetChargingProfilesResponse(status GetChargingProfileStatus) *GetChargin
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("getChargingProfileStatus", isValidGetChargingProfileStatus)
+	validate.MustRegisterValidation("getChargingProfileStatus", isValidGetChargingProfileStatus)
 }

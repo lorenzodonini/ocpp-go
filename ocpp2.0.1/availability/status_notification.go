@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -46,12 +47,12 @@ type StatusNotificationResponse struct {
 
 // The Charging Station notifies the CSMS about a connector status change.
 // This may typically be after on of the following events:
-//  - (re)boot
-//  - reset
-//  - any transaction event (start/stop/authorization)
-//  - reservation events
-//  - change availability operations
-//  - remote triggers
+//   - (re)boot
+//   - reset
+//   - any transaction event (start/stop/authorization)
+//   - reservation events
+//   - change availability operations
+//   - remote triggers
 //
 // The charging station sends a StatusNotificationRequest to the CSMS with information about the new status.
 // The CSMS responds with a StatusNotificationResponse.
@@ -88,5 +89,5 @@ func NewStatusNotificationResponse() *StatusNotificationResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("connectorStatus", isValidConnectorStatus)
+	validate.MustRegisterValidation("connectorStatus", isValidConnectorStatus)
 }

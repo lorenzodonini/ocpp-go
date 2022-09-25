@@ -1,9 +1,11 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Heartbeat (CP -> CS) --------------------
@@ -67,5 +69,5 @@ func validateHeartbeatConfirmation(sl validator.StructLevel) {
 }
 
 func init() {
-	types.Validate.RegisterStructValidation(validateHeartbeatConfirmation, HeartbeatConfirmation{})
+	validate.MustRegisterStructValidation(validateHeartbeatConfirmation, HeartbeatConfirmation{})
 }

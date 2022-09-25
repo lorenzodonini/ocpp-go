@@ -2,7 +2,7 @@
 package types
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -313,20 +313,17 @@ type MeterValue struct {
 	SampledValue []SampledValue `json:"sampledValue" validate:"required,min=1,dive"`
 }
 
-// Initialize validator
-var Validate = ocppj.Validate
-
 func init() {
-	_ = Validate.RegisterValidation("authorizationStatus", isValidAuthorizationStatus)
-	_ = Validate.RegisterValidation("chargingProfilePurpose", isValidChargingProfilePurpose)
-	_ = Validate.RegisterValidation("chargingProfileKind", isValidChargingProfileKind)
-	_ = Validate.RegisterValidation("recurrencyKind", isValidRecurrencyKind)
-	_ = Validate.RegisterValidation("chargingRateUnit", isValidChargingRateUnit)
-	_ = Validate.RegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
-	_ = Validate.RegisterValidation("readingContext", isValidReadingContext)
-	_ = Validate.RegisterValidation("valueFormat", isValidValueFormat)
-	_ = Validate.RegisterValidation("measurand", isValidMeasurand)
-	_ = Validate.RegisterValidation("phase", isValidPhase)
-	_ = Validate.RegisterValidation("location", isValidLocation)
-	_ = Validate.RegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
+	validate.MustRegisterValidation("authorizationStatus", isValidAuthorizationStatus)
+	validate.MustRegisterValidation("chargingProfilePurpose", isValidChargingProfilePurpose)
+	validate.MustRegisterValidation("chargingProfileKind", isValidChargingProfileKind)
+	validate.MustRegisterValidation("recurrencyKind", isValidRecurrencyKind)
+	validate.MustRegisterValidation("chargingRateUnit", isValidChargingRateUnit)
+	validate.MustRegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
+	validate.MustRegisterValidation("readingContext", isValidReadingContext)
+	validate.MustRegisterValidation("valueFormat", isValidValueFormat)
+	validate.MustRegisterValidation("measurand", isValidMeasurand)
+	validate.MustRegisterValidation("phase", isValidPhase)
+	validate.MustRegisterValidation("location", isValidLocation)
+	validate.MustRegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
 }

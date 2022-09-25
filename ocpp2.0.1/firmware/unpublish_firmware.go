@@ -3,9 +3,8 @@ package firmware
 import (
 	"reflect"
 
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
-
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 )
 
 // -------------------- Publish Firmware (CSMS -> CS) --------------------
@@ -78,5 +77,5 @@ func NewUnpublishFirmwareResponse(status UnpublishFirmwareStatus) *UnpublishFirm
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("unpublishFirmwareStatus", isValidUnpublishFirmwareStatus)
+	validate.MustRegisterValidation("unpublishFirmwareStatus", isValidUnpublishFirmwareStatus)
 }

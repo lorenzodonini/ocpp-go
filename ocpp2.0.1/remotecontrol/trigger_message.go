@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -107,6 +108,6 @@ func NewTriggerMessageResponse(status TriggerMessageStatus) *TriggerMessageRespo
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("messageTrigger", isValidMessageTrigger)
-	_ = types.Validate.RegisterValidation("triggerMessageStatus", isValidTriggerMessageStatus)
+	validate.MustRegisterValidation("messageTrigger", isValidMessageTrigger)
+	validate.MustRegisterValidation("triggerMessageStatus", isValidTriggerMessageStatus)
 }

@@ -2,6 +2,7 @@ package display
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -71,7 +72,7 @@ type MessageInfo struct {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("messagePriority", isValidMessagePriority)
-	_ = types.Validate.RegisterValidation("messageState", isValidMessageState)
-	_ = types.Validate.RegisterValidation("messageStatus", isValidMessageStatus)
+	validate.MustRegisterValidation("messagePriority", isValidMessagePriority)
+	validate.MustRegisterValidation("messageState", isValidMessageState)
+	validate.MustRegisterValidation("messageStatus", isValidMessageStatus)
 }

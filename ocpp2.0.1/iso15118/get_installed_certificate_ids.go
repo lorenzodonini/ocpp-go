@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -76,5 +77,5 @@ func NewGetInstalledCertificateIdsResponse(status GetInstalledCertificateStatus)
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("getInstalledCertificateStatus", isValidGetInstalledCertificateStatus)
+	validate.MustRegisterValidation("getInstalledCertificateStatus", isValidGetInstalledCertificateStatus)
 }

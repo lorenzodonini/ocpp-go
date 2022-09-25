@@ -1,9 +1,11 @@
 package smartcharging
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Get Composite Schedule (CS -> CP) --------------------
@@ -82,5 +84,5 @@ func NewGetCompositeScheduleConfirmation(status GetCompositeScheduleStatus) *Get
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("compositeScheduleStatus", isValidGetCompositeScheduleStatus)
+	validate.MustRegisterValidation("compositeScheduleStatus", isValidGetCompositeScheduleStatus)
 }

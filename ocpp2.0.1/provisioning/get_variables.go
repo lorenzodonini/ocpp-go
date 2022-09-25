@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -95,5 +96,5 @@ func NewGetVariablesResponse(result []GetVariableResult) *GetVariablesResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("getVariableStatus", isValidGetVariableStatus)
+	validate.MustRegisterValidation("getVariableStatus", isValidGetVariableStatus)
 }

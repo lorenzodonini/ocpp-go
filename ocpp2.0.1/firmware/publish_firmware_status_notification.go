@@ -3,7 +3,7 @@ package firmware
 import (
 	"reflect"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -87,5 +87,5 @@ func NewPublishFirmwareStatusNotificationResponse() *PublishFirmwareStatusNotifi
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("publishFirmwareStatus", isValidPublishFirmwareStatus)
+	validate.MustRegisterValidation("publishFirmwareStatus", isValidPublishFirmwareStatus)
 }

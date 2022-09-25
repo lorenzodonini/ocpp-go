@@ -1,9 +1,11 @@
 package smartcharging
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Clear Charging Profile (CS -> CP) --------------------
@@ -80,5 +82,5 @@ func NewClearChargingProfileConfirmation(status ClearChargingProfileStatus) *Cle
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("clearChargingProfileStatus", isValidClearChargingProfileStatus)
+	validate.MustRegisterValidation("clearChargingProfileStatus", isValidClearChargingProfileStatus)
 }

@@ -1,9 +1,10 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Change Availability (CS -> CP) --------------------
@@ -97,6 +98,6 @@ func NewChangeAvailabilityConfirmation(status AvailabilityStatus) *ChangeAvailab
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("availabilityType", isValidAvailabilityType)
-	_ = types.Validate.RegisterValidation("availabilityStatus", isValidAvailabilityStatus)
+	validate.MustRegisterValidation("availabilityType", isValidAvailabilityType)
+	validate.MustRegisterValidation("availabilityStatus", isValidAvailabilityStatus)
 }

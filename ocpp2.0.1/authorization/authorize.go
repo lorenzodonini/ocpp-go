@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Authorize (CS -> CSMS) --------------------
@@ -90,5 +91,5 @@ func NewAuthorizationResponse(idTokenInfo types.IdTokenInfo) *AuthorizeResponse 
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("authorizeCertificateStatus", isValidAuthorizeCertificateStatus)
+	validate.MustRegisterValidation("authorizeCertificateStatus", isValidAuthorizeCertificateStatus)
 }

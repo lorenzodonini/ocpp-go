@@ -1,9 +1,10 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Clear Cache (CS -> CP) --------------------
@@ -75,5 +76,5 @@ func NewClearCacheConfirmation(status ClearCacheStatus) *ClearCacheConfirmation 
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("cacheStatus", isValidClearCacheStatus)
+	validate.MustRegisterValidation("cacheStatus", isValidClearCacheStatus)
 }

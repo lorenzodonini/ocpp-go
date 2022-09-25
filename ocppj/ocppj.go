@@ -8,14 +8,10 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/logging"
-
-	"gopkg.in/go-playground/validator.v9"
-
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
-
-// The validator, used for validating incoming/outgoing OCPP messages.
-var Validate = validator.New()
 
 // The internal validation settings. Enabled by default.
 var validationEnabled bool
@@ -24,7 +20,7 @@ var validationEnabled bool
 var log logging.Logger
 
 func init() {
-	_ = Validate.RegisterValidation("errorCode", IsErrorCodeValid)
+	validate.MustRegisterValidation("errorCode", IsErrorCodeValid)
 	log = &logging.VoidLogger{}
 	validationEnabled = true
 }
@@ -78,6 +74,7 @@ var messageIdGenerator = func() string {
 // The function is invoked automatically when creating a new Call.
 //
 // Settings this overrides the default behavior, which is:
+//
 //	fmt.Sprintf("%v", rand.Uint32())
 func SetMessageIdGenerator(generator func() string) {
 	if generator != nil {
@@ -381,7 +378,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			Action:        action,
 			Payload:       request,
 		}
-		err = Validate.Struct(call)
+		err = validate.Validator.Struct(call)
 		if err != nil {
 			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, action)
 		}
@@ -402,7 +399,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			UniqueId:      uniqueId,
 			Payload:       confirmation,
 		}
-		err = Validate.Struct(callResult)
+		err = validate.Validator.Struct(callResult)
 		if err != nil {
 			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, request.GetFeatureName())
 		}
@@ -433,7 +430,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			ErrorDescription: errorDescription,
 			ErrorDetails:     details,
 		}
-		err := Validate.Struct(callError)
+		err := validate.Validator.Struct(callError)
 		if err != nil {
 			return nil, errorFromValidation(err.(validator.ValidationErrors), uniqueId, "")
 		}
@@ -462,7 +459,7 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 		Payload:       request,
 	}
 	if validationEnabled {
-		err := Validate.Struct(call)
+		err := validate.Validator.Struct(call)
 		if err != nil {
 			return nil, err
 		}
@@ -485,7 +482,7 @@ func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId 
 		Payload:       confirmation,
 	}
 	if validationEnabled {
-		err := Validate.Struct(callResult)
+		err := validate.Validator.Struct(callResult)
 		if err != nil {
 			return nil, err
 		}
@@ -503,7 +500,7 @@ func (endpoint *Endpoint) CreateCallError(uniqueId string, code ocpp.ErrorCode, 
 		ErrorDetails:     details,
 	}
 	if validationEnabled {
-		err := Validate.Struct(callError)
+		err := validate.Validator.Struct(callError)
 		if err != nil {
 			return nil, err
 		}

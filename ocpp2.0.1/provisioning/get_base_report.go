@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Get Base Report (CSMS -> CS) --------------------
@@ -81,5 +82,5 @@ func NewGetBaseReportResponse(status types.GenericDeviceModelStatus) *GetBaseRep
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("reportBaseType", isValidReportBaseType)
+	validate.MustRegisterValidation("reportBaseType", isValidReportBaseType)
 }

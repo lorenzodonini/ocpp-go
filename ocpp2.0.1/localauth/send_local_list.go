@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -110,6 +111,6 @@ func NewSendLocalListResponse(status SendLocalListStatus) *SendLocalListResponse
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("updateType", isValidUpdateType)
-	_ = types.Validate.RegisterValidation("sendLocalListStatus", isValidSendLocalListStatus)
+	validate.MustRegisterValidation("updateType", isValidUpdateType)
+	validate.MustRegisterValidation("sendLocalListStatus", isValidSendLocalListStatus)
 }

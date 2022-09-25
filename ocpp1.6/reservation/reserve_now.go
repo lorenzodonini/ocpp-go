@@ -1,9 +1,11 @@
 package reservation
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Reserve Now (CS -> CP) --------------------
@@ -93,5 +95,5 @@ func NewReserveNowConfirmation(status ReservationStatus) *ReserveNowConfirmation
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("reservationStatus", isValidReservationStatus)
+	validate.MustRegisterValidation("reservationStatus", isValidReservationStatus)
 }

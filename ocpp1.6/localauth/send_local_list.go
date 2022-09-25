@@ -1,9 +1,11 @@
 package localauth
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Send Local List (CS -> CP) --------------------
@@ -105,7 +107,7 @@ func NewSendLocalListConfirmation(status UpdateStatus) *SendLocalListConfirmatio
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("updateStatus", isValidUpdateStatus)
-	_ = types.Validate.RegisterValidation("updateType", isValidUpdateType)
+	validate.MustRegisterValidation("updateStatus", isValidUpdateStatus)
+	validate.MustRegisterValidation("updateType", isValidUpdateType)
 	//TODO: validation for SendLocalListMaxLength
 }

@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Trigger Message (CSMS -> CS) --------------------
@@ -52,7 +53,7 @@ type UnlockConnectorResponse struct {
 // This happens most of the time when there is tension on the charging cable.
 // This means the driver cannot unplug his charging cable from the Charging Station.
 // To help a driver, the CSO can send a UnlockConnectorRequest to the Charging Station.
-//The Charging Station will then try to unlock the connector again and respond with an UnlockConnectorResponse.
+// The Charging Station will then try to unlock the connector again and respond with an UnlockConnectorResponse.
 type UnlockConnectorFeature struct{}
 
 func (f UnlockConnectorFeature) GetFeatureName() string {
@@ -86,5 +87,5 @@ func NewUnlockConnectorResponse(status UnlockStatus) *UnlockConnectorResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("unlockStatus", isValidUnlockStatus)
+	validate.MustRegisterValidation("unlockStatus", isValidUnlockStatus)
 }

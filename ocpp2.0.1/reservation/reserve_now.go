@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -135,6 +136,6 @@ func NewReserveNowResponse(status ReserveNowStatus) *ReserveNowResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("reserveNowStatus", isValidReserveNowStatus)
-	_ = types.Validate.RegisterValidation("connectorType", isValidConnectorType)
+	validate.MustRegisterValidation("reserveNowStatus", isValidReserveNowStatus)
+	validate.MustRegisterValidation("connectorType", isValidConnectorType)
 }

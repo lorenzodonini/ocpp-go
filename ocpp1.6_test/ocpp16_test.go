@@ -17,6 +17,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/lorenzodonini/ocpp-go/validate"
 	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -625,7 +626,7 @@ type ConfirmationTestEntry struct {
 // TODO: pass expected error value for improved validation and error message
 func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
 	for _, testCase := range testTable {
-		err := types.Validate.Struct(testCase.Element)
+		err := validate.Validator.Struct(testCase.Element)
 		if err != nil {
 			assert.Equal(t, testCase.ExpectedValid, false, err.Error())
 		} else {

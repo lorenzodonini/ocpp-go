@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Boot Notification (CS -> CSMS) --------------------
@@ -127,6 +128,6 @@ func NewBootNotificationResponse(currentTime *types.DateTime, interval int, stat
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("registrationStatus", isValidRegistrationStatus)
-	_ = types.Validate.RegisterValidation("bootReason", isValidBootReason)
+	validate.MustRegisterValidation("registrationStatus", isValidRegistrationStatus)
+	validate.MustRegisterValidation("bootReason", isValidBootReason)
 }

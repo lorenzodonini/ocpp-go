@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/validate"
 )
 
 // -------------------- Customer Information (CSMS -> CS) --------------------
@@ -85,5 +86,5 @@ func NewCustomerInformationResponse(status CustomerInformationStatus) *CustomerI
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("customerInformationStatus", isValidCustomerInformationStatus)
+	validate.MustRegisterValidation("customerInformationStatus", isValidCustomerInformationStatus)
 }
