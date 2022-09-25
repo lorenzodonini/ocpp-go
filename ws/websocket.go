@@ -32,8 +32,6 @@ const (
 	defaultPingWait = defaultPongWait
 	// Send pings to peer with this period. Must be less than pongWait.
 	defaultPingPeriod = (defaultPongWait * 9) / 10
-	// Maximum message size allowed from peer.
-	maxMessageSize = 512
 	// Time allowed for the initial handshake to complete.
 	defaultHandshakeTimeout = 30 * time.Second
 	// Default sub-protocol to send to peer upon connection.
@@ -461,7 +459,9 @@ out:
 	// Handle client authentication
 	if server.basicAuthHandler != nil {
 		username, password, ok := r.BasicAuth()
-		ok = server.basicAuthHandler(username, password)
+		if ok {
+			ok = server.basicAuthHandler(username, password)
+		}
 		if !ok {
 			server.error(fmt.Errorf("basic auth failed: credentials invalid"))
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)

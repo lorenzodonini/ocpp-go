@@ -78,8 +78,7 @@ type ClientDispatcher interface {
 
 // pendingRequest is used internally for associating metadata to a pending Request.
 type pendingRequest struct {
-	request   ocpp.Request
-	startTime time.Time
+	request ocpp.Request
 }
 
 // DefaultClientDispatcher is a default implementation of the ClientDispatcher interface.
@@ -515,7 +514,7 @@ func (d *DefaultServerDispatcher) messagePump() {
 		case clientID = <-d.readyForDispatch:
 			// Cancel previous timeout (if any)
 			clientCtx, ok = clientContextMap[clientID]
-			if clientCtx.isActive() {
+			if ok && clientCtx.isActive() {
 				clientCtx.cancel()
 				clientContextMap[clientID] = clientTimeoutContext{}
 			}
