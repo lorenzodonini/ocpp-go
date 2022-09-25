@@ -157,18 +157,22 @@ func (e HttpConnectionError) Error() string {
 // The offered API are of asynchronous nature, and each incoming connection/message is handled using callbacks.
 //
 // To create a new ws server, use:
+//
 //	server := NewServer()
 //
 // If you need a TLS ws server instead, use:
+//
 //	server := NewTLSServer("cert.pem", "privateKey.pem")
 //
 // To support client basic authentication, use:
+//
 //	server.SetBasicAuthHandler(func (user, pass) bool {
 //		ok := authenticate(user, pass) // ... check for user and pass correctness
 //		return ok
 //	})
 //
 // To specify supported sub-protocols, use:
+//
 //	server.AddSupportedSubprotocol("ocpp1.6")
 //
 // If you need to set a specific timeout configuration, refer to the SetTimeoutConfig method.
@@ -273,6 +277,7 @@ func NewServer() *Server {
 //
 // It is recommended to pass a valid TLSConfig for the server to use.
 // For example to require client certificate verification:
+//
 //	tlsConfig := &tls.Config{
 //		ClientAuth: tls.RequireAndVerifyClientCert,
 //		ClientCAs: clientCAs,
@@ -634,9 +639,11 @@ func (server *Server) cleanupConnection(ws *WebSocket) {
 // The offered API are of asynchronous nature, and each incoming message is handled using callbacks.
 //
 // To create a new ws client, use:
+//
 //	client := NewClient()
 //
 // If you need a TLS ws client instead, use:
+//
 //	certPool, err := x509.SystemCertPool()
 //	if err != nil {
 //		log.Fatal(err)
@@ -647,11 +654,13 @@ func (server *Server) cleanupConnection(ws *WebSocket) {
 //	})
 //
 // To add additional dial options, use:
+//
 //	client.AddOption(func(*websocket.Dialer) {
 //		// Your option ...
 //	)}
 //
 // To add basic HTTP authentication, use:
+//
 //	client.SetBasicAuth("username","password")
 //
 // If you need to set a specific timeout configuration, refer to the SetTimeoutConfig method.
@@ -734,7 +743,23 @@ type Client struct {
 // Additional options may be added using the AddOption function.
 // Basic authentication can be set using the SetBasicAuth function.
 func NewClient() *Client {
-	return &Client{dialOptions: []func(*websocket.Dialer){}, timeoutConfig: NewClientTimeoutConfig(), header: http.Header{}}
+	dialOptions := []func(*websocket.Dialer){
+		func(dialer *websocket.Dialer) {
+			// Look for v1.6 subprotocol and add it, if not found
+			alreadyExists := false
+			for _, proto := range dialer.Subprotocols {
+				if proto == defaultSubProtocol {
+					alreadyExists = true
+					break
+				}
+			}
+			if !alreadyExists {
+				dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
+			}
+		},
+	}
+
+	return &Client{dialOptions: dialOptions, timeoutConfig: NewClientTimeoutConfig(), header: http.Header{}}
 }
 
 // NewTLSClient creates a new secure websocket client. If supported by the server, the websocket channel will use TLS.
@@ -743,6 +768,7 @@ func NewClient() *Client {
 // Basic authentication can be set using the SetBasicAuth function.
 //
 // To set a client certificate, you may do:
+//
 //	certificate, _ := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
 //	clientCertificates := []tls.Certificate{certificate}
 //	client := ws.NewTLSClient(&tls.Config{
@@ -753,6 +779,7 @@ func NewClient() *Client {
 // You can set any other TLS option within the same constructor as well.
 // For example, if you wish to test connecting to a server having a
 // self-signed certificate (do not use in production!), pass:
+//
 //	InsecureSkipVerify: true
 func NewTLSClient(tlsConfig *tls.Config) *Client {
 	client := &Client{dialOptions: []func(*websocket.Dialer){}, timeoutConfig: NewClientTimeoutConfig(), header: http.Header{}}
