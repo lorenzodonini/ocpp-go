@@ -146,6 +146,9 @@ func (websocketClient *MockWebsocketClient) Write(data []byte) error {
 func (websocketClient *MockWebsocketClient) AddOption(option interface{}) {
 }
 
+func (websocketClient *MockWebsocketClient) SetRequestedSubProtocol(subProto string) {
+}
+
 func (websocketClient *MockWebsocketClient) SetBasicAuth(username string, password string) {
 }
 

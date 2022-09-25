@@ -31,6 +31,8 @@ const (
 	serverPort = 8887
 	serverPath = "/ws/{id}"
 	testPath   = "/ws/testws"
+	// Default sub-protocol to send to peer upon connection.
+	defaultSubProtocol = "ocpp1.6"
 )
 
 func newWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *Server {
@@ -53,9 +55,7 @@ func newWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 
 func newWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *Client {
 	wsClient := NewClient()
-	wsClient.AddOption(func(dialer *websocket.Dialer) {
-		dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
-	})
+	wsClient.SetRequestedSubProtocol(defaultSubProtocol)
 	wsClient.SetMessageHandler(func(data []byte) error {
 		assert.NotNil(t, data)
 		if onMessage != nil {
@@ -514,9 +514,7 @@ func TestValidBasicAuth(t *testing.T) {
 	wsClient := NewTLSClient(&tls.Config{
 		RootCAs: certPool,
 	})
-	wsClient.AddOption(func(dialer *websocket.Dialer) {
-		dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
-	})
+	wsClient.SetRequestedSubProtocol(defaultSubProtocol)
 	// Add basic auth
 	wsClient.SetBasicAuth(authUsername, authPassword)
 	// Test connection
@@ -714,9 +712,7 @@ func TestValidClientTLSCertificate(t *testing.T) {
 		RootCAs:      certPool,
 		Certificates: []tls.Certificate{loadedCert},
 	})
-	wsClient.AddOption(func(dialer *websocket.Dialer) {
-		dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
-	})
+	wsClient.SetRequestedSubProtocol(defaultSubProtocol)
 	// Test connection
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
@@ -774,9 +770,7 @@ func TestInvalidClientTLSCertificate(t *testing.T) {
 		RootCAs:      certPool,                      // Contains server certificate as allowed server CA
 		Certificates: []tls.Certificate{loadedCert}, // Contains self-signed client certificate. Will be rejected by server
 	})
-	wsClient.AddOption(func(dialer *websocket.Dialer) {
-		dialer.Subprotocols = append(dialer.Subprotocols, defaultSubProtocol)
-	})
+	wsClient.SetRequestedSubProtocol(defaultSubProtocol)
 	// Test connection
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "wss", Host: host, Path: testPath}
@@ -789,7 +783,7 @@ func TestInvalidClientTLSCertificate(t *testing.T) {
 	wsServer.Stop()
 }
 
-func TestUnsupportedSubprotocol(t *testing.T) {
+func TestUnsupportedSubProtocol(t *testing.T) {
 	wsServer := newWebsocketServer(t, nil)
 	wsServer.SetNewClientHandler(func(ws Channel) {
 	})
