@@ -145,7 +145,7 @@ func TestWebsocketEcho(t *testing.T) {
 		assert.True(t, sig)
 		err := wsServer.Write(path.Base(testPath), message)
 		require.Nil(t, err)
-		sig, _ = <-triggerC
+		sig = <-triggerC
 		assert.True(t, sig)
 		wsClient.Stop()
 	}()
@@ -223,7 +223,7 @@ func TestTLSWebsocketEcho(t *testing.T) {
 		assert.True(t, sig)
 		err := wsServer.Write(path.Base(testPath), message)
 		require.NoError(t, err)
-		sig, _ = <-triggerC
+		sig = <-triggerC
 		assert.True(t, sig)
 		wsClient.Stop()
 	}()
@@ -948,12 +948,12 @@ func TestServerErrors(t *testing.T) {
 	err := wsClient.Start(u.String())
 	require.NoError(t, err)
 	// Wait for new client callback
-	r, _ = <-triggerC
+	r = <-triggerC
 	require.True(t, r)
 	// Send a dummy message and expect error on server side
 	err = wsClient.Write([]byte("dummy message"))
 	require.NoError(t, err)
-	r, _ = <-triggerC
+	r = <-triggerC
 	assert.True(t, r)
 	// Send message to non-existing client
 	err = wsServer.Write("fakeId", []byte("dummy response"))
@@ -961,10 +961,10 @@ func TestServerErrors(t *testing.T) {
 	// Send unexpected close message and wait for error to be thrown
 	err = wsClient.webSocket.connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
 	assert.NoError(t, err)
-	r, _ = <-triggerC
+	r = <-triggerC
 	// Stop and wait for errors channel cleanup
 	wsServer.Stop()
-	r, _ = <-triggerC
+	r = <-triggerC
 	assert.True(t, r)
 	close(finishC)
 }
@@ -1011,19 +1011,19 @@ func TestClientErrors(t *testing.T) {
 	// Send a dummy message and expect error on client side
 	err = wsServer.Write(path.Base(testPath), []byte("dummy message"))
 	require.NotNil(t, t, err)
-	r, _ = <-triggerC
+	r = <-triggerC
 	assert.True(t, r)
 	// Send unexpected close message and wait for error to be thrown
 	conn := wsServer.connections[path.Base(testPath)]
 	require.NotNil(t, conn)
 	err = conn.connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
 	assert.NoError(t, err)
-	r, _ = <-triggerC
+	r = <-triggerC
 	require.True(t, r)
 	// Stop server and client and wait for errors channel cleanup
 	wsServer.Stop()
 	wsClient.Stop()
-	r, _ = <-triggerC
+	r = <-triggerC
 	require.True(t, r)
 	close(finishC)
 }

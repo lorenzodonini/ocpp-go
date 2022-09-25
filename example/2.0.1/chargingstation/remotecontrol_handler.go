@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -29,7 +28,7 @@ func (handler *ChargingStationHandler) OnRequestStartTransaction(request *remote
 		evse.currentTransaction = nextTransactionID()
 		logDefault(request.GetFeatureName()).Infof("started transaction %v on evse %v, connector %v", evse.currentTransaction, *request.EvseID, connectorID)
 		response = remotecontrol.NewRequestStartTransactionResponse(remotecontrol.RequestStartStopStatusAccepted)
-		response.TransactionID = fmt.Sprintf("%s", evse.currentTransaction)
+		response.TransactionID = evse.currentTransaction
 		return response, nil
 	}
 	logDefault(request.GetFeatureName()).Errorf("couldn't start a transaction for token %v without an evseID", request.IDToken)

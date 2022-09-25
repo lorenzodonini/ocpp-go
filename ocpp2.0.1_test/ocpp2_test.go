@@ -850,39 +850,39 @@ type expectedChargingStationOptions struct {
 func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOptions, handlers ...interface{}) {
 	t := suite.T()
 	for _, h := range handlers {
-		switch h.(type) {
+		switch h := h.(type) {
 		case *MockCSMSAuthorizationHandler:
-			suite.csms.SetAuthorizationHandler(h.(*MockCSMSAuthorizationHandler))
+			suite.csms.SetAuthorizationHandler(h)
 		case *MockCSMSAvailabilityHandler:
-			suite.csms.SetAvailabilityHandler(h.(*MockCSMSAvailabilityHandler))
+			suite.csms.SetAvailabilityHandler(h)
 		case *MockCSMSDataHandler:
-			suite.csms.SetDataHandler(h.(*MockCSMSDataHandler))
+			suite.csms.SetDataHandler(h)
 		case *MockCSMSDiagnosticsHandler:
-			suite.csms.SetDiagnosticsHandler(h.(*MockCSMSDiagnosticsHandler))
+			suite.csms.SetDiagnosticsHandler(h)
 		case *MockCSMSDisplayHandler:
-			suite.csms.SetDisplayHandler(h.(*MockCSMSDisplayHandler))
+			suite.csms.SetDisplayHandler(h)
 		case *MockCSMSFirmwareHandler:
-			suite.csms.SetFirmwareHandler(h.(*MockCSMSFirmwareHandler))
+			suite.csms.SetFirmwareHandler(h)
 		case *MockCSMSIso15118Handler:
-			suite.csms.SetISO15118Handler(h.(*MockCSMSIso15118Handler))
+			suite.csms.SetISO15118Handler(h)
 		case *MockCSMSLocalAuthHandler:
-			suite.csms.SetLocalAuthListHandler(h.(*MockCSMSLocalAuthHandler))
+			suite.csms.SetLocalAuthListHandler(h)
 		case *MockCSMSMeterHandler:
-			suite.csms.SetMeterHandler(h.(*MockCSMSMeterHandler))
+			suite.csms.SetMeterHandler(h)
 		case *MockCSMSProvisioningHandler:
-			suite.csms.SetProvisioningHandler(h.(*MockCSMSProvisioningHandler))
+			suite.csms.SetProvisioningHandler(h)
 		case *MockCSMSRemoteControlHandler:
-			suite.csms.SetRemoteControlHandler(h.(*MockCSMSRemoteControlHandler))
+			suite.csms.SetRemoteControlHandler(h)
 		case *MockCSMSReservationHandler:
-			suite.csms.SetReservationHandler(h.(*MockCSMSReservationHandler))
+			suite.csms.SetReservationHandler(h)
 		case *MockCSMSSecurityHandler:
-			suite.csms.SetSecurityHandler(h.(*MockCSMSSecurityHandler))
+			suite.csms.SetSecurityHandler(h)
 		case *MockCSMSSmartChargingHandler:
-			suite.csms.SetSmartChargingHandler(h.(*MockCSMSSmartChargingHandler))
+			suite.csms.SetSmartChargingHandler(h)
 		case *MockCSMSTariffCostHandler:
-			suite.csms.SetTariffCostHandler(h.(*MockCSMSTariffCostHandler))
+			suite.csms.SetTariffCostHandler(h)
 		case *MockCSMSTransactionsHandler:
-			suite.csms.SetTransactionsHandler(h.(*MockCSMSTransactionsHandler))
+			suite.csms.SetTransactionsHandler(h)
 		}
 	}
 	suite.csms.SetNewChargingStationHandler(func(chargingStation ocpp2.ChargingStationConnection) {
@@ -909,39 +909,39 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOption
 func setupDefaultChargingStationHandlers(suite *OcppV2TestSuite, options expectedChargingStationOptions, handlers ...interface{}) {
 	t := suite.T()
 	for _, h := range handlers {
-		switch h.(type) {
+		switch h := h.(type) {
 		case *MockChargingStationAuthorizationHandler:
-			suite.chargingStation.SetAuthorizationHandler(h.(*MockChargingStationAuthorizationHandler))
+			suite.chargingStation.SetAuthorizationHandler(h)
 		case *MockChargingStationAvailabilityHandler:
-			suite.chargingStation.SetAvailabilityHandler(h.(*MockChargingStationAvailabilityHandler))
+			suite.chargingStation.SetAvailabilityHandler(h)
 		case *MockChargingStationDataHandler:
-			suite.chargingStation.SetDataHandler(h.(*MockChargingStationDataHandler))
+			suite.chargingStation.SetDataHandler(h)
 		case *MockChargingStationDiagnosticsHandler:
-			suite.chargingStation.SetDiagnosticsHandler(h.(*MockChargingStationDiagnosticsHandler))
+			suite.chargingStation.SetDiagnosticsHandler(h)
 		case *MockChargingStationDisplayHandler:
-			suite.chargingStation.SetDisplayHandler(h.(*MockChargingStationDisplayHandler))
+			suite.chargingStation.SetDisplayHandler(h)
 		case *MockChargingStationFirmwareHandler:
-			suite.chargingStation.SetFirmwareHandler(h.(*MockChargingStationFirmwareHandler))
+			suite.chargingStation.SetFirmwareHandler(h)
 		case *MockChargingStationIso15118Handler:
-			suite.chargingStation.SetISO15118Handler(h.(*MockChargingStationIso15118Handler))
+			suite.chargingStation.SetISO15118Handler(h)
 		case *MockChargingStationLocalAuthHandler:
-			suite.chargingStation.SetLocalAuthListHandler(h.(*MockChargingStationLocalAuthHandler))
+			suite.chargingStation.SetLocalAuthListHandler(h)
 		case *MockChargingStationMeterHandler:
-			suite.chargingStation.SetMeterHandler(h.(*MockChargingStationMeterHandler))
+			suite.chargingStation.SetMeterHandler(h)
 		case *MockChargingStationProvisioningHandler:
-			suite.chargingStation.SetProvisioningHandler(h.(*MockChargingStationProvisioningHandler))
+			suite.chargingStation.SetProvisioningHandler(h)
 		case *MockChargingStationRemoteControlHandler:
-			suite.chargingStation.SetRemoteControlHandler(h.(*MockChargingStationRemoteControlHandler))
+			suite.chargingStation.SetRemoteControlHandler(h)
 		case *MockChargingStationReservationHandler:
-			suite.chargingStation.SetReservationHandler(h.(*MockChargingStationReservationHandler))
+			suite.chargingStation.SetReservationHandler(h)
 		case *MockChargingStationSecurityHandler:
-			suite.chargingStation.SetSecurityHandler(h.(*MockChargingStationSecurityHandler))
+			suite.chargingStation.SetSecurityHandler(h)
 		case *MockChargingStationSmartChargingHandler:
-			suite.chargingStation.SetSmartChargingHandler(h.(*MockChargingStationSmartChargingHandler))
+			suite.chargingStation.SetSmartChargingHandler(h)
 		case *MockChargingStationTariffCostHandler:
-			suite.chargingStation.SetTariffCostHandler(h.(*MockChargingStationTariffCostHandler))
+			suite.chargingStation.SetTariffCostHandler(h)
 		case *MockChargingStationTransactionHandler:
-			suite.chargingStation.SetTransactionsHandler(h.(*MockChargingStationTransactionHandler))
+			suite.chargingStation.SetTransactionsHandler(h)
 		}
 	}
 	suite.mockWsClient.On("Start", mock.AnythingOfType("string")).Return(options.startReturnArgument).Run(func(args mock.Arguments) {

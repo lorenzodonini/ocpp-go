@@ -388,7 +388,7 @@ func (suite *OcppJTestSuite) TestClientParallelRequests() {
 	require.Nil(t, err)
 	for i := 0; i < messagesToQueue; i++ {
 		go func() {
-			req := newMockRequest(fmt.Sprintf("someReq"))
+			req := newMockRequest("someReq")
 			err = suite.chargePoint.SendRequest(req)
 			require.Nil(t, err)
 		}()
@@ -526,7 +526,7 @@ func (suite *OcppJTestSuite) TestClientDisconnected() {
 		require.NoError(t, err)
 	}
 	// Wait for trigger disconnect after a few responses were returned
-	_ = <-triggerC
+	<-triggerC
 	assert.False(t, suite.clientDispatcher.IsPaused())
 	suite.mockClient.DisconnectedHandler(disconnectError)
 	time.Sleep(200 * time.Millisecond)
@@ -592,7 +592,7 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 		require.NoError(t, err)
 	}
 	// Wait for trigger disconnect after a few responses were returned
-	_ = <-triggerC
+	<-triggerC
 	suite.mockClient.DisconnectedHandler(disconnectError)
 	// One message was sent, but all others are still in queue
 	time.Sleep(200 * time.Millisecond)
@@ -604,7 +604,7 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.False(t, suite.clientRequestQueue.IsEmpty())
 	// Wait until remaining messages are sent
-	_ = <-triggerC
+	<-triggerC
 	assert.False(t, suite.clientDispatcher.IsPaused())
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.Equal(t, messagesToQueue, sentMessages)
@@ -614,8 +614,8 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 
 // TestClientResponseTimeout ensures that upon a response timeout, the client dispatcher:
 //
-//  - cancels the current pending request
-//	- fires an error, which is returned to the caller
+//   - cancels the current pending request
+//   - fires an error, which is returned to the caller
 func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	t := suite.T()
 	requestID := ""
@@ -650,7 +650,7 @@ func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	assert.Equal(t, 1, suite.clientRequestQueue.Size())
 	assert.True(t, state.HasPendingRequest())
 	// Wait for timeout error to be thrown
-	_ = <-timeoutC
+	<-timeoutC
 	assert.True(t, suite.clientRequestQueue.IsEmpty())
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.False(t, state.HasPendingRequest())
