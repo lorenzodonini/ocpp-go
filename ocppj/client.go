@@ -28,8 +28,14 @@ type Client struct {
 //
 // You may create a simple new server by using these default values:
 //	s := ocppj.NewClient(ws.NewClient(), nil, nil)
+//
+// The wsClient parameter cannot be nil. Refer to the ws package for information on how to create and
+// customize a websocket client.
 func NewClient(id string, wsClient ws.WsClient, dispatcher ClientDispatcher, stateHandler ClientState, profiles ...*ocpp.Profile) *Client {
 	endpoint := Endpoint{}
+	if wsClient == nil {
+		panic("wsClient parameter cannot be nil")
+	}
 	for _, profile := range profiles {
 		endpoint.AddProfile(profile)
 	}
@@ -38,9 +44,6 @@ func NewClient(id string, wsClient ws.WsClient, dispatcher ClientDispatcher, sta
 	}
 	if stateHandler == nil {
 		stateHandler = NewClientState()
-	}
-	if wsClient == nil {
-		wsClient = ws.NewClient()
 	}
 	dispatcher.SetNetworkClient(wsClient)
 	dispatcher.SetPendingRequestState(stateHandler)
