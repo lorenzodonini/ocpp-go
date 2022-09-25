@@ -961,7 +961,7 @@ func TestServerErrors(t *testing.T) {
 	// Send unexpected close message and wait for error to be thrown
 	err = wsClient.webSocket.connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
 	assert.NoError(t, err)
-	r = <-triggerC
+	<-triggerC
 	// Stop and wait for errors channel cleanup
 	wsServer.Stop()
 	r = <-triggerC
