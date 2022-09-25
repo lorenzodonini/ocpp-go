@@ -117,7 +117,7 @@ type ChargePoint interface {
 // Here is an example for a client using TLS configuration with a self-signed certificate:
 //
 //	certPool := x509.NewCertPool()
-//	data, err := ioutil.ReadFile("serverSelfSignedCertFilename")
+//	data, err := os.ReadFile("serverSelfSignedCertFilename")
 //	if err != nil {
 //		log.Fatal(err)
 //	}

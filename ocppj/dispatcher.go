@@ -577,7 +577,7 @@ func (d *DefaultServerDispatcher) waitForTimeout(clientID string, clientCtx clie
 	defer clientCtx.cancel()
 	log.Debugf("started timeout timer for %s", clientID)
 	select {
-	case _, _ = <-clientCtx.ctx.Done():
+	case <-clientCtx.ctx.Done():
 		err := clientCtx.ctx.Err()
 		if err == context.DeadlineExceeded {
 			// Timeout triggered, notifying messagePump

@@ -484,8 +484,8 @@ func (cs *centralSystem) handleIncomingRequest(chargePoint ChargePointConnection
 			}
 		}
 	}
-	var confirmation ocpp.Response = nil
-	var err error = nil
+	var confirmation ocpp.Response
+	var err error
 	// Execute in separate goroutine, so the caller goroutine is available
 	go func() {
 		switch action {

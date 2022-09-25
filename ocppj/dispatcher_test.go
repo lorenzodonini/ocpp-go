@@ -94,7 +94,7 @@ func (s *ServerDispatcherTestSuite) TestServerRequestCanceled() {
 	s.websocketServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
 		id, _ := args.Get(0).(string)
 		assert.Equal(t, clientID, id)
-		_, _ = <-writeC
+		<-writeC
 	}).Return(fmt.Errorf(errMsg))
 	// Create mock request
 	req := newMockRequest("somevalue")
@@ -293,7 +293,7 @@ func (c *ClientDispatcherTestSuite) TestClientRequestCanceled() {
 	writeC := make(chan bool, 1)
 	errMsg := "mockError"
 	c.websocketClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
-		_, _ = <-writeC
+		<-writeC
 	}).Return(fmt.Errorf(errMsg))
 	// Create mock request
 	req := newMockRequest("somevalue")
@@ -362,7 +362,7 @@ func (c *ClientDispatcherTestSuite) TestClientDispatcherTimeout() {
 	err = c.dispatcher.SendRequest(bundle)
 	require.NoError(t, err)
 	// Check status after sending request
-	_, _ = <-writeC
+	<-writeC
 	assert.True(t, c.state.HasPendingRequest())
 	// Wait for timeout
 	_, ok := <-timeout

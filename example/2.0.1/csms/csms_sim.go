@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"time"
@@ -54,7 +53,7 @@ func setupTlsCentralSystem() ocpp2.CSMS {
 		certPool = systemPool
 	} else {
 		certPool = x509.NewCertPool()
-		data, err := ioutil.ReadFile(caCertificate)
+		data, err := os.ReadFile(caCertificate)
 		if err != nil {
 			log.Fatalf("couldn't read CA certificate from %v: %v", caCertificate, err)
 		}

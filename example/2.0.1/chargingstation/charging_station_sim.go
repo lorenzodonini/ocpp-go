@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"time"
@@ -45,7 +44,7 @@ func setupTlsChargingStation(chargingStationID string) ocpp2.ChargingStation {
 	// Load CA cert
 	caPath, ok := os.LookupEnv(envVarCACertificate)
 	if ok {
-		caCert, err := ioutil.ReadFile(caPath)
+		caCert, err := os.ReadFile(caPath)
 		if err != nil {
 			log.Warn(err)
 		} else if !certPool.AppendCertsFromPEM(caCert) {

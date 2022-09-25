@@ -548,7 +548,7 @@ func (cs *chargingStation) asyncCallbackHandler() {
 			} else {
 				cs.error(fmt.Errorf("no callback available for incoming error %w", protoError))
 			}
-		case _, _ = <-cs.stopC:
+		case <-cs.stopC:
 			return
 		}
 	}
@@ -685,8 +685,8 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		}
 	}
 	// Process request
-	var response ocpp.Response = nil
-	var err error = nil
+	var response ocpp.Response
+	var err error
 	switch action {
 	case reservation.CancelReservationFeatureName:
 		response, err = cs.reservationHandler.OnCancelReservation(request.(*reservation.CancelReservationRequest))

@@ -42,16 +42,19 @@ type ChargingStationConnectionHandler func(chargePoint ChargingStationConnection
 // You can instantiate a default Charging Station struct by calling NewChargingStation.
 //
 // The logic for incoming messages needs to be implemented, and message handlers need to be registered with the charging station:
-//	handler := &ChargingStationHandler{} 				// Custom struct
-//  chargingStation.SetAuthorizationHandler(handler)
-//  chargingStation.SetProvisioningHandler(handler)
-//  // set more handlers...
+//
+//		handler := &ChargingStationHandler{} 				// Custom struct
+//	 chargingStation.SetAuthorizationHandler(handler)
+//	 chargingStation.SetProvisioningHandler(handler)
+//	 // set more handlers...
+//
 // Refer to the ChargingStationHandler interface of each profile for the implementation requirements.
 //
 // If a handler for a profile is not set, the OCPP library will reply to incoming messages for that profile with a NotImplemented error.
 //
 // A charging station can be started and stopped using the Start and Stop functions.
 // While running, messages can be sent to the CSMS by calling the Charging Station's functions, e.g.
+//
 //	bootConf, err := chargingStation.BootNotification(BootReasonPowerUp, "model1", "vendor1")
 //
 // All messages are synchronous blocking, and return either the response from the CSMS or an error.
@@ -171,12 +174,14 @@ type ChargingStation interface {
 // The id parameter is required to uniquely identify the charge point.
 //
 // The endpoint and client parameters may be omitted, in order to use a default configuration:
-//   chargingStation := NewChargingStation("someUniqueId", nil, nil)
+//
+//	chargingStation := NewChargingStation("someUniqueId", nil, nil)
 //
 // Additional networking parameters (e.g. TLS or proxy configuration) may be passed, by creating a custom client.
 // Here is an example for a client using TLS configuration with a self-signed certificate:
+//
 //	certPool := x509.NewCertPool()
-//	data, err := ioutil.ReadFile("serverSelfSignedCertFilename")
+//	data, err := os.ReadFile("serverSelfSignedCertFilename")
 //	if err != nil {
 //		log.Fatal(err)
 //	}
@@ -222,10 +227,12 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) C
 // You can instantiate a default CSMS struct by calling the NewCSMS function.
 //
 // The logic for handling incoming messages needs to be implemented, and message handlers need to be registered with the CSMS:
-//	handler := &CSMSHandler{} 				// Custom struct
-//  csms.SetAuthorizationHandler(handler)
-//  csms.SetProvisioningHandler(handler)
-//  // set more handlers...
+//
+//		handler := &CSMSHandler{} 				// Custom struct
+//	 csms.SetAuthorizationHandler(handler)
+//	 csms.SetProvisioningHandler(handler)
+//	 // set more handlers...
+//
 // Refer to the CSMSHandler interface of each profile for the implementation requirements.
 //
 // If a handler for a profile is not set, the OCPP library will reply to incoming messages for that profile with a NotImplemented error.
@@ -234,10 +241,12 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) C
 // To be notified of incoming (dis)connections from charging stations refer to the SetNewChargingStationHandler and SetChargingStationDisconnectedHandler functions.
 //
 // While running, messages can be sent to a Charging Station by calling the CSMS's functions, e.g.:
+//
 //	callback := func(conf *ClearDisplayResponse, err error) {
 //		// handle the response...
 //	}
 //	clearDisplayConf, err := csms.ClearDisplay("cs0001", callback, 10)
+//
 // All messages are sent asynchronously and do not block the caller.
 type CSMS interface {
 	// Cancel a pending reservation, provided the reservationId, on a charging station.
@@ -374,12 +383,14 @@ type CSMS interface {
 // Creates a new OCPP 2.0 CSMS.
 //
 // The endpoint and client parameters may be omitted, in order to use a default configuration:
-//   csms := NewCSMS(nil, nil)
+//
+//	csms := NewCSMS(nil, nil)
 //
 // It is recommended to use the default configuration, unless a custom networking / ocppj layer is required.
 // The default dispatcher supports all implemented OCPP 2.0 features out-of-the-box.
 //
 // If you need a TLS server, you may use the following:
+//
 //	csms := NewCSMS(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
 func NewCSMS(endpoint *ocppj.Server, server ws.WsServer) CSMS {
 	if server == nil {

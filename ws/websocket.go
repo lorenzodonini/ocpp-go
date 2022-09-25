@@ -9,7 +9,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -592,7 +592,7 @@ func (server *Server) writePump(ws *WebSocket) {
 				return
 			}
 			log.Debugf("pong sent to %s", ws.ID())
-		case closeErr, _ := <-ws.closeC:
+		case closeErr := <-ws.closeC:
 			log.Debugf("closing connection to %s", ws.ID())
 			// Closing connection gracefully
 			if err := conn.WriteControl(
@@ -853,7 +853,7 @@ func (client *Client) writePump() {
 
 	for {
 		select {
-		case data, _ := <-client.webSocket.outQueue:
+		case data := <-client.webSocket.outQueue:
 			// Send data
 			log.Debugf("sending data")
 			_ = conn.SetWriteDeadline(time.Now().Add(client.timeoutConfig.WriteWait))
@@ -875,7 +875,7 @@ func (client *Client) writePump() {
 				return
 			}
 			log.Debugf("ping sent")
-		case closeErr, _ := <-client.webSocket.closeC:
+		case closeErr := <-client.webSocket.closeC:
 			log.Debugf("closing connection")
 			// Closing connection gracefully
 			if err := conn.WriteControl(
@@ -1015,7 +1015,7 @@ func (client *Client) Start(urlStr string) error {
 			httpError := HttpConnectionError{Message: err.Error(), HttpStatus: resp.Status, HttpCode: resp.StatusCode}
 			// Parse http response details
 			defer resp.Body.Close()
-			body, _ := ioutil.ReadAll(resp.Body)
+			body, _ := io.ReadAll(resp.Body)
 			if body != nil {
 				httpError.Details = string(body)
 			}
