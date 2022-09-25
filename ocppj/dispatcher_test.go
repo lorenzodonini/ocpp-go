@@ -233,7 +233,6 @@ func (s *ServerDispatcherTestSuite) TestServerDispatcherTimeout() {
 
 type ClientDispatcherTestSuite struct {
 	suite.Suite
-	mutex           sync.Mutex
 	state           ocppj.ClientState
 	queue           ocppj.RequestQueue
 	dispatcher      ocppj.ClientDispatcher
