@@ -365,7 +365,7 @@ type CanceledRequestHandler func(clientID string, requestID string, request ocpp
 // Utility struct for passing a client context around and cancel pending requests.
 type clientTimeoutContext struct {
 	ctx    context.Context
-	cancel func()
+	cancel context.CancelFunc
 }
 
 func (c clientTimeoutContext) isActive() bool {
