@@ -519,7 +519,8 @@ func (cs *centralSystem) handleIncomingRequest(chargePoint ChargePointConnection
 
 func (cs *centralSystem) handleIncomingConfirmation(chargePoint ChargePointConnection, confirmation ocpp.Response, requestId string) {
 	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID()); ok {
-		callback(confirmation, nil)
+		// Execute in separate goroutine, so the caller goroutine is available
+		go callback(confirmation, nil)
 	} else {
 		err := fmt.Errorf("no handler available for call of type %v from client %s for request %s", confirmation.GetFeatureName(), chargePoint.ID(), requestId)
 		cs.error(err)
@@ -528,7 +529,8 @@ func (cs *centralSystem) handleIncomingConfirmation(chargePoint ChargePointConne
 
 func (cs *centralSystem) handleIncomingError(chargePoint ChargePointConnection, err *ocpp.Error, details interface{}) {
 	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID()); ok {
-		callback(nil, err)
+		// Execute in separate goroutine, so the caller goroutine is available
+		go callback(nil, err)
 	} else {
 		err := fmt.Errorf("no handler available for call error %w from client %s", err, chargePoint.ID())
 		cs.error(err)
@@ -537,7 +539,8 @@ func (cs *centralSystem) handleIncomingError(chargePoint ChargePointConnection, 
 
 func (cs *centralSystem) handleCanceledRequest(chargePointID string, request ocpp.Request, err *ocpp.Error) {
 	if callback, ok := cs.callbackQueue.Dequeue(chargePointID); ok {
-		callback(nil, err)
+		// Execute in separate goroutine, so the caller goroutine is available
+		go callback(nil, err)
 	} else {
 		err := fmt.Errorf("no handler available for canceled request %s for client %s: %w",
 			request.GetFeatureName(), chargePointID, err)
