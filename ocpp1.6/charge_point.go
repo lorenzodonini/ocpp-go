@@ -340,6 +340,10 @@ func (cp *chargePoint) Stop() {
 	}
 }
 
+func (cp *chargePoint) IsConnected() bool {
+	return cp.client.IsConnected()
+}
+
 func (cp *chargePoint) notImplementedError(requestId string, action string) {
 	err := cp.client.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {

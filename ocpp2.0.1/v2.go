@@ -165,6 +165,9 @@ type ChargingStation interface {
 	// Stops the charging station routine, disconnecting it from the CSMS.
 	// Any pending requests are discarded.
 	Stop()
+	// Returns true if the charging station is currently connected to the CSMS, false otherwise.
+	// While automatically reconnecting to the CSMS, the method returns false.
+	IsConnected() bool
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	// The channel is closed by the charging station when stopped.
 	Errors() <-chan error

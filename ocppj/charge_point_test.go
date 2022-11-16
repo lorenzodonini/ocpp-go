@@ -562,9 +562,11 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 		require.NotNil(t, call)
 		writeC <- call
 	}).Return(nil)
+	isConnectedCall := suite.mockClient.On("IsConnected").Return(true)
 	// Start normally
 	err := suite.chargePoint.Start("someUrl")
 	require.Nil(t, err)
+	assert.True(t, suite.chargePoint.IsConnected())
 	// Start mocked response routine
 	go func() {
 		counter := 0
@@ -593,16 +595,20 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 	}
 	// Wait for trigger disconnect after a few responses were returned
 	<-triggerC
+	isConnectedCall.Return(false)
 	suite.mockClient.DisconnectedHandler(disconnectError)
 	// One message was sent, but all others are still in queue
 	time.Sleep(200 * time.Millisecond)
 	assert.True(t, suite.clientDispatcher.IsPaused())
+	assert.False(t, suite.chargePoint.IsConnected())
 	// Wait for some more time and then reconnect
 	time.Sleep(500 * time.Millisecond)
+	isConnectedCall.Return(true)
 	suite.mockClient.ReconnectedHandler()
 	assert.False(t, suite.clientDispatcher.IsPaused())
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.False(t, suite.clientRequestQueue.IsEmpty())
+	assert.True(t, suite.chargePoint.IsConnected())
 	// Wait until remaining messages are sent
 	<-triggerC
 	assert.False(t, suite.clientDispatcher.IsPaused())
@@ -610,6 +616,7 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 	assert.Equal(t, messagesToQueue, sentMessages)
 	assert.True(t, suite.clientRequestQueue.IsEmpty())
 	assert.False(t, state.HasPendingRequest())
+	assert.True(t, suite.chargePoint.IsConnected())
 }
 
 // TestClientResponseTimeout ensures that upon a response timeout, the client dispatcher:

@@ -591,6 +591,10 @@ func (cs *chargingStation) Stop() {
 	cs.client.Stop()
 }
 
+func (cs *chargingStation) IsConnected() bool {
+	return cs.client.IsConnected()
+}
+
 func (cs *chargingStation) notImplementedError(requestId string, action string) {
 	err := cs.client.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {

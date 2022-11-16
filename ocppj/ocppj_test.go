@@ -162,6 +162,11 @@ func (websocketClient *MockWebsocketClient) Errors() <-chan error {
 	return websocketClient.errC
 }
 
+func (websocketClient *MockWebsocketClient) IsConnected() bool {
+	args := websocketClient.MethodCalled("IsConnected")
+	return args.Bool(0)
+}
+
 // ---------------------- MOCK FEATURE ----------------------
 const (
 	MockFeatureName = "Mock"
