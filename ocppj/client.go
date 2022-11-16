@@ -115,6 +115,10 @@ func (c *Client) Stop() {
 	<-cleanupC
 }
 
+func (c *Client) IsConnected() bool {
+	return c.client.IsConnected()
+}
+
 // Sends an OCPP Request to the server.
 // The protocol is based on request-response and cannot send multiple messages concurrently.
 // To guarantee this, outgoing messages are added to a queue and processed sequentially.

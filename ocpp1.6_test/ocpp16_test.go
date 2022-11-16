@@ -143,6 +143,11 @@ func (websocketClient *MockWebsocketClient) Errors() <-chan error {
 	return websocketClient.errC
 }
 
+func (websocketClient *MockWebsocketClient) IsConnected() bool {
+	args := websocketClient.MethodCalled("IsConnected")
+	return args.Bool(0)
+}
+
 // Default queue capacity
 const queueCapacity = 10
 
@@ -682,6 +687,16 @@ func (suite *OcppV16TestSuite) SetupTest() {
 		return defaultMessageId
 	}}
 	ocppj.SetMessageIdGenerator(suite.messageIdGenerator.generateId)
+}
+
+func (suite *OcppV16TestSuite) TestIsConnected() {
+	t := suite.T()
+	// Simulate ws connected
+	mockCall := suite.mockWsClient.On("IsConnected").Return(true)
+	assert.True(t, suite.chargePoint.IsConnected())
+	// Simulate ws disconnected
+	mockCall.Return(false)
+	assert.False(t, suite.chargePoint.IsConnected())
 }
 
 //TODO: implement generic protocol tests

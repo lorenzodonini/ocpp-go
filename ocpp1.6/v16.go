@@ -101,6 +101,9 @@ type ChargePoint interface {
 	// Stops the charge point routine, disconnecting it from the central system.
 	// Any pending requests are discarded.
 	Stop()
+	// Returns true if the charge point is currently connected to the central system, false otherwise.
+	// While automatically reconnecting to the central system, the method returns false.
+	IsConnected() bool
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	// The channel is closed by the charge point when stopped.
 	Errors() <-chan error
