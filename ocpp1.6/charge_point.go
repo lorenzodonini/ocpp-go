@@ -263,7 +263,8 @@ func (cp *chargePoint) asyncCallbackHandler() {
 		case confirmation := <-cp.confirmationHandler:
 			// Get and invoke callback
 			if callback, ok := cp.callbacks.Dequeue("main"); ok {
-				callback(confirmation, nil)
+				// Invoke callback in dedicated goroutine
+				go callback(confirmation, nil)
 			} else {
 				err := fmt.Errorf("no handler available for incoming response %v", confirmation.GetFeatureName())
 				cp.error(err)
@@ -271,7 +272,8 @@ func (cp *chargePoint) asyncCallbackHandler() {
 		case protoError := <-cp.errorHandler:
 			// Get and invoke callback
 			if callback, ok := cp.callbacks.Dequeue("main"); ok {
-				callback(nil, protoError)
+				// Invoke callback in dedicated goroutine
+				go callback(nil, protoError)
 			} else {
 				err := fmt.Errorf("no handler available for error %v", protoError.Error())
 				cp.error(err)
@@ -402,50 +404,52 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	}
 	// Process request
 	var confirmation ocpp.Response
-	cp.client.GetProfileForFeature(action)
 	var err error
-	switch action {
-	case core.ChangeAvailabilityFeatureName:
-		confirmation, err = cp.coreHandler.OnChangeAvailability(request.(*core.ChangeAvailabilityRequest))
-	case core.ChangeConfigurationFeatureName:
-		confirmation, err = cp.coreHandler.OnChangeConfiguration(request.(*core.ChangeConfigurationRequest))
-	case core.ClearCacheFeatureName:
-		confirmation, err = cp.coreHandler.OnClearCache(request.(*core.ClearCacheRequest))
-	case core.DataTransferFeatureName:
-		confirmation, err = cp.coreHandler.OnDataTransfer(request.(*core.DataTransferRequest))
-	case core.GetConfigurationFeatureName:
-		confirmation, err = cp.coreHandler.OnGetConfiguration(request.(*core.GetConfigurationRequest))
-	case core.RemoteStartTransactionFeatureName:
-		confirmation, err = cp.coreHandler.OnRemoteStartTransaction(request.(*core.RemoteStartTransactionRequest))
-	case core.RemoteStopTransactionFeatureName:
-		confirmation, err = cp.coreHandler.OnRemoteStopTransaction(request.(*core.RemoteStopTransactionRequest))
-	case core.ResetFeatureName:
-		confirmation, err = cp.coreHandler.OnReset(request.(*core.ResetRequest))
-	case core.UnlockConnectorFeatureName:
-		confirmation, err = cp.coreHandler.OnUnlockConnector(request.(*core.UnlockConnectorRequest))
-	case localauth.GetLocalListVersionFeatureName:
-		confirmation, err = cp.localAuthListHandler.OnGetLocalListVersion(request.(*localauth.GetLocalListVersionRequest))
-	case localauth.SendLocalListFeatureName:
-		confirmation, err = cp.localAuthListHandler.OnSendLocalList(request.(*localauth.SendLocalListRequest))
-	case firmware.GetDiagnosticsFeatureName:
-		confirmation, err = cp.firmwareHandler.OnGetDiagnostics(request.(*firmware.GetDiagnosticsRequest))
-	case firmware.UpdateFirmwareFeatureName:
-		confirmation, err = cp.firmwareHandler.OnUpdateFirmware(request.(*firmware.UpdateFirmwareRequest))
-	case reservation.ReserveNowFeatureName:
-		confirmation, err = cp.reservationHandler.OnReserveNow(request.(*reservation.ReserveNowRequest))
-	case reservation.CancelReservationFeatureName:
-		confirmation, err = cp.reservationHandler.OnCancelReservation(request.(*reservation.CancelReservationRequest))
-	case remotetrigger.TriggerMessageFeatureName:
-		confirmation, err = cp.remoteTriggerHandler.OnTriggerMessage(request.(*remotetrigger.TriggerMessageRequest))
-	case smartcharging.SetChargingProfileFeatureName:
-		confirmation, err = cp.smartChargingHandler.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
-	case smartcharging.ClearChargingProfileFeatureName:
-		confirmation, err = cp.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
-	case smartcharging.GetCompositeScheduleFeatureName:
-		confirmation, err = cp.smartChargingHandler.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
-	default:
-		cp.notSupportedError(requestId, action)
-		return
-	}
-	cp.sendResponse(confirmation, err, requestId)
+	// Execute in separate goroutine, so the caller goroutine is available
+	go func() {
+		switch action {
+		case core.ChangeAvailabilityFeatureName:
+			confirmation, err = cp.coreHandler.OnChangeAvailability(request.(*core.ChangeAvailabilityRequest))
+		case core.ChangeConfigurationFeatureName:
+			confirmation, err = cp.coreHandler.OnChangeConfiguration(request.(*core.ChangeConfigurationRequest))
+		case core.ClearCacheFeatureName:
+			confirmation, err = cp.coreHandler.OnClearCache(request.(*core.ClearCacheRequest))
+		case core.DataTransferFeatureName:
+			confirmation, err = cp.coreHandler.OnDataTransfer(request.(*core.DataTransferRequest))
+		case core.GetConfigurationFeatureName:
+			confirmation, err = cp.coreHandler.OnGetConfiguration(request.(*core.GetConfigurationRequest))
+		case core.RemoteStartTransactionFeatureName:
+			confirmation, err = cp.coreHandler.OnRemoteStartTransaction(request.(*core.RemoteStartTransactionRequest))
+		case core.RemoteStopTransactionFeatureName:
+			confirmation, err = cp.coreHandler.OnRemoteStopTransaction(request.(*core.RemoteStopTransactionRequest))
+		case core.ResetFeatureName:
+			confirmation, err = cp.coreHandler.OnReset(request.(*core.ResetRequest))
+		case core.UnlockConnectorFeatureName:
+			confirmation, err = cp.coreHandler.OnUnlockConnector(request.(*core.UnlockConnectorRequest))
+		case localauth.GetLocalListVersionFeatureName:
+			confirmation, err = cp.localAuthListHandler.OnGetLocalListVersion(request.(*localauth.GetLocalListVersionRequest))
+		case localauth.SendLocalListFeatureName:
+			confirmation, err = cp.localAuthListHandler.OnSendLocalList(request.(*localauth.SendLocalListRequest))
+		case firmware.GetDiagnosticsFeatureName:
+			confirmation, err = cp.firmwareHandler.OnGetDiagnostics(request.(*firmware.GetDiagnosticsRequest))
+		case firmware.UpdateFirmwareFeatureName:
+			confirmation, err = cp.firmwareHandler.OnUpdateFirmware(request.(*firmware.UpdateFirmwareRequest))
+		case reservation.ReserveNowFeatureName:
+			confirmation, err = cp.reservationHandler.OnReserveNow(request.(*reservation.ReserveNowRequest))
+		case reservation.CancelReservationFeatureName:
+			confirmation, err = cp.reservationHandler.OnCancelReservation(request.(*reservation.CancelReservationRequest))
+		case remotetrigger.TriggerMessageFeatureName:
+			confirmation, err = cp.remoteTriggerHandler.OnTriggerMessage(request.(*remotetrigger.TriggerMessageRequest))
+		case smartcharging.SetChargingProfileFeatureName:
+			confirmation, err = cp.smartChargingHandler.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
+		case smartcharging.ClearChargingProfileFeatureName:
+			confirmation, err = cp.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
+		case smartcharging.GetCompositeScheduleFeatureName:
+			confirmation, err = cp.smartChargingHandler.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
+		default:
+			cp.notSupportedError(requestId, action)
+			return
+		}
+		cp.sendResponse(confirmation, err, requestId)
+	}()
 }

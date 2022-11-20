@@ -537,14 +537,16 @@ func (cs *chargingStation) asyncCallbackHandler() {
 		case confirmation := <-cs.responseHandler:
 			// Get and invoke callback
 			if callback, ok := cs.callbacks.Dequeue("main"); ok {
-				callback(confirmation, nil)
+				// Invoke callback in dedicated goroutine
+				go callback(confirmation, nil)
 			} else {
 				cs.error(fmt.Errorf("no callback available for incoming response %v", confirmation.GetFeatureName()))
 			}
 		case protoError := <-cs.errorHandler:
 			// Get and invoke callback
 			if callback, ok := cs.callbacks.Dequeue("main"); ok {
-				callback(nil, protoError)
+				// Invoke callback in dedicated goroutine
+				go callback(nil, protoError)
 			} else {
 				cs.error(fmt.Errorf("no callback available for incoming error %w", protoError))
 			}
@@ -691,90 +693,92 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 	// Process request
 	var response ocpp.Response
 	var err error
-	switch action {
-	case reservation.CancelReservationFeatureName:
-		response, err = cs.reservationHandler.OnCancelReservation(request.(*reservation.CancelReservationRequest))
-	case security.CertificateSignedFeatureName:
-		response, err = cs.securityHandler.OnCertificateSigned(request.(*security.CertificateSignedRequest))
-	case availability.ChangeAvailabilityFeatureName:
-		response, err = cs.availabilityHandler.OnChangeAvailability(request.(*availability.ChangeAvailabilityRequest))
-	case authorization.ClearCacheFeatureName:
-		response, err = cs.authorizationHandler.OnClearCache(request.(*authorization.ClearCacheRequest))
-	case smartcharging.ClearChargingProfileFeatureName:
-		response, err = cs.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
-	case display.ClearDisplayMessageFeatureName:
-		response, err = cs.displayHandler.OnClearDisplay(request.(*display.ClearDisplayRequest))
-	case diagnostics.ClearVariableMonitoringFeatureName:
-		response, err = cs.diagnosticsHandler.OnClearVariableMonitoring(request.(*diagnostics.ClearVariableMonitoringRequest))
-	case tariffcost.CostUpdatedFeatureName:
-		response, err = cs.tariffCostHandler.OnCostUpdated(request.(*tariffcost.CostUpdatedRequest))
-	case diagnostics.CustomerInformationFeatureName:
-		response, err = cs.diagnosticsHandler.OnCustomerInformation(request.(*diagnostics.CustomerInformationRequest))
-	case data.DataTransferFeatureName:
-		response, err = cs.dataHandler.OnDataTransfer(request.(*data.DataTransferRequest))
-	case iso15118.DeleteCertificateFeatureName:
-		response, err = cs.iso15118Handler.OnDeleteCertificate(request.(*iso15118.DeleteCertificateRequest))
-	case provisioning.GetBaseReportFeatureName:
-		response, err = cs.provisioningHandler.OnGetBaseReport(request.(*provisioning.GetBaseReportRequest))
-	case smartcharging.GetChargingProfilesFeatureName:
-		response, err = cs.smartChargingHandler.OnGetChargingProfiles(request.(*smartcharging.GetChargingProfilesRequest))
-	case smartcharging.GetCompositeScheduleFeatureName:
-		response, err = cs.smartChargingHandler.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
-	case display.GetDisplayMessagesFeatureName:
-		response, err = cs.displayHandler.OnGetDisplayMessages(request.(*display.GetDisplayMessagesRequest))
-	case iso15118.GetInstalledCertificateIdsFeatureName:
-		response, err = cs.iso15118Handler.OnGetInstalledCertificateIds(request.(*iso15118.GetInstalledCertificateIdsRequest))
-	case localauth.GetLocalListVersionFeatureName:
-		response, err = cs.localAuthListHandler.OnGetLocalListVersion(request.(*localauth.GetLocalListVersionRequest))
-	case diagnostics.GetLogFeatureName:
-		response, err = cs.diagnosticsHandler.OnGetLog(request.(*diagnostics.GetLogRequest))
-	case diagnostics.GetMonitoringReportFeatureName:
-		response, err = cs.diagnosticsHandler.OnGetMonitoringReport(request.(*diagnostics.GetMonitoringReportRequest))
-	case provisioning.GetReportFeatureName:
-		response, err = cs.provisioningHandler.OnGetReport(request.(*provisioning.GetReportRequest))
-	case transactions.GetTransactionStatusFeatureName:
-		response, err = cs.transactionsHandler.OnGetTransactionStatus(request.(*transactions.GetTransactionStatusRequest))
-	case provisioning.GetVariablesFeatureName:
-		response, err = cs.provisioningHandler.OnGetVariables(request.(*provisioning.GetVariablesRequest))
-	case iso15118.InstallCertificateFeatureName:
-		response, err = cs.iso15118Handler.OnInstallCertificate(request.(*iso15118.InstallCertificateRequest))
-	case firmware.PublishFirmwareFeatureName:
-		response, err = cs.firmwareHandler.OnPublishFirmware(request.(*firmware.PublishFirmwareRequest))
-	case remotecontrol.RequestStartTransactionFeatureName:
-		response, err = cs.remoteControlHandler.OnRequestStartTransaction(request.(*remotecontrol.RequestStartTransactionRequest))
-	case remotecontrol.RequestStopTransactionFeatureName:
-		response, err = cs.remoteControlHandler.OnRequestStopTransaction(request.(*remotecontrol.RequestStopTransactionRequest))
-	case reservation.ReserveNowFeatureName:
-		response, err = cs.reservationHandler.OnReserveNow(request.(*reservation.ReserveNowRequest))
-	case provisioning.ResetFeatureName:
-		response, err = cs.provisioningHandler.OnReset(request.(*provisioning.ResetRequest))
-	case localauth.SendLocalListFeatureName:
-		response, err = cs.localAuthListHandler.OnSendLocalList(request.(*localauth.SendLocalListRequest))
-	case smartcharging.SetChargingProfileFeatureName:
-		response, err = cs.smartChargingHandler.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
-	case display.SetDisplayMessageFeatureName:
-		response, err = cs.displayHandler.OnSetDisplayMessage(request.(*display.SetDisplayMessageRequest))
-	case diagnostics.SetMonitoringBaseFeatureName:
-		response, err = cs.diagnosticsHandler.OnSetMonitoringBase(request.(*diagnostics.SetMonitoringBaseRequest))
-	case diagnostics.SetMonitoringLevelFeatureName:
-		response, err = cs.diagnosticsHandler.OnSetMonitoringLevel(request.(*diagnostics.SetMonitoringLevelRequest))
-	case provisioning.SetNetworkProfileFeatureName:
-		response, err = cs.provisioningHandler.OnSetNetworkProfile(request.(*provisioning.SetNetworkProfileRequest))
-	case diagnostics.SetVariableMonitoringFeatureName:
-		response, err = cs.diagnosticsHandler.OnSetVariableMonitoring(request.(*diagnostics.SetVariableMonitoringRequest))
-	case provisioning.SetVariablesFeatureName:
-		response, err = cs.provisioningHandler.OnSetVariables(request.(*provisioning.SetVariablesRequest))
-	case remotecontrol.TriggerMessageFeatureName:
-		response, err = cs.remoteControlHandler.OnTriggerMessage(request.(*remotecontrol.TriggerMessageRequest))
-	case remotecontrol.UnlockConnectorFeatureName:
-		response, err = cs.remoteControlHandler.OnUnlockConnector(request.(*remotecontrol.UnlockConnectorRequest))
-	case firmware.UnpublishFirmwareFeatureName:
-		response, err = cs.firmwareHandler.OnUnpublishFirmware(request.(*firmware.UnpublishFirmwareRequest))
-	case firmware.UpdateFirmwareFeatureName:
-		response, err = cs.firmwareHandler.OnUpdateFirmware(request.(*firmware.UpdateFirmwareRequest))
-	default:
-		cs.notSupportedError(requestId, action)
-		return
-	}
-	cs.sendResponse(response, err, requestId)
+	go func() {
+		switch action {
+		case reservation.CancelReservationFeatureName:
+			response, err = cs.reservationHandler.OnCancelReservation(request.(*reservation.CancelReservationRequest))
+		case security.CertificateSignedFeatureName:
+			response, err = cs.securityHandler.OnCertificateSigned(request.(*security.CertificateSignedRequest))
+		case availability.ChangeAvailabilityFeatureName:
+			response, err = cs.availabilityHandler.OnChangeAvailability(request.(*availability.ChangeAvailabilityRequest))
+		case authorization.ClearCacheFeatureName:
+			response, err = cs.authorizationHandler.OnClearCache(request.(*authorization.ClearCacheRequest))
+		case smartcharging.ClearChargingProfileFeatureName:
+			response, err = cs.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
+		case display.ClearDisplayMessageFeatureName:
+			response, err = cs.displayHandler.OnClearDisplay(request.(*display.ClearDisplayRequest))
+		case diagnostics.ClearVariableMonitoringFeatureName:
+			response, err = cs.diagnosticsHandler.OnClearVariableMonitoring(request.(*diagnostics.ClearVariableMonitoringRequest))
+		case tariffcost.CostUpdatedFeatureName:
+			response, err = cs.tariffCostHandler.OnCostUpdated(request.(*tariffcost.CostUpdatedRequest))
+		case diagnostics.CustomerInformationFeatureName:
+			response, err = cs.diagnosticsHandler.OnCustomerInformation(request.(*diagnostics.CustomerInformationRequest))
+		case data.DataTransferFeatureName:
+			response, err = cs.dataHandler.OnDataTransfer(request.(*data.DataTransferRequest))
+		case iso15118.DeleteCertificateFeatureName:
+			response, err = cs.iso15118Handler.OnDeleteCertificate(request.(*iso15118.DeleteCertificateRequest))
+		case provisioning.GetBaseReportFeatureName:
+			response, err = cs.provisioningHandler.OnGetBaseReport(request.(*provisioning.GetBaseReportRequest))
+		case smartcharging.GetChargingProfilesFeatureName:
+			response, err = cs.smartChargingHandler.OnGetChargingProfiles(request.(*smartcharging.GetChargingProfilesRequest))
+		case smartcharging.GetCompositeScheduleFeatureName:
+			response, err = cs.smartChargingHandler.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
+		case display.GetDisplayMessagesFeatureName:
+			response, err = cs.displayHandler.OnGetDisplayMessages(request.(*display.GetDisplayMessagesRequest))
+		case iso15118.GetInstalledCertificateIdsFeatureName:
+			response, err = cs.iso15118Handler.OnGetInstalledCertificateIds(request.(*iso15118.GetInstalledCertificateIdsRequest))
+		case localauth.GetLocalListVersionFeatureName:
+			response, err = cs.localAuthListHandler.OnGetLocalListVersion(request.(*localauth.GetLocalListVersionRequest))
+		case diagnostics.GetLogFeatureName:
+			response, err = cs.diagnosticsHandler.OnGetLog(request.(*diagnostics.GetLogRequest))
+		case diagnostics.GetMonitoringReportFeatureName:
+			response, err = cs.diagnosticsHandler.OnGetMonitoringReport(request.(*diagnostics.GetMonitoringReportRequest))
+		case provisioning.GetReportFeatureName:
+			response, err = cs.provisioningHandler.OnGetReport(request.(*provisioning.GetReportRequest))
+		case transactions.GetTransactionStatusFeatureName:
+			response, err = cs.transactionsHandler.OnGetTransactionStatus(request.(*transactions.GetTransactionStatusRequest))
+		case provisioning.GetVariablesFeatureName:
+			response, err = cs.provisioningHandler.OnGetVariables(request.(*provisioning.GetVariablesRequest))
+		case iso15118.InstallCertificateFeatureName:
+			response, err = cs.iso15118Handler.OnInstallCertificate(request.(*iso15118.InstallCertificateRequest))
+		case firmware.PublishFirmwareFeatureName:
+			response, err = cs.firmwareHandler.OnPublishFirmware(request.(*firmware.PublishFirmwareRequest))
+		case remotecontrol.RequestStartTransactionFeatureName:
+			response, err = cs.remoteControlHandler.OnRequestStartTransaction(request.(*remotecontrol.RequestStartTransactionRequest))
+		case remotecontrol.RequestStopTransactionFeatureName:
+			response, err = cs.remoteControlHandler.OnRequestStopTransaction(request.(*remotecontrol.RequestStopTransactionRequest))
+		case reservation.ReserveNowFeatureName:
+			response, err = cs.reservationHandler.OnReserveNow(request.(*reservation.ReserveNowRequest))
+		case provisioning.ResetFeatureName:
+			response, err = cs.provisioningHandler.OnReset(request.(*provisioning.ResetRequest))
+		case localauth.SendLocalListFeatureName:
+			response, err = cs.localAuthListHandler.OnSendLocalList(request.(*localauth.SendLocalListRequest))
+		case smartcharging.SetChargingProfileFeatureName:
+			response, err = cs.smartChargingHandler.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
+		case display.SetDisplayMessageFeatureName:
+			response, err = cs.displayHandler.OnSetDisplayMessage(request.(*display.SetDisplayMessageRequest))
+		case diagnostics.SetMonitoringBaseFeatureName:
+			response, err = cs.diagnosticsHandler.OnSetMonitoringBase(request.(*diagnostics.SetMonitoringBaseRequest))
+		case diagnostics.SetMonitoringLevelFeatureName:
+			response, err = cs.diagnosticsHandler.OnSetMonitoringLevel(request.(*diagnostics.SetMonitoringLevelRequest))
+		case provisioning.SetNetworkProfileFeatureName:
+			response, err = cs.provisioningHandler.OnSetNetworkProfile(request.(*provisioning.SetNetworkProfileRequest))
+		case diagnostics.SetVariableMonitoringFeatureName:
+			response, err = cs.diagnosticsHandler.OnSetVariableMonitoring(request.(*diagnostics.SetVariableMonitoringRequest))
+		case provisioning.SetVariablesFeatureName:
+			response, err = cs.provisioningHandler.OnSetVariables(request.(*provisioning.SetVariablesRequest))
+		case remotecontrol.TriggerMessageFeatureName:
+			response, err = cs.remoteControlHandler.OnTriggerMessage(request.(*remotecontrol.TriggerMessageRequest))
+		case remotecontrol.UnlockConnectorFeatureName:
+			response, err = cs.remoteControlHandler.OnUnlockConnector(request.(*remotecontrol.UnlockConnectorRequest))
+		case firmware.UnpublishFirmwareFeatureName:
+			response, err = cs.firmwareHandler.OnUnpublishFirmware(request.(*firmware.UnpublishFirmwareRequest))
+		case firmware.UpdateFirmwareFeatureName:
+			response, err = cs.firmwareHandler.OnUpdateFirmware(request.(*firmware.UpdateFirmwareRequest))
+		default:
+			cs.notSupportedError(requestId, action)
+			return
+		}
+		cs.sendResponse(response, err, requestId)
+	}()
 }
