@@ -681,7 +681,7 @@ type SignedMeterValue struct {
 }
 
 type SampledValue struct {
-	Value            float64           `json:"value" validate:"required"`                             // Indicates the measured value.
+	Value            float64           `json:"value"`                                                 // Indicates the measured value. This value is required.
 	Context          ReadingContext    `json:"context,omitempty" validate:"omitempty,readingContext"` // Type of detail value: start, end or sample. Default = "Sample.Periodic"
 	Measurand        Measurand         `json:"measurand,omitempty" validate:"omitempty,measurand"`    // Type of measurement. Default = "Energy.Active.Import.Register"
 	Phase            Phase             `json:"phase,omitempty" validate:"omitempty,phase"`            // Indicates how the measured value is to be interpreted. For instance between L1 and neutral (L1-N) Please note that not all values of phase are applicable to all Measurands. When phase is absent, the measured value is interpreted as an overall value.
