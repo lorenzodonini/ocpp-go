@@ -237,6 +237,7 @@ func (suite *OcppV2TestSuite) TestSampledValueValidation() {
 		{types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd}, true},
 		{types.SampledValue{Value: 3.14}, true},
 		{types.SampledValue{Value: -3.14}, true},
+		{types.SampledValue{}, true},
 		{types.SampledValue{Value: 3.14, Context: "invalidContext"}, false},
 		{types.SampledValue{Value: 3.14, Measurand: "invalidMeasurand"}, false},
 		{types.SampledValue{Value: 3.14, Phase: "invalidPhase"}, false},
