@@ -293,7 +293,7 @@ func (handler *ChargePointHandler) OnCancelReservation(request *reservation.Canc
 func (handler *ChargePointHandler) OnSetChargingProfile(request *smartcharging.SetChargingProfileRequest) (confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
 	//TODO: handle logic
 	logDefault(request.GetFeatureName()).Warn("no set charging profile logic implemented yet")
-	return smartcharging.NewSetChargingProfileConfirmation(smartcharging.ChargingProfileStatusNotImplemented), nil
+	return smartcharging.NewSetChargingProfileConfirmation(smartcharging.ChargingProfileStatusNotSupported), nil
 }
 
 func (handler *ChargePointHandler) OnClearChargingProfile(request *smartcharging.ClearChargingProfileRequest) (confirmation *smartcharging.ClearChargingProfileConfirmation, err error) {

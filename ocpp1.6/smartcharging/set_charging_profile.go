@@ -15,15 +15,15 @@ const SetChargingProfileFeatureName = "SetChargingProfile"
 type ChargingProfileStatus string
 
 const (
-	ChargingProfileStatusAccepted       ChargingProfileStatus = "Accepted"
-	ChargingProfileStatusRejected       ChargingProfileStatus = "Rejected"
-	ChargingProfileStatusNotImplemented ChargingProfileStatus = "NotImplemented"
+	ChargingProfileStatusAccepted     ChargingProfileStatus = "Accepted"
+	ChargingProfileStatusRejected     ChargingProfileStatus = "Rejected"
+	ChargingProfileStatusNotSupported ChargingProfileStatus = "NotSupported"
 )
 
 func isValidChargingProfileStatus(fl validator.FieldLevel) bool {
 	status := ChargingProfileStatus(fl.Field().String())
 	switch status {
-	case ChargingProfileStatusAccepted, ChargingProfileStatusRejected, ChargingProfileStatusNotImplemented:
+	case ChargingProfileStatusAccepted, ChargingProfileStatusRejected, ChargingProfileStatusNotSupported:
 		return true
 	default:
 		return false
