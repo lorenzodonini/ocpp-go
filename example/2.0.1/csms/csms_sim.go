@@ -83,7 +83,7 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 	time.Sleep(2 * time.Second)
 	// Reserve a connector
 	reservationID := 42
-	clientIDTokenType := types.IdTokenTypeKeyCode
+	clientIDTokenType := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
 	clientIdTag := "l33t"
 	connectorID := 1
 	expiryDate := types.NewDateTime(time.Now().Add(1 * time.Hour))
