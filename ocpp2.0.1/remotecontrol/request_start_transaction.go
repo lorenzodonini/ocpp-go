@@ -33,9 +33,9 @@ func isValidRequestStartStopStatus(fl validator.FieldLevel) bool {
 type RequestStartTransactionRequest struct {
 	EvseID          *int                   `json:"evseId,omitempty" validate:"omitempty,gt=0"`
 	RemoteStartID   int                    `json:"remoteStartId" validate:"gte=0"`
-	IDToken         types.IdTokenType      `json:"idToken" validate:"idTokenType"`
+	IDToken         types.IdToken          `json:"idToken" validate:"idTokenType"`
 	ChargingProfile *types.ChargingProfile `json:"chargingProfile,omitempty"`
-	GroupIdToken    types.IdTokenType      `json:"groupIdToken,omitempty" validate:"omitempty,idTokenType"`
+	GroupIdToken    *types.IdToken         `json:"groupIdToken,omitempty" validate:"omitempty,dive"`
 }
 
 // This field definition of the RequestStartTransaction response payload, sent by the Charging Station to the CSMS in response to a RequestStartTransactionRequest.
@@ -77,7 +77,7 @@ func (c RequestStartTransactionResponse) GetFeatureName() string {
 }
 
 // Creates a new RequestStartTransactionRequest, containing all required fields. Optional fields may be set afterwards.
-func NewRequestStartTransactionRequest(remoteStartID int, IdToken types.IdTokenType) *RequestStartTransactionRequest {
+func NewRequestStartTransactionRequest(remoteStartID int, IdToken types.IdToken) *RequestStartTransactionRequest {
 	return &RequestStartTransactionRequest{RemoteStartID: remoteStartID, IDToken: IdToken}
 }
 

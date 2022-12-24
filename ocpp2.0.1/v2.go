@@ -301,11 +301,11 @@ type CSMS interface {
 	// Publishes a firmware to a local controller, allowing charging stations to download the same firmware from the local controller directly.
 	PublishFirmware(clientId string, callback func(*firmware.PublishFirmwareResponse, error), location string, checksum string, requestID int, props ...func(request *firmware.PublishFirmwareRequest)) error
 	// Remotely triggers a transaction to be started on a charging station.
-	RequestStartTransaction(clientId string, callback func(*remotecontrol.RequestStartTransactionResponse, error), remoteStartID int, IdToken types.IdTokenType, props ...func(request *remotecontrol.RequestStartTransactionRequest)) error
+	RequestStartTransaction(clientId string, callback func(*remotecontrol.RequestStartTransactionResponse, error), remoteStartID int, IdToken types.IdToken, props ...func(request *remotecontrol.RequestStartTransactionRequest)) error
 	// Remotely triggers an ongoing transaction to be stopped on a charging station.
 	RequestStopTransaction(clientId string, callback func(*remotecontrol.RequestStopTransactionResponse, error), transactionID string, props ...func(request *remotecontrol.RequestStopTransactionRequest)) error
 	// Attempts to reserve a connector for an EV, on a specific charging station.
-	ReserveNow(clientId string, callback func(*reservation.ReserveNowResponse, error), id int, expiryDateTime *types.DateTime, idToken types.IdTokenType, props ...func(request *reservation.ReserveNowRequest)) error
+	ReserveNow(clientId string, callback func(*reservation.ReserveNowResponse, error), id int, expiryDateTime *types.DateTime, idToken types.IdToken, props ...func(request *reservation.ReserveNowRequest)) error
 	// Instructs the Charging Station to reset itself.
 	Reset(clientId string, callback func(*provisioning.ResetResponse, error), t provisioning.ResetType, props ...func(request *provisioning.ResetRequest)) error
 	// Sends a local authorization list to a charging station, which can be used for the authorization of idTokens.

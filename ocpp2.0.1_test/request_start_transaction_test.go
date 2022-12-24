@@ -32,17 +32,17 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionRequestValidation() {
 		},
 	}
 	var requestTable = []GenericTestEntry{
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdTokenTypeKeyCode, ChargingProfile: &chargingProfile, GroupIdToken: types.IdTokenTypeISO15693}, true},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdTokenTypeKeyCode, ChargingProfile: &chargingProfile}, true},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdTokenTypeKeyCode}, true},
-		{remotecontrol.RequestStartTransactionRequest{RemoteStartID: 42, IDToken: types.IdTokenTypeKeyCode}, true},
-		{remotecontrol.RequestStartTransactionRequest{IDToken: types.IdTokenTypeKeyCode}, true},
+		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, true},
+		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile}, true},
+		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
+		{remotecontrol.RequestStartTransactionRequest{RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
+		{remotecontrol.RequestStartTransactionRequest{IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
 		{remotecontrol.RequestStartTransactionRequest{}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(0), RemoteStartID: 42, IDToken: types.IdTokenTypeKeyCode, ChargingProfile: &chargingProfile, GroupIdToken: types.IdTokenTypeISO15693}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: -1, IDToken: types.IdTokenTypeKeyCode, ChargingProfile: &chargingProfile, GroupIdToken: types.IdTokenTypeISO15693}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: "invalidIdToken", ChargingProfile: &chargingProfile, GroupIdToken: types.IdTokenTypeISO15693}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdTokenTypeKeyCode, ChargingProfile: &types.ChargingProfile{}, GroupIdToken: types.IdTokenTypeISO15693}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdTokenTypeKeyCode, ChargingProfile: &chargingProfile, GroupIdToken: "invalidGroupIdToken"}, false},
+		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(0), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
+		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: -1, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
+		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: "invalidIdToken"}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
+		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &types.ChargingProfile{}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
+		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: "invalidGroupIdToken"}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -69,7 +69,7 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 	wsUrl := "someUrl"
 	evseId := newInt(1)
 	remoteStartID := 42
-	idToken := types.IdTokenTypeKeyCode
+	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
 	schedule := []types.ChargingSchedule{
 		{
 			ID:               1,
@@ -89,12 +89,12 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 		ChargingProfileKind:    types.ChargingProfileKindAbsolute,
 		ChargingSchedule:       schedule,
 	}
-	groupIdToken := types.IdTokenTypeISO15693
+	groupIdToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}
 	status := remotecontrol.RequestStartStopStatusAccepted
 	transactionId := "12345"
 	statusInfo := types.StatusInfo{ReasonCode: "200"}
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"remoteStartId":%v,"idToken":"%v","chargingProfile":{"id":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":[{"id":%v,"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}]},"groupIdToken":"%v"}]`,
-		messageId, remotecontrol.RequestStartTransactionFeatureName, *evseId, remoteStartID, idToken, chargingProfile.ID, chargingProfile.StackLevel, chargingProfile.ChargingProfilePurpose, chargingProfile.ChargingProfileKind, schedule[0].ID, schedule[0].ChargingRateUnit, schedule[0].ChargingSchedulePeriod[0].StartPeriod, schedule[0].ChargingSchedulePeriod[0].Limit, groupIdToken)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"remoteStartId":%v,"idToken":{"idToken":"%s","type":"%s"},"chargingProfile":{"id":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":[{"id":%v,"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}]},"groupIdToken":{"idToken":"%s","type":"%s"}}]`,
+		messageId, remotecontrol.RequestStartTransactionFeatureName, *evseId, remoteStartID, idToken.IdToken, idToken.Type, chargingProfile.ID, chargingProfile.StackLevel, chargingProfile.ChargingProfilePurpose, chargingProfile.ChargingProfileKind, schedule[0].ID, schedule[0].ChargingRateUnit, schedule[0].ChargingSchedulePeriod[0].StartPeriod, schedule[0].ChargingSchedulePeriod[0].Limit, groupIdToken.IdToken, groupIdToken.Type)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","transactionId":"%v","statusInfo":{"reasonCode":"%v"}}]`,
 		messageId, status, transactionId, statusInfo.ReasonCode)
 	requestStartTransactionResponse := remotecontrol.NewRequestStartTransactionResponse(status)
@@ -108,7 +108,8 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 		require.True(t, ok)
 		assert.Equal(t, *evseId, *request.EvseID)
 		assert.Equal(t, remoteStartID, request.RemoteStartID)
-		assert.Equal(t, idToken, request.IDToken)
+		assert.Equal(t, idToken.IdToken, request.IDToken.IdToken)
+		assert.Equal(t, idToken.Type, request.IDToken.Type)
 		assert.Equal(t, chargingProfile.ID, request.ChargingProfile.ID)
 		assert.Equal(t, chargingProfile.ChargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
 		assert.Equal(t, chargingProfile.ChargingProfileKind, request.ChargingProfile.ChargingProfileKind)
@@ -119,6 +120,9 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 		require.Len(t, s.ChargingSchedulePeriod, len(chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod))
 		assert.Equal(t, chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod[0].Limit, s.ChargingSchedulePeriod[0].Limit)
 		assert.Equal(t, chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod[0].StartPeriod, s.ChargingSchedulePeriod[0].StartPeriod)
+		require.NotNil(t, request.GroupIdToken)
+		assert.Equal(t, groupIdToken.IdToken, request.GroupIdToken.IdToken)
+		assert.Equal(t, groupIdToken.Type, request.GroupIdToken.Type)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
@@ -137,7 +141,7 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 	}, remoteStartID, idToken, func(request *remotecontrol.RequestStartTransactionRequest) {
 		request.EvseID = evseId
 		request.ChargingProfile = &chargingProfile
-		request.GroupIdToken = groupIdToken
+		request.GroupIdToken = &groupIdToken
 	})
 	require.Nil(t, err)
 	result := <-resultChannel
@@ -148,7 +152,7 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionInvalidEndpoint() {
 	messageId := defaultMessageId
 	evseId := newInt(1)
 	remoteStartID := 42
-	idToken := types.IdTokenTypeKeyCode
+	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
 	schedule := []types.ChargingSchedule{
 		{
 			ChargingRateUnit: types.ChargingRateUnitAmperes,
@@ -167,15 +171,15 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionInvalidEndpoint() {
 		ChargingProfileKind:    types.ChargingProfileKindAbsolute,
 		ChargingSchedule:       schedule,
 	}
-	groupIdToken := types.IdTokenTypeISO15693
+	groupIdToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}
 	request := remotecontrol.RequestStartTransactionRequest{
 		EvseID:          evseId,
 		RemoteStartID:   remoteStartID,
 		IDToken:         idToken,
 		ChargingProfile: &chargingProfile,
-		GroupIdToken:    groupIdToken,
+		GroupIdToken:    &groupIdToken,
 	}
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"remoteStartId":%v,"idToken":"%v","chargingProfile":{"id":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":[{"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}]},"groupIdToken":"%v"}]`,
-		messageId, remotecontrol.RequestStartTransactionFeatureName, *evseId, remoteStartID, idToken, chargingProfile.ID, chargingProfile.StackLevel, chargingProfile.ChargingProfilePurpose, chargingProfile.ChargingProfileKind, schedule[0].ChargingRateUnit, schedule[0].ChargingSchedulePeriod[0].StartPeriod, schedule[0].ChargingSchedulePeriod[0].Limit, groupIdToken)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"evseId":%v,"remoteStartId":%v,"idToken":{"idToken":"%s","type":"%s"},"chargingProfile":{"id":%v,"stackLevel":%v,"chargingProfilePurpose":"%v","chargingProfileKind":"%v","chargingSchedule":[{"id":%v,"chargingRateUnit":"%v","chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v}]}]},"groupIdToken":{"idToken":"%s","type":"%s"}}]`,
+		messageId, remotecontrol.RequestStartTransactionFeatureName, *evseId, remoteStartID, idToken.IdToken, idToken.Type, chargingProfile.ID, chargingProfile.StackLevel, chargingProfile.ChargingProfilePurpose, chargingProfile.ChargingProfileKind, schedule[0].ID, schedule[0].ChargingRateUnit, schedule[0].ChargingSchedulePeriod[0].StartPeriod, schedule[0].ChargingSchedulePeriod[0].Limit, groupIdToken.IdToken, groupIdToken.Type)
 	testUnsupportedRequestFromChargingStation(suite, request, requestJson, messageId)
 }

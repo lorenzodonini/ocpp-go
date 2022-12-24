@@ -16,19 +16,19 @@ import (
 func (suite *OcppV2TestSuite) TestReserveNowRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
-		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdTokenTypeKeyCode, GroupIdToken: types.IdTokenTypeISO15693}, true},
-		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdTokenTypeKeyCode}, true},
-		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, IdToken: types.IdTokenTypeKeyCode}, true},
-		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), IdToken: types.IdTokenTypeKeyCode}, true},
-		{reservation.ReserveNowRequest{ExpiryDateTime: types.NewDateTime(time.Now()), IdToken: types.IdTokenTypeKeyCode}, true},
+		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, true},
+		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
+		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
+		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
+		{reservation.ReserveNowRequest{ExpiryDateTime: types.NewDateTime(time.Now()), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
 		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now())}, false},
-		{reservation.ReserveNowRequest{ID: 42, IdToken: types.IdTokenTypeKeyCode}, false},
+		{reservation.ReserveNowRequest{ID: 42, IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, false},
 		{reservation.ReserveNowRequest{}, false},
-		{reservation.ReserveNowRequest{ID: -1, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdTokenTypeKeyCode, GroupIdToken: types.IdTokenTypeISO15693}, false},
-		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: "invalidConnectorType", EvseID: newInt(1), IdToken: types.IdTokenTypeKeyCode, GroupIdToken: types.IdTokenTypeISO15693}, false},
-		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(-1), IdToken: types.IdTokenTypeKeyCode, GroupIdToken: types.IdTokenTypeISO15693}, false},
-		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: "invalidIdToken", GroupIdToken: types.IdTokenTypeISO15693}, false},
-		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdTokenTypeKeyCode, GroupIdToken: "invalidIdToken"}, false},
+		{reservation.ReserveNowRequest{ID: -1, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
+		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: "invalidConnectorType", EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
+		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(-1), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
+		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: "invalidIdToken"}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
+		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: "invalidIdToken"}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -54,12 +54,12 @@ func (suite *OcppV2TestSuite) TestReserveNowE2EMocked() {
 	expiryDateTime := types.NewDateTime(time.Now())
 	connectorType := reservation.ConnectorTypeCCS1
 	evseID := newInt(1)
-	idToken := types.IdTokenTypeKeyCode
-	groupIdToken := types.IdTokenTypeISO15693
+	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
+	groupIdToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}
 	status := reservation.ReserveNowStatusAccepted
 	statusInfo := types.StatusInfo{ReasonCode: "200"}
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v,"expiryDateTime":"%v","connectorType":"%v","evseId":%v,"idToken":"%v","groupIdToken":"%v"}]`,
-		messageId, reservation.ReserveNowFeatureName, id, expiryDateTime.FormatTimestamp(), connectorType, *evseID, idToken, groupIdToken)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v,"expiryDateTime":"%v","connectorType":"%v","evseId":%v,"idToken":{"idToken":"%s","type":"%s"},"groupIdToken":{"idToken":"%s","type":"%s"}}]`,
+		messageId, reservation.ReserveNowFeatureName, id, expiryDateTime.FormatTimestamp(), connectorType, *evseID, idToken.IdToken, idToken.Type, groupIdToken.IdToken, groupIdToken.Type)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","statusInfo":{"reasonCode":"%v"}}]`,
 		messageId, status, statusInfo.ReasonCode)
 	reserveNowResponse := reservation.NewReserveNowResponse(status)
@@ -74,8 +74,11 @@ func (suite *OcppV2TestSuite) TestReserveNowE2EMocked() {
 		assert.Equal(t, expiryDateTime.FormatTimestamp(), request.ExpiryDateTime.FormatTimestamp())
 		assert.Equal(t, connectorType, request.ConnectorType)
 		assert.Equal(t, *evseID, *request.EvseID)
-		assert.Equal(t, idToken, request.IdToken)
-		assert.Equal(t, groupIdToken, request.GroupIdToken)
+		assert.Equal(t, idToken.IdToken, request.IdToken.IdToken)
+		assert.Equal(t, idToken.Type, request.IdToken.Type)
+		require.NotNil(t, request.GroupIdToken)
+		assert.Equal(t, groupIdToken.IdToken, request.GroupIdToken.IdToken)
+		assert.Equal(t, groupIdToken.Type, request.GroupIdToken.Type)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
@@ -93,7 +96,7 @@ func (suite *OcppV2TestSuite) TestReserveNowE2EMocked() {
 	}, id, expiryDateTime, idToken, func(request *reservation.ReserveNowRequest) {
 		request.ConnectorType = connectorType
 		request.EvseID = evseID
-		request.GroupIdToken = groupIdToken
+		request.GroupIdToken = &groupIdToken
 	})
 	require.Nil(t, err)
 	result := <-resultChannel
@@ -106,17 +109,17 @@ func (suite *OcppV2TestSuite) TestReserveNowInvalidEndpoint() {
 	expiryDateTime := types.NewDateTime(time.Now())
 	connectorType := reservation.ConnectorTypeCCS1
 	evseID := newInt(1)
-	idToken := types.IdTokenTypeKeyCode
-	groupIdToken := types.IdTokenTypeISO15693
+	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
+	groupIdToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}
 	reserveNowRequest := reservation.ReserveNowRequest{
 		ID:             id,
 		ExpiryDateTime: expiryDateTime,
 		ConnectorType:  connectorType,
 		EvseID:         evseID,
 		IdToken:        idToken,
-		GroupIdToken:   groupIdToken,
+		GroupIdToken:   &groupIdToken,
 	}
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v,"expiryDateTime":"%v","connectorType":"%v","evseId":%v,"idToken":"%v","groupIdToken":"%v"}]`,
-		messageId, reservation.ReserveNowFeatureName, id, expiryDateTime.FormatTimestamp(), connectorType, *evseID, idToken, groupIdToken)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"id":%v,"expiryDateTime":"%v","connectorType":"%v","evseId":%v,"idToken":{"idToken":"%s","type":"%s"},"groupIdToken":{"idToken":"%s","type":"%s"}}]`,
+		messageId, reservation.ReserveNowFeatureName, id, expiryDateTime.FormatTimestamp(), connectorType, *evseID, idToken.IdToken, idToken.Type, groupIdToken.IdToken, groupIdToken.Type)
 	testUnsupportedRequestFromChargingStation(suite, reserveNowRequest, requestJson, messageId)
 }

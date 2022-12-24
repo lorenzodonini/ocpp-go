@@ -78,12 +78,12 @@ func isValidConnectorType(fl validator.FieldLevel) bool {
 
 // The field definition of the ReserveNow request payload sent by the CSMS to the Charging Station.
 type ReserveNowRequest struct {
-	ID             int               `json:"id" validate:"gte=0"` // ID of reservation
-	ExpiryDateTime *types.DateTime   `json:"expiryDateTime" validate:"required"`
-	ConnectorType  ConnectorType     `json:"connectorType,omitempty" validate:"omitempty,connectorType"`
-	EvseID         *int              `json:"evseId,omitempty" validate:"omitempty,gte=0"`
-	IdToken        types.IdTokenType `json:"idToken" validate:"required,idTokenType"`
-	GroupIdToken   types.IdTokenType `json:"groupIdToken,omitempty" validate:"omitempty,idTokenType"`
+	ID             int             `json:"id" validate:"gte=0"` // ID of reservation
+	ExpiryDateTime *types.DateTime `json:"expiryDateTime" validate:"required"`
+	ConnectorType  ConnectorType   `json:"connectorType,omitempty" validate:"omitempty,connectorType"`
+	EvseID         *int            `json:"evseId,omitempty" validate:"omitempty,gte=0"`
+	IdToken        types.IdToken   `json:"idToken" validate:"required,dive"`
+	GroupIdToken   *types.IdToken  `json:"groupIdToken,omitempty" validate:"omitempty,dive"`
 }
 
 // This field definition of the ReserveNow response payload, sent by the Charging Station to the CSMS in response to a ReserveNowRequest.
@@ -125,7 +125,7 @@ func (c ReserveNowResponse) GetFeatureName() string {
 }
 
 // Creates a new ReserveNowRequest, containing all required fields. Optional fields may be set afterwards.
-func NewReserveNowRequest(id int, expiryDateTime *types.DateTime, idToken types.IdTokenType) *ReserveNowRequest {
+func NewReserveNowRequest(id int, expiryDateTime *types.DateTime, idToken types.IdToken) *ReserveNowRequest {
 	return &ReserveNowRequest{ID: id, ExpiryDateTime: expiryDateTime, IdToken: idToken}
 }
 
