@@ -610,7 +610,6 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) (clientCt
 		clientCtx = clientTimeoutContext{ctx: ctx, cancel: cancel}
 	}
 	log.Infof("dispatched request %s for %s", callID, clientID)
-	log.Debugf("sent JSON message to %s: %s", clientID, string(jsonMessage))
 	return
 }
 
