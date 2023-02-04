@@ -171,6 +171,7 @@ func (s *Server) SendResponse(clientID string, requestId string, response ocpp.R
 		return err
 	}
 	log.Debugf("sent CALL RESULT [%s] for %s", callResult.UniqueId, clientID)
+	log.Debugf("sent JSON message to %s: %s", clientID, string(jsonMessage))
 	return nil
 }
 
@@ -205,6 +206,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 		log.Error(err)
 		return err
 	}
+	log.Debugf("received JSON message from %s: %s", wsChannel.ID(), string(data))
 	// Get pending requests for client
 	pending := s.RequestState.GetClientState(wsChannel.ID())
 	message, err := s.ParseMessage(parsedJson, pending)

@@ -177,6 +177,7 @@ func (c *Client) SendResponse(requestId string, response ocpp.Response) error {
 		return err
 	}
 	log.Debugf("sent CALL RESULT [%s]", callResult.UniqueId)
+	log.Debugf("sent JSON message to server: %s", string(jsonMessage))
 	return nil
 }
 
@@ -211,6 +212,7 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 		log.Error(err)
 		return err
 	}
+	log.Debugf("received JSON message from server: %s", string(data))
 	message, err := c.ParseMessage(parsedJson, c.RequestState)
 	if err != nil {
 		ocppErr := err.(*ocpp.Error)

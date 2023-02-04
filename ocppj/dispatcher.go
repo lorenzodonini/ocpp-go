@@ -232,6 +232,8 @@ func (d *DefaultClientDispatcher) dispatchNextRequest() {
 				ocpp.NewError(InternalError, err.Error(), bundle.Call.UniqueId))
 		}
 	}
+	log.Infof("dispatched request %s to server", bundle.Call.UniqueId)
+	log.Debugf("sent JSON message to server: %s", string(jsonMessage))
 }
 
 func (d *DefaultClientDispatcher) Pause() {
@@ -569,6 +571,7 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) (clientCt
 		clientCtx = clientTimeoutContext{ctx: ctx, cancel: cancel}
 	}
 	log.Infof("dispatched request %s for %s", callID, clientID)
+	log.Debugf("sent JSON message to %s: %s", clientID, string(jsonMessage))
 	return
 }
 
