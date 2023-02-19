@@ -375,10 +375,10 @@ func (suite *OcppJTestSuite) TestCentralSystemErrorHandler() {
 func addMockPendingRequest(suite *OcppJTestSuite, mockRequest ocpp.Request, mockUniqueID string, mockChargePointID string) {
 	mockCall, _ := suite.centralSystem.CreateCall(mockRequest)
 	mockCall.UniqueId = mockUniqueID
-	jsonMessage, _ := mockCall.MarshalJSON()
+	//jsonMessage, _ := mockCall.MarshalJSON()
 	requestBundle := ocppj.RequestBundle{
 		Call: mockCall,
-		Data: jsonMessage,
+		//Data: jsonMessage,
 	}
 	q := suite.serverRequestMap.GetOrCreate(mockChargePointID)
 	_ = q.Push(requestBundle)
@@ -412,9 +412,9 @@ func (suite *OcppJTestSuite) TestServerEnqueueRequest() {
 	require.True(t, ok)
 	require.NotNil(t, bundle)
 	assert.Equal(t, req.GetFeatureName(), bundle.Call.Action)
-	marshaled, err := bundle.Call.MarshalJSON()
+	//marshaled, err := bundle.Call.MarshalJSON()
 	require.Nil(t, err)
-	assert.Equal(t, marshaled, bundle.Data)
+	//assert.Equal(t, marshaled, bundle.Data)
 }
 
 func (suite *OcppJTestSuite) TestEnqueueMultipleRequests() {

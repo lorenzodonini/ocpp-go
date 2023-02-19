@@ -72,11 +72,11 @@ const (
 
 // An OCPP-J message.
 type Message interface {
+	json.Marshaler
 	// Returns the message type identifier of the message.
 	GetMessageTypeId() MessageType
 	// Returns the unique identifier of the message.
 	GetUniqueId() string
-	json.Marshaler
 }
 
 var messageIdGenerator = func() string {
@@ -183,7 +183,7 @@ const (
 	NotImplemented                ocpp.ErrorCode = "NotImplemented"                // Requested Action is not known by receiver.
 	NotSupported                  ocpp.ErrorCode = "NotSupported"                  // Requested Action is recognized but not supported by the receiver.
 	InternalError                 ocpp.ErrorCode = "InternalError"                 // An internal error occurred and the receiver was not able to process the requested Action successfully.
-	MessageTypeNotSupported       ocpp.ErrorCode = "MessageTypeNotSupported"       // A message with an Message Type Number received that is not supported by this implementation.
+	MessageTypeNotSupported       ocpp.ErrorCode = "MessageTypeNotSupported"       // A message with a Message Type Number received that is not supported by this implementation.
 	ProtocolError                 ocpp.ErrorCode = "ProtocolError"                 // Payload for Action is incomplete.
 	SecurityError                 ocpp.ErrorCode = "SecurityError"                 // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully.
 	FormationViolation            ocpp.ErrorCode = "FormationViolation"            // Payload for Action is syntactically incorrect or not conform the PDU structure for Action.
@@ -233,11 +233,11 @@ func ocppMessageToJson(message interface{}) ([]byte, error) {
 }
 
 func getValueLength(value interface{}) int {
-	switch value := value.(type) {
+	switch v := value.(type) {
 	case int:
-		return value
+		return v
 	case string:
-		return len(value)
+		return len(v)
 	default:
 		return 0
 	}
@@ -492,8 +492,8 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 // Creates a CallResult message, given an OCPP response and the message's unique ID.
 //
 // Returns an error in case the response's feature is not supported on this endpoint.
-func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId string) (*CallResult, error) {
-	action := confirmation.GetFeatureName()
+func (endpoint *Endpoint) CreateCallResult(response ocpp.Response, uniqueId string) (*CallResult, error) {
+	action := response.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
 		return nil, fmt.Errorf("Couldn't create Call Result for unsupported action %v", action)
@@ -501,7 +501,7 @@ func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId 
 	callResult := CallResult{
 		MessageTypeId: CALL_RESULT,
 		UniqueId:      uniqueId,
-		Payload:       confirmation,
+		Payload:       response,
 	}
 	if validationEnabled {
 		err := Validate.Struct(callResult)

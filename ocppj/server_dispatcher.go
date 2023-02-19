@@ -2,6 +2,7 @@ package ocppj
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -284,10 +285,19 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) (clientCt
 	}
 	el := q.Peek()
 	bundle, _ := el.(RequestBundle)
-	jsonMessage := bundle.Data
+	// Convert message to JSON
+	jsonMessage, err := json.Marshal(bundle.Call)
+	if err != nil {
+		// Cancel request internally
+		d.CompleteRequest(clientID, bundle.Call.GetUniqueId())
+		if d.onRequestCancel != nil {
+			d.onRequestCancel(clientID, bundle.Call.GetUniqueId(), bundle.Call.Payload, ocpp.NewError(InternalError, err.Error(), bundle.Call.GetUniqueId()))
+		}
+		return
+	}
 	callID := bundle.Call.GetUniqueId()
 	d.pendingRequestState.AddPendingRequest(clientID, callID, bundle.Call.Payload)
-	err := d.network.Write(clientID, jsonMessage)
+	err = d.network.Write(clientID, jsonMessage)
 	if err != nil {
 		log.Errorf("error while sending message: %v", err)
 		//TODO: handle retransmission instead of removing pending request

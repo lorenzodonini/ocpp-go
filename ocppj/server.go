@@ -134,12 +134,9 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 	if err != nil {
 		return err
 	}
-	jsonMessage, err := call.MarshalJSON()
-	if err != nil {
-		return err
-	}
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
-	if err = s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage}); err != nil {
+	// TODO: missing callback + context
+	if err = s.dispatcher.SendRequest(clientID, RequestBundle{Call: call}); err != nil {
 		log.Errorf("error dispatching request [%s, %s] to %s: %v", call.UniqueId, call.Action, clientID, err)
 		return err
 	}

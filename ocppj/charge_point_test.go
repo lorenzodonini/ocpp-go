@@ -1,8 +1,10 @@
 package ocppj_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -41,7 +43,7 @@ func (suite *OcppJTestSuite) TestClientNotStartedError() {
 	t := suite.T()
 	// Start normally
 	req := newMockRequest("somevalue")
-	err := suite.chargePoint.SendRequest(req)
+	_, err := suite.chargePoint.SendRequest(req, nil, nil)
 	require.NotNil(t, err)
 	assert.Equal(t, "ocppj client is not started, couldn't send request", err.Error())
 	require.True(t, suite.clientRequestQueue.IsEmpty())
@@ -63,7 +65,7 @@ func (suite *OcppJTestSuite) TestClientStoppedError() {
 	time.Sleep(20 * time.Millisecond)
 	assert.False(t, suite.clientDispatcher.IsRunning())
 	req := newMockRequest("somevalue")
-	err = suite.chargePoint.SendRequest(req)
+	_, err = suite.chargePoint.SendRequest(req, nil, nil)
 	assert.Error(t, err, "ocppj client is not started, couldn't send request")
 }
 
@@ -74,8 +76,8 @@ func (suite *OcppJTestSuite) TestChargePointSendRequest() {
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	_ = suite.chargePoint.Start("someUrl")
 	mockRequest := newMockRequest("mockValue")
-	err := suite.chargePoint.SendRequest(mockRequest)
-	assert.Nil(suite.T(), err)
+	_, err := suite.chargePoint.SendRequest(mockRequest, nil, nil)
+	assert.NoError(suite.T(), err)
 }
 
 func (suite *OcppJTestSuite) TestChargePointSendInvalidRequest() {
@@ -83,8 +85,9 @@ func (suite *OcppJTestSuite) TestChargePointSendInvalidRequest() {
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	_ = suite.chargePoint.Start("someUrl")
 	mockRequest := newMockRequest("")
-	err := suite.chargePoint.SendRequest(mockRequest)
-	assert.NotNil(suite.T(), err)
+	// Send request, then wait for error
+	_, err := suite.chargePoint.SendRequest(mockRequest, nil, nil)
+	assert.Error(suite.T(), err)
 }
 
 func (suite *OcppJTestSuite) TestChargePointSendRequestNoValidation() {
@@ -95,19 +98,32 @@ func (suite *OcppJTestSuite) TestChargePointSendRequestNoValidation() {
 	// Temporarily disable message validation
 	ocppj.SetMessageValidation(false)
 	defer ocppj.SetMessageValidation(true)
-	err := suite.chargePoint.SendRequest(mockRequest)
-	assert.Nil(suite.T(), err)
+	_, err := suite.chargePoint.SendRequest(mockRequest, nil, nil)
+	assert.NoError(suite.T(), err)
 }
 
 func (suite *OcppJTestSuite) TestChargePointSendInvalidJsonRequest() {
+	t := suite.T()
 	suite.mockClient.On("Write", mock.Anything).Return(nil)
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	_ = suite.chargePoint.Start("someUrl")
 	mockRequest := newMockRequest("somevalue")
-	mockRequest.MockAny = make(chan int)
-	err := suite.chargePoint.SendRequest(mockRequest)
-	require.Error(suite.T(), err)
-	assert.IsType(suite.T(), &json.UnsupportedTypeError{}, err)
+	invalidType := make(chan int)
+	mockRequest.MockAny = invalidType // Will fail when attempting to serialize to json
+	// Expected callback with error
+	errC := make(chan error, 1)
+	cb := func(response ocpp.Response, err error) {
+		assert.Nil(t, response)
+		errC <- err
+	}
+	// Send request, then wait for error
+	_, err := suite.chargePoint.SendRequest(mockRequest, cb, nil)
+	require.NoError(suite.T(), err)
+	err = <-errC
+	require.Error(t, err)
+	// Make sure the native error was a type marshaling error
+	nativeErr := json.UnsupportedTypeError{Type: reflect.TypeOf(invalidType)}
+	assert.ErrorContains(suite.T(), err, nativeErr.Error())
 }
 
 func (suite *OcppJTestSuite) TestChargePointSendInvalidCall() {
@@ -117,30 +133,33 @@ func (suite *OcppJTestSuite) TestChargePointSendInvalidCall() {
 	mockRequest := newMockRequest("somevalue")
 	// Delete existing profiles and test error
 	suite.chargePoint.Profiles = []*ocpp.Profile{}
-	err := suite.chargePoint.SendRequest(mockRequest)
+	_, err := suite.chargePoint.SendRequest(mockRequest, nil, nil)
 	assert.Error(suite.T(), err, fmt.Sprintf("Couldn't create Call for unsupported action %v", mockRequest.GetFeatureName()))
 }
 
 func (suite *OcppJTestSuite) TestChargePointSendRequestFailed() {
 	t := suite.T()
-	var callID string
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	suite.mockClient.On("Write", mock.Anything).Return(fmt.Errorf("networkError")).Run(func(args mock.Arguments) {
 		require.False(t, suite.clientRequestQueue.IsEmpty())
-		req := suite.clientRequestQueue.Peek().(ocppj.RequestBundle)
-		callID = req.Call.GetUniqueId()
-		_, ok := suite.chargePoint.RequestState.GetPendingRequest(callID)
-		// Before anything is returned, the request must still be pending
-		assert.True(t, ok)
 	})
 	_ = suite.chargePoint.Start("someUrl")
 	mockRequest := newMockRequest("mockValue")
-	err := suite.chargePoint.SendRequest(mockRequest)
+	// Expected callback with error
+	errC := make(chan error, 1)
+	cb := func(response ocpp.Response, err error) {
+		assert.Nil(t, response)
+		errC <- err
+	}
+	// Send request, then wait for error
+	requestID, err := suite.chargePoint.SendRequest(mockRequest, cb, nil)
 	//TODO: currently the network error is not returned by SendRequest, but is only generated internally
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	err = <-errC
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "networkError")
 	// Assert that pending request was removed
-	time.Sleep(500 * time.Millisecond)
-	_, ok := suite.chargePoint.RequestState.GetPendingRequest(callID)
+	_, ok := suite.chargePoint.RequestState.GetPendingRequest(requestID)
 	assert.False(t, ok)
 }
 
@@ -249,47 +268,74 @@ func (suite *OcppJTestSuite) TestChargePointCallHandler() {
 
 func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 	t := suite.T()
-	mockUniqueId := "5678"
-	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
-	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.chargePoint.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
-		assert.Equal(t, mockUniqueId, requestId)
-		assert.NotNil(t, confirmation)
-	})
+	sentC := make(chan struct{}, 1)
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
-	suite.chargePoint.RequestState.AddPendingRequest(mockUniqueId, mockRequest) // Manually add a pending request, so that response is not rejected
+	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		// Trigger event as soon as the request was sent out
+		sentC <- struct{}{}
+	})
 	err := suite.chargePoint.Start("somePath")
 	assert.Nil(t, err)
+	// Create callback with delivery confirmation channel
+	responseC := make(chan ocpp.Response, 1)
+	cb := func(response ocpp.Response, err error) {
+		responseC <- response
+	}
+	// Send request, then wait for network to send it out
+	requestID, err := suite.chargePoint.SendRequest(mockRequest, cb, nil)
+	<-sentC
 	// Simulate central system message
+	mockValue := "someValue"
+	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, requestID, mockValue)
 	err = suite.mockClient.MessageHandler([]byte(mockConfirmation))
-	assert.Nil(t, err)
+	require.Nil(t, err)
+	// Retrieve async response and check equality
+	response, ok := <-responseC
+	require.True(t, ok)
+	require.NotNil(t, response)
+	mockResponse, ok := response.(*MockConfirmation)
+	require.True(t, ok)
+	assert.Equal(t, mockValue, mockResponse.MockValue)
 }
 
 func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 	t := suite.T()
-	mockUniqueId := "5678"
-	mockErrorCode := ocppj.GenericError
-	mockErrorDescription := "Mock Description"
 	mockValue := "someValue"
-	mockErrorDetails := make(map[string]interface{})
-	mockErrorDetails["details"] = "someValue"
-
 	mockRequest := newMockRequest("testValue")
-	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, mockUniqueId, mockErrorCode, mockErrorDescription, mockValue)
-	suite.chargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
-		assert.Equal(t, mockUniqueId, err.MessageId)
-		assert.Equal(t, mockErrorCode, err.Code)
-		assert.Equal(t, mockErrorDescription, err.Description)
-		assert.Equal(t, mockErrorDetails, details)
-	})
+	sentC := make(chan struct{}, 1)
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
-	suite.chargePoint.RequestState.AddPendingRequest(mockUniqueId, mockRequest) // Manually add a pending request, so that response is not rejected
+	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		// Trigger event as soon as the request was sent out
+		sentC <- struct{}{}
+	})
 	err := suite.chargePoint.Start("someUrl")
 	assert.Nil(t, err)
-	// Simulate central system message
+	// Create callback with error channel
+	errC := make(chan error, 1)
+	cb := func(response ocpp.Response, err error) {
+		errC <- err
+	}
+	// Send request, then wait for network to send it out
+	requestID, err := suite.chargePoint.SendRequest(mockRequest, cb, nil)
+	<-sentC
+	// Simulate central system error message
+	mockErrorCode := ocppj.GenericError
+	mockErrorDescription := "Mock Description"
+	mockErrorDetails := make(map[string]interface{})
+	mockErrorDetails["details"] = "someValue"
+	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, requestID, mockErrorCode, mockErrorDescription, mockValue)
 	err = suite.mockClient.MessageHandler([]byte(mockError))
 	assert.Nil(t, err)
+	// Retrieve async error and check equality
+	err, ok := <-errC
+	require.True(t, ok)
+	require.NotNil(t, err)
+	ocppErr, ok := err.(*ocpp.Error)
+	require.True(t, ok)
+	assert.Equal(t, requestID, ocppErr.MessageId)
+	assert.Equal(t, mockErrorCode, ocppErr.Code)
+	assert.Equal(t, mockErrorDescription, ocppErr.Description)
 }
 
 // ----------------- Queue processing tests -----------------
@@ -297,15 +343,22 @@ func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 func (suite *OcppJTestSuite) TestClientEnqueueRequest() {
 	t := suite.T()
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
-	suite.mockClient.On("Write", mock.Anything).Return(nil)
+	sentDataC := make(chan []byte, 1)
+	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		rawData := args.Get(0)
+		rawBytes, ok := rawData.([]byte)
+		require.True(t, ok)
+		sentDataC <- rawBytes
+	})
 	// Start normally
 	err := suite.chargePoint.Start("someUrl")
 	require.Nil(t, err)
 	req := newMockRequest("somevalue")
-	err = suite.chargePoint.SendRequest(req)
+	requestID, err := suite.chargePoint.SendRequest(req, nil, nil)
 	require.Nil(t, err)
-	time.Sleep(500 * time.Millisecond)
 	// Message was sent, but element should still be in queue
+	sentData, ok := <-sentDataC
+	require.True(t, ok)
 	require.False(t, suite.clientRequestQueue.IsEmpty())
 	assert.Equal(t, 1, suite.clientRequestQueue.Size())
 	// Analyze enqueued bundle
@@ -315,9 +368,10 @@ func (suite *OcppJTestSuite) TestClientEnqueueRequest() {
 	require.True(t, ok)
 	require.NotNil(t, bundle)
 	assert.Equal(t, req.GetFeatureName(), bundle.Call.Action)
+	assert.Equal(t, requestID, bundle.Call.GetUniqueId())
 	marshaled, err := bundle.Call.MarshalJSON()
 	require.Nil(t, err)
-	assert.Equal(t, marshaled, bundle.Data)
+	assert.Equal(t, marshaled, sentData)
 }
 
 func (suite *OcppJTestSuite) TestClientEnqueueMultipleRequests() {
@@ -333,9 +387,10 @@ func (suite *OcppJTestSuite) TestClientEnqueueMultipleRequests() {
 	require.Nil(t, err)
 	for i := 0; i < messagesToQueue; i++ {
 		req := newMockRequest(fmt.Sprintf("request-%v", i))
-		err = suite.chargePoint.SendRequest(req)
+		_, err = suite.chargePoint.SendRequest(req, nil, nil)
 		require.Nil(t, err)
 	}
+	// Wait for queue to fill up and first message to be sent out
 	time.Sleep(500 * time.Millisecond)
 	// Only one message was sent, but all elements should still be in queue
 	assert.Equal(t, 1, sentMessages)
@@ -350,6 +405,9 @@ func (suite *OcppJTestSuite) TestClientEnqueueMultipleRequests() {
 		require.True(t, ok)
 		require.NotNil(t, bundle)
 		assert.Equal(t, MockFeatureName, bundle.Call.Action)
+		payload, ok := bundle.Call.Payload.(*MockRequest)
+		require.True(t, ok)
+		assert.Equal(t, fmt.Sprintf("request-%v", i), payload.MockValue)
 		i++
 	}
 	assert.Equal(t, messagesToQueue, i)
@@ -365,12 +423,12 @@ func (suite *OcppJTestSuite) TestClientRequestQueueFull() {
 	require.Nil(t, err)
 	for i := 0; i < messagesToQueue; i++ {
 		req := newMockRequest(fmt.Sprintf("request-%v", i))
-		err = suite.chargePoint.SendRequest(req)
+		_, err = suite.chargePoint.SendRequest(req, nil, nil)
 		require.Nil(t, err)
 	}
 	// Queue is now full. Trying to send an additional message should throw an error
 	req := newMockRequest("full")
-	err = suite.chargePoint.SendRequest(req)
+	_, err = suite.chargePoint.SendRequest(req, nil, nil)
 	require.NotNil(t, err)
 	assert.Equal(t, "request queue is full, cannot push new element", err.Error())
 }
@@ -389,10 +447,11 @@ func (suite *OcppJTestSuite) TestClientParallelRequests() {
 	for i := 0; i < messagesToQueue; i++ {
 		go func() {
 			req := newMockRequest("someReq")
-			err = suite.chargePoint.SendRequest(req)
+			_, err = suite.chargePoint.SendRequest(req, nil, nil)
 			require.Nil(t, err)
 		}()
 	}
+	// Wait for queue to fill up and first message to be sent out
 	time.Sleep(1000 * time.Millisecond)
 	// Only one message was sent, but all element should still be in queue
 	require.False(t, suite.clientRequestQueue.IsEmpty())
@@ -427,27 +486,25 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 				return
 			}
 			// Get original request to generate meaningful response
-			peeked := suite.clientRequestQueue.Peek()
-			bundle, _ := peeked.(ocppj.RequestBundle)
-			require.NotNil(t, bundle)
-			assert.Equal(t, call.UniqueId, bundle.Call.UniqueId)
 			req, _ := call.Payload.(*MockRequest)
 			// Send response back to client
 			var data []byte
 			var err error
+			var callResult *ocppj.CallResult
+			var callError *ocppj.CallError
 			v, _ := strconv.Atoi(req.MockValue)
 			if v%2 == 0 {
 				// Send CallResult
 				resp := newMockConfirmation("someResp")
-				res, err := suite.chargePoint.CreateCallResult(resp, call.GetUniqueId())
+				callResult, err = suite.chargePoint.CreateCallResult(resp, call.GetUniqueId())
 				require.Nil(t, err)
-				data, err = res.MarshalJSON()
+				data, err = callResult.MarshalJSON()
 				require.Nil(t, err)
 			} else {
 				// Send CallError
-				res, err := suite.chargePoint.CreateCallError(call.GetUniqueId(), ocppj.GenericError, fmt.Sprintf("error-%v", req.MockValue), nil)
+				callError, err = suite.chargePoint.CreateCallError(call.GetUniqueId(), ocppj.GenericError, fmt.Sprintf("error-%v", req.MockValue), nil)
 				require.Nil(t, err)
-				data, err = res.MarshalJSON()
+				data, err = callError.MarshalJSON()
 				require.Nil(t, err)
 			}
 			fmt.Printf("sending mocked response to message %v\n", call.GetUniqueId())
@@ -456,7 +513,7 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 			// Make sure the top queue element was popped
 			mutex.Lock()
 			processedMessages += 1
-			peeked = suite.clientRequestQueue.Peek()
+			peeked := suite.clientRequestQueue.Peek()
 			if peeked != nil {
 				bundle, _ := peeked.(ocppj.RequestBundle)
 				require.NotNil(t, bundle)
@@ -472,7 +529,7 @@ func (suite *OcppJTestSuite) TestClientRequestFlow() {
 	for i := 0; i < messagesToQueue; i++ {
 		go func(j int) {
 			req := newMockRequest(fmt.Sprintf("%v", j))
-			err = suite.chargePoint.SendRequest(req)
+			_, err = suite.chargePoint.SendRequest(req, nil, nil)
 			require.Nil(t, err)
 		}(i)
 	}
@@ -522,7 +579,7 @@ func (suite *OcppJTestSuite) TestClientDisconnected() {
 	// Send some messages
 	for i := 0; i < messagesToQueue; i++ {
 		req := newMockRequest(fmt.Sprintf("%v", i))
-		err = suite.chargePoint.SendRequest(req)
+		_, err = suite.chargePoint.SendRequest(req, nil, nil)
 		require.NoError(t, err)
 	}
 	// Wait for trigger disconnect after a few responses were returned
@@ -590,7 +647,7 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 	// Send some messages
 	for i := 0; i < messagesToQueue; i++ {
 		req := newMockRequest(fmt.Sprintf("%v", i))
-		err = suite.chargePoint.SendRequest(req)
+		_, err = suite.chargePoint.SendRequest(req, nil, nil)
 		require.NoError(t, err)
 	}
 	// Wait for trigger disconnect after a few responses were returned
@@ -605,6 +662,7 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 	time.Sleep(500 * time.Millisecond)
 	isConnectedCall.Return(true)
 	suite.mockClient.ReconnectedHandler()
+	time.Sleep(50 * time.Millisecond)
 	assert.False(t, suite.clientDispatcher.IsPaused())
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.False(t, suite.clientRequestQueue.IsEmpty())
@@ -625,29 +683,22 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 //   - fires an error, which is returned to the caller
 func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	t := suite.T()
-	requestID := ""
 	req := newMockRequest("test")
 	timeoutC := make(chan bool, 1)
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
-	suite.mockClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
-		data := args.Get(0).([]byte)
-		call := ParseCall(&suite.chargePoint.Endpoint, suite.chargePoint.RequestState, string(data), t)
-		require.NotNil(t, call)
-		requestID = call.UniqueId
-	}).Return(nil)
-	suite.clientDispatcher.SetOnRequestCanceled(func(rID string, request ocpp.Request, err *ocpp.Error) {
-		assert.Equal(t, requestID, rID)
-		assert.Equal(t, MockFeatureName, request.GetFeatureName())
-		assert.Equal(t, req, request)
-		assert.Error(t, err)
-		timeoutC <- true
-	})
+	suite.mockClient.On("Write", mock.Anything).Return(nil)
 	// Sets a low response timeout for testing purposes
 	suite.clientDispatcher.SetTimeout(500 * time.Millisecond)
+	// Set timeout callback
+	timeoutCb := func(response ocpp.Response, err error) {
+		assert.Nil(t, response)
+		assert.Error(t, err)
+		timeoutC <- true
+	}
 	// Start normally and send a message
 	err := suite.chargePoint.Start("someUrl")
 	require.NoError(t, err)
-	err = suite.chargePoint.SendRequest(req)
+	_, err = suite.chargePoint.SendRequest(req, timeoutCb, context.TODO())
 	require.NoError(t, err)
 	// Wait for request to be enqueued, then check state
 	time.Sleep(50 * time.Millisecond)
