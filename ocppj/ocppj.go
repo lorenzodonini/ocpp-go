@@ -72,11 +72,11 @@ const (
 
 // An OCPP-J message.
 type Message interface {
+	json.Marshaler
 	// Returns the message type identifier of the message.
 	GetMessageTypeId() MessageType
 	// Returns the unique identifier of the message.
 	GetUniqueId() string
-	json.Marshaler
 }
 
 var messageIdGenerator = func() string {
@@ -265,11 +265,11 @@ func ocppMessageToJson(message interface{}) ([]byte, error) {
 }
 
 func getValueLength(value interface{}) int {
-	switch value := value.(type) {
+	switch v := value.(type) {
 	case int:
-		return value
+		return v
 	case string:
-		return len(value)
+		return len(v)
 	default:
 		return 0
 	}
@@ -545,8 +545,8 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 // Creates a CallResult message, given an OCPP response and the message's unique ID.
 //
 // Returns an error in case the response's feature is not supported on this endpoint.
-func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId string) (*CallResult, error) {
-	action := confirmation.GetFeatureName()
+func (endpoint *Endpoint) CreateCallResult(response ocpp.Response, uniqueId string) (*CallResult, error) {
+	action := response.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
 		return nil, ocpp.NewError(NotSupported, fmt.Sprintf("couldn't create Call Result for unsupported action %v", action), uniqueId)
@@ -554,7 +554,7 @@ func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId 
 	callResult := CallResult{
 		MessageTypeId: CALL_RESULT,
 		UniqueId:      uniqueId,
-		Payload:       confirmation,
+		Payload:       response,
 	}
 	if validationEnabled {
 		err := Validate.Struct(callResult)

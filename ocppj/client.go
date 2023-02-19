@@ -1,6 +1,7 @@
 package ocppj
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -17,8 +18,6 @@ type Client struct {
 	client                ws.Client
 	Id                    string
 	requestHandler        func(request ocpp.Request, requestId string, action string)
-	responseHandler       func(response ocpp.Response, requestId string)
-	errorHandler          func(err *ocpp.Error, details interface{})
 	onDisconnectedHandler func(err error)
 	onReconnectedHandler  func()
 	invalidMessageHook    func(err *ocpp.Error, rawMessage string, parsedFields []interface{}) *ocpp.Error
@@ -50,9 +49,10 @@ func NewClient(id string, wsClient ws.Client, dispatcher ClientDispatcher, state
 	if stateHandler == nil {
 		stateHandler = NewClientState()
 	}
-	dispatcher.SetNetworkClient(wsClient)
+	dispatcher.SetNetworkSendHandler(wsClient.Write)
 	dispatcher.SetPendingRequestState(stateHandler)
-	return &Client{Endpoint: endpoint, client: wsClient, Id: id, dispatcher: dispatcher, RequestState: stateHandler}
+	client := &Client{Endpoint: endpoint, client: wsClient, Id: id, dispatcher: dispatcher, RequestState: stateHandler}
+	return client
 }
 
 // Return incoming requests handler.
@@ -103,17 +103,14 @@ func (c *Client) SetInvalidMessageHook(hook func(err *ocpp.Error, rawMessage str
 	c.invalidMessageHook = hook
 }
 
+// Registers a handler for disconnection events.
 func (c *Client) SetOnDisconnectedHandler(handler func(err error)) {
 	c.onDisconnectedHandler = handler
 }
 
+// Registers a handler for reconnection events.
 func (c *Client) SetOnReconnectedHandler(handler func()) {
 	c.onReconnectedHandler = handler
-}
-
-// Registers the handler to be called on timeout.
-func (c *Client) SetOnRequestCanceled(handler func(requestId string, request ocpp.Request, err *ocpp.Error)) {
-	c.dispatcher.SetOnRequestCanceled(handler)
 }
 
 // Connects to the given serverURL and starts running the I/O loop for the underlying connection.
@@ -130,6 +127,7 @@ func (c *Client) Start(serverURL string) error {
 	c.client.SetMessageHandler(c.ocppMessageHandler)
 	c.client.SetDisconnectedHandler(c.onDisconnected)
 	c.client.SetReconnectedHandler(c.onReconnected)
+	c.dispatcher.SetOnRequestCanceled(c.onMessageError)
 	// Connect & run
 	fullUrl := fmt.Sprintf("%v/%v", serverURL, c.Id)
 	err := c.client.Start(fullUrl)
@@ -174,38 +172,40 @@ func (c *Client) IsConnected() bool {
 	return c.client.IsConnected()
 }
 
-// Sends an OCPP Request to the server.
+// SendRequest sends an OCPP Request to the server.
 // The protocol is based on request-response and cannot send multiple messages concurrently.
 // To guarantee this, outgoing messages are added to a queue and processed sequentially.
+//
+// The callback function is required to be notified of any incoming response/error for the request.
+// A cancelable context may be passed optionally.
 //
 // Returns an error in the following cases:
 //
 // - the client wasn't started
 //
-// - message validation fails (request is malformed)
-//
 // - the endpoint doesn't support the feature
 //
 // - the output queue is full
-func (c *Client) SendRequest(request ocpp.Request) error {
+func (c *Client) SendRequest(request ocpp.Request, callback func(response ocpp.Response, err error), ctx context.Context) (requestID string, err error) {
 	if !c.dispatcher.IsRunning() {
-		return fmt.Errorf("ocppj client is not started, couldn't send request")
+		err = fmt.Errorf("ocppj client is not started, couldn't send request")
+		return
 	}
 	call, err := c.CreateCall(request)
 	if err != nil {
-		return err
+		return
 	}
-	jsonMessage, err := call.MarshalJSON()
-	if err != nil {
-		return err
-	}
+	requestID = call.GetUniqueId()
 	// Message will be processed by dispatcher. A dedicated mechanism allows to delegate the message queue handling.
-	if err = c.dispatcher.SendRequest(RequestBundle{Call: call, Data: jsonMessage}); err != nil {
+	if ctx == nil {
+		ctx = context.TODO()
+	}
+	if err = c.dispatcher.SendRequest(RequestBundle{Call: call, Callback: callback, Context: ctx}); err != nil {
 		log.Errorf("error dispatching request [%s, %s]: %v", call.UniqueId, call.Action, err)
-		return err
+		return
 	}
 	log.Debugf("enqueued CALL [%s, %s]", call.UniqueId, call.Action)
-	return nil
+	return
 }
 
 // Sends an OCPP Response to the server.
@@ -302,17 +302,16 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 		case CALL_RESULT:
 			callResult := message.(*CallResult)
 			log.Debugf("handling incoming CALL RESULT [%s]", callResult.UniqueId)
-			c.dispatcher.CompleteRequest(callResult.GetUniqueId()) // Remove current request from queue and send next one
-			if c.responseHandler != nil {
-				c.responseHandler(callResult.Payload, callResult.UniqueId)
-			}
+			// Remove current request from queue and send next one
+			reqBundle := c.dispatcher.CompleteRequest(callResult.GetUniqueId())
+			c.onResponse(reqBundle, callResult.Payload)
 		case CALL_ERROR:
 			callError := message.(*CallError)
 			log.Debugf("handling incoming CALL ERROR [%s]", callError.UniqueId)
-			c.dispatcher.CompleteRequest(callError.GetUniqueId()) // Remove current request from queue and send next one
-			if c.errorHandler != nil {
-				c.errorHandler(ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
-			}
+			// Remove current request from queue and send next one
+			reqBundle := c.dispatcher.CompleteRequest(callError.GetUniqueId())
+			// TODO: callError.ErrorDetails ?
+			c.onMessageError(reqBundle, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.GetUniqueId()))
 		}
 	}
 	return nil
@@ -344,6 +343,18 @@ func (c *Client) HandleFailedResponseError(requestID string, err error, featureN
 	}
 	// Send an OCPP error to the target, since no regular response could be sent
 	_ = c.SendError(requestID, responseErr.Code, responseErr.Description, nil)
+}
+
+func (c *Client) onResponse(request RequestBundle, response ocpp.Response) {
+	if request.Callback != nil {
+		go request.Callback(response, nil)
+	}
+}
+
+func (c *Client) onMessageError(request RequestBundle, err error) {
+	if request.Callback != nil {
+		go request.Callback(nil, err)
+	}
 }
 
 func (c *Client) onDisconnected(err error) {

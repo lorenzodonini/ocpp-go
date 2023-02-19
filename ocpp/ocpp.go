@@ -30,6 +30,9 @@ type Response interface {
 	GetFeatureName() string
 }
 
+// Defines a callback for handling either a Response or an error.
+type Callback func(response Response, err error)
+
 // ErrorCode defines a common code name for an error.
 type ErrorCode string
 

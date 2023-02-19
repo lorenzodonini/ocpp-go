@@ -1,15 +1,19 @@
 package ocppj
 
 import (
+	"context"
 	"fmt"
 	"sync"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
 )
 
-// RequestBundle is a convenience struct for passing a call object struct and the
-// raw byte data into the queue containing outgoing requests.
+// RequestBundle is a convenience struct for passing a call object struct along with the raw byte data
+// and additional context into the queue containing outgoing requests.
 type RequestBundle struct {
-	Call *Call
-	Data []byte
+	Call     *Call
+	Callback ocpp.Callback
+	Context  context.Context
 }
 
 // RequestQueue can be arbitrarily implemented, as long as it conforms to the Queue interface.
