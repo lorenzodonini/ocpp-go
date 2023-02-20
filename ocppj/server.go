@@ -12,6 +12,7 @@ import (
 type Server struct {
 	Endpoint
 	server                    ws.WsServer
+	checkClientHandler        ws.CheckClientHandler
 	newClientHandler          ClientHandler
 	disconnectedClientHandler ClientHandler
 	requestHandler            RequestHandler
@@ -86,6 +87,11 @@ func (s *Server) SetNewClientHandler(handler ClientHandler) {
 	s.newClientHandler = handler
 }
 
+// Registers a handler for validate incoming client connections.
+func (s *Server) SetNewClientValidationHandler(handler ws.CheckClientHandler) {
+	s.checkClientHandler = handler
+}
+
 // Registers a handler for client disconnections.
 func (s *Server) SetDisconnectedClientHandler(handler ClientHandler) {
 	s.disconnectedClientHandler = handler
@@ -99,6 +105,7 @@ func (s *Server) SetDisconnectedClientHandler(handler ClientHandler) {
 // An error may be returned, if the websocket server couldn't be started.
 func (s *Server) Start(listenPort int, listenPath string) {
 	// Set internal message handler
+	s.server.SetCheckClientHandler(s.checkClientHandler)
 	s.server.SetNewClientHandler(s.onClientConnected)
 	s.server.SetDisconnectedClientHandler(s.onClientDisconnected)
 	s.server.SetMessageHandler(s.ocppMessageHandler)

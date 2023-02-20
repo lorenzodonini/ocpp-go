@@ -149,6 +149,8 @@ func (e HttpConnectionError) Error() string {
 
 // ---------------------- SERVER ----------------------
 
+type CheckClientHandler func(id string, r *http.Request) bool
+
 // WsServer defines a websocket server, which passively listens for incoming connections on ws or wss protocol.
 // The offered API are of asynchronous nature, and each incoming connection/message is handled using callbacks.
 //
@@ -234,6 +236,9 @@ type WsServer interface {
 	// By default, if the Origin header is present in the request, and the Origin host is not equal
 	// to the Host request header, the websocket handshake fails.
 	SetCheckOriginHandler(handler func(r *http.Request) bool)
+	// SetCheckClientHandler sets a handler for validate incoming websocket connections, allowing to perform
+	// custom client connection checks.
+	SetCheckClientHandler(handler func(id string, r *http.Request) bool)
 	// Addr gives the address on which the server is listening, useful if, for
 	// example, the port is system-defined (set to 0).
 	Addr() *net.TCPAddr
@@ -246,6 +251,7 @@ type Server struct {
 	connections         map[string]*WebSocket
 	httpServer          *http.Server
 	messageHandler      func(ws Channel, data []byte) error
+	checkClientHandler  func(id string, r *http.Request) bool
 	newClientHandler    func(ws Channel)
 	disconnectedHandler func(ws Channel)
 	basicAuthHandler    func(username string, password string) bool
@@ -295,6 +301,10 @@ func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.
 
 func (server *Server) SetMessageHandler(handler func(ws Channel, data []byte) error) {
 	server.messageHandler = handler
+}
+
+func (server *Server) SetCheckClientHandler(handler func(id string, r *http.Request) bool) {
+	server.checkClientHandler = handler
 }
 
 func (server *Server) SetNewClientHandler(handler func(ws Channel)) {
@@ -467,6 +477,16 @@ out:
 			return
 		}
 	}
+
+	if server.checkClientHandler != nil {
+		ok := server.checkClientHandler(id, r)
+		if !ok {
+			server.error(fmt.Errorf("client validation: invalid client"))
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+	}
+
 	// Upgrade websocket
 	conn, err := server.upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
