@@ -34,6 +34,7 @@ type ChargingStationConnection interface {
 	TLSConnectionState() *tls.ConnectionState
 }
 
+type ChargingStationValidationHandler ws.CheckClientHandler
 type ChargingStationConnectionHandler func(chargePoint ChargingStationConnection)
 
 // -------------------- v2.0 Charging Station --------------------
@@ -365,6 +366,8 @@ type CSMS interface {
 	SetDisplayHandler(handler display.CSMSHandler)
 	// Registers a handler for incoming data transfer messages
 	SetDataHandler(handler data.CSMSHandler)
+	// Registers a handler for new incoming Charging station connections.
+	SetNewChargingStationValidationHandler(handler ws.CheckClientHandler)
 	// Registers a handler for new incoming Charging station connections.
 	SetNewChargingStationHandler(handler ChargingStationConnectionHandler)
 	// Registers a handler for Charging station disconnections.

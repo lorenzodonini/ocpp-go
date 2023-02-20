@@ -735,6 +735,10 @@ func (cs *csms) SetDataHandler(handler data.CSMSHandler) {
 	cs.dataHandler = handler
 }
 
+func (cs *csms) SetNewChargingStationValidationHandler(handler ws.CheckClientHandler) {
+	cs.server.SetNewClientValidationHandler(handler)
+}
+
 func (cs *csms) SetNewChargingStationHandler(handler ChargingStationConnectionHandler) {
 	cs.server.SetNewClientHandler(func(chargingStation ws.Channel) {
 		handler(chargingStation)
