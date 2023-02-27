@@ -9,6 +9,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
+	"github.com/gorilla/mux"
 	"io"
 	"net"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/logging"
 
-	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
@@ -262,6 +262,7 @@ type Server struct {
 	errC                chan error
 	connMutex           sync.RWMutex
 	addr                *net.TCPAddr
+	httpHandler         *mux.Router
 }
 
 // Creates a new simple websocket server (the websockets are not secured).
@@ -288,6 +289,7 @@ func NewServer() *Server {
 // If no tlsConfig parameter is passed, the server will by default
 // not perform any client certificate verification.
 func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.Config) *Server {
+	router := mux.NewRouter()
 	return &Server{
 		tlsCertificatePath: certificatePath,
 		tlsCertificateKey:  certificateKey,
@@ -296,6 +298,7 @@ func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.
 		},
 		timeoutConfig: NewServerTimeoutConfig(),
 		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
+		httpHandler:   router,
 	}
 }
 
@@ -355,11 +358,12 @@ func (server *Server) Addr() *net.TCPAddr {
 	return server.addr
 }
 
+func (server *Server) AddHttpHandler(listenPath string, handler func(w http.ResponseWriter, r *http.Request)) {
+	server.httpHandler.HandleFunc(listenPath, handler)
+}
+
 func (server *Server) Start(port int, listenPath string) {
-	router := mux.NewRouter()
-	router.HandleFunc(listenPath, func(w http.ResponseWriter, r *http.Request) {
-		server.wsHandler(w, r)
-	})
+
 	server.connections = make(map[string]*WebSocket)
 	if server.httpServer == nil {
 		server.httpServer = &http.Server{}
@@ -367,7 +371,11 @@ func (server *Server) Start(port int, listenPath string) {
 
 	addr := fmt.Sprintf(":%v", port)
 	server.httpServer.Addr = addr
-	server.httpServer.Handler = router
+
+	server.AddHttpHandler(listenPath, func(w http.ResponseWriter, r *http.Request) {
+		server.wsHandler(w, r)
+	})
+	server.httpServer.Handler = server.httpHandler
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
