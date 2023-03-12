@@ -291,7 +291,7 @@ func jsonMarshal(t interface{}) ([]byte, error) {
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(EscapeHTML)
 	err := encoder.Encode(t)
-	return buffer.Bytes(), err
+	return bytes.TrimRight(buffer.Bytes(), "\n"), err
 }
 
 // -------------------- Endpoint --------------------
