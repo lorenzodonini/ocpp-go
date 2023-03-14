@@ -12,7 +12,7 @@ const GetConfigurationFeatureName = "GetConfiguration"
 type ConfigurationKey struct {
 	Key      string  `json:"key" validate:"required,max=50"`
 	Readonly bool    `json:"readonly"`
-	Value    *string `json:"value,omitempty" validate:"max=500"`
+	Value    *string `json:"value,omitempty" validate:"omitempty,max=500"`
 }
 
 // The field definition of the GetConfiguration request payload sent by the Central System to the Charge Point.
