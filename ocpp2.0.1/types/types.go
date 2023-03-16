@@ -47,22 +47,22 @@ func isValidAuthorizationStatus(fl validator.FieldLevel) bool {
 }
 
 // ID Token
-type IdTokenType string
+type IdTokenEnumType string
 
 const (
-	IdTokenTypeCentral         IdTokenType = "Central"
-	IdTokenTypeEMAID           IdTokenType = "eMAID"
-	IdTokenTypeISO14443        IdTokenType = "ISO14443"
-	IdTokenTypeKeyCode         IdTokenType = "KeyCode"
-	IdTokenTypeLocal           IdTokenType = "Local"
-	IdTokenTypeNoAuthorization IdTokenType = "NoAuthorization"
-	IdTokenTypeISO15693        IdTokenType = "ISO15693"
+	IdTokenEnumTypeCentral         IdTokenEnumType = "Central"
+	IdTokenEnumTypeEMAID           IdTokenEnumType = "eMAID"
+	IdTokenEnumTypeISO14443        IdTokenEnumType = "ISO14443"
+	IdTokenEnumTypeKeyCode         IdTokenEnumType = "KeyCode"
+	IdTokenEnumTypeLocal           IdTokenEnumType = "Local"
+	IdTokenEnumTypeNoAuthorization IdTokenEnumType = "NoAuthorization"
+	IdTokenEnumTypeISO15693        IdTokenEnumType = "ISO15693"
 )
 
-func isValidIdTokenType(fl validator.FieldLevel) bool {
-	tokenType := IdTokenType(fl.Field().String())
-	switch tokenType {
-	case IdTokenTypeCentral, IdTokenTypeEMAID, IdTokenTypeISO14443, IdTokenTypeKeyCode, IdTokenTypeLocal, IdTokenTypeNoAuthorization, IdTokenTypeISO15693:
+func isValidIdTokenEnumType(fl validator.FieldLevel) bool {
+	tokenEnumType := IdTokenEnumType(fl.Field().String())
+	switch tokenEnumType {
+	case IdTokenEnumTypeCentral, IdTokenEnumTypeEMAID, IdTokenEnumTypeISO14443, IdTokenEnumTypeKeyCode, IdTokenEnumTypeLocal, IdTokenEnumTypeNoAuthorization, IdTokenEnumTypeISO15693:
 		return true
 	default:
 		return false
@@ -74,9 +74,9 @@ type AdditionalInfo struct {
 	Type              string `json:"type" validate:"required,max=50"`
 }
 
-type IdToken struct {
+type IdTokenType struct {
 	IdToken        string           `json:"idToken" validate:"required,max=36"`
-	Type           IdTokenType      `json:"type" validate:"required,idTokenType"`
+	Type           IdTokenEnumType  `json:"type" validate:"required,idTokenType"`
 	AdditionalInfo []AdditionalInfo `json:"additionalInfo,omitempty" validate:"omitempty,dive"`
 }
 
@@ -700,7 +700,7 @@ type MeterValue struct {
 var Validate = ocppj.Validate
 
 func init() {
-	_ = Validate.RegisterValidation("idTokenType", isValidIdTokenType)
+	_ = Validate.RegisterValidation("idTokenType", isValidIdTokenEnumType)
 	_ = Validate.RegisterValidation("genericDeviceModelStatus", isValidGenericDeviceModelStatus)
 	_ = Validate.RegisterValidation("genericStatus", isValidGenericStatus)
 	_ = Validate.RegisterValidation("hashAlgorithm", isValidHashAlgorithmType)
