@@ -2,6 +2,7 @@
 package ocppj
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -23,6 +24,8 @@ var validationEnabled bool
 // The internal verbose logger
 var log logging.Logger
 
+var EscapeHTML = true
+
 func init() {
 	_ = Validate.RegisterValidation("errorCode", IsErrorCodeValid)
 	log = &logging.VoidLogger{}
@@ -38,6 +41,12 @@ func SetLogger(logger logging.Logger) {
 		panic("cannot set a nil logger")
 	}
 	log = logger
+}
+
+// Allows an instance of ocppj to configure if the message is Marshaled by escaping special caracters like "<", ">", "&" etc
+// For more info https://pkg.go.dev/encoding/json#HTMLEscape
+func SetHTMLEscape(flag bool) {
+	EscapeHTML = flag
 }
 
 // Allows to enable/disable automatic validation for OCPP messages
@@ -111,7 +120,7 @@ func (call *Call) MarshalJSON() ([]byte, error) {
 	fields[1] = call.UniqueId
 	fields[2] = call.Action
 	fields[3] = call.Payload
-	return json.Marshal(fields)
+	return jsonMarshal(fields)
 }
 
 // -------------------- Call Result --------------------
@@ -137,7 +146,7 @@ func (callResult *CallResult) MarshalJSON() ([]byte, error) {
 	fields[0] = int(callResult.MessageTypeId)
 	fields[1] = callResult.UniqueId
 	fields[2] = callResult.Payload
-	return json.Marshal(fields)
+	return jsonMarshal(fields)
 }
 
 // -------------------- Call Error --------------------
@@ -214,7 +223,7 @@ func ParseJsonMessage(dataJson string) ([]interface{}, error) {
 }
 
 func ocppMessageToJson(message interface{}) ([]byte, error) {
-	jsonData, err := json.Marshal(message)
+	jsonData, err := jsonMarshal(message)
 	if err != nil {
 		return nil, err
 	}
@@ -274,6 +283,15 @@ func errorFromValidation(validationErrors validator.ValidationErrors, messageId 
 		}
 	}
 	return ocpp.NewError(GenericError, fmt.Sprintf("%v", validationErrors.Error()), messageId)
+}
+
+// Marshals data by manipulating EscapeHTML property of encoder
+func jsonMarshal(t interface{}) ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(EscapeHTML)
+	err := encoder.Encode(t)
+	return bytes.TrimRight(buffer.Bytes(), "\n"), err
 }
 
 // -------------------- Endpoint --------------------
