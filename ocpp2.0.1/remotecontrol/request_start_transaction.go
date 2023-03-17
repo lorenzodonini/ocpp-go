@@ -33,7 +33,7 @@ func isValidRequestStartStopStatus(fl validator.FieldLevel) bool {
 type RequestStartTransactionRequest struct {
 	EvseID          *int                   `json:"evseId,omitempty" validate:"omitempty,gt=0"`
 	RemoteStartID   int                    `json:"remoteStartId" validate:"gte=0"`
-	IDToken         types.IdToken          `json:"idToken" validate:"idTokenType"`
+	IDToken         types.IdToken          `json:"idToken"`
 	ChargingProfile *types.ChargingProfile `json:"chargingProfile,omitempty"`
 	GroupIdToken    *types.IdToken         `json:"groupIdToken,omitempty" validate:"omitempty,dive"`
 }
