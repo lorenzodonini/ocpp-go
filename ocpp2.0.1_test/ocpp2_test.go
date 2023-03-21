@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -104,7 +105,7 @@ func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client
 	websocketServer.MethodCalled("NewClient", websocketId, client)
 }
 
-func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler ws.CheckClientHandler) {
+func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler func(id string, r *http.Request) bool) {
 	websocketServer.CheckClientHandler = handler
 }
 
