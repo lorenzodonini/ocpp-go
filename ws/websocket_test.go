@@ -665,6 +665,50 @@ func TestCustomOriginHeaderHandler(t *testing.T) {
 	wsServer.Stop()
 }
 
+func TestCustomCheckClientHandler(t *testing.T) {
+	invalidTestPath := "/ws/invalid-testws"
+	id := path.Base(testPath)
+	connected := make(chan bool)
+	wsServer := newWebsocketServer(t, func(data []byte) ([]byte, error) {
+		assert.Fail(t, "no message should be received from client!")
+		return nil, nil
+	})
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		connected <- true
+	})
+	wsServer.SetCheckClientHandler(func(clientId string, r *http.Request) bool {
+		return id == clientId
+	})
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(500 * time.Millisecond)
+
+	// Test message
+	wsClient := newWebsocketClient(t, func(data []byte) ([]byte, error) {
+		assert.Fail(t, "no message should be received from server!")
+		return nil, nil
+	})
+
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	// Set invalid client (not /ws/testws)
+	u := url.URL{Scheme: "ws", Host: host, Path: invalidTestPath}
+	// Attempt to connect and expect invalid client id error
+	err := wsClient.Start(u.String())
+	require.Error(t, err)
+	httpErr, ok := err.(HttpConnectionError)
+	require.True(t, ok)
+	assert.Equal(t, http.StatusUnauthorized, httpErr.HttpCode)
+	assert.Equal(t, "websocket: bad handshake", httpErr.Message)
+
+	// Re-attempt with correct client id
+	u = url.URL{Scheme: "ws", Host: host, Path: testPath}
+	err = wsClient.Start(u.String())
+	require.NoError(t, err)
+	result := <-connected
+	assert.True(t, result)
+	// Cleanup
+	wsServer.Stop()
+}
+
 func TestValidClientTLSCertificate(t *testing.T) {
 	// Create self-signed TLS certificate
 	clientCertFilename := "/tmp/client.pem"

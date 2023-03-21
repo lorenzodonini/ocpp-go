@@ -68,6 +68,7 @@ type MockWebsocketServer struct {
 	ws.WsServer
 	MessageHandler            func(ws ws.Channel, data []byte) error
 	NewClientHandler          func(ws ws.Channel)
+	CheckClientHandler        ws.CheckClientHandler
 	DisconnectedClientHandler func(ws ws.Channel)
 }
 
@@ -101,6 +102,10 @@ func (websocketServer *MockWebsocketServer) AddSupportedSubprotocol(subProto str
 
 func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client interface{}) {
 	websocketServer.MethodCalled("NewClient", websocketId, client)
+}
+
+func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler ws.CheckClientHandler) {
+	websocketServer.CheckClientHandler = handler
 }
 
 // ---------------------- MOCK WEBSOCKET CLIENT ----------------------
