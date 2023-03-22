@@ -9,7 +9,6 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io"
 	"net"
 	"net/http"
@@ -18,9 +17,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lorenzodonini/ocpp-go/logging"
-
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/lorenzodonini/ocpp-go/logging"
 )
 
 const (
