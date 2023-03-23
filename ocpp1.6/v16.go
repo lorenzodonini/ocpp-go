@@ -236,6 +236,8 @@ type CentralSystem interface {
 	SetRemoteTriggerHandler(handler remotetrigger.CentralSystemHandler)
 	// Registers a handler for incoming smart charging profile messages.
 	SetSmartChargingHandler(handler smartcharging.CentralSystemHandler)
+	// Registers a handler for new incoming Charging station connections.
+	SetNewChargingStationValidationHandler(handler ws.CheckClientHandler)
 	// Registers a handler for new incoming charge point connections.
 	SetNewChargePointHandler(handler ChargePointConnectionHandler)
 	// Registers a handler for charge point disconnections.

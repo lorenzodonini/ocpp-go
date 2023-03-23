@@ -360,6 +360,10 @@ func (cs *centralSystem) SetSmartChargingHandler(handler smartcharging.CentralSy
 	cs.smartChargingHandler = handler
 }
 
+func (cs *centralSystem) SetNewChargingStationValidationHandler(handler ws.CheckClientHandler) {
+	cs.server.SetNewClientValidationHandler(handler)
+}
+
 func (cs *centralSystem) SetNewChargePointHandler(handler ChargePointConnectionHandler) {
 	cs.server.SetNewClientHandler(func(chargePoint ws.Channel) {
 		handler(chargePoint)
