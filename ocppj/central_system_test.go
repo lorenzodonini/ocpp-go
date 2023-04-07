@@ -2,10 +2,14 @@ package ocppj_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"sync"
 	"time"
+
+	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -246,7 +250,63 @@ func (suite *OcppJTestSuite) TestCentralSystemSendErrorFailed() {
 	assert.NotNil(t, err)
 }
 
-// Handlers
+func (suite *OcppJTestSuite) TestCentralSystemHandleFailedResponse() {
+	t := suite.T()
+	msgC := make(chan []byte, 1)
+	mockChargePointID := "0101"
+	mockUniqueID := "1234"
+	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
+	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		data, ok := args.Get(1).([]byte)
+		require.True(t, ok)
+		msgC <- data
+	})
+	suite.centralSystem.Start(8887, "/{ws}")
+	suite.serverDispatcher.CreateClient(mockChargePointID)
+	// 1. occurrence validation error
+	mockField := "MyStruct.Field1"
+	mockError := MockValidationError{
+		tag:       "required",
+		namespace: mockField,
+		typ:       reflect.TypeOf(""),
+	}
+	var err error
+	err = validator.ValidationErrors{mockError}
+	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, MockFeatureName)
+	rawResponse := <-msgC
+	expectedErr := fmt.Sprintf(`[4,"%v","%v","Field %s required but not found for feature %s",{}]`, mockUniqueID, ocppj.OccurrenceConstraintViolation, mockField, MockFeatureName)
+	assert.Equal(t, expectedErr, string(rawResponse))
+	// 2. property constraint validation error
+	val := "len4"
+	mockError = MockValidationError{
+		tag:       "min",
+		namespace: mockField,
+		param:     "5",
+		value:     val,
+		typ:       reflect.TypeOf(val),
+	}
+	err = validator.ValidationErrors{mockError}
+	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, MockFeatureName)
+	rawResponse = <-msgC
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","Field %s must be minimum %s, but was %d for feature %s",{}]`,
+		mockUniqueID, ocppj.PropertyConstraintViolation, mockField, mockError.param, len(val), MockFeatureName)
+	assert.Equal(t, expectedErr, string(rawResponse))
+	// 3. ocpp error validation failed
+	err = validator.ValidationErrors{}
+	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, "")
+	rawResponse = <-msgC
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","%s",{}]`, mockUniqueID, ocppj.GenericError, err.Error())
+	assert.Equal(t, expectedErr, string(rawResponse))
+	// 4. profile error
+	err = errors.New("this is some uncharted error")
+	feature := "SomeFeature"
+	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, feature)
+	rawResponse = <-msgC
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","Unsupported feature %s",{}]`, mockUniqueID, ocppj.NotSupported, feature)
+	assert.Equal(t, expectedErr, string(rawResponse))
+}
+
+// ----------------- Handlers tests -----------------
 
 func (suite *OcppJTestSuite) TestCentralSystemNewClientHandler() {
 	t := suite.T()

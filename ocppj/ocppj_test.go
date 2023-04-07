@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"testing"
 
+	ut "github.com/go-playground/universal-translator"
+
 	"github.com/lorenzodonini/ocpp-go/logging"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -780,6 +782,27 @@ func (suite *OcppJTestSuite) TestLogger() {
 		assert.Equal(t, "cannot set a nil logger", r.(string))
 	})
 }
+
+type MockValidationError struct {
+	tag       string
+	namespace string
+	param     string
+	value     string
+	typ       reflect.Type
+}
+
+func (m MockValidationError) ActualTag() string                 { return m.tag }
+func (m MockValidationError) Tag() string                       { return m.tag }
+func (m MockValidationError) Namespace() string                 { return m.namespace }
+func (m MockValidationError) StructNamespace() string           { return m.namespace }
+func (m MockValidationError) Field() string                     { return m.namespace }
+func (m MockValidationError) StructField() string               { return m.namespace }
+func (m MockValidationError) Value() interface{}                { return m.value }
+func (m MockValidationError) Param() string                     { return m.param }
+func (m MockValidationError) Kind() reflect.Kind                { return m.typ.Kind() }
+func (m MockValidationError) Type() reflect.Type                { return m.typ }
+func (m MockValidationError) Translate(ut ut.Translator) string { return "" }
+func (m MockValidationError) Error() string                     { return fmt.Sprintf("some error for value %s", m.value) }
 
 func TestMockOcppJ(t *testing.T) {
 	suite.Run(t, new(ClientQueueTestSuite))
