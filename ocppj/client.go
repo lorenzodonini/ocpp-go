@@ -3,6 +3,8 @@ package ocppj
 import (
 	"fmt"
 
+	"gopkg.in/go-playground/validator.v9"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
@@ -173,10 +175,10 @@ func (c *Client) SendResponse(requestId string, response ocpp.Response) error {
 		return err
 	}
 	if err = c.client.Write(jsonMessage); err != nil {
-		log.Errorf("error sending response [%s]: %v", callResult.UniqueId, err)
+		log.Errorf("error sending response [%s]: %v", callResult.GetUniqueId(), err)
 		return err
 	}
-	log.Debugf("sent CALL RESULT [%s]", callResult.UniqueId)
+	log.Debugf("sent CALL RESULT [%s]", callResult.GetUniqueId())
 	log.Debugf("sent JSON message to server: %s", string(jsonMessage))
 	return nil
 }
@@ -203,6 +205,7 @@ func (c *Client) SendError(requestId string, errorCode ocpp.ErrorCode, descripti
 		return err
 	}
 	log.Debugf("sent CALL ERROR [%s]", callError.UniqueId)
+	log.Debugf("sent JSON message to server: %s", string(jsonMessage))
 	return nil
 }
 
@@ -248,6 +251,34 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 		}
 	}
 	return nil
+}
+
+// HandleFailedResponseError allows to handle failures while sending responses (either CALL_RESULT or CALL_ERROR).
+// It internally analyzes and creates an ocpp.Error based on the given error.
+// It will the attempt to send it to the server.
+//
+// The function helps to prevent starvation on the other endpoint, which is caused by a response never reaching it.
+// The method will, however, only attempt to send a default error once.
+// If this operation fails, the other endpoint may still starve.
+func (c *Client) HandleFailedResponseError(requestID string, err error, featureName string) {
+	log.Debugf("handling error for failed response [%s]", requestID)
+	// There's two possible errors: invalid profile or invalid payload
+	validationErr, ok := err.(validator.ValidationErrors)
+	var responseErr *ocpp.Error
+	if ok {
+		if featureName == "" {
+			// Validation for OcppError failed, generating a default error
+			responseErr = ocpp.NewError(GenericError, err.Error(), requestID)
+		} else {
+			// Validation failed for a feature, sending an error instead
+			responseErr = errorFromValidation(validationErr, requestID, featureName)
+		}
+	} else {
+		// unsupported profile error
+		responseErr = ocpp.NewError(NotSupported, fmt.Sprintf("Unsupported feature %v", featureName), requestID)
+	}
+	// Send an OCPP error to the target, since no regular response could be sent
+	_ = c.SendError(requestID, responseErr.Code, responseErr.Description, nil)
 }
 
 func (c *Client) onDisconnected(err error) {
