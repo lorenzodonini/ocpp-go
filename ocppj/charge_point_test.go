@@ -2,10 +2,14 @@ package ocppj_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"sync"
 	"time"
+
+	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -84,7 +88,7 @@ func (suite *OcppJTestSuite) TestChargePointSendInvalidRequest() {
 	_ = suite.chargePoint.Start("someUrl")
 	mockRequest := newMockRequest("")
 	err := suite.chargePoint.SendRequest(mockRequest)
-	assert.NotNil(suite.T(), err)
+	require.NotNil(suite.T(), err)
 }
 
 func (suite *OcppJTestSuite) TestChargePointSendRequestNoValidation() {
@@ -224,6 +228,59 @@ func (suite *OcppJTestSuite) TestChargePointSendErrorFailed() {
 	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
 	assert.Equal(t, "networkError", err.Error())
+}
+
+func (suite *OcppJTestSuite) TestChargePointHandleFailedResponse() {
+	t := suite.T()
+	msgC := make(chan []byte, 1)
+	mockUniqueID := "1234"
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
+	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		data, ok := args.Get(0).([]byte)
+		require.True(t, ok)
+		msgC <- data
+	})
+	// 1. occurrence validation error
+	mockField := "MyStruct.Field1"
+	mockError := MockValidationError{
+		tag:       "required",
+		namespace: mockField,
+		typ:       reflect.TypeOf(""),
+	}
+	var err error
+	err = validator.ValidationErrors{mockError}
+	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, MockFeatureName)
+	rawResponse := <-msgC
+	expectedErr := fmt.Sprintf(`[4,"%v","%v","Field %s required but not found for feature %s",{}]`, mockUniqueID, ocppj.OccurrenceConstraintViolation, mockField, MockFeatureName)
+	assert.Equal(t, expectedErr, string(rawResponse))
+	// 2. property constraint validation error
+	val := "len4"
+	mockError = MockValidationError{
+		tag:       "min",
+		namespace: mockField,
+		param:     "5",
+		value:     val,
+		typ:       reflect.TypeOf(val),
+	}
+	err = validator.ValidationErrors{mockError}
+	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, MockFeatureName)
+	rawResponse = <-msgC
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","Field %s must be minimum %s, but was %d for feature %s",{}]`,
+		mockUniqueID, ocppj.PropertyConstraintViolation, mockField, mockError.param, len(val), MockFeatureName)
+	assert.Equal(t, expectedErr, string(rawResponse))
+	// 3. ocpp error validation failed
+	err = validator.ValidationErrors{}
+	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, "")
+	rawResponse = <-msgC
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","%s",{}]`, mockUniqueID, ocppj.GenericError, err.Error())
+	assert.Equal(t, expectedErr, string(rawResponse))
+	// 4. profile error
+	err = errors.New("this is some uncharted error")
+	feature := "SomeFeature"
+	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, feature)
+	rawResponse = <-msgC
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","Unsupported feature %s",{}]`, mockUniqueID, ocppj.NotSupported, feature)
+	assert.Equal(t, expectedErr, string(rawResponse))
 }
 
 // ----------------- Call Handlers tests -----------------
