@@ -2,6 +2,7 @@ package ocpp16
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -407,19 +408,23 @@ func (cs *centralSystem) Start(listenPort int, listenPath string) {
 }
 
 func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
-	// send error response
 	if err != nil {
-		cs.error(fmt.Errorf("error handling request: %w", err))
-		err := cs.server.SendError(chargePointId, requestId, ocppj.InternalError, "Error handling request", nil)
+		// Send error response
+		err = cs.server.SendError(chargePointId, requestId, ocppj.InternalError, err.Error(), nil)
 		if err != nil {
+			// Error while sending an error. Will attempt to send a default error instead
+			cs.server.HandleFailedResponseError(chargePointId, requestId, err, "")
+			// Notify client implementation
 			err = fmt.Errorf("error replying cp %s to request %s with 'internal error': %w", chargePointId, requestId, err)
 			cs.error(err)
 		}
 		return
 	}
 
-	if confirmation == nil {
+	if confirmation == nil || reflect.ValueOf(confirmation).IsNil() {
 		err = fmt.Errorf("empty confirmation to %s for request %s", chargePointId, requestId)
+		// Sending a dummy error to server instead, then notify client implementation
+		_ = cs.server.SendError(chargePointId, requestId, ocppj.GenericError, err.Error(), nil)
 		cs.error(err)
 		return
 	}
@@ -427,6 +432,9 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Re
 	// send confirmation response
 	err = cs.server.SendResponse(chargePointId, requestId, confirmation)
 	if err != nil {
+		// Error while sending an error. Will attempt to send a default error instead
+		cs.server.HandleFailedResponseError(chargePointId, requestId, err, confirmation.GetFeatureName())
+		// Notify client implementation
 		err = fmt.Errorf("error replying cp %s to request %s: %w", chargePointId, requestId, err)
 		cs.error(err)
 	}
