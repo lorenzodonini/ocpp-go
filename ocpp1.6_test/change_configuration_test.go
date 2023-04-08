@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -47,7 +48,7 @@ func (suite *OcppV16TestSuite) TestChangeConfigurationE2EMocked() {
 	changeConfigurationConfirmation := core.NewChangeConfigurationConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockChargePointCoreListener{}
+	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnChangeConfiguration", mock.Anything).Return(changeConfigurationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.ChangeConfigurationRequest)
 		require.NotNil(t, request)

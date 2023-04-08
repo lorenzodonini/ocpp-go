@@ -209,49 +209,49 @@ type MockCentralSystemCoreListener struct {
 	mock.Mock
 }
 
-func (coreListener MockCentralSystemCoreListener) OnAuthorize(chargePointId string, request *core.AuthorizeRequest) (confirmation *core.AuthorizeConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnAuthorize(chargePointId string, request *core.AuthorizeRequest) (confirmation *core.AuthorizeConfirmation, err error) {
 	args := coreListener.MethodCalled("OnAuthorize", chargePointId, request)
 	conf := args.Get(0).(*core.AuthorizeConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockCentralSystemCoreListener) OnBootNotification(chargePointId string, request *core.BootNotificationRequest) (confirmation *core.BootNotificationConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnBootNotification(chargePointId string, request *core.BootNotificationRequest) (confirmation *core.BootNotificationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnBootNotification", chargePointId, request)
 	conf := args.Get(0).(*core.BootNotificationConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
 	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
 	conf := args.Get(0).(*core.DataTransferConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockCentralSystemCoreListener) OnHeartbeat(chargePointId string, request *core.HeartbeatRequest) (confirmation *core.HeartbeatConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnHeartbeat(chargePointId string, request *core.HeartbeatRequest) (confirmation *core.HeartbeatConfirmation, err error) {
 	args := coreListener.MethodCalled("OnHeartbeat", chargePointId, request)
 	conf := args.Get(0).(*core.HeartbeatConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockCentralSystemCoreListener) OnMeterValues(chargePointId string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnMeterValues(chargePointId string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, err error) {
 	args := coreListener.MethodCalled("OnMeterValues", chargePointId, request)
 	conf := args.Get(0).(*core.MeterValuesConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockCentralSystemCoreListener) OnStartTransaction(chargePointId string, request *core.StartTransactionRequest) (confirmation *core.StartTransactionConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnStartTransaction(chargePointId string, request *core.StartTransactionRequest) (confirmation *core.StartTransactionConfirmation, err error) {
 	args := coreListener.MethodCalled("OnStartTransaction", chargePointId, request)
 	conf := args.Get(0).(*core.StartTransactionConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockCentralSystemCoreListener) OnStatusNotification(chargePointId string, request *core.StatusNotificationRequest) (confirmation *core.StatusNotificationConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnStatusNotification(chargePointId string, request *core.StatusNotificationRequest) (confirmation *core.StatusNotificationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnStatusNotification", chargePointId, request)
 	conf := args.Get(0).(*core.StatusNotificationConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockCentralSystemCoreListener) OnStopTransaction(chargePointId string, request *core.StopTransactionRequest) (confirmation *core.StopTransactionConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnStopTransaction(chargePointId string, request *core.StopTransactionRequest) (confirmation *core.StopTransactionConfirmation, err error) {
 	args := coreListener.MethodCalled("OnStopTransaction", chargePointId, request)
 	conf := args.Get(0).(*core.StopTransactionConfirmation)
 	return conf, args.Error(1)
@@ -262,55 +262,55 @@ type MockChargePointCoreListener struct {
 	mock.Mock
 }
 
-func (coreListener MockChargePointCoreListener) OnChangeAvailability(request *core.ChangeAvailabilityRequest) (confirmation *core.ChangeAvailabilityConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnChangeAvailability(request *core.ChangeAvailabilityRequest) (confirmation *core.ChangeAvailabilityConfirmation, err error) {
 	args := coreListener.MethodCalled("OnChangeAvailability", request)
 	conf := args.Get(0).(*core.ChangeAvailabilityConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnDataTransfer(request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnDataTransfer(request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
 	args := coreListener.MethodCalled("OnDataTransfer", request)
 	conf := args.Get(0).(*core.DataTransferConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnChangeConfiguration", request)
 	conf := args.Get(0).(*core.ChangeConfigurationConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnClearCache(request *core.ClearCacheRequest) (confirmation *core.ClearCacheConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnClearCache(request *core.ClearCacheRequest) (confirmation *core.ClearCacheConfirmation, err error) {
 	args := coreListener.MethodCalled("OnClearCache", request)
 	conf := args.Get(0).(*core.ClearCacheConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnGetConfiguration(request *core.GetConfigurationRequest) (confirmation *core.GetConfigurationConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnGetConfiguration(request *core.GetConfigurationRequest) (confirmation *core.GetConfigurationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnGetConfiguration", request)
 	conf := args.Get(0).(*core.GetConfigurationConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnReset(request *core.ResetRequest) (confirmation *core.ResetConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnReset(request *core.ResetRequest) (confirmation *core.ResetConfirmation, err error) {
 	args := coreListener.MethodCalled("OnReset", request)
 	conf := args.Get(0).(*core.ResetConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnUnlockConnector(request *core.UnlockConnectorRequest) (confirmation *core.UnlockConnectorConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnUnlockConnector(request *core.UnlockConnectorRequest) (confirmation *core.UnlockConnectorConfirmation, err error) {
 	args := coreListener.MethodCalled("OnUnlockConnector", request)
 	conf := args.Get(0).(*core.UnlockConnectorConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnRemoteStartTransaction(request *core.RemoteStartTransactionRequest) (confirmation *core.RemoteStartTransactionConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnRemoteStartTransaction(request *core.RemoteStartTransactionRequest) (confirmation *core.RemoteStartTransactionConfirmation, err error) {
 	args := coreListener.MethodCalled("OnRemoteStartTransaction", request)
 	conf := args.Get(0).(*core.RemoteStartTransactionConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener MockChargePointCoreListener) OnRemoteStopTransaction(request *core.RemoteStopTransactionRequest) (confirmation *core.RemoteStopTransactionConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnRemoteStopTransaction(request *core.RemoteStopTransactionRequest) (confirmation *core.RemoteStopTransactionConfirmation, err error) {
 	args := coreListener.MethodCalled("OnRemoteStopTransaction", request)
 	conf := args.Get(0).(*core.RemoteStopTransactionConfirmation)
 	return conf, args.Error(1)
@@ -557,7 +557,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	channel := NewMockWebSocket(wsId)
 
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: false})
-	coreListener := MockCentralSystemCoreListener{}
+	coreListener := &MockCentralSystemCoreListener{}
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	resultChannel := make(chan bool, 1)
 	suite.ocppjChargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
@@ -595,7 +595,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	channel := NewMockWebSocket(wsId)
 
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: false})
-	coreListener := MockChargePointCoreListener{}
+	coreListener := &MockChargePointCoreListener{}
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	suite.ocppjCentralSystem.SetErrorHandler(func(chargePoint ws.Channel, err *ocpp.Error, details interface{}) {
 		assert.Equal(t, messageId, err.MessageId)

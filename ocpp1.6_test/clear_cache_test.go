@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -39,7 +40,7 @@ func (suite *OcppV16TestSuite) TestClearCacheE2EMocked() {
 	clearCacheConfirmation := core.NewClearCacheConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockChargePointCoreListener{}
+	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnClearCache", mock.Anything).Return(clearCacheConfirmation, nil)
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
