@@ -400,10 +400,14 @@ type MockChargingStationDataHandler struct {
 	mock.Mock
 }
 
-func (handler *MockChargingStationDataHandler) OnDataTransfer(request *data.DataTransferRequest) (confirmation *data.DataTransferResponse, err error) {
+func (handler *MockChargingStationDataHandler) OnDataTransfer(request *data.DataTransferRequest) (response *data.DataTransferResponse, err error) {
 	args := handler.MethodCalled("OnDataTransfer", request)
-	conf := args.Get(0).(*data.DataTransferResponse)
-	return conf, args.Error(1)
+	rawResp := args.Get(0)
+	err = args.Error(1)
+	if rawResp != nil {
+		response = rawResp.(*data.DataTransferResponse)
+	}
+	return
 }
 
 // ---------------------- MOCK CSMS DATA HANDLER ----------------------
@@ -412,10 +416,14 @@ type MockCSMSDataHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSDataHandler) OnDataTransfer(chargingStationID string, request *data.DataTransferRequest) (confirmation *data.DataTransferResponse, err error) {
+func (handler *MockCSMSDataHandler) OnDataTransfer(chargingStationID string, request *data.DataTransferRequest) (response *data.DataTransferResponse, err error) {
 	args := handler.MethodCalled("OnDataTransfer", chargingStationID, request)
-	conf := args.Get(0).(*data.DataTransferResponse)
-	return conf, args.Error(1)
+	rawResp := args.Get(0)
+	err = args.Error(1)
+	if rawResp != nil {
+		response = rawResp.(*data.DataTransferResponse)
+	}
+	return
 }
 
 // ---------------------- MOCK CS DIAGNOSTICS HANDLER ----------------------
