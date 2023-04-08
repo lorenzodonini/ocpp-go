@@ -193,7 +193,8 @@ func (suite *OcppJTestSuite) TestChargePointSendConfirmationFailed() {
 	mockConfirmation := newMockConfirmation("mockValue")
 	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
-	assert.Equal(t, "networkError", err.Error())
+	expectedErr := fmt.Sprintf("ocpp message (%v): GenericError - networkError", mockUniqueId)
+	assert.ErrorContains(t, err, expectedErr)
 }
 
 // ----------------- SendError tests -----------------
@@ -223,7 +224,8 @@ func (suite *OcppJTestSuite) TestChargePointSendErrorFailed() {
 	mockConfirmation := newMockConfirmation("mockValue")
 	err := suite.chargePoint.SendResponse(mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
-	assert.Equal(t, "networkError", err.Error())
+	expectedErr := fmt.Sprintf("ocpp message (%v): GenericError - networkError", mockUniqueId)
+	assert.ErrorContains(t, err, expectedErr)
 }
 
 func (suite *OcppJTestSuite) TestChargePointHandleFailedResponse() {
