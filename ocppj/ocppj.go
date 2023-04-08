@@ -500,7 +500,7 @@ func (endpoint *Endpoint) CreateCallResult(confirmation ocpp.Response, uniqueId 
 	action := confirmation.GetFeatureName()
 	profile, _ := endpoint.GetProfileForFeature(action)
 	if profile == nil {
-		return nil, fmt.Errorf("Couldn't create Call Result for unsupported action %v", action)
+		return nil, ocpp.NewError(NotSupported, fmt.Sprintf("couldn't create Call Result for unsupported action %v", action), uniqueId)
 	}
 	callResult := CallResult{
 		MessageTypeId: CALL_RESULT,

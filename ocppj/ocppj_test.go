@@ -195,23 +195,23 @@ type MockFeature struct {
 	mock.Mock
 }
 
-func (f MockFeature) GetFeatureName() string {
+func (f *MockFeature) GetFeatureName() string {
 	return MockFeatureName
 }
 
-func (f MockFeature) GetRequestType() reflect.Type {
+func (f *MockFeature) GetRequestType() reflect.Type {
 	return reflect.TypeOf(MockRequest{})
 }
 
-func (f MockFeature) GetResponseType() reflect.Type {
+func (f *MockFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(MockConfirmation{})
 }
 
-func (r MockRequest) GetFeatureName() string {
+func (r *MockRequest) GetFeatureName() string {
 	return MockFeatureName
 }
 
-func (c MockConfirmation) GetFeatureName() string {
+func (c *MockConfirmation) GetFeatureName() string {
 	return MockFeatureName
 }
 
@@ -221,6 +221,14 @@ func newMockRequest(value string) *MockRequest {
 
 func newMockConfirmation(value string) *MockConfirmation {
 	return &MockConfirmation{MockValue: value}
+}
+
+type MockUnsupportedResponse struct {
+	MockValue string `json:"mockValue" validate:"required,min=5"`
+}
+
+func (m *MockUnsupportedResponse) GetFeatureName() string {
+	return "SomeRandomFeature"
 }
 
 // ---------------------- COMMON UTILITY METHODS ----------------------
@@ -356,7 +364,7 @@ type OcppJTestSuite struct {
 }
 
 func (suite *OcppJTestSuite) SetupTest() {
-	mockProfile := ocpp.NewProfile("mock", MockFeature{})
+	mockProfile := ocpp.NewProfile("mock", &MockFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockClient = &mockClient
