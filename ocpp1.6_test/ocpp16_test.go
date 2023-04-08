@@ -223,8 +223,12 @@ func (coreListener *MockCentralSystemCoreListener) OnBootNotification(chargePoin
 
 func (coreListener *MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
 	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
-	conf := args.Get(0).(*core.DataTransferConfirmation)
-	return conf, args.Error(1)
+	rawConf := args.Get(0)
+	err = args.Error(1)
+	if rawConf != nil {
+		confirmation = rawConf.(*core.DataTransferConfirmation)
+	}
+	return
 }
 
 func (coreListener *MockCentralSystemCoreListener) OnHeartbeat(chargePointId string, request *core.HeartbeatRequest) (confirmation *core.HeartbeatConfirmation, err error) {
@@ -270,8 +274,12 @@ func (coreListener *MockChargePointCoreListener) OnChangeAvailability(request *c
 
 func (coreListener *MockChargePointCoreListener) OnDataTransfer(request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
 	args := coreListener.MethodCalled("OnDataTransfer", request)
-	conf := args.Get(0).(*core.DataTransferConfirmation)
-	return conf, args.Error(1)
+	rawConf := args.Get(0)
+	err = args.Error(1)
+	if rawConf != nil {
+		confirmation = rawConf.(*core.DataTransferConfirmation)
+	}
+	return
 }
 
 func (coreListener *MockChargePointCoreListener) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
