@@ -2,6 +2,7 @@ package ocpp2
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -814,22 +815,33 @@ func (cs *csms) Start(listenPort int, listenPath string) {
 
 func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, err error, requestId string) {
 	if err != nil {
-		err := cs.server.SendError(chargingStationID, requestId, ocppj.ProtocolError, "Couldn't generate valid confirmation", nil)
+		// Send error response
+		err = cs.server.SendError(chargingStationID, requestId, ocppj.InternalError, err.Error(), nil)
 		if err != nil {
-			err = fmt.Errorf("replying cs %s to request %s with 'protocol error': %w", chargingStationID, requestId, err)
+			// Error while sending an error. Will attempt to send a default error instead
+			cs.server.HandleFailedResponseError(chargingStationID, requestId, err, "")
+			// Notify client implementation
+			err = fmt.Errorf("error replying cp %s to request %s with 'internal error': %w", chargingStationID, requestId, err)
 			cs.error(err)
 		}
 		return
 	}
-	if response == nil {
+
+	if response == nil || reflect.ValueOf(response).IsNil() {
 		err = fmt.Errorf("empty response to %s for request %s", chargingStationID, requestId)
+		// Sending a dummy error to server instead, then notify client implementation
+		_ = cs.server.SendError(chargingStationID, requestId, ocppj.GenericError, err.Error(), nil)
 		cs.error(err)
 		return
 	}
-	// send response
+
+	// send confirmation response
 	err = cs.server.SendResponse(chargingStationID, requestId, response)
 	if err != nil {
-		err = fmt.Errorf("replying cs %s to request %s: %w", chargingStationID, requestId, err)
+		// Error while sending an error. Will attempt to send a default error instead
+		cs.server.HandleFailedResponseError(chargingStationID, requestId, err, response.GetFeatureName())
+		// Notify client implementation
+		err = fmt.Errorf("error replying cp %s to request %s: %w", chargingStationID, requestId, err)
 		cs.error(err)
 	}
 }
