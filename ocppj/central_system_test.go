@@ -203,7 +203,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSendConfirmationFailed() {
 	mockConfirmation := newMockConfirmation("mockValue")
 	err := suite.centralSystem.SendResponse(mockChargePointId, mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
-	assert.Equal(t, "networkError", err.Error())
+	expectedErr := fmt.Sprintf("ocpp message (%v): GenericError - networkError", mockUniqueId)
+	assert.ErrorContains(t, err, expectedErr)
 }
 
 // SendError
@@ -244,6 +245,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSendErrorFailed() {
 	mockConfirmation := newMockConfirmation("mockValue")
 	err := suite.centralSystem.SendResponse(mockChargePointId, mockUniqueId, mockConfirmation)
 	assert.NotNil(t, err)
+	expectedErr := fmt.Sprintf("ocpp message (%v): GenericError - networkError", mockUniqueId)
+	assert.ErrorContains(t, err, expectedErr)
 }
 
 func (suite *OcppJTestSuite) TestCentralSystemHandleFailedResponse() {
