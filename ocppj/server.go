@@ -173,11 +173,11 @@ func (s *Server) SendResponse(clientID string, requestId string, response ocpp.R
 	}
 	jsonMessage, err := callResult.MarshalJSON()
 	if err != nil {
-		return err
+		return ocpp.NewError(GenericError, err.Error(), requestId)
 	}
 	if err = s.server.Write(clientID, jsonMessage); err != nil {
 		log.Errorf("error sending response [%s] to %s: %v", callResult.GetUniqueId(), clientID, err)
-		return err
+		return ocpp.NewError(GenericError, err.Error(), requestId)
 	}
 	log.Debugf("sent CALL RESULT [%s] for %s", callResult.GetUniqueId(), clientID)
 	log.Debugf("sent JSON message to %s: %s", clientID, string(jsonMessage))
@@ -199,11 +199,11 @@ func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.Err
 	}
 	jsonMessage, err := callError.MarshalJSON()
 	if err != nil {
-		return err
+		return ocpp.NewError(GenericError, err.Error(), requestId)
 	}
 	if err = s.server.Write(clientID, jsonMessage); err != nil {
 		log.Errorf("error sending response error [%s] to %s: %v", callError.UniqueId, clientID, err)
-		return err
+		return ocpp.NewError(GenericError, err.Error(), requestId)
 	}
 	log.Debugf("sent CALL ERROR [%s] for %s", callError.UniqueId, clientID)
 	return nil
@@ -264,20 +264,19 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 // If this operation fails, the other endpoint may still starve.
 func (s *Server) HandleFailedResponseError(clientID string, requestID string, err error, featureName string) {
 	log.Debugf("handling error for failed response [%s]", requestID)
-	// There's two possible errors: invalid profile or invalid payload
-	validationErr, ok := err.(validator.ValidationErrors)
 	var responseErr *ocpp.Error
-	if ok {
-		if featureName == "" {
-			// Validation for OcppError failed, generating a default error
-			responseErr = ocpp.NewError(GenericError, err.Error(), requestID)
-		} else {
-			// Validation failed for a feature, sending an error instead
-			responseErr = errorFromValidation(validationErr, requestID, featureName)
-		}
-	} else {
-		// unsupported profile error
-		responseErr = ocpp.NewError(NotSupported, fmt.Sprintf("Unsupported feature %v", featureName), requestID)
+	// There's several possible errors: invalid profile, invalid payload or send error
+	switch err.(type) {
+	case validator.ValidationErrors:
+		// Validation error
+		validationErr := err.(validator.ValidationErrors)
+		responseErr = errorFromValidation(validationErr, requestID, featureName)
+	case *ocpp.Error:
+		// Internal OCPP error
+		responseErr = err.(*ocpp.Error)
+	case error:
+		// Unknown error
+		responseErr = ocpp.NewError(GenericError, err.Error(), requestID)
 	}
 	// Send an OCPP error to the target, since no regular response could be sent
 	_ = s.SendError(clientID, requestID, responseErr.Code, responseErr.Description, nil)

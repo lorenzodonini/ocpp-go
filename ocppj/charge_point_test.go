@@ -2,14 +2,10 @@ package ocppj_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"sync"
 	"time"
-
-	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -240,46 +236,64 @@ func (suite *OcppJTestSuite) TestChargePointHandleFailedResponse() {
 		require.True(t, ok)
 		msgC <- data
 	})
-	// 1. occurrence validation error
-	mockField := "MyStruct.Field1"
-	mockError := MockValidationError{
-		tag:       "required",
-		namespace: mockField,
-		typ:       reflect.TypeOf(""),
-	}
+	var callResult *ocppj.CallResult
+	var callError *ocppj.CallError
 	var err error
-	err = validator.ValidationErrors{mockError}
-	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, MockFeatureName)
+	// 1. occurrence validation error
+	mockField := "CallResult.Payload.MockValue"
+	mockResponse := newMockConfirmation("")
+	callResult, err = suite.chargePoint.CreateCallResult(mockResponse, mockUniqueID)
+	require.Error(t, err)
+	require.Nil(t, callResult)
+	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, mockResponse.GetFeatureName())
 	rawResponse := <-msgC
-	expectedErr := fmt.Sprintf(`[4,"%v","%v","Field %s required but not found for feature %s",{}]`, mockUniqueID, ocppj.OccurrenceConstraintViolation, mockField, MockFeatureName)
+	expectedErr := fmt.Sprintf(`[4,"%v","%v","Field %s required but not found for feature %s",{}]`, mockUniqueID, ocppj.OccurrenceConstraintViolation, mockField, mockResponse.GetFeatureName())
 	assert.Equal(t, expectedErr, string(rawResponse))
 	// 2. property constraint validation error
 	val := "len4"
-	mockError = MockValidationError{
-		tag:       "min",
-		namespace: mockField,
-		param:     "5",
-		value:     val,
-		typ:       reflect.TypeOf(val),
-	}
-	err = validator.ValidationErrors{mockError}
-	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, MockFeatureName)
+	minParamLength := "5"
+	mockResponse = newMockConfirmation(val)
+	callResult, err = suite.chargePoint.CreateCallResult(mockResponse, mockUniqueID)
+	require.Error(t, err)
+	require.Nil(t, callResult)
+	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, mockResponse.GetFeatureName())
 	rawResponse = <-msgC
 	expectedErr = fmt.Sprintf(`[4,"%v","%v","Field %s must be minimum %s, but was %d for feature %s",{}]`,
-		mockUniqueID, ocppj.PropertyConstraintViolation, mockField, mockError.param, len(val), MockFeatureName)
+		mockUniqueID, ocppj.PropertyConstraintViolation, mockField, minParamLength, len(val), mockResponse.GetFeatureName())
 	assert.Equal(t, expectedErr, string(rawResponse))
-	// 3. ocpp error validation failed
-	err = validator.ValidationErrors{}
+	// 3. profile not supported
+	mockUnsupportedResponse := &MockUnsupportedResponse{MockValue: "someValue"}
+	callResult, err = suite.chargePoint.CreateCallResult(mockUnsupportedResponse, mockUniqueID)
+	require.Error(t, err)
+	require.Nil(t, callResult)
+	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, mockUnsupportedResponse.GetFeatureName())
+	rawResponse = <-msgC
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","couldn't create Call Result for unsupported action %s",{}]`,
+		mockUniqueID, ocppj.NotSupported, mockUnsupportedResponse.GetFeatureName())
+	assert.Equal(t, expectedErr, string(rawResponse))
+	// 4. ocpp error validation failed
+	invalidErrorCode := "InvalidErrorCode"
+	callError, err = suite.chargePoint.CreateCallError(mockUniqueID, ocpp.ErrorCode(invalidErrorCode), "", nil)
+	require.Error(t, err)
+	require.Nil(t, callError)
 	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, "")
 	rawResponse = <-msgC
-	expectedErr = fmt.Sprintf(`[4,"%v","%v","%s",{}]`, mockUniqueID, ocppj.GenericError, err.Error())
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","Key: 'CallError.ErrorCode' Error:Field validation for 'ErrorCode' failed on the 'errorCode' tag",{}]`,
+		mockUniqueID, ocppj.GenericError)
 	assert.Equal(t, expectedErr, string(rawResponse))
-	// 4. profile error
-	err = errors.New("this is some uncharted error")
-	feature := "SomeFeature"
-	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, feature)
+	// 5. marshaling err
+	err = suite.chargePoint.SendError(mockUniqueID, ocppj.SecurityError, "", make(chan struct{}))
+	require.Error(t, err)
+	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, "")
 	rawResponse = <-msgC
-	expectedErr = fmt.Sprintf(`[4,"%v","%v","Unsupported feature %s",{}]`, mockUniqueID, ocppj.NotSupported, feature)
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","json: unsupported type: chan struct {}",{}]`, mockUniqueID, ocppj.GenericError)
+	assert.Equal(t, expectedErr, string(rawResponse))
+	// 6. network error
+	rawErr := "client is currently not connected, cannot send data"
+	err = ocpp.NewError(ocppj.GenericError, rawErr, mockUniqueID)
+	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, "")
+	rawResponse = <-msgC
+	expectedErr = fmt.Sprintf(`[4,"%v","%v","%s",{}]`, mockUniqueID, ocppj.GenericError, rawErr)
 	assert.Equal(t, expectedErr, string(rawResponse))
 }
 

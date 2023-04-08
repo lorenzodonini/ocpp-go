@@ -26,7 +26,7 @@ type ServerDispatcherTestSuite struct {
 
 func (s *ServerDispatcherTestSuite) SetupTest() {
 	s.endpoint = ocppj.Server{}
-	mockProfile := ocpp.NewProfile("mock", MockFeature{})
+	mockProfile := ocpp.NewProfile("mock", &MockFeature{})
 	s.endpoint.AddProfile(mockProfile)
 	s.queueMap = ocppj.NewFIFOQueueMap(10)
 	s.dispatcher = ocppj.NewDefaultServerDispatcher(s.queueMap)
@@ -242,7 +242,7 @@ type ClientDispatcherTestSuite struct {
 
 func (c *ClientDispatcherTestSuite) SetupTest() {
 	c.endpoint = ocppj.Client{Id: "client1"}
-	mockProfile := ocpp.NewProfile("mock", MockFeature{})
+	mockProfile := ocpp.NewProfile("mock", &MockFeature{})
 	c.endpoint.AddProfile(mockProfile)
 	c.queue = ocppj.NewFIFOClientQueue(10)
 	c.dispatcher = ocppj.NewDefaultClientDispatcher(c.queue)
