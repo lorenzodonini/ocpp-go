@@ -2,12 +2,13 @@ package ocpp16_test
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"time"
 )
 
 // Test
@@ -48,7 +49,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	responseRaw := []byte(responseJson)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockCentralSystemCoreListener{}
+	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnAuthorize", mock.AnythingOfType("string"), mock.Anything).Return(authorizeConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.AuthorizeRequest)
 		require.True(t, ok)

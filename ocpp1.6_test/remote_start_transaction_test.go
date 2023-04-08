@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
@@ -69,7 +70,7 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionE2EMocked() {
 	RemoteStartTransactionConfirmation := core.NewRemoteStartTransactionConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockChargePointCoreListener{}
+	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnRemoteStartTransaction", mock.Anything).Return(RemoteStartTransactionConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.RemoteStartTransactionRequest)
 		require.NotNil(t, request)

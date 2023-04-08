@@ -64,7 +64,7 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 	responseRaw := []byte(responseJson)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockCentralSystemCoreListener{}
+	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnStopTransaction", mock.AnythingOfType("string"), mock.Anything).Return(stopTransactionConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.StopTransactionRequest)
 		require.True(t, ok)

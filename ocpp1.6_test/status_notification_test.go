@@ -57,7 +57,7 @@ func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
 	statusNotificationConfirmation := core.NewStatusNotificationConfirmation()
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockCentralSystemCoreListener{}
+	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(statusNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.StatusNotificationRequest)
 		require.True(t, ok)

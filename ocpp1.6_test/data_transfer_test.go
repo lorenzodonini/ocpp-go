@@ -3,6 +3,7 @@ package ocpp16_test
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -61,7 +62,7 @@ func (suite *OcppV16TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	dataTransferConfirmation := core.NewDataTransferConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockCentralSystemCoreListener{}
+	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnDataTransfer", mock.AnythingOfType("string"), mock.Anything).Return(dataTransferConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.DataTransferRequest)
 		require.NotNil(t, request)
@@ -101,7 +102,7 @@ func (suite *OcppV16TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	dataTransferConfirmation := core.NewDataTransferConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockChargePointCoreListener{}
+	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnDataTransfer", mock.Anything).Return(dataTransferConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.DataTransferRequest)
 		require.NotNil(t, request)

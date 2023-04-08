@@ -63,7 +63,7 @@ func (suite *OcppV16TestSuite) TestGetConfigurationE2EMocked() {
 	getConfigurationConfirmation.UnknownKey = unknownKeys
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockChargePointCoreListener{}
+	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnGetConfiguration", mock.Anything).Return(getConfigurationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.GetConfigurationRequest)
 		require.NotNil(t, request)

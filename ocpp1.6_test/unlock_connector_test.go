@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -41,7 +42,7 @@ func (suite *OcppV16TestSuite) TestUnlockConnectorE2EMocked() {
 	unlockConnectorConfirmation := core.NewUnlockConnectorConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
-	coreListener := MockChargePointCoreListener{}
+	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnUnlockConnector", mock.Anything).Return(unlockConnectorConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.UnlockConnectorRequest)
 		require.NotNil(t, request)

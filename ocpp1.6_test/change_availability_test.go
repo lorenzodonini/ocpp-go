@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -47,7 +48,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	changeAvailabilityConfirmation := core.NewChangeAvailabilityConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 	// Setting handlers
-	coreListener := MockChargePointCoreListener{}
+	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnChangeAvailability", mock.Anything).Return(changeAvailabilityConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.ChangeAvailabilityRequest)
 		require.NotNil(t, request)

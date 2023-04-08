@@ -2,11 +2,12 @@ package ocpp16_test
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"time"
 )
 
 // Test
@@ -38,7 +39,7 @@ func (suite *OcppV16TestSuite) TestHeartbeatE2EMocked() {
 	heartbeatConfirmation := core.NewHeartbeatConfirmation(currentTime)
 	channel := NewMockWebSocket(wsId)
 
-	coreListener := MockCentralSystemCoreListener{}
+	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnHeartbeat", mock.AnythingOfType("string"), mock.Anything).Return(heartbeatConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.HeartbeatRequest)
 		require.NotNil(t, request)
