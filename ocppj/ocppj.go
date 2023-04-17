@@ -443,7 +443,10 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		if len(arr) > 4 {
 			details = arr[4]
 		}
-		rawErrorCode := arr[2].(string)
+		rawErrorCode, ok := arr[2].(string)
+		if !ok {
+			return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 2, expected rawErrorCode (string)", arr[2]), rawErrorCode)
+		}
 		errorCode := ocpp.ErrorCode(rawErrorCode)
 		errorDescription := ""
 		if v, ok := arr[3].(string); ok {
