@@ -664,6 +664,27 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Description)
 }
 
+func (suite *OcppJTestSuite) TestParseMessageInvalidRawErrorCode() {
+	t := suite.T()
+	mockMessage := make([]interface{}, 5)
+	messageId := "12345"
+	pendingRequest := newMockRequest("request")
+	mockMessage[0] = float64(ocppj.CALL_ERROR) // Message Type ID
+	mockMessage[1] = messageId                 // Unique ID
+	mockMessage[2] = float64(42)               // test invalid typecast
+	mockMessage[3] = "error description"
+	mockMessage[4] = "error details"
+	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
+	assert.Equal(t, protoErr.MessageId, "") // unique id is never set after invalid type cast return
+	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, "Invalid element 42 at 2, expected rawErrorCode (string)", protoErr.Description)
+}
+
 func (suite *OcppJTestSuite) TestParseMessageInvalidRequest() {
 	t := suite.T()
 	mockMessage := make([]interface{}, 4)
