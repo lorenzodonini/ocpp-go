@@ -13,7 +13,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestSetChargingProfileRequestValidation() {
 	t := suite.T()
-	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
+	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.94210))
 	chargingProfile := types.NewChargingProfile(1, 1, types.ChargingProfilePurposeChargePointMaxProfile, types.ChargingProfileKindAbsolute, chargingSchedule)
 	var requestTable = []GenericTestEntry{
 		{smartcharging.SetChargingProfileRequest{ConnectorId: 1, ChargingProfile: chargingProfile}, true},
@@ -47,7 +47,7 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 	chargingProfileKind := types.ChargingProfileKindAbsolute
 	chargingRateUnit := types.ChargingRateUnitWatts
 	startPeriod := 0
-	limit := 10.0
+	limit := 10.94210
 	status := smartcharging.ChargingProfileStatusAccepted
 	chargingSchedule := types.NewChargingSchedule(chargingRateUnit, types.NewChargingSchedulePeriod(startPeriod, limit))
 	chargingProfile := types.NewChargingProfile(chargingProfileId, stackLevel, chargingProfilePurpose, chargingProfileKind, chargingSchedule)
