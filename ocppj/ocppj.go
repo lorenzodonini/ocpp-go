@@ -212,7 +212,9 @@ func IsErrorCodeValid(fl validator.FieldLevel) bool {
 // Returns the array of elements contained in the message.
 func ParseRawJsonMessage(dataJson []byte) ([]interface{}, error) {
 	var arr []interface{}
-	err := json.Unmarshal(dataJson, &arr)
+	dec := json.NewDecoder(bytes.NewBuffer(dataJson))
+	dec.UseNumber()
+	err := dec.Decode(&arr)
 	if err != nil {
 		return nil, err
 	}
@@ -375,8 +377,12 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 	if len(arr) < 3 {
 		return nil, ocpp.NewError(FormationViolation, "Invalid message. Expected array length >= 3", "")
 	}
-	rawTypeId, ok := arr[0].(float64)
+	numberTypeId, ok := arr[0].(json.Number)
 	if !ok {
+		return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", arr[0]), "")
+	}
+	rawTypeId, err := numberTypeId.Int64()
+	if err != nil {
 		return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", arr[0]), "")
 	}
 	typeId := MessageType(rawTypeId)
