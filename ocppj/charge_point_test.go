@@ -153,7 +153,7 @@ func (suite *OcppJTestSuite) TestChargePointSendRequestFailed() {
 	}
 	// Send request, then wait for error
 	requestID, err := suite.chargePoint.SendRequest(mockRequest, cb, nil)
-	//TODO: currently the network error is not returned by SendRequest, but is only generated internally
+	// Network error is not returned by SendRequest, but within the callback itself
 	require.NoError(t, err)
 	err = <-errC
 	require.Error(t, err)
@@ -268,6 +268,8 @@ func (suite *OcppJTestSuite) TestChargePointCallHandler() {
 
 func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 	t := suite.T()
+	var dummyRequestID string
+	var err error
 	mockRequest := newMockRequest("testValue")
 	sentC := make(chan struct{}, 1)
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
@@ -275,19 +277,26 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 		// Trigger event as soon as the request was sent out
 		sentC <- struct{}{}
 	})
-	err := suite.chargePoint.Start("somePath")
+	err = suite.chargePoint.Start("somePath")
 	assert.Nil(t, err)
 	// Create callback with delivery confirmation channel
+	suite.chargePoint.SetResponseHandler(func(requestID string, response ocpp.Response, err error, callback ocpp.Callback) {
+		assert.Equal(t, dummyRequestID, requestID)
+		assert.NotNil(t, response)
+		assert.Nil(t, err)
+		require.NotNil(t, callback)
+		callback(response, err)
+	})
 	responseC := make(chan ocpp.Response, 1)
 	cb := func(response ocpp.Response, err error) {
 		responseC <- response
 	}
 	// Send request, then wait for network to send it out
-	requestID, err := suite.chargePoint.SendRequest(mockRequest, cb, nil)
+	dummyRequestID, err = suite.chargePoint.SendRequest(mockRequest, cb, nil)
 	<-sentC
 	// Simulate central system message
 	mockValue := "someValue"
-	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, requestID, mockValue)
+	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, dummyRequestID, mockValue)
 	err = suite.mockClient.MessageHandler([]byte(mockConfirmation))
 	require.Nil(t, err)
 	// Retrieve async response and check equality
@@ -301,6 +310,8 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 
 func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 	t := suite.T()
+	var dummyRequestID string
+	var err error
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	sentC := make(chan struct{}, 1)
@@ -309,31 +320,38 @@ func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 		// Trigger event as soon as the request was sent out
 		sentC <- struct{}{}
 	})
-	err := suite.chargePoint.Start("someUrl")
+	err = suite.chargePoint.Start("someUrl")
 	assert.Nil(t, err)
 	// Create callback with error channel
+	suite.chargePoint.SetResponseHandler(func(requestID string, response ocpp.Response, err error, callback ocpp.Callback) {
+		assert.Equal(t, dummyRequestID, requestID)
+		assert.Nil(t, response)
+		assert.Error(t, err)
+		require.NotNil(t, callback)
+		callback(response, err)
+	})
 	errC := make(chan error, 1)
 	cb := func(response ocpp.Response, err error) {
 		errC <- err
 	}
 	// Send request, then wait for network to send it out
-	requestID, err := suite.chargePoint.SendRequest(mockRequest, cb, nil)
+	dummyRequestID, err = suite.chargePoint.SendRequest(mockRequest, cb, nil)
 	<-sentC
 	// Simulate central system error message
 	mockErrorCode := ocppj.GenericError
 	mockErrorDescription := "Mock Description"
 	mockErrorDetails := make(map[string]interface{})
 	mockErrorDetails["details"] = "someValue"
-	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, requestID, mockErrorCode, mockErrorDescription, mockValue)
+	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, dummyRequestID, mockErrorCode, mockErrorDescription, mockValue)
 	err = suite.mockClient.MessageHandler([]byte(mockError))
 	assert.Nil(t, err)
 	// Retrieve async error and check equality
 	err, ok := <-errC
 	require.True(t, ok)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	ocppErr, ok := err.(*ocpp.Error)
 	require.True(t, ok)
-	assert.Equal(t, requestID, ocppErr.MessageId)
+	assert.Equal(t, dummyRequestID, ocppErr.MessageId)
 	assert.Equal(t, mockErrorCode, ocppErr.Code)
 	assert.Equal(t, mockErrorDescription, ocppErr.Description)
 }
@@ -684,21 +702,25 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	t := suite.T()
 	req := newMockRequest("test")
-	timeoutC := make(chan bool, 1)
+	timeoutC := make(chan error, 1)
 	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
 	suite.mockClient.On("Write", mock.Anything).Return(nil)
+	suite.chargePoint.SetResponseHandler(func(requestID string, response ocpp.Response, err error, callback ocpp.Callback) {
+		callback(response, err)
+	})
 	// Sets a low response timeout for testing purposes
 	suite.clientDispatcher.SetTimeout(500 * time.Millisecond)
 	// Set timeout callback
 	timeoutCb := func(response ocpp.Response, err error) {
 		assert.Nil(t, response)
 		assert.Error(t, err)
-		timeoutC <- true
+		timeoutC <- err
 	}
 	// Start normally and send a message
 	err := suite.chargePoint.Start("someUrl")
 	require.NoError(t, err)
-	_, err = suite.chargePoint.SendRequest(req, timeoutCb, context.TODO())
+	ctx := context.TODO()
+	_, err = suite.chargePoint.SendRequest(req, timeoutCb, ctx)
 	require.NoError(t, err)
 	// Wait for request to be enqueued, then check state
 	time.Sleep(50 * time.Millisecond)
@@ -708,8 +730,56 @@ func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	assert.Equal(t, 1, suite.clientRequestQueue.Size())
 	assert.True(t, state.HasPendingRequest())
 	// Wait for timeout error to be thrown
-	<-timeoutC
+	err = <-timeoutC
+	ocppErr, ok := err.(*ocpp.Error)
+	require.True(t, ok)
+	assert.Equal(t, ocppj.GenericError, ocppErr.Code)
+	assert.Equal(t, "Request timed out", ocppErr.Description)
+	// Parent ctx is ok, since only internal timeout context was canceled
+	assert.NoError(t, ctx.Err())
+	// Queues are empty
 	assert.True(t, suite.clientRequestQueue.IsEmpty())
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.False(t, state.HasPendingRequest())
+}
+
+func (suite *OcppJTestSuite) TestClientRequestCanceled() {
+	t := suite.T()
+	req := newMockRequest("test")
+	cancelC := make(chan error, 1)
+	writeC := make(chan struct{}, 1)
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
+	suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		writeC <- struct{}{}
+	})
+	suite.chargePoint.SetResponseHandler(func(requestID string, response ocpp.Response, err error, callback ocpp.Callback) {
+		callback(response, err)
+	})
+	cb := func(response ocpp.Response, err error) {
+		assert.Nil(t, response)
+		assert.Error(t, err)
+		cancelC <- err
+	}
+	// Start normally and send a message
+	err := suite.chargePoint.Start("someUrl")
+	require.NoError(t, err)
+	ctx, cancel := context.WithCancel(context.Background())
+	_, err = suite.chargePoint.SendRequest(req, cb, ctx)
+	require.NoError(t, err)
+	// Wait for request to be sent, then wait a bit and cancel
+	<-writeC
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+	// Wait for cancel error to be thrown
+	err = <-cancelC
+	ocppErr, ok := err.(*ocpp.Error)
+	require.True(t, ok)
+	assert.Equal(t, ocppj.GenericError, ocppErr.Code)
+	assert.Equal(t, "Request canceled by user", ocppErr.Description)
+	// Parent ctx is canceled
+	assert.Error(t, ctx.Err())
+	// Internal queues are empty
+	assert.True(t, suite.clientRequestQueue.IsEmpty())
+	assert.True(t, suite.clientDispatcher.IsRunning())
+	assert.False(t, suite.chargePoint.RequestState.HasPendingRequest())
 }

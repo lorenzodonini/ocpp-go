@@ -46,6 +46,8 @@ func (c *ClientDispatcherTestSuite) TestClientSendRequest() {
 	c.websocketClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
 		sent <- true
 	}).Return(nil)
+	timeout := time.Second * 1
+	c.dispatcher.SetTimeout(timeout)
 	c.dispatcher.Start()
 	require.True(t, c.dispatcher.IsRunning())
 	// Create and send mock request
@@ -67,6 +69,8 @@ func (c *ClientDispatcherTestSuite) TestClientSendRequest() {
 	c.dispatcher.CompleteRequest(requestID)
 	assert.False(t, c.state.HasPendingRequest())
 	assert.True(t, c.queue.IsEmpty())
+	// Assert that no timeout is invoked
+	time.Sleep(timeout + (300 * time.Millisecond))
 }
 
 func (c *ClientDispatcherTestSuite) TestClientRequestFailed() {
