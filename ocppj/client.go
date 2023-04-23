@@ -15,6 +15,7 @@ type Client struct {
 	client                ws.WsClient
 	Id                    string
 	requestHandler        func(request ocpp.Request, requestId string, action string)
+	responseHandler       func(requestID string, response ocpp.Response, err error, callback ocpp.Callback)
 	onDisconnectedHandler func(err error)
 	onReconnectedHandler  func()
 	dispatcher            ClientDispatcher
@@ -26,6 +27,7 @@ type Client struct {
 // a state handler and a list of supported profiles (optional).
 //
 // You may create a simple new server by using these default values:
+//
 //	s := ocppj.NewClient(ws.NewClient(), nil, nil)
 //
 // The wsClient parameter cannot be nil. Refer to the ws package for information on how to create and
@@ -53,6 +55,10 @@ func NewClient(id string, wsClient ws.WsClient, dispatcher ClientDispatcher, sta
 // Registers a handler for incoming requests.
 func (c *Client) SetRequestHandler(handler func(request ocpp.Request, requestId string, action string)) {
 	c.requestHandler = handler
+}
+
+func (c *Client) SetResponseHandler(handler func(requestID string, response ocpp.Response, err error, callback ocpp.Callback)) {
+	c.responseHandler = handler
 }
 
 // Registers a handler for disconnection events.
@@ -103,6 +109,7 @@ func (c *Client) Stop() {
 	<-cleanupC
 }
 
+// Checks whether the client is connected to the server.
 func (c *Client) IsConnected() bool {
 	return c.client.IsConnected()
 }
@@ -121,7 +128,7 @@ func (c *Client) IsConnected() bool {
 // - the endpoint doesn't support the feature
 //
 // - the output queue is full
-func (c *Client) SendRequest(request ocpp.Request, callback func(response ocpp.Response, err error), ctx context.Context) (requestID string, err error) {
+func (c *Client) SendRequest(request ocpp.Request, callback ocpp.Callback, ctx context.Context) (requestID string, err error) {
 	if !c.dispatcher.IsRunning() {
 		err = fmt.Errorf("ocppj client is not started, couldn't send request")
 		return
@@ -240,14 +247,14 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 }
 
 func (c *Client) onResponse(request RequestBundle, response ocpp.Response) {
-	if request.Callback != nil {
-		go request.Callback(response, nil)
+	if c.responseHandler != nil {
+		go c.responseHandler(request.Call.GetUniqueId(), response, nil, request.Callback)
 	}
 }
 
 func (c *Client) onMessageError(request RequestBundle, err error) {
-	if request.Callback != nil {
-		go request.Callback(nil, err)
+	if c.responseHandler != nil {
+		go c.responseHandler(request.Call.GetUniqueId(), nil, err, request.Callback)
 	}
 }
 
