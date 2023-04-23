@@ -227,6 +227,10 @@ func (d *DefaultClientDispatcher) messagePump() {
 		// Only dispatch a request if the request queue isn't empty and there is no pending request already
 		if !d.requestQueue.IsEmpty() && !d.pendingRequestState.HasPendingRequest() {
 			err := d.dispatchNextRequest()
+			if err != nil {
+				// Network error while sending request. Request will be retried later.
+				log.Error(err)
+			}
 			if err == nil {
 				d.startRequestTimeout()
 			}
