@@ -2,10 +2,10 @@
 package ocpp16
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 
-	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -110,11 +110,30 @@ type ChargePoint interface {
 	//
 	// The request is synchronous blocking.
 	SendRequest(request ocpp.Request) (ocpp.Response, error)
+	// Sends a request to the central system.
+	// The central system will respond with a confirmation, or with an error if the request was invalid or could not be processed.
+	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
+	//
+	// An optional context can be passed to the function. If the context is canceled before the request is completed,
+	// the function returns an error.
+	//
+	// The request is synchronous blocking.
+	SendRequestWithContext(request ocpp.Request, ctx context.Context) (ocpp.Response, error)
 	// Sends an asynchronous request to the central system.
-	// The central system will respond with a confirmation messages, or with an error if the request was invalid or could not be processed.
+	// The central system will reply with a confirmation message, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.
+	//
 	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
-	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
+	SendRequestAsync(request ocpp.Request, callback ocpp.Callback) error
+	// Sends an asynchronous request to the central system.
+	// The central system will reply with a confirmation message, or with an error if the request was invalid or could not be processed.
+	// This result is propagated via a callback, called asynchronously.
+	//
+	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
+	//
+	// An optional context can be passed to the function. If the context is canceled before the request is completed,
+	// the callback is invoked with an error.
+	SendRequestAsyncWithContext(request ocpp.Request, callback ocpp.Callback, ctx context.Context) error
 	// Connects to the central system and starts the charge point routine.
 	// The function doesn't block and returns right away, after having attempted to open a connection to the central system.
 	// If the connection couldn't be opened, an error is returned.
@@ -204,6 +223,12 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.Client) ChargeP
 		cp.errorHandler <- err
 	})
 	cp.client.SetRequestHandler(cp.handleIncomingRequest)
+	// Callback invoked by ocppj layer, whenever:
+	//  - a response/error is received
+	// 	- an internal error occurs
+	// 	- the request is cancelled
+	//  - the request times out
+	cp.client.SetResponseHandler(cp.onResponse)
 	return &cp
 }
 

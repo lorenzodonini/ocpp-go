@@ -2,10 +2,10 @@
 package ocpp2
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 
-	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/authorization"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
@@ -146,17 +146,35 @@ type ChargingStation interface {
 	// Registers a handler for incoming data transfer messages
 	SetDataHandler(handler data.ChargingStationHandler)
 	// Sends a request to the CSMS.
-	// The CSMS will respond with a confirmation, or with an error if the request was invalid or could not be processed.
+	// The CSMS will reply with a response, or with an error if the request was invalid or could not be processed.
 	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
 	//
 	// The request is synchronous blocking.
 	SendRequest(request ocpp.Request) (ocpp.Response, error)
+	// Sends a request to the CSMS.
+	// The CSMS will reply with a response, or with an error if the request was invalid or could not be processed.
+	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
+	//
+	// An optional context can be passed to the function. If the context is canceled before the request is completed,
+	// the function returns an error.
+	//
+	// The request is synchronous blocking.
+	SendRequestWithContext(request ocpp.Request, ctx context.Context) (ocpp.Response, error)
 	// Sends an asynchronous request to the CSMS.
-	// The CSMS will respond with a confirmation message, or with an error if the request was invalid or could not be processed.
+	// The CSMS will reply with a response message, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.
 	//
 	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never invoked.
-	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
+	SendRequestAsync(request ocpp.Request, callback ocpp.Callback) error
+	// Sends an asynchronous request to the CSMS.
+	// The CSMS will reply with a response message, or with an error if the request was invalid or could not be processed.
+	// This result is propagated via a callback, called asynchronously.
+	//
+	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
+	//
+	// An optional context can be passed to the function. If the context is canceled before the request is completed,
+	// the callback is invoked with an error.
+	SendRequestAsyncWithContext(request ocpp.Request, callback ocpp.Callback, ctx context.Context) error
 	// Connects to the CSMS and starts the charging station routine.
 	// The function doesn't block and returns right away, after having attempted to open a connection to the CSMS.
 	// If the connection couldn't be opened, an error is returned.
@@ -237,6 +255,12 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) Cha
 		cs.errorHandler <- err
 	})
 	cs.client.SetRequestHandler(cs.handleIncomingRequest)
+	// Callback invoked by ocppj layer, whenever:
+	//  - a response/error is received
+	// 	- an internal error occurs
+	// 	- the request is cancelled
+	//  - the request times out
+	cs.client.SetResponseHandler(cs.onResponse)
 	return &cs
 }
 

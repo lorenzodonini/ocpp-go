@@ -318,8 +318,8 @@ func (d *DefaultClientDispatcher) Resume() {
 func (d *DefaultClientDispatcher) CompleteRequest(requestId string) (bundle RequestBundle) {
 	// Critical section, lock prevents concurrent invocations of CompleteRequest,
 	// which may lead to race conditions in the request queue.
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 	el := d.requestQueue.Peek()
 	if el == nil {
 		log.Errorf("attempting to pop front of queue, but queue is empty")
