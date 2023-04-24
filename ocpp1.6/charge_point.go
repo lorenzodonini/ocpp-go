@@ -1,9 +1,9 @@
 package ocpp16
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -23,9 +23,6 @@ type chargePoint struct {
 	reservationHandler   reservation.ChargePointHandler
 	remoteTriggerHandler remotetrigger.ChargePointHandler
 	smartChargingHandler smartcharging.ChargePointHandler
-	confirmationHandler  chan ocpp.Response
-	errorHandler         chan error
-	callbacks            callbackqueue.CallbackQueue
 	stopC                chan struct{}
 	errC                 chan error // external error channel
 }
@@ -36,10 +33,15 @@ func (cp *chargePoint) error(err error) {
 	}
 }
 
-// Callback invoked whenever a queued request is canceled, due to timeout.
-// By default, the callback returns a GenericError to the caller, who sent the original request.
-func (cp *chargePoint) onRequestTimeout(_ string, _ ocpp.Request, err *ocpp.Error) {
-	cp.errorHandler <- err
+// Function invoked whenever a Response or an error is received for a request.
+// The callback includes the user-defined callback function, which may be used to handle the response accordingly.
+// The identifier of the original request is attached to the function as reference.
+func (cp *chargePoint) onResponse(requestID string, response ocpp.Response, err error, callback ocpp.Callback) {
+	if callback == nil {
+		cp.error(fmt.Errorf("no callback defined for confirmation to request %v, dropping confirmation", requestID))
+		return
+	}
+	callback(response, err)
 }
 
 // Errors returns a channel for error messages. If it doesn't exist it es created.
@@ -205,39 +207,54 @@ func (cp *chargePoint) SetSmartChargingHandler(handler smartcharging.ChargePoint
 }
 
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) {
+	return cp.SendRequestWithContext(request, context.TODO())
+}
+
+func (cp *chargePoint) SendRequestWithContext(request ocpp.Request, ctx context.Context) (ocpp.Response, error) {
 	featureName := request.GetFeatureName()
 	if _, found := cp.client.GetProfileForFeature(featureName); !found {
 		return nil, fmt.Errorf("feature %v is unsupported on charge point (missing profile), cannot send request", featureName)
 	}
-
+	if ctx == nil {
+		ctx = context.TODO()
+	}
 	// Wraps an asynchronous response
 	type asyncResponse struct {
 		r ocpp.Response
 		e error
 	}
-	// Create channel and pass it to a callback function, for retrieving asynchronous response
+	// Create channel and use it within a callback function, for retrieving asynchronous response
 	asyncResponseC := make(chan asyncResponse, 1)
-	send := func() error {
-		return cp.client.SendRequest(request)
+	callback := func(response ocpp.Response, err error) {
+		if ctx.Err() != nil {
+			// Request was canceled already, ignore callback.
+			// Confirmation will be handled by select switch below.
+			return
+		}
+		asyncResponseC <- asyncResponse{response, err}
 	}
-	err := cp.callbacks.TryQueue("main", send, func(confirmation ocpp.Response, err error) {
-		asyncResponseC <- asyncResponse{r: confirmation, e: err}
-	})
+	// Send request, then start blocking wait for asynchronous response
+	_, err := cp.client.SendRequest(request, callback, ctx)
 	if err != nil {
 		return nil, err
 	}
 	select {
 	case asyncResult, ok := <-asyncResponseC:
 		if !ok {
-			return nil, fmt.Errorf("internal error while receiving result for %v request", request.GetFeatureName())
+			return nil, fmt.Errorf("internal error while receiving result for %s request", request.GetFeatureName())
 		}
 		return asyncResult.r, asyncResult.e
-	case <-cp.stopC:
-		return nil, fmt.Errorf("client stopped while waiting for response to %v", request.GetFeatureName())
+	case <-ctx.Done():
+		// Request was canceled by user. Return an error and don't handle callbacks any longer
+		return nil, fmt.Errorf("request timed out/canceled by user. Any incoming response will be ignored")
 	}
 }
 
-func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
+func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback ocpp.Callback) error {
+	return cp.SendRequestAsyncWithContext(request, callback, context.TODO())
+}
+
+func (cp *chargePoint) SendRequestAsyncWithContext(request ocpp.Request, callback ocpp.Callback, ctx context.Context) error {
 	featureName := request.GetFeatureName()
 	if _, found := cp.client.GetProfileForFeature(featureName); !found {
 		return fmt.Errorf("feature %v is unsupported on charge point (missing profile), cannot send request", featureName)
@@ -249,49 +266,12 @@ func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(conf
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", featureName)
 	}
-	// Response will be retrieved asynchronously via asyncHandler
-	send := func() error {
-		return cp.client.SendRequest(request)
+	if ctx == nil {
+		ctx = context.TODO()
 	}
-	err := cp.callbacks.TryQueue("main", send, callback)
+	// Response will be handled asynchronously and passed to the callback function
+	_, err := cp.client.SendRequest(request, callback, ctx)
 	return err
-}
-
-func (cp *chargePoint) asyncCallbackHandler() {
-	for {
-		select {
-		case confirmation := <-cp.confirmationHandler:
-			// Get and invoke callback
-			if callback, ok := cp.callbacks.Dequeue("main"); ok {
-				callback(confirmation, nil)
-			} else {
-				err := fmt.Errorf("no handler available for incoming response %v", confirmation.GetFeatureName())
-				cp.error(err)
-			}
-		case protoError := <-cp.errorHandler:
-			// Get and invoke callback
-			if callback, ok := cp.callbacks.Dequeue("main"); ok {
-				callback(nil, protoError)
-			} else {
-				err := fmt.Errorf("no handler available for error %v", protoError.Error())
-				cp.error(err)
-			}
-		case <-cp.stopC:
-			// Handler stopped, cleanup callbacks.
-			// No callback invocation, since the user manually stopped the client.
-			cp.clearCallbacks(false)
-			return
-		}
-	}
-}
-
-func (cp *chargePoint) clearCallbacks(invokeCallback bool) {
-	for cb, ok := cp.callbacks.Dequeue("main"); ok; cb, ok = cp.callbacks.Dequeue("main") {
-		if invokeCallback {
-			err := ocpp.NewError(ocppj.GenericError, "client stopped, no response received from server", "")
-			cb(nil, err)
-		}
-	}
 }
 
 func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, requestId string) {
@@ -322,11 +302,7 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, reque
 
 func (cp *chargePoint) Start(centralSystemUrl string) error {
 	cp.stopC = make(chan struct{}, 1)
-	// Async response handler receives incoming responses/errors and triggers callbacks
 	err := cp.client.Start(centralSystemUrl)
-	if err == nil {
-		go cp.asyncCallbackHandler()
-	}
 	return err
 }
 

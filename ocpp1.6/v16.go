@@ -2,10 +2,10 @@
 package ocpp16
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 
-	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -66,7 +66,6 @@ type ChargePoint interface {
 	DiagnosticsStatusNotification(status firmware.DiagnosticsStatus, props ...func(request *firmware.DiagnosticsStatusNotificationRequest)) (*firmware.DiagnosticsStatusNotificationConfirmation, error)
 	// Notifies the central system of a status change during the download of a new firmware version.
 	FirmwareStatusNotification(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationConfirmation, error)
-
 	// Registers a handler for incoming core profile messages
 	SetCoreHandler(listener core.ChargePointHandler)
 	// Registers a handler for incoming local authorization profile messages
@@ -85,11 +84,30 @@ type ChargePoint interface {
 	//
 	// The request is synchronous blocking.
 	SendRequest(request ocpp.Request) (ocpp.Response, error)
+	// Sends a request to the central system.
+	// The central system will respond with a confirmation, or with an error if the request was invalid or could not be processed.
+	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
+	//
+	// An optional context can be passed to the function. If the context is canceled before the request is completed,
+	// the function returns an error.
+	//
+	// The request is synchronous blocking.
+	SendRequestWithContext(request ocpp.Request, ctx context.Context) (ocpp.Response, error)
 	// Sends an asynchronous request to the central system.
-	// The central system will respond with a confirmation messages, or with an error if the request was invalid or could not be processed.
+	// The central system will reply with a confirmation message, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.
+	//
 	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
-	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
+	SendRequestAsync(request ocpp.Request, callback ocpp.Callback) error
+	// Sends an asynchronous request to the central system.
+	// The central system will reply with a confirmation message, or with an error if the request was invalid or could not be processed.
+	// This result is propagated via a callback, called asynchronously.
+	//
+	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never called.
+	//
+	// An optional context can be passed to the function. If the context is canceled before the request is completed,
+	// the callback is invoked with an error.
+	SendRequestAsyncWithContext(request ocpp.Request, callback ocpp.Callback, ctx context.Context) error
 	// Connects to the central system and starts the charge point routine.
 	// The function doesn't block and returns right away, after having attempted to open a connection to the central system.
 	// If the connection couldn't be opened, an error is returned.
@@ -139,23 +157,21 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 		client = ws.NewClient()
 	}
 	client.SetRequestedSubProtocol(types.V16Subprotocol)
-	cp := chargePoint{confirmationHandler: make(chan ocpp.Response, 1), errorHandler: make(chan error, 1), callbacks: callbackqueue.New()}
+	cp := chargePoint{}
 
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
 		endpoint = ocppj.NewClient(id, client, dispatcher, nil, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
-	// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
-	endpoint.SetOnRequestCanceled(cp.onRequestTimeout)
 	cp.client = endpoint
-
-	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
-		cp.confirmationHandler <- confirmation
-	})
-	cp.client.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
-		cp.errorHandler <- err
-	})
+	// Callback invoked by ocppj layer, whenever a request is received
 	cp.client.SetRequestHandler(cp.handleIncomingRequest)
+	// Callback invoked by ocppj layer, whenever:
+	//  - a response/error is received
+	// 	- an internal error occurs
+	// 	- the request is cancelled
+	//  - the request times out
+	cp.client.SetResponseHandler(cp.onResponse)
 	return &cp
 }
 

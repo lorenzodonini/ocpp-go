@@ -143,6 +143,9 @@ func (suite *OcppJTestSuite) TestChargePointSendRequestFailed() {
 	suite.mockClient.On("Write", mock.Anything).Return(fmt.Errorf("networkError")).Run(func(args mock.Arguments) {
 		require.False(t, suite.clientRequestQueue.IsEmpty())
 	})
+	suite.chargePoint.SetResponseHandler(func(requestID string, response ocpp.Response, err error, callback ocpp.Callback) {
+		callback(response, err)
+	})
 	_ = suite.chargePoint.Start("someUrl")
 	mockRequest := newMockRequest("mockValue")
 	// Expected callback with error
