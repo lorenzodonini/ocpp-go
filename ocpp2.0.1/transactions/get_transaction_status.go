@@ -17,7 +17,7 @@ type GetTransactionStatusRequest struct {
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetTransactionStatusResponse struct {
 	OngoingIndicator *bool `json:"ongoingIndicator,omitempty" validate:"omitempty"`
-	MessageInQueue   bool  `json:"messageInQueue"`
+	MessageInQueue   bool  `json:"messagesInQueue"`
 }
 
 // In some scenarios a CSMS needs to know whether there are still messages for a transaction that need to be delivered.
