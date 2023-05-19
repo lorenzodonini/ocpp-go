@@ -24,8 +24,8 @@ func (suite *OcppV2TestSuite) TestGetTransactionStatusRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetTransactionStatusResponseValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{transactions.GetTransactionStatusResponse{OngoingIndicator: newBool(true), MessageInQueue: true}, true},
-		{transactions.GetTransactionStatusResponse{MessageInQueue: true}, true},
+		{transactions.GetTransactionStatusResponse{OngoingIndicator: newBool(true), MessagesInQueue: true}, true},
+		{transactions.GetTransactionStatusResponse{MessagesInQueue: true}, true},
 		{transactions.GetTransactionStatusResponse{}, true},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
@@ -37,11 +37,11 @@ func (suite *OcppV2TestSuite) TestGetTransactionStatusE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	transactionID := "12345"
-	messageInQueue := false
+	messagesInQueue := false
 	ongoingIndicator := newBool(true)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"transactionId":"%v"}]`, messageId, transactions.GetTransactionStatusFeatureName, transactionID)
-	responseJson := fmt.Sprintf(`[3,"%v",{"ongoingIndicator":%v,"messageInQueue":%v}]`, messageId, *ongoingIndicator, messageInQueue)
-	getTransactionStatusResponse := transactions.NewGetTransactionStatusResponse(messageInQueue)
+	responseJson := fmt.Sprintf(`[3,"%v",{"ongoingIndicator":%v,"messagesInQueue":%v}]`, messageId, *ongoingIndicator, messagesInQueue)
+	getTransactionStatusResponse := transactions.NewGetTransactionStatusResponse(messagesInQueue)
 	getTransactionStatusResponse.OngoingIndicator = ongoingIndicator
 	channel := NewMockWebSocket(wsId)
 
@@ -62,7 +62,7 @@ func (suite *OcppV2TestSuite) TestGetTransactionStatusE2EMocked() {
 	err = suite.csms.GetTransactionStatus(wsId, func(response *transactions.GetTransactionStatusResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, messageInQueue, response.MessageInQueue)
+		assert.Equal(t, messagesInQueue, response.MessagesInQueue)
 		require.NotNil(t, response.OngoingIndicator)
 		require.Equal(t, *ongoingIndicator, *response.OngoingIndicator)
 		resultChannel <- true
