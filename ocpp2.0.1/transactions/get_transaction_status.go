@@ -17,7 +17,7 @@ type GetTransactionStatusRequest struct {
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetTransactionStatusResponse struct {
 	OngoingIndicator *bool `json:"ongoingIndicator,omitempty" validate:"omitempty"`
-	MessageInQueue   bool  `json:"messagesInQueue"`
+	MessagesInQueue  bool  `json:"messagesInQueue"`
 }
 
 // In some scenarios a CSMS needs to know whether there are still messages for a transaction that need to be delivered.
@@ -52,6 +52,6 @@ func NewGetTransactionStatusRequest() *GetTransactionStatusRequest {
 }
 
 // Creates a new GetTransactionStatusResponse, containing all required fields. There are no optional fields for this message.
-func NewGetTransactionStatusResponse(messageInQueue bool) *GetTransactionStatusResponse {
-	return &GetTransactionStatusResponse{MessageInQueue: messageInQueue}
+func NewGetTransactionStatusResponse(messagesInQueue bool) *GetTransactionStatusResponse {
+	return &GetTransactionStatusResponse{MessagesInQueue: messagesInQueue}
 }
