@@ -42,7 +42,7 @@ type SetVariableData struct {
 
 type SetVariableResult struct {
 	AttributeType   types.Attribute   `json:"attributeType,omitempty" validate:"omitempty,attribute"`
-	AttributeStatus SetVariableStatus `json:"attributeStatus" validate:"required,getVariableStatus"`
+	AttributeStatus SetVariableStatus `json:"attributeStatus" validate:"required,setVariableStatus"`
 	Component       types.Component   `json:"component" validate:"required"`
 	Variable        types.Variable    `json:"variable" validate:"required"`
 	StatusInfo      *types.StatusInfo `json:"statusInfo,omitempty" validate:"omitempty"`
