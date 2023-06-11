@@ -1,8 +1,9 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 // -------------------- Remote Stop Transaction (CS -> CP) --------------------
@@ -17,7 +18,7 @@ type RemoteStopTransactionRequest struct {
 // This field definition of the RemoteStopTransaction confirmation payload, sent by the Charge Point to the Central System in response to a RemoteStopTransactionRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type RemoteStopTransactionConfirmation struct {
-	Status types.RemoteStartStopStatus `json:"status" validate:"required,remoteStartStopStatus"`
+	Status types.RemoteStartStopStatus `json:"status" validate:"required,remoteStartStopStatus16"`
 }
 
 // Central System can request a Charge Point to stop a transaction by sending a RemoteStopTransactionRequest to Charge Point with the identifier of the transaction.

@@ -247,7 +247,7 @@ type GroupIdToken struct {
 }
 
 type IdTokenInfo struct {
-	Status              AuthorizationStatus `json:"status" validate:"required,authorizationStatus"`
+	Status              AuthorizationStatus `json:"status" validate:"required,authorizationStatus201"`
 	CacheExpiryDateTime *DateTime           `json:"cacheExpiryDateTime,omitempty" validate:"omitempty"`
 	ChargingPriority    int                 `json:"chargingPriority,omitempty" validate:"min=-9,max=9"`
 	Language1           string              `json:"language1,omitempty" validate:"max=8"`
@@ -479,7 +479,7 @@ type ChargingSchedule struct {
 	ID                     int                      `json:"id" validate:"gte=0"` // Identifies the ChargingSchedule.
 	StartSchedule          *DateTime                `json:"startSchedule,omitempty" validate:"omitempty"`
 	Duration               *int                     `json:"duration,omitempty" validate:"omitempty,gte=0"`
-	ChargingRateUnit       ChargingRateUnitType     `json:"chargingRateUnit" validate:"required,chargingRateUnit"`
+	ChargingRateUnit       ChargingRateUnitType     `json:"chargingRateUnit" validate:"required,chargingRateUnit201"`
 	MinChargingRate        *float64                 `json:"minChargingRate,omitempty" validate:"omitempty,gte=0"`
 	ChargingSchedulePeriod []ChargingSchedulePeriod `json:"chargingSchedulePeriod" validate:"required,min=1,max=1024"`
 	SalesTariff            *SalesTariff             `json:"salesTariff,omitempty" validate:"omitempty"` // Sales tariff associated with this charging schedule.
@@ -492,9 +492,9 @@ func NewChargingSchedule(id int, chargingRateUnit ChargingRateUnitType, schedule
 type ChargingProfile struct {
 	ID                     int                        `json:"id" validate:"gte=0"`
 	StackLevel             int                        `json:"stackLevel" validate:"gte=0"`
-	ChargingProfilePurpose ChargingProfilePurposeType `json:"chargingProfilePurpose" validate:"required,chargingProfilePurpose"`
-	ChargingProfileKind    ChargingProfileKindType    `json:"chargingProfileKind" validate:"required,chargingProfileKind"`
-	RecurrencyKind         RecurrencyKindType         `json:"recurrencyKind,omitempty" validate:"omitempty,recurrencyKind"`
+	ChargingProfilePurpose ChargingProfilePurposeType `json:"chargingProfilePurpose" validate:"required,chargingProfilePurpose201"`
+	ChargingProfileKind    ChargingProfileKindType    `json:"chargingProfileKind" validate:"required,chargingProfileKind201"`
+	RecurrencyKind         RecurrencyKindType         `json:"recurrencyKind,omitempty" validate:"omitempty,recurrencyKind201"`
 	ValidFrom              *DateTime                  `json:"validFrom,omitempty"`
 	ValidTo                *DateTime                  `json:"validTo,omitempty"`
 	TransactionID          string                     `json:"transactionId,omitempty" validate:"omitempty,max=36"`
@@ -526,7 +526,6 @@ func isValidRemoteStartStopStatus(fl validator.FieldLevel) bool {
 // Meter Value
 
 type ReadingContext string
-type ValueFormat string
 type Measurand string
 type Phase string
 type Location string
@@ -681,13 +680,13 @@ type SignedMeterValue struct {
 }
 
 type SampledValue struct {
-	Value            float64           `json:"value"`                                                 // Indicates the measured value. This value is required.
-	Context          ReadingContext    `json:"context,omitempty" validate:"omitempty,readingContext"` // Type of detail value: start, end or sample. Default = "Sample.Periodic"
-	Measurand        Measurand         `json:"measurand,omitempty" validate:"omitempty,measurand"`    // Type of measurement. Default = "Energy.Active.Import.Register"
-	Phase            Phase             `json:"phase,omitempty" validate:"omitempty,phase"`            // Indicates how the measured value is to be interpreted. For instance between L1 and neutral (L1-N) Please note that not all values of phase are applicable to all Measurands. When phase is absent, the measured value is interpreted as an overall value.
-	Location         Location          `json:"location,omitempty" validate:"omitempty,location"`      // Indicates where the measured value has been sampled.
-	SignedMeterValue *SignedMeterValue `json:"signedMeterValue,omitempty" validate:"omitempty"`       // Contains the MeterValueSignature with sign/encoding method information.
-	UnitOfMeasure    *UnitOfMeasure    `json:"unitOfMeasure,omitempty" validate:"omitempty"`          // Represents a UnitOfMeasure including a multiplier.
+	Value            float64           `json:"value"`                                                    // Indicates the measured value. This value is required.
+	Context          ReadingContext    `json:"context,omitempty" validate:"omitempty,readingContext201"` // Type of detail value: start, end or sample. Default = "Sample.Periodic"
+	Measurand        Measurand         `json:"measurand,omitempty" validate:"omitempty,measurand201"`    // Type of measurement. Default = "Energy.Active.Import.Register"
+	Phase            Phase             `json:"phase,omitempty" validate:"omitempty,phase201"`            // Indicates how the measured value is to be interpreted. For instance between L1 and neutral (L1-N) Please note that not all values of phase are applicable to all Measurands. When phase is absent, the measured value is interpreted as an overall value.
+	Location         Location          `json:"location,omitempty" validate:"omitempty,location201"`      // Indicates where the measured value has been sampled.
+	SignedMeterValue *SignedMeterValue `json:"signedMeterValue,omitempty" validate:"omitempty"`          // Contains the MeterValueSignature with sign/encoding method information.
+	UnitOfMeasure    *UnitOfMeasure    `json:"unitOfMeasure,omitempty" validate:"omitempty"`             // Represents a UnitOfMeasure including a multiplier.
 }
 
 type MeterValue struct {
@@ -705,18 +704,18 @@ func init() {
 	_ = Validate.RegisterValidation("genericStatus", isValidGenericStatus)
 	_ = Validate.RegisterValidation("hashAlgorithm", isValidHashAlgorithmType)
 	_ = Validate.RegisterValidation("messageFormat", isValidMessageFormatType)
-	_ = Validate.RegisterValidation("authorizationStatus", isValidAuthorizationStatus)
+	_ = Validate.RegisterValidation("authorizationStatus201", isValidAuthorizationStatus)
 	_ = Validate.RegisterValidation("attribute", isValidAttribute)
-	_ = Validate.RegisterValidation("chargingProfilePurpose", isValidChargingProfilePurpose)
-	_ = Validate.RegisterValidation("chargingProfileKind", isValidChargingProfileKind)
-	_ = Validate.RegisterValidation("recurrencyKind", isValidRecurrencyKind)
-	_ = Validate.RegisterValidation("chargingRateUnit", isValidChargingRateUnit)
+	_ = Validate.RegisterValidation("chargingProfilePurpose201", isValidChargingProfilePurpose)
+	_ = Validate.RegisterValidation("chargingProfileKind201", isValidChargingProfileKind)
+	_ = Validate.RegisterValidation("recurrencyKind201", isValidRecurrencyKind)
+	_ = Validate.RegisterValidation("chargingRateUnit201", isValidChargingRateUnit)
 	_ = Validate.RegisterValidation("chargingLimitSource", isValidChargingLimitSource)
-	_ = Validate.RegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
-	_ = Validate.RegisterValidation("readingContext", isValidReadingContext)
-	_ = Validate.RegisterValidation("measurand", isValidMeasurand)
-	_ = Validate.RegisterValidation("phase", isValidPhase)
-	_ = Validate.RegisterValidation("location", isValidLocation)
+	_ = Validate.RegisterValidation("remoteStartStopStatus201", isValidRemoteStartStopStatus)
+	_ = Validate.RegisterValidation("readingContext201", isValidReadingContext)
+	_ = Validate.RegisterValidation("measurand201", isValidMeasurand)
+	_ = Validate.RegisterValidation("phase201", isValidPhase)
+	_ = Validate.RegisterValidation("location201", isValidLocation)
 	_ = Validate.RegisterValidation("signatureMethod", isValidSignatureMethod)
 	_ = Validate.RegisterValidation("encodingMethod", isValidEncodingMethod)
 	_ = Validate.RegisterValidation("certificateSigningUse", isValidCertificateSigningUse)

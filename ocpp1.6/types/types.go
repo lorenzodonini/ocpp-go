@@ -42,7 +42,7 @@ func isValidAuthorizationStatus(fl validator.FieldLevel) bool {
 type IdTagInfo struct {
 	ExpiryDate  *DateTime           `json:"expiryDate,omitempty" validate:"omitempty"`
 	ParentIdTag string              `json:"parentIdTag,omitempty" validate:"omitempty,max=20"`
-	Status      AuthorizationStatus `json:"status" validate:"required,authorizationStatus"`
+	Status      AuthorizationStatus `json:"status" validate:"required,authorizationStatus16"`
 }
 
 func NewIdTagInfo(status AuthorizationStatus) *IdTagInfo {
@@ -121,7 +121,7 @@ func NewChargingSchedulePeriod(startPeriod int, limit float64) ChargingScheduleP
 type ChargingSchedule struct {
 	Duration               *int                     `json:"duration,omitempty" validate:"omitempty,gte=0"`
 	StartSchedule          *DateTime                `json:"startSchedule,omitempty"`
-	ChargingRateUnit       ChargingRateUnitType     `json:"chargingRateUnit" validate:"required,chargingRateUnit"`
+	ChargingRateUnit       ChargingRateUnitType     `json:"chargingRateUnit" validate:"required,chargingRateUnit16"`
 	ChargingSchedulePeriod []ChargingSchedulePeriod `json:"chargingSchedulePeriod" validate:"required,min=1"`
 	MinChargingRate        *float64                 `json:"minChargingRate,omitempty" validate:"omitempty,gte=0"`
 }
@@ -134,9 +134,9 @@ type ChargingProfile struct {
 	ChargingProfileId      int                        `json:"chargingProfileId"`
 	TransactionId          int                        `json:"transactionId,omitempty"`
 	StackLevel             int                        `json:"stackLevel" validate:"gte=0"`
-	ChargingProfilePurpose ChargingProfilePurposeType `json:"chargingProfilePurpose" validate:"required,chargingProfilePurpose"`
-	ChargingProfileKind    ChargingProfileKindType    `json:"chargingProfileKind" validate:"required,chargingProfileKind"`
-	RecurrencyKind         RecurrencyKindType         `json:"recurrencyKind,omitempty" validate:"omitempty,recurrencyKind"`
+	ChargingProfilePurpose ChargingProfilePurposeType `json:"chargingProfilePurpose" validate:"required,chargingProfilePurpose16"`
+	ChargingProfileKind    ChargingProfileKindType    `json:"chargingProfileKind" validate:"required,chargingProfileKind16"`
+	RecurrencyKind         RecurrencyKindType         `json:"recurrencyKind,omitempty" validate:"omitempty,recurrencyKind16"`
 	ValidFrom              *DateTime                  `json:"validFrom,omitempty"`
 	ValidTo                *DateTime                  `json:"validTo,omitempty"`
 	ChargingSchedule       *ChargingSchedule          `json:"chargingSchedule" validate:"required"`
@@ -300,11 +300,11 @@ func isValidUnitOfMeasure(fl validator.FieldLevel) bool {
 
 type SampledValue struct {
 	Value     string         `json:"value" validate:"required"`
-	Context   ReadingContext `json:"context,omitempty" validate:"omitempty,readingContext"`
+	Context   ReadingContext `json:"context,omitempty" validate:"omitempty,readingContext16"`
 	Format    ValueFormat    `json:"format,omitempty" validate:"omitempty,valueFormat"`
-	Measurand Measurand      `json:"measurand,omitempty" validate:"omitempty,measurand"`
-	Phase     Phase          `json:"phase,omitempty" validate:"omitempty,phase"`
-	Location  Location       `json:"location,omitempty" validate:"omitempty,location"`
+	Measurand Measurand      `json:"measurand,omitempty" validate:"omitempty,measurand16"`
+	Phase     Phase          `json:"phase,omitempty" validate:"omitempty,phase16"`
+	Location  Location       `json:"location,omitempty" validate:"omitempty,location16"`
 	Unit      UnitOfMeasure  `json:"unit,omitempty" validate:"omitempty,unitOfMeasure"`
 }
 
@@ -317,16 +317,16 @@ type MeterValue struct {
 var Validate = ocppj.Validate
 
 func init() {
-	_ = Validate.RegisterValidation("authorizationStatus", isValidAuthorizationStatus)
-	_ = Validate.RegisterValidation("chargingProfilePurpose", isValidChargingProfilePurpose)
-	_ = Validate.RegisterValidation("chargingProfileKind", isValidChargingProfileKind)
-	_ = Validate.RegisterValidation("recurrencyKind", isValidRecurrencyKind)
-	_ = Validate.RegisterValidation("chargingRateUnit", isValidChargingRateUnit)
-	_ = Validate.RegisterValidation("remoteStartStopStatus", isValidRemoteStartStopStatus)
-	_ = Validate.RegisterValidation("readingContext", isValidReadingContext)
+	_ = Validate.RegisterValidation("authorizationStatus16", isValidAuthorizationStatus)
+	_ = Validate.RegisterValidation("chargingProfilePurpose16", isValidChargingProfilePurpose)
+	_ = Validate.RegisterValidation("chargingProfileKind16", isValidChargingProfileKind)
+	_ = Validate.RegisterValidation("recurrencyKind16", isValidRecurrencyKind)
+	_ = Validate.RegisterValidation("chargingRateUnit16", isValidChargingRateUnit)
+	_ = Validate.RegisterValidation("remoteStartStopStatus16", isValidRemoteStartStopStatus)
+	_ = Validate.RegisterValidation("readingContext16", isValidReadingContext)
 	_ = Validate.RegisterValidation("valueFormat", isValidValueFormat)
-	_ = Validate.RegisterValidation("measurand", isValidMeasurand)
-	_ = Validate.RegisterValidation("phase", isValidPhase)
-	_ = Validate.RegisterValidation("location", isValidLocation)
+	_ = Validate.RegisterValidation("measurand16", isValidMeasurand)
+	_ = Validate.RegisterValidation("phase16", isValidPhase)
+	_ = Validate.RegisterValidation("location16", isValidLocation)
 	_ = Validate.RegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
 }
