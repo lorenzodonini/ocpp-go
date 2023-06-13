@@ -154,6 +154,13 @@ type CertificateHashData struct {
 	SerialNumber   string            `json:"serialNumber" validate:"required,max=20"`
 }
 
+// CertificateHashDataChain
+type CertificateHashDataChain struct {
+	CertificateType          CertificateUse        `json:"certificateType" validate:"required,certificateUse"`
+	CertificateHashData      CertificateHashData   `json:"certificateHashData" validate:"required"`
+	ChildCertificateHashData []CertificateHashData `json:"childCertificateHashData,omitempty" validate:"omitempty,dive"`
+}
+
 // Certificate15118EVStatus
 type Certificate15118EVStatus string
 

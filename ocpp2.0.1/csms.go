@@ -297,8 +297,8 @@ func (cs *csms) GetDisplayMessages(clientId string, callback func(*display.GetDi
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*iso15118.GetInstalledCertificateIdsResponse, error), typeOfCertificate types.CertificateUse, props ...func(*iso15118.GetInstalledCertificateIdsRequest)) error {
-	request := iso15118.NewGetInstalledCertificateIdsRequest(typeOfCertificate)
+func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*iso15118.GetInstalledCertificateIdsResponse, error), certificateTypes []types.CertificateUse, props ...func(*iso15118.GetInstalledCertificateIdsRequest)) error {
+	request := iso15118.NewGetInstalledCertificateIdsRequest(certificateTypes)
 	for _, fn := range props {
 		fn(request)
 	}
