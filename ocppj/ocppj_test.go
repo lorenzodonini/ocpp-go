@@ -535,7 +535,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidLength() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, ocppj.FormatViolation, protoErr.Code)
 	assert.Equal(t, "Invalid message. Expected array length >= 3", protoErr.Description)
 }
 
@@ -553,7 +553,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidTypeId() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, ocppj.FormatViolation, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", invalidTypeId), protoErr.Description)
 }
 
@@ -570,7 +570,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidMessageId() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, ocppj.FormatViolation, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", invalidMessageId), protoErr.Description)
 }
 
@@ -625,7 +625,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, ocppj.FormatViolation, protoErr.Code)
 	assert.Equal(t, "Invalid Call message. Expected array length 4", protoErr.Description)
 }
 
@@ -660,7 +660,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, ocppj.FormatViolation, protoErr.Code)
 	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Description)
 }
 
@@ -681,7 +681,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRawErrorCode() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, protoErr.MessageId, "") // unique id is never set after invalid type cast return
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, ocppj.FormatViolation, protoErr.Code)
 	assert.Equal(t, "Invalid element 42 at 2, expected rawErrorCode (string)", protoErr.Description)
 }
 
