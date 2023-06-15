@@ -14,12 +14,12 @@ import (
 func (suite *OcppV2TestSuite) TestCertificateSignedRequestValidation() {
 	t := suite.T()
 	var testTable = []GenericTestEntry{
-		{security.CertificateSignedRequest{CertificateChain: "sampleCert", TypeOfCertificate: types.ChargingStationCert}, true},
+		{security.CertificateSignedRequest{CertificateChain: "sampleCert", CertificateType: types.ChargingStationCert}, true},
 		{security.CertificateSignedRequest{CertificateChain: "sampleCert"}, true},
 		{security.CertificateSignedRequest{CertificateChain: ""}, false},
 		{security.CertificateSignedRequest{}, false},
 		{security.CertificateSignedRequest{CertificateChain: newLongString(100001)}, false},
-		{security.CertificateSignedRequest{CertificateChain: "sampleCert", TypeOfCertificate: "invalidCertificateType"}, false},
+		{security.CertificateSignedRequest{CertificateChain: "sampleCert", CertificateType: "invalidCertificateType"}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
@@ -46,7 +46,7 @@ func (suite *OcppV2TestSuite) TestCertificateSignedE2EMocked() {
 	certificateChain := "someX509CertificateChain"
 	certificateType := types.ChargingStationCert
 	status := security.CertificateSignedStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateChain":"%v","typeOfCertificate":"%v"}]`,
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateChain":"%v","certificateType":"%v"}]`,
 		messageId, security.CertificateSignedFeatureName, certificateChain, certificateType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
 	certificateSignedConfirmation := security.NewCertificateSignedResponse(status)
@@ -57,7 +57,7 @@ func (suite *OcppV2TestSuite) TestCertificateSignedE2EMocked() {
 		request, ok := args.Get(0).(*security.CertificateSignedRequest)
 		require.True(t, ok)
 		assert.Equal(t, certificateChain, request.CertificateChain)
-		assert.Equal(t, certificateType, request.TypeOfCertificate)
+		assert.Equal(t, certificateType, request.CertificateType)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
@@ -72,7 +72,7 @@ func (suite *OcppV2TestSuite) TestCertificateSignedE2EMocked() {
 		assert.Equal(t, status, confirmation.Status)
 		resultChannel <- true
 	}, certificateChain, func(request *security.CertificateSignedRequest) {
-		request.TypeOfCertificate = certificateType
+		request.CertificateType = certificateType
 	})
 	require.Nil(t, err)
 	result := <-resultChannel
@@ -84,7 +84,7 @@ func (suite *OcppV2TestSuite) TestCertificateSignedInvalidEndpoint() {
 	certificate := "someX509Certificate"
 	certificateType := types.ChargingStationCert
 	certificateSignedRequest := security.NewCertificateSignedRequest(certificate)
-	certificateSignedRequest.TypeOfCertificate = certificateType
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateChain":"%v","typeOfCertificate":"%v"}]`, messageId, security.CertificateSignedFeatureName, certificate, certificateType)
+	certificateSignedRequest.CertificateType = certificateType
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateChain":"%v","certificateType":"%v"}]`, messageId, security.CertificateSignedFeatureName, certificate, certificateType)
 	testUnsupportedRequestFromChargingStation(suite, certificateSignedRequest, requestJson, messageId)
 }
