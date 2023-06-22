@@ -1,9 +1,10 @@
 package smartcharging
 
 import (
+	"reflect"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
 )
 
 // -------------------- Get Composite Schedule (CS -> CP) --------------------
@@ -32,7 +33,7 @@ func isValidGetCompositeScheduleStatus(fl validator.FieldLevel) bool {
 type GetCompositeScheduleRequest struct {
 	ConnectorId      int                        `json:"connectorId" validate:"gte=0"`
 	Duration         int                        `json:"duration" validate:"gte=0"`
-	ChargingRateUnit types.ChargingRateUnitType `json:"chargingRateUnit,omitempty" validate:"omitempty,chargingRateUnit"`
+	ChargingRateUnit types.ChargingRateUnitType `json:"chargingRateUnit,omitempty" validate:"omitempty,chargingRateUnit16"`
 }
 
 // This field definition of the GetCompositeSchedule confirmation payload, sent by the Charge Point to the Central System in response to a GetCompositeScheduleRequest.

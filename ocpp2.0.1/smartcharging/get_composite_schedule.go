@@ -37,7 +37,7 @@ type CompositeSchedule struct {
 // The field definition of the GetCompositeSchedule request payload sent by the CSMS to the Charging System.
 type GetCompositeScheduleRequest struct {
 	Duration         int                        `json:"duration" validate:"gte=0"`
-	ChargingRateUnit types.ChargingRateUnitType `json:"chargingRateUnit,omitempty" validate:"omitempty,chargingRateUnit"`
+	ChargingRateUnit types.ChargingRateUnitType `json:"chargingRateUnit,omitempty" validate:"omitempty,chargingRateUnit201"`
 	EvseID           int                        `json:"evseId" validate:"gte=0"`
 }
 

@@ -1,8 +1,9 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 // -------------------- Remote Start Transaction (CS -> CP) --------------------
@@ -19,7 +20,7 @@ type RemoteStartTransactionRequest struct {
 // This field definition of the RemoteStartTransaction confirmation payload, sent by the Charge Point to the Central System in response to a RemoteStartTransactionRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type RemoteStartTransactionConfirmation struct {
-	Status types.RemoteStartStopStatus `json:"status" validate:"required,remoteStartStopStatus"`
+	Status types.RemoteStartStopStatus `json:"status" validate:"required,remoteStartStopStatus16"`
 }
 
 // Central System can request a Charge Point to start a transaction by sending a RemoteStartTransactionRequest.

@@ -63,7 +63,6 @@ func (suite *OcppV2TestSuite) TestBootNotificationE2EMocked() {
 	currentTime := types.NewDateTime(time.Now())
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"reason":"%v","chargingStation":{"model":"%v","vendorName":"%v"}}]`, messageId, provisioning.BootNotificationFeatureName, reason, chargePointModel, chargePointVendor)
 	responseJson := fmt.Sprintf(`[3,"%v",{"currentTime":"%v","interval":%v,"status":"%v"}]`, messageId, currentTime.FormatTimestamp(), interval, registrationStatus)
-	fmt.Println(responseJson)
 	bootNotificationConfirmation := provisioning.NewBootNotificationResponse(currentTime, interval, registrationStatus)
 	channel := NewMockWebSocket(wsId)
 

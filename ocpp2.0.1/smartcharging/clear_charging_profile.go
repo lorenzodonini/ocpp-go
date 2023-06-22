@@ -22,7 +22,7 @@ const (
 
 type ClearChargingProfileType struct {
 	EvseID                 *int                             `json:"evseId,omitempty" validate:"omitempty,gte=0"`
-	ChargingProfilePurpose types.ChargingProfilePurposeType `json:"chargingProfilePurpose,omitempty" validate:"omitempty,chargingProfilePurpose"`
+	ChargingProfilePurpose types.ChargingProfilePurposeType `json:"chargingProfilePurpose,omitempty" validate:"omitempty,chargingProfilePurpose201"`
 	StackLevel             *int                             `json:"stackLevel,omitempty" validate:"omitempty,gt=0"`
 }
 
