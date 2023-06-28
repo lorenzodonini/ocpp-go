@@ -66,7 +66,8 @@ type ChargePoint interface {
 	DiagnosticsStatusNotification(status firmware.DiagnosticsStatus, props ...func(request *firmware.DiagnosticsStatusNotificationRequest)) (*firmware.DiagnosticsStatusNotificationConfirmation, error)
 	// Notifies the central system of a status change during the download of a new firmware version.
 	FirmwareStatusNotification(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationConfirmation, error)
-
+	// Notifies the central system of a status change during the download of a new signed firmware version.
+	SignedFirmwareStatusNotification(status firmware.SignedFirmwareStatus, requestId int, props ...func(request *firmware.SignedFirmwareStatusNotificationRequest)) (*firmware.SignedFirmwareStatusNotificationConfirmation, error)
 	// Registers a handler for incoming core profile messages
 	SetCoreHandler(listener core.ChargePointHandler)
 	// Registers a handler for incoming local authorization profile messages
@@ -211,6 +212,8 @@ type CentralSystem interface {
 	GetDiagnostics(clientId string, callback func(*firmware.GetDiagnosticsConfirmation, error), location string, props ...func(request *firmware.GetDiagnosticsRequest)) error
 	// Instructs the charge point to download and install a new firmware version. The firmware binary will be downloaded out-of-band from the provided URL location.
 	UpdateFirmware(clientId string, callback func(*firmware.UpdateFirmwareConfirmation, error), location string, retrieveDate *types.DateTime, props ...func(request *firmware.UpdateFirmwareRequest)) error
+	// Instructs the charge point to ... TODO: comment
+	SignedUpdateFirmware(clientId string, requestId int, location, signature, signingCertificate string, retrieveDate *types.DateTime, callback func(confirmation *firmware.SignedUpdateFirmwareConfirmation, err error), props ...func(request *firmware.SignedUpdateFirmwareRequest)) error
 	// Instructs the charge point to reserve a connector for a specific IdTag (client). The connector, or the entire charge point, will be reserved until the provided expiration time.
 	ReserveNow(clientId string, callback func(*reservation.ReserveNowConfirmation, error), connectorId int, expiryDate *types.DateTime, idTag string, reservationId int, props ...func(request *reservation.ReserveNowRequest)) error
 	// Cancels a previously reserved charge point or connector, given the reservation ID.

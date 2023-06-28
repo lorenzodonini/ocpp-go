@@ -42,12 +42,13 @@ func (ci *ConnectorInfo) hasTransactionInProgress() bool {
 
 // ChargePointState contains some simple state for a connected charge point
 type ChargePointState struct {
-	status            core.ChargePointStatus
-	diagnosticsStatus firmware.DiagnosticsStatus
-	firmwareStatus    firmware.FirmwareStatus
-	connectors        map[int]*ConnectorInfo // No assumptions about the # of connectors
-	transactions      map[int]*TransactionInfo
-	errorCode         core.ChargePointErrorCode
+	status               core.ChargePointStatus
+	diagnosticsStatus    firmware.DiagnosticsStatus
+	firmwareStatus       firmware.FirmwareStatus
+	signedFirmwareStatus firmware.SignedFirmwareStatus
+	connectors           map[int]*ConnectorInfo // No assumptions about the # of connectors
+	transactions         map[int]*TransactionInfo
+	errorCode            core.ChargePointErrorCode
 }
 
 func (cps *ChargePointState) getConnector(id int) *ConnectorInfo {
@@ -175,6 +176,16 @@ func (handler *CentralSystemHandler) OnFirmwareStatusNotification(chargePointId 
 	info.firmwareStatus = request.Status
 	logDefault(chargePointId, request.GetFeatureName()).Infof("updated firmware status to %v", request.Status)
 	return &firmware.FirmwareStatusNotificationConfirmation{}, nil
+}
+
+func (handler *CentralSystemHandler) OnSignedFirmwareStatusNotification(chargePointId string, request *firmware.SignedFirmwareStatusNotificationRequest) (confirmation *firmware.SignedFirmwareStatusNotificationConfirmation, err error) {
+	info, ok := handler.chargePoints[chargePointId]
+	if !ok {
+		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
+	}
+	info.signedFirmwareStatus = request.Status
+	logDefault(chargePointId, request.GetFeatureName()).Infof("updated signed firmware status to %v", request.Status)
+	return &firmware.SignedFirmwareStatusNotificationConfirmation{}, nil
 }
 
 // No callbacks for Local Auth management, Reservation, Remote trigger or Smart Charging profile on central system

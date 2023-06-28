@@ -37,7 +37,7 @@ func isValidTriggerMessageStatus(fl validator.FieldLevel) bool {
 func isValidMessageTrigger(fl validator.FieldLevel) bool {
 	trigger := MessageTrigger(fl.Field().String())
 	switch trigger {
-	case core.BootNotificationFeatureName, firmware.DiagnosticsStatusNotificationFeatureName, firmware.FirmwareStatusNotificationFeatureName, core.HeartbeatFeatureName, core.MeterValuesFeatureName, core.StatusNotificationFeatureName:
+	case core.BootNotificationFeatureName, firmware.DiagnosticsStatusNotificationFeatureName, firmware.FirmwareStatusNotificationFeatureName, core.HeartbeatFeatureName, core.MeterValuesFeatureName, core.StatusNotificationFeatureName, firmware.SignedUpdateFirmwareFeatureName:
 		return true
 	default:
 		return false

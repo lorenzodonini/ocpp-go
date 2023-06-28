@@ -9,12 +9,14 @@ import (
 type CentralSystemHandler interface {
 	OnDiagnosticsStatusNotification(chargePointId string, request *DiagnosticsStatusNotificationRequest) (confirmation *DiagnosticsStatusNotificationConfirmation, err error)
 	OnFirmwareStatusNotification(chargePointId string, request *FirmwareStatusNotificationRequest) (confirmation *FirmwareStatusNotificationConfirmation, err error)
+	OnSignedFirmwareStatusNotification(chargePointId string, request *SignedFirmwareStatusNotificationRequest) (confirmation *SignedFirmwareStatusNotificationConfirmation, err error)
 }
 
 // Needs to be implemented by Charge points for handling messages part of the OCPP 1.6 FirmwareManagement profile.
 type ChargePointHandler interface {
 	OnGetDiagnostics(request *GetDiagnosticsRequest) (confirmation *GetDiagnosticsConfirmation, err error)
 	OnUpdateFirmware(request *UpdateFirmwareRequest) (confirmation *UpdateFirmwareConfirmation, err error)
+	OnSignedUpdateFirmware(request *SignedUpdateFirmwareRequest) (confirmation *SignedUpdateFirmwareConfirmation, err error)
 }
 
 // The profile name
@@ -26,4 +28,6 @@ var Profile = ocpp.NewProfile(
 	GetDiagnosticsFeature{},
 	DiagnosticsStatusNotificationFeature{},
 	FirmwareStatusNotificationFeature{},
-	UpdateFirmwareFeature{})
+	UpdateFirmwareFeature{},
+	SignedUpdateFirmwareFeature{},
+	SignedFirmwareStatusNotificationFeature{})

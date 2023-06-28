@@ -202,6 +202,21 @@ func (handler *ChargePointHandler) OnUpdateFirmware(request *firmware.UpdateFirm
 	return firmware.NewUpdateFirmwareConfirmation(), nil
 }
 
+func (handler *ChargePointHandler) OnSignedUpdateFirmware(request *firmware.SignedUpdateFirmwareRequest) (confirmation *firmware.SignedUpdateFirmwareConfirmation, err error) {
+	retries := 0
+	retryInterval := 30
+	if request.Retries != nil {
+		retries = *request.Retries
+	}
+	if request.RetryInterval != nil {
+		retryInterval = *request.RetryInterval
+	}
+	logDefault(request.GetFeatureName()).Infof("starting signed update firmware procedure")
+	go signedUpdateFirmware(request.Firmware.Location, request.RequestId, request.Firmware.RetrieveDateTime, retries, retryInterval)
+	return firmware.NewSignedUpdateFirmwareConfirmation(firmware.SignedUpdateFirmwareConfirmationStatusAccepted), nil
+
+}
+
 // ------------- Remote trigger profile callbacks -------------
 
 func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.TriggerMessageRequest) (confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
@@ -220,6 +235,9 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 		}()
 		status = remotetrigger.TriggerMessageStatusAccepted
 	case firmware.FirmwareStatusNotificationFeatureName:
+		//TODO: schedule firmware status notification message
+		break
+	case firmware.SignedUpdateFirmwareFeatureName:
 		//TODO: schedule firmware status notification message
 		break
 	case core.HeartbeatFeatureName:
@@ -342,6 +360,12 @@ func updateFirmwareStatus(status firmware.FirmwareStatus, props ...func(request 
 	logDefault(statusConfirmation.GetFeatureName()).Infof("firmware status updated to %v", status)
 }
 
+func updateSignedFirmwareStatus(status firmware.SignedFirmwareStatus, requestId int, props ...func(request *firmware.SignedFirmwareStatusNotificationRequest)) {
+	statusConfirmation, err := chargePoint.SignedFirmwareStatusNotification(status, requestId, props...)
+	checkError(err)
+	logDefault(statusConfirmation.GetFeatureName()).Infof("signed firmware status updated to %v", status)
+}
+
 func updateFirmware(location string, retrieveDate *types.DateTime, retries int, retryInterval int) {
 	updateFirmwareStatus(firmware.FirmwareStatusDownloading)
 	err := downloadFile("/tmp/out.bin", location)
@@ -356,6 +380,25 @@ func updateFirmware(location string, retrieveDate *types.DateTime, retries int, 
 	time.Sleep(time.Second * 5)
 	// Notify completion
 	updateFirmwareStatus(firmware.FirmwareStatusInstalled)
+}
+
+func signedUpdateFirmware(location string, requestId int, retrieveDate *types.DateTime, retries int, retryInterval int) {
+	updateSignedFirmwareStatus(firmware.SignedFirmwareStatusDownloading, requestId)
+	err := downloadFile("/tmp/out.bin", location)
+	if err != nil {
+		logDefault(firmware.SignedUpdateFirmwareFeatureName).Errorf("error while downloading file %v", err)
+		updateSignedFirmwareStatus(firmware.SignedFirmwareStatusDownloadFailed, requestId)
+		return
+	}
+
+	updateSignedFirmwareStatus(firmware.SignedFirmwareStatusDownloaded, requestId)
+	// Simulate installation
+	updateSignedFirmwareStatus(firmware.SignedFirmwareStatusInstalling, requestId)
+	time.Sleep(time.Second * 5)
+	// Notify completion
+	updateSignedFirmwareStatus(firmware.SignedFirmwareStatusSignatureVerified, requestId)
+	updateSignedFirmwareStatus(firmware.SignedFirmwareStatusInstalled, requestId)
+
 }
 
 func downloadFile(filepath string, url string) error {

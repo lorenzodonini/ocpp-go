@@ -181,6 +181,19 @@ func (cp *chargePoint) FirmwareStatusNotification(status firmware.FirmwareStatus
 	}
 }
 
+func (cp *chargePoint) SignedFirmwareStatusNotification(status firmware.SignedFirmwareStatus, requestId int, props ...func(request *firmware.SignedFirmwareStatusNotificationRequest)) (*firmware.SignedFirmwareStatusNotificationConfirmation, error) {
+	request := firmware.NewSignedFirmwareStatusNotificationRequest(status, requestId)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	} else {
+		return confirmation.(*firmware.SignedFirmwareStatusNotificationConfirmation), err
+	}
+}
+
 func (cp *chargePoint) SetCoreHandler(handler core.ChargePointHandler) {
 	cp.coreHandler = handler
 }
@@ -245,7 +258,7 @@ func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(conf
 	}
 	switch featureName {
 	case core.AuthorizeFeatureName, core.BootNotificationFeatureName, core.DataTransferFeatureName, core.HeartbeatFeatureName, core.MeterValuesFeatureName, core.StartTransactionFeatureName, core.StopTransactionFeatureName, core.StatusNotificationFeatureName,
-		firmware.DiagnosticsStatusNotificationFeatureName, firmware.FirmwareStatusNotificationFeatureName:
+		firmware.DiagnosticsStatusNotificationFeatureName, firmware.FirmwareStatusNotificationFeatureName, firmware.SignedUpdateFirmwareFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", featureName)

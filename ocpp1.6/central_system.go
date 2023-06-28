@@ -247,6 +247,23 @@ func (cs *centralSystem) UpdateFirmware(clientId string, callback func(*firmware
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *centralSystem) SignedUpdateFirmware(clientId string, requestId int, location, signature, signingCertificate string, retrieveDate *types.DateTime, callback func(confirmation *firmware.SignedUpdateFirmwareConfirmation, err error), props ...func(request *firmware.SignedUpdateFirmwareRequest)) error {
+	request := firmware.NewSignedUpdateFirmwareRequest(requestId, location, signature, signingCertificate, retrieveDate)
+	for _, fn := range props {
+		fn(request)
+	}
+
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
+		if confirmation != nil {
+			callback(confirmation.(*firmware.SignedUpdateFirmwareConfirmation), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+
+}
+
 func (cs *centralSystem) ReserveNow(clientId string, callback func(*reservation.ReserveNowConfirmation, error), connectorId int, expiryDate *types.DateTime, idTag string, reservationId int, props ...func(request *reservation.ReserveNowRequest)) error {
 	request := reservation.NewReserveNowRequest(connectorId, expiryDate, idTag, reservationId)
 	for _, fn := range props {
@@ -389,7 +406,7 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 	switch featureName {
 	case core.ChangeAvailabilityFeatureName, core.ChangeConfigurationFeatureName, core.ClearCacheFeatureName, core.DataTransferFeatureName, core.GetConfigurationFeatureName, core.RemoteStartTransactionFeatureName, core.RemoteStopTransactionFeatureName, core.ResetFeatureName, core.UnlockConnectorFeatureName,
 		localauth.GetLocalListVersionFeatureName, localauth.SendLocalListFeatureName,
-		firmware.GetDiagnosticsFeatureName, firmware.UpdateFirmwareFeatureName,
+		firmware.GetDiagnosticsFeatureName, firmware.UpdateFirmwareFeatureName, firmware.SignedUpdateFirmwareFeatureName,
 		reservation.ReserveNowFeatureName, reservation.CancelReservationFeatureName,
 		remotetrigger.TriggerMessageFeatureName,
 		smartcharging.SetChargingProfileFeatureName, smartcharging.ClearChargingProfileFeatureName, smartcharging.GetCompositeScheduleFeatureName:
@@ -521,6 +538,8 @@ func (cs *centralSystem) handleIncomingRequest(chargePoint ChargePointConnection
 			confirmation, err = cs.firmwareHandler.OnDiagnosticsStatusNotification(chargePoint.ID(), request.(*firmware.DiagnosticsStatusNotificationRequest))
 		case firmware.FirmwareStatusNotificationFeatureName:
 			confirmation, err = cs.firmwareHandler.OnFirmwareStatusNotification(chargePoint.ID(), request.(*firmware.FirmwareStatusNotificationRequest))
+		case firmware.SignedFirmwareStatusNotificationFeatureName:
+			confirmation, err = cs.firmwareHandler.OnSignedFirmwareStatusNotification(chargePoint.ID(), request.(*firmware.SignedFirmwareStatusNotificationRequest))
 		default:
 			cs.notSupportedError(chargePoint.ID(), requestId, action)
 			return

@@ -365,6 +365,12 @@ func (firmwareListener MockCentralSystemFirmwareManagementListener) OnFirmwareSt
 	return conf, args.Error(1)
 }
 
+func (firmwareListener MockCentralSystemFirmwareManagementListener) OnSignedFirmwareStatusNotification(chargePointId string, request *firmware.SignedFirmwareStatusNotificationRequest) (confirmation *firmware.SignedFirmwareStatusNotificationConfirmation, err error) {
+	args := firmwareListener.MethodCalled("OnSignedFirmwareStatusNotification", chargePointId, request)
+	conf := args.Get(0).(*firmware.SignedFirmwareStatusNotificationConfirmation)
+	return conf, args.Error(1)
+}
+
 // ---------------------- MOCK CP FIRMWARE MANAGEMENT LISTENER ----------------------
 type MockChargePointFirmwareManagementListener struct {
 	mock.Mock
@@ -379,6 +385,12 @@ func (firmwareListener MockChargePointFirmwareManagementListener) OnGetDiagnosti
 func (firmwareListener MockChargePointFirmwareManagementListener) OnUpdateFirmware(request *firmware.UpdateFirmwareRequest) (confirmation *firmware.UpdateFirmwareConfirmation, err error) {
 	args := firmwareListener.MethodCalled("OnUpdateFirmware", request)
 	conf := args.Get(0).(*firmware.UpdateFirmwareConfirmation)
+	return conf, args.Error(1)
+}
+
+func (firmwareListener MockChargePointFirmwareManagementListener) OnSignedUpdateFirmware(request *firmware.SignedUpdateFirmwareRequest) (confirmation *firmware.SignedUpdateFirmwareConfirmation, err error) {
+	args := firmwareListener.MethodCalled("OnSignedUpdateFirmware", request)
+	conf := args.Get(0).(*firmware.SignedUpdateFirmwareConfirmation)
 	return conf, args.Error(1)
 }
 
