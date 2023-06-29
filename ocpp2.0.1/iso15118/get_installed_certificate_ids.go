@@ -31,13 +31,14 @@ func isValidGetInstalledCertificateStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the GetInstalledCertificateIdsRequest PDU sent by the CSMS to the Charging Station.
 type GetInstalledCertificateIdsRequest struct {
-	TypeOfCertificate types.CertificateUse `json:"typeOfCertificate" validate:"required,certificateUse"`
+	CertificateTypes []types.CertificateUse `json:"certificateType" validate:"omitempty,dive,certificateUse"`
 }
 
 // The field definition of the GetInstalledCertificateIds response payload sent by the Charging Station to the CSMS in response to a GetInstalledCertificateIdsRequest.
 type GetInstalledCertificateIdsResponse struct {
-	Status              GetInstalledCertificateStatus `json:"status" validate:"required,getInstalledCertificateStatus"`
-	CertificateHashData []types.CertificateHashData   `json:"certificateHashData,omitempty" validate:"omitempty,dive"`
+	Status                   GetInstalledCertificateStatus    `json:"status" validate:"required,getInstalledCertificateStatus"`
+	StatusInfo               *types.StatusInfo                `json:"statusInfo,omitempty" validate:"omitempty"`
+	CertificateHashDataChain []types.CertificateHashDataChain `json:"certificateHashDataChain,omitempty" validate:"omitempty,dive"`
 }
 
 // To facilitate the management of the Charging Station’s installed certificates, a method of retrieving the installed certificates is provided.
@@ -66,8 +67,8 @@ func (c GetInstalledCertificateIdsResponse) GetFeatureName() string {
 }
 
 // Creates a new GetInstalledCertificateIdsRequest, containing all required fields. There are no optional fields for this message.
-func NewGetInstalledCertificateIdsRequest(typeOfCertificate types.CertificateUse) *GetInstalledCertificateIdsRequest {
-	return &GetInstalledCertificateIdsRequest{TypeOfCertificate: typeOfCertificate}
+func NewGetInstalledCertificateIdsRequest() *GetInstalledCertificateIdsRequest {
+	return &GetInstalledCertificateIdsRequest{}
 }
 
 // Creates a new NewGetInstalledCertificateIdsResponse, containing all required fields. Additional optional fields may be set afterwards.

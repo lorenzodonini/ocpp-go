@@ -46,7 +46,7 @@ func (suite *OcppV2TestSuite) TestCertificateSignedE2EMocked() {
 	certificateChain := "someX509CertificateChain"
 	certificateType := types.ChargingStationCert
 	status := security.CertificateSignedStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateChain":"%v","typeOfCertificate":"%v"}]`,
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateChain":"%v","certificateType":"%v"}]`,
 		messageId, security.CertificateSignedFeatureName, certificateChain, certificateType)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v"}]`, messageId, status)
 	certificateSignedConfirmation := security.NewCertificateSignedResponse(status)
@@ -85,6 +85,6 @@ func (suite *OcppV2TestSuite) TestCertificateSignedInvalidEndpoint() {
 	certificateType := types.ChargingStationCert
 	certificateSignedRequest := security.NewCertificateSignedRequest(certificate)
 	certificateSignedRequest.TypeOfCertificate = certificateType
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateChain":"%v","typeOfCertificate":"%v"}]`, messageId, security.CertificateSignedFeatureName, certificate, certificateType)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificateChain":"%v","certificateType":"%v"}]`, messageId, security.CertificateSignedFeatureName, certificate, certificateType)
 	testUnsupportedRequestFromChargingStation(suite, certificateSignedRequest, requestJson, messageId)
 }
