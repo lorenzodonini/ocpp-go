@@ -16,19 +16,26 @@ const FirmwareStatusNotificationFeatureName = "FirmwareStatusNotification"
 type FirmwareStatus string
 
 const (
-	FirmwareStatusDownloaded         FirmwareStatus = "Downloaded"
-	FirmwareStatusDownloadFailed     FirmwareStatus = "DownloadFailed"
-	FirmwareStatusDownloading        FirmwareStatus = "Downloading"
-	FirmwareStatusIdle               FirmwareStatus = "Idle"
-	FirmwareStatusInstallationFailed FirmwareStatus = "InstallationFailed"
-	FirmwareStatusInstalling         FirmwareStatus = "Installing"
-	FirmwareStatusInstalled          FirmwareStatus = "Installed"
+	FirmwareStatusDownloaded                FirmwareStatus = "Downloaded"
+	FirmwareStatusDownloadFailed            FirmwareStatus = "DownloadFailed"
+	FirmwareStatusDownloading               FirmwareStatus = "Downloading"
+	FirmwareStatusDownloadScheduled         FirmwareStatus = "DownloadScheduled"
+	FirmwareStatusDownloadPaused            FirmwareStatus = "DownloadPaused"
+	FirmwareStatusIdle                      FirmwareStatus = "Idle"
+	FirmwareStatusInstallationFailed        FirmwareStatus = "InstallationFailed"
+	FirmwareStatusInstalling                FirmwareStatus = "Installing"
+	FirmwareStatusInstalled                 FirmwareStatus = "Installed"
+	FirmwareStatusInstallRebooting          FirmwareStatus = "InstallRebooting"
+	FirmwareStatusInstallScheduled          FirmwareStatus = "InstallScheduled"
+	FirmwareStatusInstallVerificationFailed FirmwareStatus = "InstallVerificationFailed"
+	FirmwareStatusInvalidSignature          FirmwareStatus = "InvalidSignature"
+	FirmwareStatusSignatureVerified         FirmwareStatus = "SignatureVerified"
 )
 
 func isValidFirmwareStatus(fl validator.FieldLevel) bool {
 	status := FirmwareStatus(fl.Field().String())
 	switch status {
-	case FirmwareStatusDownloaded, FirmwareStatusDownloadFailed, FirmwareStatusDownloading, FirmwareStatusIdle, FirmwareStatusInstallationFailed, FirmwareStatusInstalling, FirmwareStatusInstalled:
+	case FirmwareStatusDownloaded, FirmwareStatusDownloadFailed, FirmwareStatusDownloading, FirmwareStatusDownloadScheduled, FirmwareStatusDownloadPaused, FirmwareStatusIdle, FirmwareStatusInstallationFailed, FirmwareStatusInstalling, FirmwareStatusInstalled, FirmwareStatusInstallRebooting, FirmwareStatusInstallScheduled, FirmwareStatusInstallVerificationFailed, FirmwareStatusInvalidSignature, FirmwareStatusSignatureVerified:
 		return true
 	default:
 		return false
