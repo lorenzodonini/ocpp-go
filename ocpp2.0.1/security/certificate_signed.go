@@ -33,7 +33,7 @@ func isValidCertificateSignedStatus(fl validator.FieldLevel) bool {
 // The field definition of the CertificateSignedRequest PDU sent by the CSMS to the Charging Station.
 type CertificateSignedRequest struct {
 	CertificateChain  string                      `json:"certificateChain" validate:"required,max=10000"`
-	TypeOfCertificate types.CertificateSigningUse `json:"typeOfCertificate,omitempty" validate:"omitempty,certificateSigningUse"`
+	TypeOfCertificate types.CertificateSigningUse `json:"certificateType,omitempty" validate:"omitempty,certificateSigningUse"`
 }
 
 // The field definition of the CertificateSignedResponse payload sent by the Charging Station to the CSMS in response to a CertificateSignedRequest.

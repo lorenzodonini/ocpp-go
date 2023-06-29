@@ -284,7 +284,7 @@ type CSMS interface {
 	// Retrieves all messages currently configured on a charging station.
 	GetDisplayMessages(clientId string, callback func(*display.GetDisplayMessagesResponse, error), requestId int, props ...func(*display.GetDisplayMessagesRequest)) error
 	// Retrieves all installed certificates on a charging station.
-	GetInstalledCertificateIds(clientId string, callback func(*iso15118.GetInstalledCertificateIdsResponse, error), typeOfCertificate types.CertificateUse, props ...func(*iso15118.GetInstalledCertificateIdsRequest)) error
+	GetInstalledCertificateIds(clientId string, callback func(*iso15118.GetInstalledCertificateIdsResponse, error), props ...func(*iso15118.GetInstalledCertificateIdsRequest)) error
 	// Queries a charging station for version number of the Local Authorization List.
 	GetLocalListVersion(clientId string, callback func(*localauth.GetLocalListVersionResponse, error), props ...func(*localauth.GetLocalListVersionRequest)) error
 	// Instructs a charging station to upload a diagnostics or security logfile to the CSMS.

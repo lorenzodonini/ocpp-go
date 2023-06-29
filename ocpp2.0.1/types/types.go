@@ -154,6 +154,13 @@ type CertificateHashData struct {
 	SerialNumber   string            `json:"serialNumber" validate:"required,max=20"`
 }
 
+// CertificateHashDataChain
+type CertificateHashDataChain struct {
+	CertificateType          CertificateUse        `json:"certificateType" validate:"required,certificateUse"`
+	CertificateHashData      CertificateHashData   `json:"certificateHashData" validate:"required"`
+	ChildCertificateHashData []CertificateHashData `json:"childCertificateHashData,omitempty" validate:"omitempty,dive"`
+}
+
 // Certificate15118EVStatus
 type Certificate15118EVStatus string
 
@@ -202,13 +209,14 @@ const (
 	CSOSubCA1                   CertificateUse = "CSOSubCA1"
 	CSOSubCA2                   CertificateUse = "CSOSubCA2"
 	CSMSRootCertificate         CertificateUse = "CSMSRootCertificate"
+	V2GCertificateChain         CertificateUse = "V2GCertificateChain"
 	ManufacturerRootCertificate CertificateUse = "ManufacturerRootCertificate"
 )
 
 func isValidCertificateUse(fl validator.FieldLevel) bool {
 	use := CertificateUse(fl.Field().String())
 	switch use {
-	case V2GRootCertificate, MORootCertificate, CSOSubCA1, CSOSubCA2, CSMSRootCertificate, ManufacturerRootCertificate:
+	case V2GRootCertificate, MORootCertificate, CSOSubCA1, CSOSubCA2, CSMSRootCertificate, V2GCertificateChain, ManufacturerRootCertificate:
 		return true
 	default:
 		return false
