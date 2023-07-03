@@ -55,12 +55,14 @@ func (suite *OcppJTestSuite) TestClientStoppedError() {
 		// Simulate websocket internal working
 		suite.mockClient.DisconnectedHandler(nil)
 	})
+	call := suite.mockClient.On("IsConnected").Return(true)
 	err := suite.chargePoint.Start("someUrl")
 	require.NoError(t, err)
 	// Stop client
 	suite.chargePoint.Stop()
 	// Send message. Expected error
 	time.Sleep(20 * time.Millisecond)
+	call.Return(false)
 	assert.False(t, suite.clientDispatcher.IsRunning())
 	req := newMockRequest("somevalue")
 	err = suite.chargePoint.SendRequest(req)
@@ -734,4 +736,36 @@ func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	assert.True(t, suite.clientRequestQueue.IsEmpty())
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.False(t, state.HasPendingRequest())
+}
+
+func (suite *OcppJTestSuite) TestStopDisconnectedClient() {
+	t := suite.T()
+	suite.mockClient.On("Start", mock.AnythingOfType("string")).Return(nil)
+	suite.mockClient.On("Write", mock.Anything).Return(nil)
+	suite.mockClient.On("Stop").Return(nil)
+	call := suite.mockClient.On("IsConnected").Return(true)
+	// Start normally
+	err := suite.chargePoint.Start("someUrl")
+	require.NoError(t, err)
+	// Trigger network disconnect
+	disconnectError := fmt.Errorf("some error")
+	suite.chargePoint.SetOnDisconnectedHandler(func(err error) {
+		require.Errorf(t, err, disconnectError.Error())
+	})
+	call.Return(false)
+	suite.mockClient.DisconnectedHandler(disconnectError)
+	time.Sleep(100 * time.Millisecond)
+	// Dispatcher should be paused
+	assert.True(t, suite.clientDispatcher.IsPaused())
+	assert.False(t, suite.chargePoint.IsConnected())
+	// Stop client while reconnecting
+	suite.chargePoint.Stop()
+	time.Sleep(50 * time.Millisecond)
+	assert.True(t, suite.clientDispatcher.IsPaused())
+	assert.False(t, suite.chargePoint.IsConnected())
+	// Attempt stopping client again
+	suite.chargePoint.Stop()
+	time.Sleep(50 * time.Millisecond)
+	assert.True(t, suite.clientDispatcher.IsPaused())
+	assert.False(t, suite.chargePoint.IsConnected())
 }

@@ -1086,13 +1086,14 @@ func (client *Client) Stop() {
 	}
 	client.mutex.Unlock()
 	// Notify reconnection goroutine to stop (if any)
-	close(client.reconnectC)
+	if client.reconnectC != nil {
+		close(client.reconnectC)
+	}
 	if client.errC != nil {
 		close(client.errC)
 		client.errC = nil
 	}
 	// Wait for connection to actually close
-
 }
 
 func (client *Client) error(err error) {

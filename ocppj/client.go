@@ -29,6 +29,7 @@ type Client struct {
 // a state handler and a list of supported profiles (optional).
 //
 // You may create a simple new server by using these default values:
+//
 //	s := ocppj.NewClient(ws.NewClient(), nil, nil)
 //
 // The wsClient parameter cannot be nil. Refer to the ws package for information on how to create and
@@ -108,11 +109,17 @@ func (c *Client) Start(serverURL string) error {
 func (c *Client) Stop() {
 	// Overwrite handler to intercept disconnected signal
 	cleanupC := make(chan struct{}, 1)
-	c.client.SetDisconnectedHandler(func(err error) {
-		cleanupC <- struct{}{}
-	})
+	if c.IsConnected() {
+		c.client.SetDisconnectedHandler(func(err error) {
+			cleanupC <- struct{}{}
+		})
+	} else {
+		close(cleanupC)
+	}
 	c.client.Stop()
-	c.dispatcher.Stop()
+	if c.dispatcher.IsRunning() {
+		c.dispatcher.Stop()
+	}
 	// Wait for websocket to be cleaned up
 	<-cleanupC
 }
