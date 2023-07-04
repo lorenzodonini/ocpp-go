@@ -810,6 +810,9 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 }
 
 func (cs *csms) Start(listenPort int, listenPath string) {
+	// Overriding some protocol-specific values in the lower layers globally
+	ocppj.FormationViolation = ocppj.FormatViolationV2
+	// Start server
 	cs.server.Start(listenPort, listenPath)
 }
 

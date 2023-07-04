@@ -589,9 +589,12 @@ func (cs *chargingStation) sendResponse(response ocpp.Response, err error, reque
 }
 
 func (cs *chargingStation) Start(csmsUrl string) error {
+	// Overriding some protocol-specific values in the lower layers globally
+	ocppj.FormationViolation = ocppj.FormatViolationV2
+	// Start client
 	cs.stopC = make(chan struct{}, 1)
-	// Async response handler receives incoming responses/errors and triggers callbacks
 	err := cs.client.Start(csmsUrl)
+	// Async response handler receives incoming responses/errors and triggers callbacks
 	if err == nil {
 		go cs.asyncCallbackHandler()
 	}
