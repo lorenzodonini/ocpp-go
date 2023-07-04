@@ -404,6 +404,9 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 }
 
 func (cs *centralSystem) Start(listenPort int, listenPath string) {
+	// Overriding some protocol-specific values in the lower layers globally
+	ocppj.FormationViolation = ocppj.FormatViolationV16
+	// Start server
 	cs.server.Start(listenPort, listenPath)
 }
 

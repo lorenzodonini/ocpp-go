@@ -329,9 +329,12 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, reque
 }
 
 func (cp *chargePoint) Start(centralSystemUrl string) error {
+	// Overriding some protocol-specific values in the lower layers globally
+	ocppj.FormationViolation = ocppj.FormatViolationV16
+	// Start client
 	cp.stopC = make(chan struct{}, 1)
-	// Async response handler receives incoming responses/errors and triggers callbacks
 	err := cp.client.Start(centralSystemUrl)
+	// Async response handler receives incoming responses/errors and triggers callbacks
 	if err == nil {
 		go cp.asyncCallbackHandler()
 	}
