@@ -152,3 +152,10 @@ func (suite *OcppV16TestSuite) TestCentralSystemSendResponseError() {
 	assert.Equal(t, ocppj.GenericError, ocppErr.Code)
 	assert.Equal(t, fmt.Sprintf("empty confirmation to %s for request 1234", wsId), ocppErr.Description)
 }
+
+func (suite *OcppV16TestSuite) TestErrorCodes() {
+	t := suite.T()
+	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
+	suite.centralSystem.Start(8887, "somePath")
+	assert.Equal(t, ocppj.FormatViolationV16, ocppj.FormationViolation)
+}
