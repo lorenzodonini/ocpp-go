@@ -53,16 +53,17 @@ const (
 	IdTokenTypeCentral         IdTokenType = "Central"
 	IdTokenTypeEMAID           IdTokenType = "eMAID"
 	IdTokenTypeISO14443        IdTokenType = "ISO14443"
+	IdTokenTypeISO15693        IdTokenType = "ISO15693"
 	IdTokenTypeKeyCode         IdTokenType = "KeyCode"
 	IdTokenTypeLocal           IdTokenType = "Local"
+	IdTokenTypeMacAddress      IdTokenType = "MacAddress"
 	IdTokenTypeNoAuthorization IdTokenType = "NoAuthorization"
-	IdTokenTypeISO15693        IdTokenType = "ISO15693"
 )
 
 func isValidIdTokenType(fl validator.FieldLevel) bool {
 	tokenType := IdTokenType(fl.Field().String())
 	switch tokenType {
-	case IdTokenTypeCentral, IdTokenTypeEMAID, IdTokenTypeISO14443, IdTokenTypeKeyCode, IdTokenTypeLocal, IdTokenTypeNoAuthorization, IdTokenTypeISO15693:
+	case IdTokenTypeCentral, IdTokenTypeEMAID, IdTokenTypeISO14443, IdTokenTypeISO15693, IdTokenTypeKeyCode, IdTokenTypeLocal, IdTokenTypeMacAddress, IdTokenTypeNoAuthorization:
 		return true
 	default:
 		return false
