@@ -52,14 +52,14 @@ func isValidResetStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the Reset request payload sent by the CSMS to the Charging Station.
 type ResetRequest struct {
-	Type   ResetType `json:"type" validate:"resetType"`
+	Type   ResetType `json:"type" validate:"resetType201"`
 	EvseID *int      `json:"evseId,omitempty" validate:"omitempty,gte=0"`
 }
 
 // This field definition of the Reset response payload, sent by the Charging Station to the CSMS in response to a ResetRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ResetResponse struct {
-	Status     ResetStatus       `json:"status" validate:"required,resetStatus"`
+	Status     ResetStatus       `json:"status" validate:"required,resetStatus201"`
 	StatusInfo *types.StatusInfo `json:"statusInfo" validate:"omitempty"`
 }
 
@@ -103,6 +103,6 @@ func NewResetResponse(status ResetStatus) *ResetResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("resetType", isValidResetType)
-	_ = types.Validate.RegisterValidation("resetStatus", isValidResetStatus)
+	_ = types.Validate.RegisterValidation("resetType201", isValidResetType)
+	_ = types.Validate.RegisterValidation("resetStatus201", isValidResetStatus)
 }

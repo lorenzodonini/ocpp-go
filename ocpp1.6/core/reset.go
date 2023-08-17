@@ -1,9 +1,10 @@
 package core
 
 import (
+	"reflect"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
 )
 
 // -------------------- Reset (CS -> CP) --------------------
@@ -45,13 +46,13 @@ func isValidResetStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the Reset request payload sent by the Central System to the Charge Point.
 type ResetRequest struct {
-	Type ResetType `json:"type" validate:"required,resetType"`
+	Type ResetType `json:"type" validate:"required,resetType16"`
 }
 
 // This field definition of the Reset confirmation payload, sent by the Charge Point to the Central System in response to a ResetRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ResetConfirmation struct {
-	Status ResetStatus `json:"status" validate:"required,resetStatus"`
+	Status ResetStatus `json:"status" validate:"required,resetStatus16"`
 }
 
 // The Central System SHALL send a ResetRequest for requesting a Charge Point to reset itself.
@@ -62,8 +63,8 @@ type ResetConfirmation struct {
 // At receipt of a soft reset, the Charge Point SHALL stop ongoing transactions gracefully and send StopTransactionRequest for every ongoing transaction.
 // It should then restart the application software (if possible, otherwise restart the processor/controller).
 // At receipt of a hard reset the Charge Point SHALL restart (all) the hardware, it is not required to gracefully stop ongoing transaction.
-//If possible the Charge Point sends a StopTransactionRequest for previously ongoing transactions after having restarted and having been accepted by the Central System via a BootNotificationConfirmation.
-//This is a last resort solution for a not correctly functioning Charge Points, by sending a "hard" reset, (queued) information might get lost.
+// If possible the Charge Point sends a StopTransactionRequest for previously ongoing transactions after having restarted and having been accepted by the Central System via a BootNotificationConfirmation.
+// This is a last resort solution for a not correctly functioning Charge Points, by sending a "hard" reset, (queued) information might get lost.
 type ResetFeature struct{}
 
 func (f ResetFeature) GetFeatureName() string {
@@ -97,6 +98,6 @@ func NewResetConfirmation(status ResetStatus) *ResetConfirmation {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("resetType", isValidResetType)
-	_ = types.Validate.RegisterValidation("resetStatus", isValidResetStatus)
+	_ = types.Validate.RegisterValidation("resetType16", isValidResetType)
+	_ = types.Validate.RegisterValidation("resetStatus16", isValidResetStatus)
 }
