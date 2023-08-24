@@ -629,6 +629,26 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
 	assert.Equal(t, "Invalid Call message. Expected array length 4", protoErr.Description)
 }
 
+func (suite *OcppJTestSuite) TestParseMessageInvalidActionCall() {
+	t := suite.T()
+	mockMessage := make([]interface{}, 4)
+	messageId := "12345"
+	mockRequest := newMockRequest("")
+	// Test invalid message length
+	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
+	mockMessage[1] = messageId           // Unique ID
+	mockMessage[2] = float64(42)         // Wrong type on action parameter
+	mockMessage[3] = mockRequest
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
+	assert.Equal(t, protoErr.MessageId, "") // unique id is never set after invalid type cast return
+	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, "Invalid element 42 at 2, expected action (string)", protoErr.Description)
+}
+
 func (suite *OcppJTestSuite) TestParseMessageInvalidCallResult() {
 	t := suite.T()
 	mockMessage := make([]interface{}, 3)
