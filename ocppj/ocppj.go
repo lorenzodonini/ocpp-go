@@ -394,7 +394,11 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		if len(arr) != 4 {
 			return nil, ocpp.NewError(FormationViolation, "Invalid Call message. Expected array length 4", uniqueId)
 		}
-		action := arr[2].(string)
+		action, ok := arr[2].(string)
+		if !ok {
+			return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 2, expected action (string)", arr[2]), "")
+		}
+
 		profile, ok := endpoint.GetProfileForFeature(action)
 		if !ok {
 			return nil, ocpp.NewError(NotSupported, fmt.Sprintf("Unsupported feature %v", action), uniqueId)
