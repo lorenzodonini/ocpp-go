@@ -821,7 +821,7 @@ func TestInvalidClientTLSCertificate(t *testing.T) {
 	assert.NotNil(t, err)
 	netError, ok := err.(net.Error)
 	require.True(t, ok)
-	assert.Equal(t, "remote error: tls: bad certificate", netError.Error()) // tls.alertBadCertificate = 42
+	assert.Equal(t, "remote error: tls: unknown certificate authority", netError.Error()) // tls.alertUnknownCA = 48
 	// Cleanup
 	wsServer.Stop()
 }
