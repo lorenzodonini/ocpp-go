@@ -1006,7 +1006,7 @@ func (client *Client) handleReconnection() {
 		}
 		client.error(fmt.Errorf("reconnection failed: %w", err))
 
-		if reconnectionAttempts > client.timeoutConfig.RetryBackOffRepeatTimes {
+		if reconnectionAttempts < client.timeoutConfig.RetryBackOffRepeatTimes {
 			// Re-connection failed, double the delay
 			delay *= 2
 		}
