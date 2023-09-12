@@ -35,7 +35,7 @@ type ClearCacheRequest struct {
 // This field definition of the ClearCache confirmation payload, sent by the Charge Point to the Central System in response to a ClearCacheRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ClearCacheConfirmation struct {
-	Status ClearCacheStatus `json:"status" validate:"required,cacheStatus"`
+	Status ClearCacheStatus `json:"status" validate:"required,cacheStatus16"`
 }
 
 // Central System can request a Charge Point to clear its Authorization Cache.
@@ -75,5 +75,5 @@ func NewClearCacheConfirmation(status ClearCacheStatus) *ClearCacheConfirmation 
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("cacheStatus", isValidClearCacheStatus)
+	_ = types.Validate.RegisterValidation("cacheStatus16", isValidClearCacheStatus)
 }

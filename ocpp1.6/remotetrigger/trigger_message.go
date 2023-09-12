@@ -46,14 +46,14 @@ func isValidMessageTrigger(fl validator.FieldLevel) bool {
 
 // The field definition of the TriggerMessage request payload sent by the Central System to the Charge Point.
 type TriggerMessageRequest struct {
-	RequestedMessage MessageTrigger `json:"requestedMessage" validate:"required,messageTrigger"`
+	RequestedMessage MessageTrigger `json:"requestedMessage" validate:"required,messageTrigger16"`
 	ConnectorId      *int           `json:"connectorId,omitempty" validate:"omitempty,gt=0"`
 }
 
 // This field definition of the TriggerMessage confirmation payload, sent by the Charge Point to the Central System in response to a TriggerMessageRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type TriggerMessageConfirmation struct {
-	Status TriggerMessageStatus `json:"status" validate:"required,triggerMessageStatus"`
+	Status TriggerMessageStatus `json:"status" validate:"required,triggerMessageStatus16"`
 }
 
 // During normal operation, the Charge Point informs the Central System of its state and any relevant occurrences.
@@ -110,6 +110,6 @@ func NewTriggerMessageConfirmation(status TriggerMessageStatus) *TriggerMessageC
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("triggerMessageStatus", isValidTriggerMessageStatus)
-	_ = types.Validate.RegisterValidation("messageTrigger", isValidMessageTrigger)
+	_ = types.Validate.RegisterValidation("triggerMessageStatus16", isValidTriggerMessageStatus)
+	_ = types.Validate.RegisterValidation("messageTrigger16", isValidMessageTrigger)
 }

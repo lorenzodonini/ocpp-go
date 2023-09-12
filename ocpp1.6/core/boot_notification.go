@@ -47,7 +47,7 @@ type BootNotificationRequest struct {
 type BootNotificationConfirmation struct {
 	CurrentTime *types.DateTime    `json:"currentTime" validate:"required"`
 	Interval    int                `json:"interval" validate:"gte=0"`
-	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
+	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus16"`
 }
 
 // After each (re)boot, a Charge Point SHALL send a request to the Central System with information about its configuration (e.g. version, vendor, etc.).
@@ -91,5 +91,5 @@ func NewBootNotificationConfirmation(currentTime *types.DateTime, interval int, 
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("registrationStatus", isValidRegistrationStatus)
+	_ = types.Validate.RegisterValidation("registrationStatus16", isValidRegistrationStatus)
 }

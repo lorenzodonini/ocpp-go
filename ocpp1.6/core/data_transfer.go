@@ -40,7 +40,7 @@ type DataTransferRequest struct {
 // This field definition of the DataTransfer confirmation payload, sent by an endpoint in response to a DataTransferRequest, coming from the other endpoint.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type DataTransferConfirmation struct {
-	Status DataTransferStatus `json:"status" validate:"required,dataTransferStatus"`
+	Status DataTransferStatus `json:"status" validate:"required,dataTransferStatus16"`
 	Data   interface{}        `json:"data,omitempty"`
 }
 
@@ -79,5 +79,5 @@ func NewDataTransferConfirmation(status DataTransferStatus) *DataTransferConfirm
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("dataTransferStatus", isValidDataTransferStatus)
+	_ = types.Validate.RegisterValidation("dataTransferStatus16", isValidDataTransferStatus)
 }

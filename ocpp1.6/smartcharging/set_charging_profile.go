@@ -39,7 +39,7 @@ type SetChargingProfileRequest struct {
 // This field definition of the SetChargingProfile confirmation payload, sent by the Charge Point to the Central System in response to a SetChargingProfileRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type SetChargingProfileConfirmation struct {
-	Status ChargingProfileStatus `json:"status" validate:"required,chargingProfileStatus"`
+	Status ChargingProfileStatus `json:"status" validate:"required,chargingProfileStatus16"`
 }
 
 // The Central System MAY send charging profiles to a Charge Point that are to be used as default charging profiles.
@@ -79,5 +79,5 @@ func NewSetChargingProfileConfirmation(status ChargingProfileStatus) *SetChargin
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("chargingProfileStatus", isValidChargingProfileStatus)
+	_ = types.Validate.RegisterValidation("chargingProfileStatus16", isValidChargingProfileStatus)
 }

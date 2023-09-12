@@ -37,7 +37,7 @@ type UnlockConnectorRequest struct {
 // This field definition of the UnlockConnector confirmation payload, sent by the Charge Point to the Central System in response to an UnlockConnectorRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type UnlockConnectorConfirmation struct {
-	Status UnlockStatus `json:"status" validate:"required,unlockStatus"`
+	Status UnlockStatus `json:"status" validate:"required,unlockStatus16"`
 }
 
 // Central System can request a Charge Point to unlock a connector. To do so, the Central System SHALL send an UnlockConnectorRequest.
@@ -81,5 +81,5 @@ func NewUnlockConnectorConfirmation(status UnlockStatus) *UnlockConnectorConfirm
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("unlockStatus", isValidUnlockStatus)
+	_ = types.Validate.RegisterValidation("unlockStatus16", isValidUnlockStatus)
 }

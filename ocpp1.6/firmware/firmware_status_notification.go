@@ -35,7 +35,7 @@ func isValidFirmwareStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the FirmwareStatusNotification request payload sent by the Charge Point to the Central System.
 type FirmwareStatusNotificationRequest struct {
-	Status FirmwareStatus `json:"status" validate:"required,firmwareStatus"`
+	Status FirmwareStatus `json:"status" validate:"required,firmwareStatus16"`
 }
 
 // This field definition of the FirmwareStatusNotification confirmation payload, sent by the Central System to the Charge Point in response to a FirmwareStatusNotificationRequest.
@@ -79,5 +79,5 @@ func NewFirmwareStatusNotificationConfirmation() *FirmwareStatusNotificationConf
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("firmwareStatus", isValidFirmwareStatus)
+	_ = types.Validate.RegisterValidation("firmwareStatus16", isValidFirmwareStatus)
 }

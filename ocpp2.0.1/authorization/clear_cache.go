@@ -37,7 +37,7 @@ type ClearCacheRequest struct {
 // This field definition of the ClearCache response payload, sent by the Charging Station to the CSMS in response to a ClearCacheRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ClearCacheResponse struct {
-	Status     ClearCacheStatus  `json:"status" validate:"required,cacheStatus"`
+	Status     ClearCacheStatus  `json:"status" validate:"required,cacheStatus201"`
 	StatusInfo *types.StatusInfo `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
@@ -78,5 +78,5 @@ func NewClearCacheResponse(status ClearCacheStatus) *ClearCacheResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("cacheStatus", isValidClearCacheStatus)
+	_ = types.Validate.RegisterValidation("cacheStatus201", isValidClearCacheStatus)
 }

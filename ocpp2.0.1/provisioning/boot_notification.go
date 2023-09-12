@@ -79,7 +79,7 @@ type BootNotificationRequest struct {
 type BootNotificationResponse struct {
 	CurrentTime *types.DateTime    `json:"currentTime" validate:"required"`
 	Interval    int                `json:"interval" validate:"gte=0"`
-	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus"`
+	Status      RegistrationStatus `json:"status" validate:"required,registrationStatus201"`
 	StatusInfo  *types.StatusInfo  `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
@@ -127,6 +127,6 @@ func NewBootNotificationResponse(currentTime *types.DateTime, interval int, stat
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("registrationStatus", isValidRegistrationStatus)
+	_ = types.Validate.RegisterValidation("registrationStatus201", isValidRegistrationStatus)
 	_ = types.Validate.RegisterValidation("bootReason", isValidBootReason)
 }
