@@ -44,7 +44,7 @@ func isValidFirmwareStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the FirmwareStatusNotification request payload sent by the Charging Station to the CSMS.
 type FirmwareStatusNotificationRequest struct {
-	Status    FirmwareStatus `json:"status" validate:"required,firmwareStatus"`
+	Status    FirmwareStatus `json:"status" validate:"required,firmwareStatus201"`
 	RequestID *int           `json:"requestId,omitempty" validate:"omitempty,gte=0"`
 }
 
@@ -89,5 +89,5 @@ func NewFirmwareStatusNotificationResponse() *FirmwareStatusNotificationResponse
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("firmwareStatus", isValidFirmwareStatus)
+	_ = types.Validate.RegisterValidation("firmwareStatus201", isValidFirmwareStatus)
 }

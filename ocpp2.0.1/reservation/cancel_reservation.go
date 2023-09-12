@@ -38,7 +38,7 @@ type CancelReservationRequest struct {
 // This field definition of the CancelReservation response payload, sent by the Charging Station to the CSMS in response to a CancelReservationRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type CancelReservationResponse struct {
-	Status     CancelReservationStatus `json:"status" validate:"required,cancelReservationStatus"`
+	Status     CancelReservationStatus `json:"status" validate:"required,cancelReservationStatus201"`
 	StatusInfo *types.StatusInfo       `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
@@ -78,5 +78,5 @@ func NewCancelReservationResponse(status CancelReservationStatus) *CancelReserva
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("cancelReservationStatus", isValidCancelReservationStatus)
+	_ = types.Validate.RegisterValidation("cancelReservationStatus201", isValidCancelReservationStatus)
 }

@@ -45,7 +45,7 @@ type ClearChargingProfileRequest struct {
 // This field definition of the ClearChargingProfile response payload, sent by the Charging Station to the CSMS in response to a ClearChargingProfileRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ClearChargingProfileResponse struct {
-	Status     ClearChargingProfileStatus `json:"status" validate:"required,clearChargingProfileStatus"`
+	Status     ClearChargingProfileStatus `json:"status" validate:"required,clearChargingProfileStatus201"`
 	StatusInfo *types.StatusInfo          `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
@@ -87,5 +87,5 @@ func NewClearChargingProfileResponse(status ClearChargingProfileStatus) *ClearCh
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("clearChargingProfileStatus", isValidClearChargingProfileStatus)
+	_ = types.Validate.RegisterValidation("clearChargingProfileStatus201", isValidClearChargingProfileStatus)
 }

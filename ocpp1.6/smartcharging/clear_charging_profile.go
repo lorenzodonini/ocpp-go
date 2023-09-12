@@ -40,7 +40,7 @@ type ClearChargingProfileRequest struct {
 // This field definition of the ClearChargingProfile confirmation payload, sent by the Charge Point to the Central System in response to a ClearChargingProfileRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type ClearChargingProfileConfirmation struct {
-	Status ClearChargingProfileStatus `json:"status" validate:"required,clearChargingProfileStatus"`
+	Status ClearChargingProfileStatus `json:"status" validate:"required,clearChargingProfileStatus16"`
 }
 
 // If the Central System wishes to clear some or all of the charging profiles that were previously sent the Charge Point,
@@ -81,5 +81,5 @@ func NewClearChargingProfileConfirmation(status ClearChargingProfileStatus) *Cle
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("clearChargingProfileStatus", isValidClearChargingProfileStatus)
+	_ = types.Validate.RegisterValidation("clearChargingProfileStatus16", isValidClearChargingProfileStatus)
 }

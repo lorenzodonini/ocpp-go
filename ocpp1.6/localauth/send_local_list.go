@@ -55,7 +55,7 @@ type AuthorizationData struct {
 type SendLocalListRequest struct {
 	ListVersion            int                 `json:"listVersion" validate:"gte=0"`
 	LocalAuthorizationList []AuthorizationData `json:"localAuthorizationList,omitempty" validate:"omitempty,dive"`
-	UpdateType             UpdateType          `json:"updateType" validate:"required,updateType"`
+	UpdateType             UpdateType          `json:"updateType" validate:"required,updateType16"`
 }
 
 // This field definition of the SendLocalList confirmation payload, sent by the Charge Point to the Central System in response to a SendLocalListRequest.
@@ -106,6 +106,6 @@ func NewSendLocalListConfirmation(status UpdateStatus) *SendLocalListConfirmatio
 
 func init() {
 	_ = types.Validate.RegisterValidation("updateStatus", isValidUpdateStatus)
-	_ = types.Validate.RegisterValidation("updateType", isValidUpdateType)
+	_ = types.Validate.RegisterValidation("updateType16", isValidUpdateType)
 	//TODO: validation for SendLocalListMaxLength
 }

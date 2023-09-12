@@ -39,7 +39,7 @@ type SetChargingProfileRequest struct {
 // This field definition of the SetChargingProfile response payload, sent by the Charging Station to the CSMS in response to a SetChargingProfileRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type SetChargingProfileResponse struct {
-	Status     ChargingProfileStatus `json:"status" validate:"required,chargingProfileStatus"`
+	Status     ChargingProfileStatus `json:"status" validate:"required,chargingProfileStatus201"`
 	StatusInfo *types.StatusInfo     `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
@@ -87,5 +87,5 @@ func NewSetChargingProfileResponse(status ChargingProfileStatus) *SetChargingPro
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("chargingProfileStatus", isValidChargingProfileStatus)
+	_ = types.Validate.RegisterValidation("chargingProfileStatus201", isValidChargingProfileStatus)
 }

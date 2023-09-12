@@ -57,7 +57,7 @@ type AuthorizationData struct {
 // The field definition of the SendLocalList request payload sent by the CSMS to the Charging Station.
 type SendLocalListRequest struct {
 	VersionNumber          int                 `json:"versionNumber" validate:"gte=0"`
-	UpdateType             UpdateType          `json:"updateType" validate:"required,updateType"`
+	UpdateType             UpdateType          `json:"updateType" validate:"required,updateType201"`
 	LocalAuthorizationList []AuthorizationData `json:"localAuthorizationList,omitempty" validate:"omitempty,dive"`
 }
 
@@ -110,6 +110,6 @@ func NewSendLocalListResponse(status SendLocalListStatus) *SendLocalListResponse
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("updateType", isValidUpdateType)
+	_ = types.Validate.RegisterValidation("updateType201", isValidUpdateType)
 	_ = types.Validate.RegisterValidation("sendLocalListStatus", isValidSendLocalListStatus)
 }

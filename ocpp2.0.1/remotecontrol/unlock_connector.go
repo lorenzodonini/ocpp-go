@@ -44,7 +44,7 @@ type UnlockConnectorRequest struct {
 // This field definition of the UnlockConnector response payload, sent by the Charging Station to the CSMS in response to a UnlockConnectorRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type UnlockConnectorResponse struct {
-	Status     UnlockStatus      `json:"status" validate:"required,unlockStatus"`
+	Status     UnlockStatus      `json:"status" validate:"required,unlockStatus201"`
 	StatusInfo *types.StatusInfo `json:"statusInfo,omitempty"`
 }
 
@@ -52,7 +52,7 @@ type UnlockConnectorResponse struct {
 // This happens most of the time when there is tension on the charging cable.
 // This means the driver cannot unplug his charging cable from the Charging Station.
 // To help a driver, the CSO can send a UnlockConnectorRequest to the Charging Station.
-//The Charging Station will then try to unlock the connector again and respond with an UnlockConnectorResponse.
+// The Charging Station will then try to unlock the connector again and respond with an UnlockConnectorResponse.
 type UnlockConnectorFeature struct{}
 
 func (f UnlockConnectorFeature) GetFeatureName() string {
@@ -86,5 +86,5 @@ func NewUnlockConnectorResponse(status UnlockStatus) *UnlockConnectorResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("unlockStatus", isValidUnlockStatus)
+	_ = types.Validate.RegisterValidation("unlockStatus201", isValidUnlockStatus)
 }
