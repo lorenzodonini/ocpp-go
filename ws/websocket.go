@@ -985,7 +985,7 @@ func (client *Client) cleanup() {
 
 func (client *Client) handleReconnection() {
 	log.Info("started automatic reconnection handler")
-	delay := client.timeoutConfig.RetryBackOffWaitMinimum + time.Duration(rand.Intn(client.timeoutConfig.RetryBackOffRandomRange+1))
+	delay := client.timeoutConfig.RetryBackOffWaitMinimum + time.Duration(rand.Intn(client.timeoutConfig.RetryBackOffRandomRange+1))*time.Second
 	reconnectionAttempts := 1
 	for {
 		// Wait before reconnecting
@@ -1009,6 +1009,7 @@ func (client *Client) handleReconnection() {
 		if reconnectionAttempts < client.timeoutConfig.RetryBackOffRepeatTimes {
 			// Re-connection failed, double the delay
 			delay *= 2
+			delay += time.Duration(rand.Intn(client.timeoutConfig.RetryBackOffRandomRange+1)) * time.Second
 		}
 		reconnectionAttempts += 1
 	}
