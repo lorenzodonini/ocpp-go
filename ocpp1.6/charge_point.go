@@ -298,7 +298,11 @@ func (cp *chargePoint) clearCallbacks(invokeCallback bool) {
 func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
-		err = cp.client.SendError(requestId, ocppj.InternalError, err.Error(), nil)
+		if callError, ok := err.(*ocppj.CallError); ok {
+			err = cp.client.SendError(requestId, callError.ErrorCode, callError.ErrorDescription, nil)
+		} else {
+			err = cp.client.SendError(requestId, ocppj.InternalError, err.Error(), nil)
+		}
 		if err != nil {
 			// Error while sending an error. Will attempt to send a default error instead
 			cp.client.HandleFailedResponseError(requestId, err, "")
