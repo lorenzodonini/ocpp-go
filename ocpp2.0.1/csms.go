@@ -819,7 +819,11 @@ func (cs *csms) Start(listenPort int, listenPath string) {
 func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
-		err = cs.server.SendError(chargingStationID, requestId, ocppj.InternalError, err.Error(), nil)
+		if callError, ok := err.(*ocppj.CallError); ok {
+			err = cs.server.SendError(chargingStationID, requestId, callError.ErrorCode, callError.ErrorDescription, nil)
+		} else {
+			err = cs.server.SendError(chargingStationID, requestId, ocppj.InternalError, err.Error(), nil)
+		}
 		if err != nil {
 			// Error while sending an error. Will attempt to send a default error instead
 			cs.server.HandleFailedResponseError(chargingStationID, requestId, err, "")
