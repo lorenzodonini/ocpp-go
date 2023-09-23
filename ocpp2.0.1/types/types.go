@@ -70,13 +70,24 @@ func isValidIdTokenType(fl validator.FieldLevel) bool {
 	}
 }
 
+func isValidIdToken(sl validator.StructLevel) {
+	idToken := sl.Current().Interface().(IdToken)
+	// validate required idToken value except `NoAuthorization` type
+	switch idToken.Type {
+	case IdTokenTypeCentral, IdTokenTypeEMAID, IdTokenTypeISO14443, IdTokenTypeISO15693, IdTokenTypeKeyCode, IdTokenTypeLocal, IdTokenTypeMacAddress:
+		if idToken.IdToken == "" {
+			sl.ReportError(idToken.IdToken, "IdToken", "IdToken", "required", "")
+		}
+	}
+}
+
 type AdditionalInfo struct {
 	AdditionalIdToken string `json:"additionalIdToken" validate:"required,max=36"`
 	Type              string `json:"type" validate:"required,max=50"`
 }
 
 type IdToken struct {
-	IdToken        string           `json:"idToken" validate:"required,max=36"`
+	IdToken        string           `json:"idToken" validate:"max=36"`
 	Type           IdTokenType      `json:"type" validate:"required,idTokenType"`
 	AdditionalInfo []AdditionalInfo `json:"additionalInfo,omitempty" validate:"omitempty,dive"`
 }
@@ -731,4 +742,6 @@ func init() {
 	_ = Validate.RegisterValidation("certificateUse", isValidCertificateUse)
 	_ = Validate.RegisterValidation("15118EVCertificate", isValidCertificate15118EVStatus)
 	_ = Validate.RegisterValidation("costKind", isValidCostKind)
+
+	Validate.RegisterStructValidation(isValidIdToken, IdToken{})
 }
