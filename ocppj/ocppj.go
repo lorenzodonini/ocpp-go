@@ -398,7 +398,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 	typeId := MessageType(rawTypeId)
 	uniqueId, ok := arr[1].(string)
 	if !ok {
-		return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", arr[1]), uniqueId)
+		return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", arr[1]), "")
 	}
 	// Parse message
 	if typeId == CALL {
@@ -407,7 +407,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		action, ok := arr[2].(string)
 		if !ok {
-			return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 2, expected action (string)", arr[2]), "")
+			return nil, ocpp.NewError(FormationViolation, fmt.Sprintf("Invalid element %v at 2, expected action (string)", arr[2]), uniqueId)
 		}
 
 		profile, ok := endpoint.GetProfileForFeature(action)

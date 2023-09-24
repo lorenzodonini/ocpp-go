@@ -13,12 +13,12 @@ import (
 
 func (handler *ChargingStationHandler) OnPublishFirmware(request *firmware.PublishFirmwareRequest) (response *firmware.PublishFirmwareResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnUnpublishFirmware(request *firmware.UnpublishFirmwareRequest) (response *firmware.UnpublishFirmwareResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnUpdateFirmware(request *firmware.UpdateFirmwareRequest) (response *firmware.UpdateFirmwareResponse, err error) {

@@ -819,8 +819,8 @@ func (cs *csms) Start(listenPort int, listenPath string) {
 func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
-		if callError, ok := err.(*ocppj.CallError); ok {
-			err = cs.server.SendError(chargingStationID, requestId, callError.ErrorCode, callError.ErrorDescription, nil)
+		if ocppError, ok := err.(*ocpp.Error); ok {
+			err = cs.server.SendError(chargingStationID, requestId, ocppError.Code, ocppError.Description, nil)
 		} else {
 			err = cs.server.SendError(chargingStationID, requestId, ocppj.InternalError, err.Error(), nil)
 		}

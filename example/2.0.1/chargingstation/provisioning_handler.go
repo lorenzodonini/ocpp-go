@@ -8,17 +8,17 @@ import (
 
 func (handler *ChargingStationHandler) OnGetBaseReport(request *provisioning.GetBaseReportRequest) (response *provisioning.GetBaseReportResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnGetReport(request *provisioning.GetReportRequest) (response *provisioning.GetReportResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnGetVariables(request *provisioning.GetVariablesRequest) (response *provisioning.GetVariablesResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnReset(request *provisioning.ResetRequest) (response *provisioning.ResetResponse, err error) {
@@ -29,12 +29,12 @@ func (handler *ChargingStationHandler) OnReset(request *provisioning.ResetReques
 
 func (handler *ChargingStationHandler) OnSetNetworkProfile(request *provisioning.SetNetworkProfileRequest) (response *provisioning.SetNetworkProfileResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnSetVariables(request *provisioning.SetVariablesRequest) (response *provisioning.SetVariablesResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 //func (handler *ChargingStationHandler) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
