@@ -161,17 +161,6 @@ type CallError struct {
 	ErrorDetails     interface{}    `json:"errorDetails" validate:"omitempty"`
 }
 
-func NewCallError(code ocpp.ErrorCode, description string) *CallError {
-	return &CallError{
-		ErrorCode:        code,
-		ErrorDescription: description,
-	}
-}
-
-func (callError *CallError) Error() string {
-	return callError.ErrorDescription
-}
-
 func (callError *CallError) GetMessageTypeId() MessageType {
 	return callError.MessageTypeId
 }
