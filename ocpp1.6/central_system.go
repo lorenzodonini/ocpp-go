@@ -413,8 +413,8 @@ func (cs *centralSystem) Start(listenPort int, listenPath string) {
 func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
-		if callError, ok := err.(*ocppj.CallError); ok {
-			err = cs.server.SendError(chargePointId, requestId, callError.ErrorCode, callError.ErrorDescription, nil)
+		if ocppError, ok := err.(*ocpp.Error); ok {
+			err = cs.server.SendError(chargePointId, requestId, ocppError.Code, ocppError.Description, nil)
 		} else {
 			err = cs.server.SendError(chargePointId, requestId, ocppj.InternalError, err.Error(), nil)
 		}

@@ -8,5 +8,5 @@ import (
 
 func (handler *ChargingStationHandler) OnGetTransactionStatus(request *transactions.GetTransactionStatusRequest) (response *transactions.GetTransactionStatusResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }

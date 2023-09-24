@@ -558,8 +558,8 @@ func (cs *chargingStation) asyncCallbackHandler() {
 func (cs *chargingStation) sendResponse(response ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
-		if callError, ok := err.(*ocppj.CallError); ok {
-			err = cs.client.SendError(requestId, callError.ErrorCode, callError.ErrorDescription, nil)
+		if ocppError, ok := err.(*ocpp.Error); ok {
+			err = cs.client.SendError(requestId, ocppError.Code, ocppError.Description, nil)
 		} else {
 			err = cs.client.SendError(requestId, ocppj.InternalError, err.Error(), nil)
 		}

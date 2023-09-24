@@ -14,5 +14,5 @@ func (c *CSMSHandler) OnSecurityEventNotification(chargingStationID string, requ
 
 func (c *CSMSHandler) OnSignCertificate(chargingStationID string, request *security.SignCertificateRequest) (response *security.SignCertificateResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }

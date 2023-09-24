@@ -8,10 +8,10 @@ import (
 
 func (c *CSMSHandler) OnGet15118EVCertificate(chargingStationID string, request *iso15118.Get15118EVCertificateRequest) (response *iso15118.Get15118EVCertificateResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (c *CSMSHandler) OnGetCertificateStatus(chargingStationID string, request *iso15118.GetCertificateStatusRequest) (response *iso15118.GetCertificateStatusResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
