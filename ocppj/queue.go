@@ -58,8 +58,8 @@ func (q *FIFOClientQueue) Push(element interface{}) error {
 }
 
 func (q *FIFOClientQueue) Peek() interface{} {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
+	q.mutex.RLock()
+	defer q.mutex.RUnlock()
 	if len(q.elements) == 0 {
 		return nil
 	}
@@ -78,20 +78,20 @@ func (q *FIFOClientQueue) Pop() interface{} {
 }
 
 func (q *FIFOClientQueue) Size() int {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
+	q.mutex.RLock()
+	defer q.mutex.RUnlock()
 	return len(q.elements)
 }
 
 func (q *FIFOClientQueue) IsFull() bool {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
+	q.mutex.RLock()
+	defer q.mutex.RUnlock()
 	return len(q.elements) >= q.capacity && q.capacity > 0
 }
 
 func (q *FIFOClientQueue) IsEmpty() bool {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
+	q.mutex.RLock()
+	defer q.mutex.RUnlock()
 	return len(q.elements) == 0
 }
 
@@ -145,18 +145,15 @@ func (f *FIFOQueueMap) Init() {
 }
 
 func (f *FIFOQueueMap) Get(clientID string) (RequestQueue, bool) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-	q, ok := f.data[clientID]
-	return q, ok
+	f.mutex.RLock()
+	defer f.mutex.RUnlock()
+	return f.data[clientID]
 }
 
 func (f *FIFOQueueMap) GetOrCreate(clientID string) RequestQueue {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
-	var q RequestQueue
-	var ok bool
-	q, ok = f.data[clientID]
+	q, ok := f.data[clientID]
 	if !ok {
 		q = NewFIFOClientQueue(f.queueCapacity)
 		f.data[clientID] = q
