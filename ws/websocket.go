@@ -195,7 +195,7 @@ type WsServer interface {
 	//	...
 	//
 	// To stop a running server, call the Stop function.
-	Start(port int, listenPath string)
+	Start(ln net.Listener, listenPath string)
 	// Shuts down a running websocket server.
 	// All open channels will be forcefully closed, and the previously called Start function will return.
 	Stop()

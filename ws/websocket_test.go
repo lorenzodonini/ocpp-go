@@ -137,7 +137,10 @@ func TestWebsocketEcho(t *testing.T) {
 		return nil, nil
 	})
 	// Start server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	// Start flow routine
 	go func() {
 		// Wait for messages to be exchanged, then close connection
@@ -154,7 +157,7 @@ func TestWebsocketEcho(t *testing.T) {
 	// Test message
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	require.NoError(t, err)
 	require.True(t, wsClient.IsConnected())
 	err = wsClient.Write(message)
@@ -215,7 +218,10 @@ func TestTLSWebsocketEcho(t *testing.T) {
 	})
 
 	// Start server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	// Start flow routine
 	go func() {
 		// Wait for messages to be exchanged, then close connection
@@ -260,10 +266,15 @@ func TestServerStartErrors(t *testing.T) {
 		triggerC <- true
 	}()
 	time.Sleep(100 * time.Millisecond)
-	go wsServer.Start(serverPort, serverPath)
+
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(100 * time.Millisecond)
-	// Starting server again throws error
-	wsServer.Start(serverPort, serverPath)
+	// Starting  again throws error
+	wsServer.Start(ln, serverPath)
+
 	r := <-triggerC
 	require.True(t, r)
 	wsServer.Stop()
@@ -274,7 +285,10 @@ func TestClientDuplicateConnection(t *testing.T) {
 	wsServer.SetNewClientHandler(func(ws Channel) {
 	})
 	// Start server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(100 * time.Millisecond)
 	// Connect client 1
 	wsClient1 := newWebsocketClient(t, func(data []byte) ([]byte, error) {
@@ -282,7 +296,7 @@ func TestClientDuplicateConnection(t *testing.T) {
 	})
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
-	err := wsClient1.Start(u.String())
+	err = wsClient1.Start(u.String())
 	require.NoError(t, err)
 	// Try to connect client 2
 	disconnectC := make(chan struct{})
@@ -333,12 +347,15 @@ func TestServerStopConnection(t *testing.T) {
 		disconnectedClientC <- struct{}{}
 	})
 	// Start server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(100 * time.Millisecond)
 	// Connect client
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	require.NoError(t, err)
 	// Wait for client to connect
 	_, ok := <-triggerC
@@ -372,7 +389,10 @@ func TestWebsocketServerStopAllConnections(t *testing.T) {
 		disconnectedServerC <- struct{}{}
 	})
 	// Start server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(100 * time.Millisecond)
 	// Connect clients
 	clients := []WsClient{}
@@ -389,7 +409,7 @@ func TestWebsocketServerStopAllConnections(t *testing.T) {
 			disconnectedClientC <- struct{}{}
 		})
 		u := url.URL{Scheme: "ws", Host: host, Path: fmt.Sprintf("%v-%v", testPath, i)}
-		err := wsClient.Start(u.String())
+		err = wsClient.Start(u.String())
 		require.NoError(t, err)
 		clients = append(clients, wsClient)
 		// Wait for client to connect
@@ -424,7 +444,10 @@ func TestWebsocketClientConnectionBreak(t *testing.T) {
 	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
 		disconnected <- true
 	})
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(1 * time.Second)
 
 	// Test
@@ -438,7 +461,7 @@ func TestWebsocketClientConnectionBreak(t *testing.T) {
 		err := wsClient.webSocket.connection.Close()
 		assert.Nil(t, err)
 	}()
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	assert.Nil(t, err)
 	result := <-newClient
 	assert.True(t, result)
@@ -462,14 +485,17 @@ func TestWebsocketServerConnectionBreak(t *testing.T) {
 	wsServer.SetDisconnectedClientHandler(func(ws Channel) {
 		disconnected <- true
 	})
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(1 * time.Second)
 
 	// Test
 	wsClient := newWebsocketClient(t, nil)
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	assert.Nil(t, err)
 	result := <-disconnected
 	assert.True(t, result)
@@ -501,7 +527,10 @@ func TestValidBasicAuth(t *testing.T) {
 		connected <- true
 	})
 	// Run server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(1 * time.Second)
 
 	// Create TLS client
@@ -552,7 +581,10 @@ func TestInvalidBasicAuth(t *testing.T) {
 		t.Fail()
 	})
 	// Run server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(1 * time.Second)
 
 	// Create TLS client
@@ -597,7 +629,10 @@ func TestInvalidOriginHeader(t *testing.T) {
 	wsServer.SetNewClientHandler(func(ws Channel) {
 		assert.Fail(t, "no new connection should be received from client!")
 	})
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(500 * time.Millisecond)
 
 	// Test message
@@ -610,7 +645,7 @@ func TestInvalidOriginHeader(t *testing.T) {
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 	// Attempt to connect and expect cross-origin error
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	require.Error(t, err)
 	httpErr, ok := err.(HttpConnectionError)
 	require.True(t, ok)
@@ -634,7 +669,10 @@ func TestCustomOriginHeaderHandler(t *testing.T) {
 	wsServer.SetCheckOriginHandler(func(r *http.Request) bool {
 		return r.Header.Get("Origin") == origin
 	})
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(500 * time.Millisecond)
 
 	// Test message
@@ -647,7 +685,7 @@ func TestCustomOriginHeaderHandler(t *testing.T) {
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 	// Attempt to connect and expect cross-origin error
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	require.Error(t, err)
 	httpErr, ok := err.(HttpConnectionError)
 	require.True(t, ok)
@@ -679,7 +717,10 @@ func TestCustomCheckClientHandler(t *testing.T) {
 	wsServer.SetCheckClientHandler(func(clientId string, r *http.Request) bool {
 		return id == clientId
 	})
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(500 * time.Millisecond)
 
 	// Test message
@@ -692,7 +733,7 @@ func TestCustomCheckClientHandler(t *testing.T) {
 	// Set invalid client (not /ws/testws)
 	u := url.URL{Scheme: "ws", Host: host, Path: invalidTestPath}
 	// Attempt to connect and expect invalid client id error
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	require.Error(t, err)
 	httpErr, ok := err.(HttpConnectionError)
 	require.True(t, ok)
@@ -740,7 +781,10 @@ func TestValidClientTLSCertificate(t *testing.T) {
 		connected <- true
 	})
 	// Run server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(1 * time.Second)
 
 	// Create TLS client
@@ -798,7 +842,10 @@ func TestInvalidClientTLSCertificate(t *testing.T) {
 		t.Fail()
 	})
 	// Run server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(200 * time.Millisecond)
 
 	// Create TLS client
@@ -838,7 +885,10 @@ func TestUnsupportedSubProtocol(t *testing.T) {
 	wsServer.AddSupportedSubprotocol(defaultSubProtocol)
 	assert.Len(t, wsServer.upgrader.Subprotocols, 1)
 	// Start server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(1 * time.Second)
 
 	// Setup client
@@ -859,7 +909,7 @@ func TestUnsupportedSubProtocol(t *testing.T) {
 	// Test
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	assert.NoError(t, err)
 	// Expect connection to be closed directly after start
 	_, ok := <-disconnectC
@@ -885,7 +935,10 @@ func TestSetServerTimeoutConfig(t *testing.T) {
 	config.WriteWait = writeWait
 	wsServer.SetTimeoutConfig(config)
 	// Start server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(500 * time.Millisecond)
 	assert.Equal(t, wsServer.timeoutConfig.PingWait, pingWait)
 	assert.Equal(t, wsServer.timeoutConfig.WriteWait, writeWait)
@@ -893,7 +946,7 @@ func TestSetServerTimeoutConfig(t *testing.T) {
 	wsClient := newWebsocketClient(t, nil)
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	assert.NoError(t, err)
 	result := <-disconnected
 	assert.True(t, result)
@@ -912,7 +965,10 @@ func TestSetClientTimeoutConfig(t *testing.T) {
 		disconnected <- true
 	})
 	// Start server
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(200 * time.Millisecond)
 	// Run test
 	wsClient := newWebsocketClient(t, nil)
@@ -930,7 +986,7 @@ func TestSetClientTimeoutConfig(t *testing.T) {
 	config.PingPeriod = pingPeriod
 	wsClient.SetTimeoutConfig(config)
 	// Start client and expect handshake error
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	opError, ok := err.(*net.OpError)
 	require.True(t, ok)
 	assert.Equal(t, "dial", opError.Op)
@@ -983,13 +1039,16 @@ func TestServerErrors(t *testing.T) {
 	assert.True(t, r)
 	// Start server for real
 	wsServer.httpServer = &http.Server{}
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(200 * time.Millisecond)
 	// Create and connect client
 	wsClient := newWebsocketClient(t, nil)
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
-	err := wsClient.Start(u.String())
+	err = wsClient.Start(u.String())
 	require.NoError(t, err)
 	// Wait for new client callback
 	r = <-triggerC
@@ -1039,10 +1098,13 @@ func TestClientErrors(t *testing.T) {
 			}
 		}
 	}()
-	go wsServer.Start(serverPort, serverPath)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go wsServer.Start(ln, serverPath)
+
 	time.Sleep(200 * time.Millisecond)
 	// Attempt to write a message without being connected
-	err := wsClient.Write([]byte("dummy message"))
+	err = wsClient.Write([]byte("dummy message"))
 	require.Error(t, err)
 	// Connect client
 	host := fmt.Sprintf("localhost:%v", serverPort)

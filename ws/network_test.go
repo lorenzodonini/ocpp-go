@@ -59,7 +59,10 @@ func (s *NetworkTestSuite) TestClientConnectionFailed() {
 	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.Fail(t, "should not accept new clients")
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go s.server.Start(ln, serverPath)
 	time.Sleep(500 * time.Millisecond)
 
 	// Test client
@@ -70,7 +73,7 @@ func (s *NetworkTestSuite) TestClientConnectionFailed() {
 	_ = s.proxy.Disable()
 	defer s.proxy.Enable()
 	// Attempt connection
-	err := s.client.Start(u.String())
+	err = s.client.Start(u.String())
 	require.Error(t, err)
 	netError, ok := err.(*net.OpError)
 	require.True(t, ok)
@@ -92,7 +95,10 @@ func (s *NetworkTestSuite) TestClientConnectionFailedTimeout() {
 	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.Fail(t, "should not accept new clients")
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go s.server.Start(ln, serverPath)
 	time.Sleep(500 * time.Millisecond)
 
 	// Test client
@@ -100,7 +106,7 @@ func (s *NetworkTestSuite) TestClientConnectionFailedTimeout() {
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 
 	// Add connection timeout
-	_, err := s.proxy.AddToxic("connectTimeout", "timeout", "upstream", 1, toxiproxy.Attributes{
+	_, err = s.proxy.AddToxic("connectTimeout", "timeout", "upstream", 1, toxiproxy.Attributes{
 		"timeout": 3000, // 3 seconds
 	})
 	defer s.proxy.RemoveToxic("connectTimeout")
@@ -135,7 +141,10 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- true
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go s.server.Start(ln, serverPath)
 	time.Sleep(500 * time.Millisecond)
 
 	// Test bench
@@ -154,7 +163,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	// Connect client
 	host := s.proxy.Listen
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
-	err := s.client.Start(u.String())
+	err = s.client.Start(u.String())
 	require.Nil(t, err)
 	// Close all connection from server side
 	time.Sleep(500 * time.Millisecond)
@@ -209,7 +218,10 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 		assert.Fail(t, "unexpected message received")
 		return fmt.Errorf("unexpected message received")
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go s.server.Start(ln, serverPath)
 	time.Sleep(500 * time.Millisecond)
 
 	// Test client
@@ -230,7 +242,7 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 
 	// Attempt connection
-	err := s.client.Start(u.String())
+	err = s.client.Start(u.String())
 	require.NoError(t, err)
 	// Slow upstream network -> ping won't get through and server-side close will be triggered
 	_, err = s.proxy.AddToxic("readTimeout", "timeout", "upstream", 1, toxiproxy.Attributes{
@@ -277,7 +289,10 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 		assert.Fail(t, "unexpected message received")
 		return fmt.Errorf("unexpected message received")
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	require.NoError(t, err)
+	go s.server.Start(ln, serverPath)
 	time.Sleep(500 * time.Millisecond)
 
 	// Test client
@@ -301,7 +316,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 
 	// Attempt connection
-	err := s.client.Start(u.String())
+	err = s.client.Start(u.String())
 	require.NoError(t, err)
 	// Slow down network. Ping will be received but pong won't go through
 	_, err = s.proxy.AddToxic("writeTimeout", "timeout", "downstream", 1, toxiproxy.Attributes{
@@ -327,8 +342,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	s.server.Stop()
 }
 
-//TODO: test error channel from websocket
-
+// TODO: test error channel from websocket
 func TestNetworkErrors(t *testing.T) {
 	suite.Run(t, new(NetworkTestSuite))
 }

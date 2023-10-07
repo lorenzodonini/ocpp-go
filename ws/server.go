@@ -134,32 +134,24 @@ func (server *Server) AddHttpHandler(listenPath string, handler func(w http.Resp
 	server.httpHandler.HandleFunc(listenPath, handler)
 }
 
-func (server *Server) Start(port int, listenPath string) {
+func (server *Server) Start(ln net.Listener, listenPath string) {
 	server.connections = make(map[string]*WebSocket)
 	if server.httpServer == nil {
 		server.httpServer = &http.Server{}
 	}
-
-	addr := fmt.Sprintf(":%v", port)
-	server.httpServer.Addr = addr
 
 	server.AddHttpHandler(listenPath, func(w http.ResponseWriter, r *http.Request) {
 		server.wsHandler(w, r)
 	})
 	server.httpServer.Handler = server.httpHandler
 
-	ln, err := net.Listen("tcp", addr)
-	if err != nil {
-		server.error(fmt.Errorf("failed to listen: %w", err))
-		return
-	}
-
 	server.addr = ln.Addr().(*net.TCPAddr)
+	server.httpServer.Addr = fmt.Sprintf(":%d", server.addr.Port)
 
-	defer ln.Close()
-
-	log.Infof("listening on tcp network %v", addr)
+	log.Infof("listening on tcp network %v", server.httpServer.Addr)
 	server.httpServer.RegisterOnShutdown(server.stopConnections)
+
+	var err error
 	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
 		err = server.httpServer.ServeTLS(ln, server.tlsCertificatePath, server.tlsCertificateKey)
 	} else {
@@ -167,7 +159,7 @@ func (server *Server) Start(port int, listenPath string) {
 	}
 
 	if err != http.ErrServerClosed {
-		server.error(fmt.Errorf("failed to listen: %w", err))
+		server.error(fmt.Errorf("server failed: %w", err))
 	}
 }
 
