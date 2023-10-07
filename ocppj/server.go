@@ -137,7 +137,6 @@ func (s *Server) Start() http.HandlerFunc {
 	s.dispatcher.Start()
 	// Serve & run
 	return s.server.Start()
-	// TODO: return error?
 }
 
 // Stops the server.

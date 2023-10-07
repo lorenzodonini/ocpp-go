@@ -31,11 +31,12 @@ func (s *NetworkTestSuite) SetupSuite() {
 	s.proxyPort = 8886
 	// Proxy listens on 8886 and upstreams to 8887 (where ocpp server is actually listening)
 	oldProxy, err := client.Proxy("ocpp")
+	s.Require().NoError(err)
 	if oldProxy != nil {
 		oldProxy.Delete()
 	}
 	p, err := client.CreateProxy("ocpp", "localhost:8886", fmt.Sprintf("localhost:%v", serverPort))
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.proxy = p
 }
 

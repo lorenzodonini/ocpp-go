@@ -28,7 +28,6 @@ type Server struct {
 
 // Creates a new simple websocket server (the websockets are not secured).
 func NewServer() *Server {
-	// router := mux.NewRouter()
 	return &Server{
 		timeoutConfig: NewServerTimeoutConfig(),
 		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
