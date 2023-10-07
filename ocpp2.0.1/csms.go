@@ -2,7 +2,7 @@ package ocpp2
 
 import (
 	"fmt"
-	"net"
+	"net/http"
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
@@ -810,11 +810,11 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 	return cs.callbackQueue.TryQueue(clientId, send, callback)
 }
 
-func (cs *csms) Start(ln net.Listener, listenPath string) {
+func (cs *csms) Start() http.HandlerFunc {
 	// Overriding some protocol-specific values in the lower layers globally
 	ocppj.FormationViolation = ocppj.FormatViolationV2
 	// Start server
-	cs.server.Start(ln, listenPath)
+	return cs.server.Start()
 }
 
 func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, err error, requestId string) {

@@ -2,7 +2,7 @@ package ocppj
 
 import (
 	"fmt"
-	"net"
+	"net/http"
 
 	"gopkg.in/go-playground/validator.v9"
 
@@ -128,7 +128,7 @@ func (s *Server) SetDisconnectedClientHandler(handler ClientHandler) {
 // Invoke this function in a separate goroutine, to perform other operations on the main thread.
 //
 // An error may be returned, if the websocket server couldn't be started.
-func (s *Server) Start(ln net.Listener, listenPath string) {
+func (s *Server) Start() http.HandlerFunc {
 	// Set internal message handler
 	s.server.SetCheckClientHandler(s.checkClientHandler)
 	s.server.SetNewClientHandler(s.onClientConnected)
@@ -136,7 +136,7 @@ func (s *Server) Start(ln net.Listener, listenPath string) {
 	s.server.SetMessageHandler(s.ocppMessageHandler)
 	s.dispatcher.Start()
 	// Serve & run
-	s.server.Start(ln, listenPath)
+	return s.server.Start()
 	// TODO: return error?
 }
 

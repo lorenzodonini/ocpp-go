@@ -1,16 +1,12 @@
 package ws
 
 import (
-	"context"
-	"crypto/tls"
 	"fmt"
-	"net"
 	"net/http"
 	"path"
 	"sync"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
@@ -19,58 +15,23 @@ import (
 // Use the NewServer or NewTLSServer functions to create a new server.
 type Server struct {
 	connections         map[string]*WebSocket
-	httpServer          *http.Server
 	messageHandler      func(ws Channel, data []byte) error
 	checkClientHandler  func(id string, r *http.Request) bool
 	newClientHandler    func(ws Channel)
 	disconnectedHandler func(ws Channel)
 	basicAuthHandler    func(username string, password string) bool
-	tlsCertificatePath  string
-	tlsCertificateKey   string
 	timeoutConfig       ServerTimeoutConfig
 	upgrader            websocket.Upgrader
 	errC                chan error
 	connMutex           sync.RWMutex
-	addr                *net.TCPAddr
-	httpHandler         *mux.Router
 }
 
 // Creates a new simple websocket server (the websockets are not secured).
 func NewServer() *Server {
-	router := mux.NewRouter()
+	// router := mux.NewRouter()
 	return &Server{
-		httpServer:    &http.Server{},
 		timeoutConfig: NewServerTimeoutConfig(),
 		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
-		httpHandler:   router,
-	}
-}
-
-// NewTLSServer creates a new secure websocket server. All created websocket channels will use TLS.
-//
-// You need to pass a filepath to the server TLS certificate and key.
-//
-// It is recommended to pass a valid TLSConfig for the server to use.
-// For example to require client certificate verification:
-//
-//	tlsConfig := &tls.Config{
-//		ClientAuth: tls.RequireAndVerifyClientCert,
-//		ClientCAs: clientCAs,
-//	}
-//
-// If no tlsConfig parameter is passed, the server will by default
-// not perform any client certificate verification.
-func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.Config) *Server {
-	router := mux.NewRouter()
-	return &Server{
-		tlsCertificatePath: certificatePath,
-		tlsCertificateKey:  certificateKey,
-		httpServer: &http.Server{
-			TLSConfig: tlsConfig,
-		},
-		timeoutConfig: NewServerTimeoutConfig(),
-		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
-		httpHandler:   router,
 	}
 }
 
@@ -126,50 +87,14 @@ func (server *Server) Errors() <-chan error {
 	return server.errC
 }
 
-func (server *Server) Addr() *net.TCPAddr {
-	return server.addr
-}
-
-func (server *Server) AddHttpHandler(listenPath string, handler func(w http.ResponseWriter, r *http.Request)) {
-	server.httpHandler.HandleFunc(listenPath, handler)
-}
-
-func (server *Server) Start(ln net.Listener, listenPath string) {
+func (server *Server) Start() http.HandlerFunc {
 	server.connections = make(map[string]*WebSocket)
-	if server.httpServer == nil {
-		server.httpServer = &http.Server{}
-	}
-
-	server.AddHttpHandler(listenPath, func(w http.ResponseWriter, r *http.Request) {
-		server.wsHandler(w, r)
-	})
-	server.httpServer.Handler = server.httpHandler
-
-	server.addr = ln.Addr().(*net.TCPAddr)
-	server.httpServer.Addr = fmt.Sprintf(":%d", server.addr.Port)
-
-	log.Infof("listening on tcp network %v", server.httpServer.Addr)
-	server.httpServer.RegisterOnShutdown(server.stopConnections)
-
-	var err error
-	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
-		err = server.httpServer.ServeTLS(ln, server.tlsCertificatePath, server.tlsCertificateKey)
-	} else {
-		err = server.httpServer.Serve(ln)
-	}
-
-	if err != http.ErrServerClosed {
-		server.error(fmt.Errorf("server failed: %w", err))
-	}
+	return server.wsHandler
 }
 
 func (server *Server) Stop() {
-	log.Info("stopping websocket server")
-	err := server.httpServer.Shutdown(context.TODO())
-	if err != nil {
-		server.error(fmt.Errorf("shutdown failed: %w", err))
-	}
-
+	log.Info("stopping server")
+	server.stopConnections()
 	if server.errC != nil {
 		close(server.errC)
 		server.errC = nil

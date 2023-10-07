@@ -4,6 +4,7 @@ package ocpp2
 import (
 	"crypto/tls"
 	"net"
+	"net/http"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -383,7 +384,7 @@ type CSMS interface {
 	// The central system runs as a daemon and handles incoming charge point connections and messages.
 
 	// The function blocks forever, so it is suggested to wrap it in a goroutine, in case other functionality needs to be executed on the main program thread.
-	Start(ln net.Listener, listenPath string)
+	Start() http.HandlerFunc
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	Errors() <-chan error
 }

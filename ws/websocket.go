@@ -195,7 +195,7 @@ type WsServer interface {
 	//	...
 	//
 	// To stop a running server, call the Stop function.
-	Start(ln net.Listener, listenPath string)
+	Start() http.HandlerFunc
 	// Shuts down a running websocket server.
 	// All open channels will be forcefully closed, and the previously called Start function will return.
 	Stop()
@@ -242,9 +242,6 @@ type WsServer interface {
 	// SetCheckClientHandler sets a handler for validate incoming websocket connections, allowing to perform
 	// custom client connection checks.
 	SetCheckClientHandler(handler func(id string, r *http.Request) bool)
-	// Addr gives the address on which the server is listening, useful if, for
-	// example, the port is system-defined (set to 0).
-	Addr() *net.TCPAddr
 }
 
 // ---------------------- CLIENT ----------------------
