@@ -147,7 +147,8 @@ func (f *FIFOQueueMap) Init() {
 func (f *FIFOQueueMap) Get(clientID string) (RequestQueue, bool) {
 	f.mutex.RLock()
 	defer f.mutex.RUnlock()
-	return f.data[clientID]
+	q, ok := f.data[clientID]
+	return q, ok
 }
 
 func (f *FIFOQueueMap) GetOrCreate(clientID string) RequestQueue {
