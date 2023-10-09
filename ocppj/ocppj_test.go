@@ -644,7 +644,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidActionCall() {
 	require.Error(t, err)
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
-	assert.Equal(t, protoErr.MessageId, "") // unique id is never set after invalid type cast return
+	assert.Equal(t, protoErr.MessageId, messageId) // unique id is returned even after invalid type cast error
 	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
 	assert.Equal(t, "Invalid element 42 at 2, expected action (string)", protoErr.Description)
 }
