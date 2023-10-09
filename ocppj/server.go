@@ -2,6 +2,7 @@ package ocppj
 
 import (
 	"fmt"
+	"net/http"
 
 	"gopkg.in/go-playground/validator.v9"
 
@@ -25,11 +26,13 @@ type Server struct {
 	RequestState              ServerState
 }
 
-type ClientHandler func(client ws.Channel)
-type RequestHandler func(client ws.Channel, request ocpp.Request, requestId string, action string)
-type ResponseHandler func(client ws.Channel, response ocpp.Response, requestId string)
-type ErrorHandler func(client ws.Channel, err *ocpp.Error, details interface{})
-type InvalidMessageHook func(client ws.Channel, err *ocpp.Error, rawJson string, parsedFields []interface{}) *ocpp.Error
+type (
+	ClientHandler      func(client ws.Channel)
+	RequestHandler     func(client ws.Channel, request ocpp.Request, requestId string, action string)
+	ResponseHandler    func(client ws.Channel, response ocpp.Response, requestId string)
+	ErrorHandler       func(client ws.Channel, err *ocpp.Error, details interface{})
+	InvalidMessageHook func(client ws.Channel, err *ocpp.Error, rawJson string, parsedFields []interface{}) *ocpp.Error
+)
 
 // Creates a new Server endpoint.
 // Requires a a websocket server. Optionally a structure for queueing/dispatching requests,
@@ -125,7 +128,7 @@ func (s *Server) SetDisconnectedClientHandler(handler ClientHandler) {
 // Invoke this function in a separate goroutine, to perform other operations on the main thread.
 //
 // An error may be returned, if the websocket server couldn't be started.
-func (s *Server) Start(listenPort int, listenPath string) {
+func (s *Server) Start() http.HandlerFunc {
 	// Set internal message handler
 	s.server.SetCheckClientHandler(s.checkClientHandler)
 	s.server.SetNewClientHandler(s.onClientConnected)
@@ -133,8 +136,7 @@ func (s *Server) Start(listenPort int, listenPath string) {
 	s.server.SetMessageHandler(s.ocppMessageHandler)
 	s.dispatcher.Start()
 	// Serve & run
-	s.server.Start(listenPort, listenPath)
-	// TODO: return error?
+	return s.server.Start()
 }
 
 // Stops the server.

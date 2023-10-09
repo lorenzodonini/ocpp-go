@@ -31,11 +31,12 @@ func (s *NetworkTestSuite) SetupSuite() {
 	s.proxyPort = 8886
 	// Proxy listens on 8886 and upstreams to 8887 (where ocpp server is actually listening)
 	oldProxy, err := client.Proxy("ocpp")
+	s.Require().NoError(err)
 	if oldProxy != nil {
 		oldProxy.Delete()
 	}
 	p, err := client.CreateProxy("ocpp", "localhost:8886", fmt.Sprintf("localhost:%v", serverPort))
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.proxy = p
 }
 
@@ -59,7 +60,9 @@ func (s *NetworkTestSuite) TestClientConnectionFailed() {
 	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.Fail(t, "should not accept new clients")
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	// Start server
+	go httpServer(serverPort, s.server).ListenAndServe()
 	time.Sleep(500 * time.Millisecond)
 
 	// Test client
@@ -92,7 +95,9 @@ func (s *NetworkTestSuite) TestClientConnectionFailedTimeout() {
 	s.server.SetNewClientHandler(func(ws Channel) {
 		assert.Fail(t, "should not accept new clients")
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	// Start server
+	go httpServer(serverPort, s.server).ListenAndServe()
 	time.Sleep(500 * time.Millisecond)
 
 	// Test client
@@ -135,7 +140,9 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- true
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	// Start server
+	go httpServer(serverPort, s.server).ListenAndServe()
 	time.Sleep(500 * time.Millisecond)
 
 	// Test bench
@@ -209,7 +216,9 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 		assert.Fail(t, "unexpected message received")
 		return fmt.Errorf("unexpected message received")
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	// Start server
+	go httpServer(serverPort, s.server).ListenAndServe()
 	time.Sleep(500 * time.Millisecond)
 
 	// Test client
@@ -277,7 +286,9 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 		assert.Fail(t, "unexpected message received")
 		return fmt.Errorf("unexpected message received")
 	})
-	go s.server.Start(serverPort, serverPath)
+
+	// Start server
+	go httpServer(serverPort, s.server).ListenAndServe()
 	time.Sleep(500 * time.Millisecond)
 
 	// Test client
@@ -327,8 +338,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	s.server.Stop()
 }
 
-//TODO: test error channel from websocket
-
+// TODO: test error channel from websocket
 func TestNetworkErrors(t *testing.T) {
 	suite.Run(t, new(NetworkTestSuite))
 }
