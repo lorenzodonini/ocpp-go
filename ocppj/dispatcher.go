@@ -172,25 +172,27 @@ func (d *DefaultClientDispatcher) SendRequest(req RequestBundle) error {
 
 func (d *DefaultClientDispatcher) messagePump() {
 	rdy := true // Ready to transmit at the beginning
-	for {
-		// for d.requestChannel
-		// must RUnlock before any break/continue/return
+
+	reqChan := func() chan bool {
 		d.mutex.RLock()
+		defer d.mutex.RUnlock()
+		return d.requestChannel
+	}
+
+	for {
 		select {
-		case _, ok := <-d.requestChannel:
+		case _, ok := <-reqChan():
 			// New request was posted
 			if !ok {
 				d.requestQueue.Init()
 				d.mutex.Lock()
 				d.requestChannel = nil
 				d.mutex.Unlock()
-				d.mutex.RUnlock()
 				return
 			}
 		case _, ok := <-d.timer.C:
 			// Timeout elapsed
 			if !ok {
-				d.mutex.RUnlock()
 				continue
 			}
 			if d.pendingRequestState.HasPendingRequest() {
@@ -210,6 +212,7 @@ func (d *DefaultClientDispatcher) messagePump() {
 		}
 
 		// Check if dispatcher is paused
+		d.mutex.RLock()
 		paused := d.paused
 		d.mutex.RUnlock()
 		if paused {
@@ -480,11 +483,15 @@ func (d *DefaultServerDispatcher) messagePump() {
 	var clientCtx clientTimeoutContext
 	var clientQueue RequestQueue
 	clientContextMap := map[string]clientTimeoutContext{} // Empty at the beginning
+
+	reqChan := func() chan string {
+		d.mutex.RLock()
+		defer d.mutex.RUnlock()
+		return d.requestChannel
+	}
+
 	// Dispatcher Loop
 	for {
-		// for d.requestChannel
-		// must RUnlock before any break/continue/return
-		d.mutex.RLock()
 		select {
 		case <-d.stoppedC:
 			// Server was stopped
@@ -492,7 +499,7 @@ func (d *DefaultServerDispatcher) messagePump() {
 			log.Info("stopped processing requests")
 			d.mutex.RUnlock()
 			return
-		case clientID = <-d.requestChannel:
+		case clientID = <-reqChan():
 			// Check whether there is a request queue for the specified client
 			clientQueue, ok = d.queueMap.Get(clientID)
 			if !ok {
@@ -503,7 +510,6 @@ func (d *DefaultServerDispatcher) messagePump() {
 				if clientCtx.ctx != nil {
 					clientCtx.cancel()
 				}
-				d.mutex.RUnlock()
 				continue
 			}
 			// Check whether we can transmit to client
@@ -518,7 +524,6 @@ func (d *DefaultServerDispatcher) messagePump() {
 		case clientID, ok = <-d.timerC:
 			// Timeout elapsed
 			if !ok {
-				d.mutex.RUnlock()
 				continue
 			}
 			// Canceling timeout context
@@ -554,7 +559,6 @@ func (d *DefaultServerDispatcher) messagePump() {
 			}
 			log.Debugf("%v ready to transmit again", clientID)
 		}
-		d.mutex.RUnlock()
 
 		// Only dispatch request if able to send and request queue isn't empty
 		if rdy && clientQueue != nil && !clientQueue.IsEmpty() {
