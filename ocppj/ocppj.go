@@ -201,7 +201,7 @@ const (
 func IsErrorCodeValid(fl validator.FieldLevel) bool {
 	code := ocpp.ErrorCode(fl.Field().String())
 	switch code {
-	case NotImplemented, NotSupported, InternalError, MessageTypeNotSupported, ProtocolError, SecurityError, FormationViolation, PropertyConstraintViolation, OccurrenceConstraintViolation, TypeConstraintViolation, GenericError:
+	case NotImplemented, NotSupported, InternalError, MessageTypeNotSupported, ProtocolError, SecurityError, FormatViolationV16, FormatViolationV2, PropertyConstraintViolation, OccurrenceConstraintViolation, TypeConstraintViolation, GenericError:
 		return true
 	}
 	return false
