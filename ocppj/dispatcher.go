@@ -497,7 +497,6 @@ func (d *DefaultServerDispatcher) messagePump() {
 			// Server was stopped
 			d.queueMap.Init()
 			log.Info("stopped processing requests")
-			d.mutex.RUnlock()
 			return
 		case clientID = <-reqChan():
 			// Check whether there is a request queue for the specified client
