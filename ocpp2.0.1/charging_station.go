@@ -594,7 +594,7 @@ func (cs *chargingStation) sendResponse(response ocpp.Response, err error, reque
 
 func (cs *chargingStation) Start(csmsUrl string) error {
 	// Overriding some protocol-specific values in the lower layers globally
-	ocppj.FormationViolation = ocppj.FormatViolationV2
+	cs.client.Endpoint.FormatError = ocppj.FormatViolationV2
 	// Start client
 	cs.stopC = make(chan struct{}, 1)
 	err := cs.client.Start(csmsUrl)

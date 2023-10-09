@@ -334,7 +334,7 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, reque
 
 func (cp *chargePoint) Start(centralSystemUrl string) error {
 	// Overriding some protocol-specific values in the lower layers globally
-	ocppj.FormationViolation = ocppj.FormatViolationV16
+	cp.client.Endpoint.FormatError = ocppj.FormatViolationV16
 	// Start client
 	cp.stopC = make(chan struct{}, 1)
 	err := cp.client.Start(centralSystemUrl)
