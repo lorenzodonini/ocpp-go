@@ -98,8 +98,10 @@ type DefaultClientDispatcher struct {
 	timeout             time.Duration
 }
 
-const defaultTimeoutTick = 24 * time.Hour
-const defaultMessageTimeout = 30 * time.Second
+const (
+	defaultTimeoutTick    = 24 * time.Hour
+	defaultMessageTimeout = 30 * time.Second
+)
 
 // NewDefaultClientDispatcher creates a new DefaultClientDispatcher struct.
 func NewDefaultClientDispatcher(queue RequestQueue) *DefaultClientDispatcher {
@@ -121,20 +123,22 @@ func (d *DefaultClientDispatcher) SetTimeout(timeout time.Duration) {
 }
 
 func (d *DefaultClientDispatcher) Start() {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 	d.requestChannel = make(chan bool, 1)
 	d.timer = time.NewTimer(defaultTimeoutTick) // Default to 24 hours tick
 	go d.messagePump()
 }
 
 func (d *DefaultClientDispatcher) IsRunning() bool {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 	return d.requestChannel != nil
 }
 
 func (d *DefaultClientDispatcher) IsPaused() bool {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 	return d.paused
 }
 
@@ -160,19 +164,24 @@ func (d *DefaultClientDispatcher) SendRequest(req RequestBundle) error {
 	if err := d.requestQueue.Push(req); err != nil {
 		return err
 	}
+	d.mutex.RLock()
 	d.requestChannel <- true
+	d.mutex.RUnlock()
 	return nil
 }
 
 func (d *DefaultClientDispatcher) messagePump() {
 	rdy := true // Ready to transmit at the beginning
 	for {
+		d.mutex.RLock() // for d.requestChannel
 		select {
 		case _, ok := <-d.requestChannel:
 			// New request was posted
 			if !ok {
 				d.requestQueue.Init()
+				d.mutex.Lock()
 				d.requestChannel = nil
+				d.mutex.Unlock()
 				return
 			}
 		case _, ok := <-d.timer.C:
@@ -195,6 +204,8 @@ func (d *DefaultClientDispatcher) messagePump() {
 		case rdy = <-d.readyForDispatch:
 			// Ready flag set, keep going
 		}
+		d.mutex.RUnlock()
+
 		// Check if dispatcher is paused
 		d.mutex.Lock()
 		paused := d.paused
@@ -225,7 +236,7 @@ func (d *DefaultClientDispatcher) dispatchNextRequest() {
 	// Attempt to send over network
 	err := d.network.Write(jsonMessage)
 	if err != nil {
-		//TODO: handle retransmission instead of skipping request altogether
+		// TODO: handle retransmission instead of skipping request altogether
 		d.CompleteRequest(bundle.Call.GetUniqueId())
 		if d.onRequestCancel != nil {
 			d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Payload,
@@ -422,7 +433,9 @@ func (d *DefaultServerDispatcher) CreateClient(clientID string) {
 func (d *DefaultServerDispatcher) DeleteClient(clientID string) {
 	d.queueMap.Remove(clientID)
 	if d.IsRunning() {
+		d.mutex.RLock()
 		d.requestChannel <- clientID
+		d.mutex.RUnlock()
 	}
 }
 
@@ -449,7 +462,9 @@ func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle
 	if err := q.Push(req); err != nil {
 		return err
 	}
+	d.mutex.RLock()
 	d.requestChannel <- clientID
+	d.mutex.RUnlock()
 	return nil
 }
 
@@ -464,6 +479,7 @@ func (d *DefaultServerDispatcher) messagePump() {
 	clientContextMap := map[string]clientTimeoutContext{} // Empty at the beginning
 	// Dispatcher Loop
 	for {
+		d.mutex.RLock() // for d.requestChannel
 		select {
 		case <-d.stoppedC:
 			// Server was stopped
@@ -530,6 +546,8 @@ func (d *DefaultServerDispatcher) messagePump() {
 			}
 			log.Debugf("%v ready to transmit again", clientID)
 		}
+		d.mutex.RUnlock()
+
 		// Only dispatch request if able to send and request queue isn't empty
 		if rdy && clientQueue != nil && !clientQueue.IsEmpty() {
 			// Send request & set new context
@@ -559,7 +577,7 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) (clientCt
 	err := d.network.Write(clientID, jsonMessage)
 	if err != nil {
 		log.Errorf("error while sending message: %v", err)
-		//TODO: handle retransmission instead of removing pending request
+		// TODO: handle retransmission instead of removing pending request
 		d.CompleteRequest(clientID, callID)
 		if d.onRequestCancel != nil {
 			d.onRequestCancel(clientID, bundle.Call.UniqueId, bundle.Call.Payload,
