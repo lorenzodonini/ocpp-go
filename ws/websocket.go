@@ -376,8 +376,10 @@ func (server *Server) AddHttpHandler(listenPath string, handler func(w http.Resp
 }
 
 func (server *Server) Start(port int, listenPath string) {
-
+	server.connMutex.Lock()
 	server.connections = make(map[string]*WebSocket)
+	server.connMutex.Unlock()
+
 	if server.httpServer == nil {
 		server.httpServer = &http.Server{}
 	}
@@ -440,16 +442,16 @@ func (server *Server) StopConnection(id string, closeError websocket.CloseError)
 }
 
 func (server *Server) stopConnections() {
-	server.connMutex.Lock()
-	defer server.connMutex.Unlock()
+	server.connMutex.RLock()
+	defer server.connMutex.RUnlock()
 	for _, conn := range server.connections {
 		conn.closeC <- websocket.CloseError{Code: websocket.CloseNormalClosure, Text: ""}
 	}
 }
 
 func (server *Server) Write(webSocketId string, data []byte) error {
-	server.connMutex.Lock()
-	defer server.connMutex.Unlock()
+	server.connMutex.RLock()
+	defer server.connMutex.RUnlock()
 	ws, ok := server.connections[webSocketId]
 	if !ok {
 		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
@@ -1082,7 +1084,7 @@ func (client *Client) Start(urlStr string) error {
 	log.Infof("connected to server as %s", id)
 	client.reconnectC = make(chan struct{})
 	client.setConnected(true)
-	//Start reader and write routine
+	// Start reader and write routine
 	go client.writePump()
 	go client.readPump()
 	return nil
