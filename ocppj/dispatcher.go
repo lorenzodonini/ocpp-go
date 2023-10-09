@@ -402,11 +402,11 @@ func NewDefaultServerDispatcher(queueMap ServerQueueMap) *DefaultServerDispatche
 
 func (d *DefaultServerDispatcher) Start() {
 	d.mutex.Lock()
+	defer d.mutex.Unlock()
 	d.requestChannel = make(chan string, 20)
 	d.timerC = make(chan string, 10)
 	d.stoppedC = make(chan struct{}, 1)
 	d.running = true
-	d.mutex.Unlock()
 	go d.messagePump()
 }
 
