@@ -670,8 +670,8 @@ type OcppV16TestSuite struct {
 	ocppjCentralSystem *ocppj.Server
 	mockWsServer       *MockWebsocketServer
 	mockWsClient       *MockWebsocketClient
-	chargePoint        ocpp16.ChargePoint
-	centralSystem      ocpp16.CentralSystem
+	chargePoint        ocpp16.ChargePoint   // ocpp16.chargePoint
+	centralSystem      ocpp16.CentralSystem // ocpp16.centralSystem
 	messageIdGenerator TestRandomIdGenerator
 	clientDispatcher   ocppj.ClientDispatcher
 	serverDispatcher   ocppj.ServerDispatcher
@@ -720,8 +720,7 @@ func (suite *OcppV16TestSuite) TestIsConnected() {
 	assert.False(t, suite.chargePoint.IsConnected())
 }
 
-//TODO: implement generic protocol tests
-
+// TODO: implement generic protocol tests
 func TestOcpp16Protocol(t *testing.T) {
 	suite.Run(t, new(OcppV16TestSuite))
 }
