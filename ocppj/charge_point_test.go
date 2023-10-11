@@ -122,7 +122,7 @@ func (suite *OcppJTestSuite) TestChargePointInvalidMessageHook() {
 	serializedPayload, err := json.Marshal(mockPayload)
 	require.NoError(t, err)
 	invalidMessage := fmt.Sprintf("[2,\"%v\",\"%s\",%v]", mockID, MockFeatureName, string(serializedPayload))
-	expectedError := fmt.Sprintf("[4,\"%v\",\"%v\",\"%v\",{}]", mockID, ocppj.FormationViolation, "json: cannot unmarshal number into Go struct field MockRequest.mockValue of type string")
+	expectedError := fmt.Sprintf("[4,\"%v\",\"%v\",\"%v\",{}]", mockID, suite.chargePoint.Endpoint.FormatError, "json: cannot unmarshal number into Go struct field MockRequest.mockValue of type string")
 	writeHook := suite.mockClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		data := args.Get(0).([]byte)
 		assert.Equal(t, expectedError, string(data))
@@ -142,7 +142,7 @@ func (suite *OcppJTestSuite) TestChargePointInvalidMessageHook() {
 	err = suite.mockClient.MessageHandler([]byte(invalidMessage))
 	ocppErr, ok := err.(*ocpp.Error)
 	require.True(t, ok)
-	assert.Equal(t, ocppj.FormationViolation, ocppErr.Code)
+	assert.Equal(t, suite.chargePoint.Endpoint.FormatError, ocppErr.Code)
 	// Setup hook 2
 	mockError := ocpp.NewError(ocppj.InternalError, "custom error", mockID)
 	expectedError = fmt.Sprintf("[4,\"%v\",\"%v\",\"%v\",{}]", mockError.MessageId, mockError.Code, mockError.Description)
@@ -193,7 +193,7 @@ func (suite *OcppJTestSuite) TestChargePointSendRequestFailed() {
 	_ = suite.chargePoint.Start("someUrl")
 	mockRequest := newMockRequest("mockValue")
 	err := suite.chargePoint.SendRequest(mockRequest)
-	//TODO: currently the network error is not returned by SendRequest, but is only generated internally
+	// TODO: currently the network error is not returned by SendRequest, but is only generated internally
 	assert.Nil(t, err)
 	// Assert that pending request was removed
 	time.Sleep(500 * time.Millisecond)
@@ -472,7 +472,7 @@ func (suite *OcppJTestSuite) TestClientEnqueueMultipleRequests() {
 	require.False(t, suite.clientRequestQueue.IsEmpty())
 	assert.Equal(t, messagesToQueue, suite.clientRequestQueue.Size())
 	// Analyze enqueued bundle
-	var i = 0
+	var i int
 	for !suite.clientRequestQueue.IsEmpty() {
 		popped := suite.clientRequestQueue.Pop()
 		require.NotNil(t, popped)

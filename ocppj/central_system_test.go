@@ -117,7 +117,7 @@ func (suite *OcppJTestSuite) TestCentralSystemInvalidMessageHook() {
 	serializedPayload, err := json.Marshal(mockPayload)
 	require.NoError(t, err)
 	invalidMessage := fmt.Sprintf("[2,\"%v\",\"%s\",%v]", mockID, MockFeatureName, string(serializedPayload))
-	expectedError := fmt.Sprintf("[4,\"%v\",\"%v\",\"%v\",{}]", mockID, ocppj.FormationViolation, "json: cannot unmarshal number into Go struct field MockRequest.mockValue of type string")
+	expectedError := fmt.Sprintf("[4,\"%v\",\"%v\",\"%v\",{}]", mockID, suite.centralSystem.Endpoint.FormatError, "json: cannot unmarshal number into Go struct field MockRequest.mockValue of type string")
 	writeHook := suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		data := args.Get(1).([]byte)
 		assert.Equal(t, expectedError, string(data))
@@ -138,7 +138,7 @@ func (suite *OcppJTestSuite) TestCentralSystemInvalidMessageHook() {
 	err = suite.mockServer.MessageHandler(mockChargePoint, []byte(invalidMessage))
 	ocppErr, ok := err.(*ocpp.Error)
 	require.True(t, ok)
-	assert.Equal(t, ocppj.FormationViolation, ocppErr.Code)
+	assert.Equal(t, suite.centralSystem.Endpoint.FormatError, ocppErr.Code)
 	// Setup hook 2
 	mockError := ocpp.NewError(ocppj.InternalError, "custom error", mockID)
 	expectedError = fmt.Sprintf("[4,\"%v\",\"%v\",\"%v\",{}]", mockError.MessageId, mockError.Code, mockError.Description)
@@ -197,7 +197,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockRequest := newMockRequest("mockValue")
 	err := suite.centralSystem.SendRequest(mockChargePointId, mockRequest)
-	//TODO: currently the network error is not returned by SendRequest, but is only generated internally
+	// TODO: currently the network error is not returned by SendRequest, but is only generated internally
 	assert.Nil(t, err)
 	// Assert that pending request was removed
 	time.Sleep(500 * time.Millisecond)
@@ -578,7 +578,7 @@ func (suite *OcppJTestSuite) TestEnqueueMultipleRequests() {
 	assert.False(t, q.IsEmpty())
 	assert.Equal(t, messagesToQueue, q.Size())
 	// Analyze enqueued bundle
-	var i = 0
+	var i int
 	for !q.IsEmpty() {
 		popped := q.Pop()
 		require.NotNil(t, popped)

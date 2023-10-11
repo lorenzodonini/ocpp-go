@@ -29,7 +29,6 @@ type MockWebSocket struct {
 
 func (websocket MockWebSocket) ID() string {
 	return websocket.id
-
 }
 
 func (websocket MockWebSocket) RemoteAddr() net.Addr {
@@ -405,8 +404,6 @@ func (suite *OcppJTestSuite) TestGetProfileForFeature() {
 	assert.Equal(t, "mock", profile.Name)
 }
 
-//func (suite *OcppJTestSuite) TestAddFeature
-
 func (suite *OcppJTestSuite) TestGetProfileForInvalidFeature() {
 	t := suite.T()
 	profile, ok := suite.chargePoint.GetProfileForFeature("test")
@@ -535,7 +532,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidLength() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, suite.chargePoint.Endpoint.FormatError, protoErr.Code)
 	assert.Equal(t, "Invalid message. Expected array length >= 3", protoErr.Description)
 }
 
@@ -553,7 +550,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidTypeId() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, suite.chargePoint.Endpoint.FormatError, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", invalidTypeId), protoErr.Description)
 }
 
@@ -570,7 +567,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidMessageId() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, suite.chargePoint.Endpoint.FormatError, protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", invalidMessageId), protoErr.Description)
 }
 
@@ -625,7 +622,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, suite.chargePoint.Endpoint.FormatError, protoErr.Code)
 	assert.Equal(t, "Invalid Call message. Expected array length 4", protoErr.Description)
 }
 
@@ -645,7 +642,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidActionCall() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, protoErr.MessageId, messageId) // unique id is returned even after invalid type cast error
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, suite.chargePoint.Endpoint.FormatError, protoErr.Code)
 	assert.Equal(t, "Invalid element 42 at 2, expected action (string)", protoErr.Description)
 }
 
@@ -680,7 +677,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, suite.chargePoint.Endpoint.FormatError, protoErr.Code)
 	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Description)
 }
 
@@ -701,7 +698,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRawErrorCode() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, protoErr.MessageId, "") // unique id is never set after invalid type cast return
-	assert.Equal(t, ocppj.FormationViolation, protoErr.Code)
+	assert.Equal(t, suite.chargePoint.Endpoint.FormatError, protoErr.Code)
 	assert.Equal(t, "Invalid element 42 at 2, expected rawErrorCode (string)", protoErr.Description)
 }
 
@@ -787,8 +784,7 @@ func (suite *OcppJTestSuite) TestParseCall() {
 	assert.Equal(t, mockValue, mockRequest.MockValue)
 }
 
-//TODO: implement further ocpp-j protocol tests
-
+// TODO: implement further ocpp-j protocol tests
 type testLogger struct {
 	c chan string
 }
@@ -796,18 +792,23 @@ type testLogger struct {
 func (l *testLogger) Debug(args ...interface{}) {
 	l.c <- "debug"
 }
+
 func (l *testLogger) Debugf(format string, args ...interface{}) {
 	l.c <- "debugf"
 }
+
 func (l *testLogger) Info(args ...interface{}) {
 	l.c <- "info"
 }
+
 func (l *testLogger) Infof(format string, args ...interface{}) {
 	l.c <- "infof"
 }
+
 func (l *testLogger) Error(args ...interface{}) {
 	l.c <- "error"
 }
+
 func (l *testLogger) Errorf(format string, args ...interface{}) {
 	l.c <- "errorf"
 }
