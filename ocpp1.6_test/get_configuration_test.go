@@ -12,7 +12,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestGetConfigurationRequestValidation() {
 	t := suite.T()
-	var requestTable = []GenericTestEntry{
+	requestTable := []GenericTestEntry{
 		{core.GetConfigurationRequest{Key: []string{"key1", "key2"}}, true},
 		{core.GetConfigurationRequest{Key: []string{"key1", "key2", "key3", "key4", "key5", "key6"}}, true},
 		{core.GetConfigurationRequest{Key: []string{"key1", "key2", "key2"}}, false},
@@ -24,11 +24,20 @@ func (suite *OcppV16TestSuite) TestGetConfigurationRequestValidation() {
 }
 
 func (suite *OcppV16TestSuite) TestGetConfigurationConfirmationValidation() {
+	type ConfigurationKeyWrong struct {
+		Key      string  `json:"key" validate:"required,max=50"`
+		Readonly string  `json:"readonly"` // wrong type string instead of bool
+		Value    *string `json:"value,omitempty" validate:"omitempty,max=500"`
+	}
+	type GetConfigurationConfirmationWrong struct {
+		ConfigurationKey []ConfigurationKeyWrong `json:"configurationKey,omitempty" validate:"omitempty,dive"`
+	}
+
 	t := suite.T()
 	value1 := "value1"
 	value2 := "value2"
 	longValue := ">500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."
-	var confirmationTable = []GenericTestEntry{
+	confirmationTable := []GenericTestEntry{
 		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: &value1}}}, true},
 		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: &value1}, {Key: "key2", Readonly: false, Value: &value2}}}, true},
 		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: &value1}}, UnknownKey: []string{"keyX"}}, true},
@@ -37,9 +46,10 @@ func (suite *OcppV16TestSuite) TestGetConfigurationConfirmationValidation() {
 		{core.GetConfigurationConfirmation{UnknownKey: []string{">50................................................"}}, false},
 		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: ">50................................................", Readonly: true, Value: &value1}}}, false},
 		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: &longValue}}}, false},
+		{GetConfigurationConfirmationWrong{ConfigurationKey: []ConfigurationKeyWrong{{Key: "key1", Readonly: "true", Value: &value1}}}, false},
 		//{ocpp16.GetConfigurationConfirmation{ConfigurationKey: []ocpp16.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}, {Key: "key1", Readonly: false, Value: "value2"}}}, false},
 	}
-	//TODO: additional test cases TBD. See get_configuration.go
+	// TODO: additional test cases TBD. See get_configuration.go
 	ExecuteGenericTestTable(t, confirmationTable)
 }
 
