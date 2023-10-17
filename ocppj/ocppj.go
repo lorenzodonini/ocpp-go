@@ -393,7 +393,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		action, ok := arr[2].(string)
 		if !ok {
-			return nil, ocpp.NewError(endpoint.FormatError, fmt.Sprintf("Invalid element %v at 2, expected action (string)", arr[2]), "")
+			return nil, ocpp.NewError(endpoint.FormatError, fmt.Sprintf("Invalid element %v at 2, expected action (string)", arr[2]), uniqueId)
 		}
 
 		profile, ok := endpoint.GetProfileForFeature(action)

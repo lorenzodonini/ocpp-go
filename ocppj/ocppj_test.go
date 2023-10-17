@@ -363,6 +363,7 @@ type OcppJTestSuite struct {
 }
 
 func (suite *OcppJTestSuite) SetupTest() {
+	defaultFormatError := ocppj.FormatViolationV16 // set default to version 1.6 format error *for test only
 	mockProfile := ocpp.NewProfile("mock", &MockFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
@@ -374,6 +375,8 @@ func (suite *OcppJTestSuite) SetupTest() {
 	suite.serverRequestMap = ocppj.NewFIFOQueueMap(queueCapacity)
 	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(suite.serverRequestMap)
 	suite.centralSystem = ocppj.NewServer(suite.mockServer, suite.serverDispatcher, nil, mockProfile)
+	suite.centralSystem.FormatError = defaultFormatError
+	suite.chargePoint.FormatError = defaultFormatError
 }
 
 func (suite *OcppJTestSuite) TearDownTest() {
