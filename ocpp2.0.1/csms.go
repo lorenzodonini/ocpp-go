@@ -816,6 +816,10 @@ func (cs *csms) Start(listenPort int, listenPath string) {
 	cs.server.Start(listenPort, listenPath)
 }
 
+func (cs *csms) FormatError() ocpp.ErrorCode {
+	return cs.server.Endpoint.FormatError
+}
+
 func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response

@@ -249,11 +249,13 @@ type CentralSystem interface {
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Response, error)) error
 	// Starts running the central system on the specified port and URL.
 	// The central system runs as a daemon and handles incoming charge point connections and messages.
-	//
+
 	// The function blocks forever, so it is suggested to wrap it in a goroutine, in case other functionality needs to be executed on the main program thread.
 	Start(listenPort int, listenPath string)
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	Errors() <-chan error
+	// FormatError returns a format-error error code.
+	FormatError() ocpp.ErrorCode
 }
 
 // Creates a new OCPP 1.6 central system.
