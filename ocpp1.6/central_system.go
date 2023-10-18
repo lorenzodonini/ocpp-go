@@ -410,6 +410,10 @@ func (cs *centralSystem) Start(listenPort int, listenPath string) {
 	cs.server.Start(listenPort, listenPath)
 }
 
+func (cs *centralSystem) FormatError() ocpp.ErrorCode {
+	return cs.server.Endpoint.FormatError
+}
+
 func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
