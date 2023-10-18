@@ -405,13 +405,13 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 
 func (cs *centralSystem) Start(listenPort int, listenPath string) {
 	// Overriding some protocol-specific values in the lower layers globally
-	cs.server.Endpoint.FormatError = ocppj.FormatViolationV16
+	cs.server.Endpoint.Dialect = ocpp.V16
 	// Start server
 	cs.server.Start(listenPort, listenPath)
 }
 
-func (cs *centralSystem) FormatError() ocpp.ErrorCode {
-	return cs.server.Endpoint.FormatError
+func (cs *centralSystem) Dialect() ocpp.Dialect {
+	return cs.server.Endpoint.Dialect
 }
 
 func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {

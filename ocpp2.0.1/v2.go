@@ -34,8 +34,10 @@ type ChargingStationConnection interface {
 	TLSConnectionState() *tls.ConnectionState
 }
 
-type ChargingStationValidationHandler ws.CheckClientHandler
-type ChargingStationConnectionHandler func(chargePoint ChargingStationConnection)
+type (
+	ChargingStationValidationHandler ws.CheckClientHandler
+	ChargingStationConnectionHandler func(chargePoint ChargingStationConnection)
+)
 
 // -------------------- v2.0 Charging Station --------------------
 
@@ -384,8 +386,8 @@ type CSMS interface {
 	Start(listenPort int, listenPath string)
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	Errors() <-chan error
-	// FormatError returns a format-error error code.
-	FormatError() ocpp.ErrorCode
+	// Dialect returns the endpoint dialect.
+	Dialect() ocpp.Dialect
 }
 
 // Creates a new OCPP 2.0 CSMS.
