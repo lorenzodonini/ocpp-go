@@ -117,7 +117,7 @@ func (suite *OcppJTestSuite) TestCentralSystemInvalidMessageHook() {
 	serializedPayload, err := json.Marshal(mockPayload)
 	require.NoError(t, err)
 	invalidMessage := fmt.Sprintf("[2,\"%v\",\"%s\",%v]", mockID, MockFeatureName, string(serializedPayload))
-	expectedError := fmt.Sprintf("[4,\"%v\",\"%v\",\"%v\",{}]", mockID, suite.centralSystem.Endpoint.FormatError, "json: cannot unmarshal number into Go struct field MockRequest.mockValue of type string")
+	expectedError := fmt.Sprintf("[4,\"%v\",\"%v\",\"%v\",{}]", mockID, ocppj.FormatErrorForDialect(suite.centralSystem.Endpoint.Dialect), "json: cannot unmarshal number into Go struct field MockRequest.mockValue of type string")
 	writeHook := suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		data := args.Get(1).([]byte)
 		assert.Equal(t, expectedError, string(data))
@@ -138,7 +138,7 @@ func (suite *OcppJTestSuite) TestCentralSystemInvalidMessageHook() {
 	err = suite.mockServer.MessageHandler(mockChargePoint, []byte(invalidMessage))
 	ocppErr, ok := err.(*ocpp.Error)
 	require.True(t, ok)
-	assert.Equal(t, suite.centralSystem.Endpoint.FormatError, ocppErr.Code)
+	assert.Equal(t, ocppj.FormatErrorForDialect(suite.centralSystem.Endpoint.Dialect), ocppErr.Code)
 	// Setup hook 2
 	mockError := ocpp.NewError(ocppj.InternalError, "custom error", mockID)
 	expectedError = fmt.Sprintf("[4,\"%v\",\"%v\",\"%v\",{}]", mockError.MessageId, mockError.Code, mockError.Description)

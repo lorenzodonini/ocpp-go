@@ -811,13 +811,13 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 
 func (cs *csms) Start(listenPort int, listenPath string) {
 	// Overriding some protocol-specific values in the lower layers globally
-	cs.server.Endpoint.FormatError = ocppj.FormatViolationV2
+	cs.server.Endpoint.Dialect = ocpp.V16
 	// Start server
 	cs.server.Start(listenPort, listenPath)
 }
 
-func (cs *csms) FormatError() ocpp.ErrorCode {
-	return cs.server.Endpoint.FormatError
+func (cs *csms) Dialect() ocpp.Dialect {
+	return cs.server.Endpoint.Dialect
 }
 
 func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, err error, requestId string) {

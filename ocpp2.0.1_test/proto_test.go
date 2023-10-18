@@ -162,5 +162,5 @@ func (suite *OcppV2TestSuite) TestErrorCodes() {
 	t := suite.T()
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.csms.Start(8887, "somePath")
-	assert.Equal(t, ocppj.FormatViolationV2, suite.csms.FormatError())
+	assert.Equal(t, ocppj.FormatViolationV2, ocppj.FormatErrorForDialect(suite.csms.Dialect()))
 }
