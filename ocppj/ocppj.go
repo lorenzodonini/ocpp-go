@@ -198,8 +198,12 @@ const (
 	FormatViolationV16            ocpp.ErrorCode = "FormationViolation"            // Payload for Action is syntactically incorrect or not conform the PDU structure for Action. This is only valid for OCPP 1.6
 )
 
-func FormatErrorForDialect(d ocpp.Dialect) ocpp.ErrorCode {
-	switch d {
+type dialector interface {
+	Dialect() ocpp.Dialect
+}
+
+func FormatErrorType(d dialector) ocpp.ErrorCode {
+	switch d.Dialect() {
 	case ocpp.V16:
 		return FormatViolationV16
 	case ocpp.V2:
@@ -315,8 +319,18 @@ func jsonMarshal(t interface{}) ([]byte, error) {
 // An OCPP-J endpoint is one of the two entities taking part in the communication.
 // The endpoint keeps state for supported OCPP profiles and current pending requests.
 type Endpoint struct {
-	Dialect  ocpp.Dialect
+	dialect  ocpp.Dialect
 	Profiles []*ocpp.Profile
+}
+
+// Sets endpoint dialect.
+func (endpoint *Endpoint) SetDialect(d ocpp.Dialect) {
+	endpoint.dialect = d
+}
+
+// Gets endpoint dialect.
+func (endpoint *Endpoint) Dialect() ocpp.Dialect {
+	return endpoint.dialect
 }
 
 // Adds support for a new profile on the endpoint.
@@ -386,25 +400,25 @@ func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (o
 func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState ClientState) (Message, error) {
 	// Checking message fields
 	if len(arr) < 3 {
-		return nil, ocpp.NewError(FormatErrorForDialect(endpoint.Dialect), "Invalid message. Expected array length >= 3", "")
+		return nil, ocpp.NewError(FormatErrorType(endpoint), "Invalid message. Expected array length >= 3", "")
 	}
 	rawTypeId, ok := arr[0].(float64)
 	if !ok {
-		return nil, ocpp.NewError(FormatErrorForDialect(endpoint.Dialect), fmt.Sprintf("Invalid element %v at 0, expected message type (int)", arr[0]), "")
+		return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 0, expected message type (int)", arr[0]), "")
 	}
 	typeId := MessageType(rawTypeId)
 	uniqueId, ok := arr[1].(string)
 	if !ok {
-		return nil, ocpp.NewError(FormatErrorForDialect(endpoint.Dialect), fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", arr[1]), uniqueId)
+		return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", arr[1]), uniqueId)
 	}
 	// Parse message
 	if typeId == CALL {
 		if len(arr) != 4 {
-			return nil, ocpp.NewError(FormatErrorForDialect(endpoint.Dialect), "Invalid Call message. Expected array length 4", uniqueId)
+			return nil, ocpp.NewError(FormatErrorType(endpoint), "Invalid Call message. Expected array length 4", uniqueId)
 		}
 		action, ok := arr[2].(string)
 		if !ok {
-			return nil, ocpp.NewError(FormatErrorForDialect(endpoint.Dialect), fmt.Sprintf("Invalid element %v at 2, expected action (string)", arr[2]), uniqueId)
+			return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 2, expected action (string)", arr[2]), uniqueId)
 		}
 
 		profile, ok := endpoint.GetProfileForFeature(action)
@@ -413,7 +427,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		request, err := profile.ParseRequest(action, arr[3], parseRawJsonRequest)
 		if err != nil {
-			return nil, ocpp.NewError(FormatErrorForDialect(endpoint.Dialect), err.Error(), uniqueId)
+			return nil, ocpp.NewError(FormatErrorType(endpoint), err.Error(), uniqueId)
 		}
 		call := Call{
 			MessageTypeId: CALL,
@@ -435,7 +449,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		profile, _ := endpoint.GetProfileForFeature(request.GetFeatureName())
 		confirmation, err := profile.ParseResponse(request.GetFeatureName(), arr[2], parseRawJsonConfirmation)
 		if err != nil {
-			return nil, ocpp.NewError(FormatErrorForDialect(endpoint.Dialect), err.Error(), uniqueId)
+			return nil, ocpp.NewError(FormatErrorType(endpoint), err.Error(), uniqueId)
 		}
 		callResult := CallResult{
 			MessageTypeId: CALL_RESULT,
@@ -454,7 +468,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			return nil, nil
 		}
 		if len(arr) < 4 {
-			return nil, ocpp.NewError(FormatErrorForDialect(endpoint.Dialect), "Invalid Call Error message. Expected array length >= 4", uniqueId)
+			return nil, ocpp.NewError(FormatErrorType(endpoint), "Invalid Call Error message. Expected array length >= 4", uniqueId)
 		}
 		var details interface{}
 		if len(arr) > 4 {
@@ -462,7 +476,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		rawErrorCode, ok := arr[2].(string)
 		if !ok {
-			return nil, ocpp.NewError(FormatErrorForDialect(endpoint.Dialect), fmt.Sprintf("Invalid element %v at 2, expected rawErrorCode (string)", arr[2]), rawErrorCode)
+			return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 2, expected rawErrorCode (string)", arr[2]), rawErrorCode)
 		}
 		errorCode := ocpp.ErrorCode(rawErrorCode)
 		errorDescription := ""
