@@ -363,7 +363,6 @@ type OcppJTestSuite struct {
 }
 
 func (suite *OcppJTestSuite) SetupTest() {
-	defaultDialect := ocpp.V16 // set default to version 1.6 format error *for test only
 	mockProfile := ocpp.NewProfile("mock", &MockFeature{})
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
@@ -375,8 +374,9 @@ func (suite *OcppJTestSuite) SetupTest() {
 	suite.serverRequestMap = ocppj.NewFIFOQueueMap(queueCapacity)
 	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(suite.serverRequestMap)
 	suite.centralSystem = ocppj.NewServer(suite.mockServer, suite.serverDispatcher, nil, mockProfile)
-	suite.centralSystem.Dialect = defaultDialect
-	suite.chargePoint.Dialect = defaultDialect
+	defaultDialect := ocpp.V16 // set default to version 1.6 format error *for test only
+	suite.centralSystem.SetDialect(defaultDialect)
+	suite.chargePoint.SetDialect(defaultDialect)
 }
 
 func (suite *OcppJTestSuite) TearDownTest() {
@@ -535,7 +535,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidLength() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorForDialect(suite.chargePoint.Endpoint.Dialect), protoErr.Code)
+	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
 	assert.Equal(t, "Invalid message. Expected array length >= 3", protoErr.Description)
 }
 
@@ -553,7 +553,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidTypeId() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorForDialect(suite.chargePoint.Endpoint.Dialect), protoErr.Code)
+	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", invalidTypeId), protoErr.Description)
 }
 
@@ -570,7 +570,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidMessageId() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorForDialect(suite.chargePoint.Endpoint.Dialect), protoErr.Code)
+	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
 	assert.Equal(t, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", invalidMessageId), protoErr.Description)
 }
 
@@ -625,7 +625,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorForDialect(suite.chargePoint.Endpoint.Dialect), protoErr.Code)
+	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
 	assert.Equal(t, "Invalid Call message. Expected array length 4", protoErr.Description)
 }
 
@@ -645,7 +645,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidActionCall() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, protoErr.MessageId, messageId) // unique id is returned even after invalid type cast error
-	assert.Equal(t, ocppj.FormatErrorForDialect(suite.chargePoint.Endpoint.Dialect), protoErr.Code)
+	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
 	assert.Equal(t, "Invalid element 42 at 2, expected action (string)", protoErr.Description)
 }
 
@@ -680,7 +680,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorForDialect(suite.chargePoint.Endpoint.Dialect), protoErr.Code)
+	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
 	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Description)
 }
 
@@ -701,7 +701,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRawErrorCode() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, protoErr.MessageId, "") // unique id is never set after invalid type cast return
-	assert.Equal(t, ocppj.FormatErrorForDialect(suite.chargePoint.Endpoint.Dialect), protoErr.Code)
+	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
 	assert.Equal(t, "Invalid element 42 at 2, expected rawErrorCode (string)", protoErr.Description)
 }
 
