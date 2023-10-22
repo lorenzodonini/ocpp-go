@@ -392,8 +392,6 @@ type CSMS interface {
 	Start(listenPort int, listenPath string)
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	Errors() <-chan error
-	// Dialect returns the endpoint dialect.
-	Dialect() ocpp.Dialect
 }
 
 // Creates a new OCPP 2.0 CSMS.
