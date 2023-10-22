@@ -333,8 +333,6 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, reque
 }
 
 func (cp *chargePoint) Start(centralSystemUrl string) error {
-	// Overriding some protocol-specific values in the lower layers globally
-	cp.client.Endpoint.SetDialect(ocpp.V16)
 	// Start client
 	cp.stopC = make(chan struct{}, 1)
 	err := cp.client.Start(centralSystemUrl)
