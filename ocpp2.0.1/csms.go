@@ -53,6 +53,7 @@ func newCSMS(server *ocppj.Server) csms {
 	if server == nil {
 		panic("server must not be nil")
 	}
+	server.SetDialect(ocpp.V2)
 	return csms{
 		server:        server,
 		callbackQueue: callbackqueue.New(),
@@ -810,8 +811,6 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 }
 
 func (cs *csms) Start(listenPort int, listenPath string) {
-	// Overriding some protocol-specific values in the lower layers globally
-	cs.server.Endpoint.SetDialect(ocpp.V2)
 	// Start server
 	cs.server.Start(listenPort, listenPath)
 }
