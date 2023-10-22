@@ -206,16 +206,22 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) C
 		client = ws.NewClient()
 	}
 	client.SetRequestedSubProtocol(types.V201Subprotocol)
-	cs := chargingStation{responseHandler: make(chan ocpp.Response, 1), errorHandler: make(chan error, 1), callbacks: callbackqueue.New()}
 
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
 		endpoint = ocppj.NewClient(id, client, dispatcher, nil, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
 	}
+	endpoint.SetDialect(ocpp.V2)
+
+	cs := chargingStation{
+		client:          endpoint,
+		responseHandler: make(chan ocpp.Response, 1),
+		errorHandler:    make(chan error, 1),
+		callbacks:       callbackqueue.New(),
+	}
 
 	// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
 	endpoint.SetOnRequestCanceled(cs.onRequestTimeout)
-	cs.client = endpoint
 
 	cs.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
 		cs.responseHandler <- confirmation
