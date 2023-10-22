@@ -670,8 +670,8 @@ type OcppV16TestSuite struct {
 	ocppjCentralSystem *ocppj.Server
 	mockWsServer       *MockWebsocketServer
 	mockWsClient       *MockWebsocketClient
-	chargePoint        ocpp16.ChargePoint   // ocpp16.chargePoint
-	centralSystem      ocpp16.CentralSystem // ocpp16.centralSystem
+	chargePoint        ocpp16.ChargePoint
+	centralSystem      ocpp16.CentralSystem
 	messageIdGenerator TestRandomIdGenerator
 	clientDispatcher   ocppj.ClientDispatcher
 	serverDispatcher   ocppj.ServerDispatcher
