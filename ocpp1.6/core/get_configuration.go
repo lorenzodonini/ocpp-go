@@ -2,17 +2,27 @@ package core
 
 import (
 	"reflect"
+	"strings"
 )
 
 // -------------------- Get Configuration (CS -> CP) --------------------
 
 const GetConfigurationFeatureName = "GetConfiguration"
 
+// Be more lenient about boolean values
+type BooleanOrString bool
+
+func (bit *BooleanOrString) UnmarshalJSON(data []byte) error {
+	asString := strings.Trim(string(data), `"`)
+	*bit = BooleanOrString(asString == "true")
+	return nil
+}
+
 // Contains information about a specific configuration key. It is returned in GetConfigurationConfirmation
 type ConfigurationKey struct {
-	Key      string  `json:"key" validate:"required,max=50"`
-	Readonly bool    `json:"readonly"`
-	Value    *string `json:"value,omitempty" validate:"omitempty,max=500"`
+	Key      string          `json:"key" validate:"required,max=50"`
+	Readonly BooleanOrString `json:"readonly"`
+	Value    *string         `json:"value,omitempty" validate:"omitempty,max=500"`
 }
 
 // The field definition of the GetConfiguration request payload sent by the Central System to the Charge Point.
