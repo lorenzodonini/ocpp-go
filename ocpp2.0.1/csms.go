@@ -815,10 +815,6 @@ func (cs *csms) Start(listenPort int, listenPath string) {
 	cs.server.Start(listenPort, listenPath)
 }
 
-func (cs *csms) Dialect() ocpp.Dialect {
-	return cs.server.Endpoint.Dialect()
-}
-
 func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response

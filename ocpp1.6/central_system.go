@@ -409,10 +409,6 @@ func (cs *centralSystem) Start(listenPort int, listenPath string) {
 	cs.server.Start(listenPort, listenPath)
 }
 
-func (cs *centralSystem) Dialect() ocpp.Dialect {
-	return cs.server.Endpoint.Dialect()
-}
-
 func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
