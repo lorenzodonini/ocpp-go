@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -1141,6 +1142,7 @@ func (suite *OcppV2TestSuite) SetupTest() {
 		return defaultMessageId
 	}}
 	ocppj.SetMessageIdGenerator(suite.messageIdGenerator.generateId)
+	types.DateTimeFormat = time.RFC3339
 }
 
 func (suite *OcppV2TestSuite) TestIsConnected() {
