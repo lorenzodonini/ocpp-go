@@ -24,6 +24,11 @@ func NewDateTime(time time.Time) *DateTime {
 	return &DateTime{Time: time}
 }
 
+// Creates a new DateTime struct, containing a time.Now() value.
+func Now() *DateTime {
+	return &DateTime{Time: time.Now()}
+}
+
 func null(b []byte) bool {
 	if len(b) != 4 {
 		return false
