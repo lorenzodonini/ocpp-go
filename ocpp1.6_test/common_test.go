@@ -176,3 +176,9 @@ func (suite *OcppV16TestSuite) TestMarshalDateTime() {
 		suite.Equal(dt.ExpectedFormattedString, formatted)
 	}
 }
+
+func (suite *OcppV16TestSuite) TestNowDateTime() {
+	now := types.Now()
+	suite.NotNil(now)
+	suite.True(time.Now().Sub(now.Time) < 1*time.Second)
+}
