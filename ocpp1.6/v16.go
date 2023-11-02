@@ -139,15 +139,22 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 		client = ws.NewClient()
 	}
 	client.SetRequestedSubProtocol(types.V16Subprotocol)
-	cp := chargePoint{confirmationHandler: make(chan ocpp.Response, 1), errorHandler: make(chan error, 1), callbacks: callbackqueue.New()}
 
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
 		endpoint = ocppj.NewClient(id, client, dispatcher, nil, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
 	}
+	endpoint.SetDialect(ocpp.V16)
+
+	cp := chargePoint{
+		client:              endpoint,
+		confirmationHandler: make(chan ocpp.Response, 1),
+		errorHandler:        make(chan error, 1),
+		callbacks:           callbackqueue.New(),
+	}
+
 	// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
 	endpoint.SetOnRequestCanceled(cp.onRequestTimeout)
-	cp.client = endpoint
 
 	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
 		cp.confirmationHandler <- confirmation
@@ -249,7 +256,7 @@ type CentralSystem interface {
 	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Response, error)) error
 	// Starts running the central system on the specified port and URL.
 	// The central system runs as a daemon and handles incoming charge point connections and messages.
-	//
+
 	// The function blocks forever, so it is suggested to wrap it in a goroutine, in case other functionality needs to be executed on the main program thread.
 	Start(listenPort int, listenPath string)
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
