@@ -1,6 +1,8 @@
 package core
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -9,20 +11,31 @@ import (
 
 const GetConfigurationFeatureName = "GetConfiguration"
 
-// Be more lenient about boolean values
-type BooleanOrString bool
+// Be more lenient about ConfigurationKey values
+func (key *ConfigurationKey) UnmarshalJSON(data []byte) error {
+	var v map[string]interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	key.Key = v["key"].(string)
+	switch v["readonly"].(type) {
+	case string:
+		readOnlyAsString := strings.Trim(string(v["readonly"].(string)), `"`)
+		key.Readonly = readOnlyAsString == "true"
+	default:
+		key.Readonly = v["readonly"].(bool)
+	}
 
-func (bit *BooleanOrString) UnmarshalJSON(data []byte) error {
-	asString := strings.Trim(string(data), `"`)
-	*bit = BooleanOrString(asString == "true")
+	valueAsString := fmt.Sprintf("%v", v["value"])
+	key.Value = &valueAsString
 	return nil
 }
 
 // Contains information about a specific configuration key. It is returned in GetConfigurationConfirmation
 type ConfigurationKey struct {
-	Key      string          `json:"key" validate:"required,max=50"`
-	Readonly BooleanOrString `json:"readonly"`
-	Value    *string         `json:"value,omitempty" validate:"omitempty,max=500"`
+	Key      string  `json:"key" validate:"required,max=50"`
+	Readonly bool    `json:"readonly"`
+	Value    *string `json:"value,omitempty" validate:"omitempty,max=500"`
 }
 
 // The field definition of the GetConfiguration request payload sent by the Central System to the Charge Point.
