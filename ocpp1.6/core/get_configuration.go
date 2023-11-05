@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 )
 
 // -------------------- Get Configuration (CS -> CP) --------------------
@@ -18,14 +17,7 @@ func (key *ConfigurationKey) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	key.Key = v["key"].(string)
-	switch v["readonly"].(type) {
-	case string:
-		readOnlyAsString := strings.Trim(string(v["readonly"].(string)), `"`)
-		key.Readonly = readOnlyAsString == "true"
-	default:
-		key.Readonly = v["readonly"].(bool)
-	}
-
+	key.Readonly = fmt.Sprintf("%v", v["readonly"]) == "true"
 	valueAsString := fmt.Sprintf("%v", v["value"])
 	key.Value = &valueAsString
 	return nil

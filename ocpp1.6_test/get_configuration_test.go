@@ -129,7 +129,7 @@ func (suite *OcppV16TestSuite) TestGetConfigurationLenientParseJSON() {
 	someValue := "someValue"
 	someOtherValue := "25"
 	resultKey1 := core.ConfigurationKey{Key: key1, Readonly: true, Value: &someValue}
-	resultKey2 := core.ConfigurationKey{Key: key2, Readonly: false, Value: &someOtherValue}
+	resultKey2 := core.ConfigurationKey{Key: key2, Readonly: true, Value: &someOtherValue}
 	resultKeys := []core.ConfigurationKey{resultKey1, resultKey2}
 	responseJson := fmt.Sprintf(`[3,"%v",{"configurationKey":[{"key":"%v","readonly":%v,"value":"%v"},{"key":"%v","readonly":"%v","value":%v}]}]`, defaultMessageId, resultKey1.Key, resultKey1.Readonly, *resultKey1.Value, resultKey2.Key, resultKey2.Readonly, *resultKey2.Value)
 	parsedData, err := ocppj.ParseJsonMessage(responseJson)
