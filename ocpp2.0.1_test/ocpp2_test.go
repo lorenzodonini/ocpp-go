@@ -909,6 +909,7 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOption
 		assert.Equal(t, options.clientId, chargingStation.ID())
 	})
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
+	suite.mockWsServer.On("Stop").Return()
 	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
 		clientId := args.String(0)
 		data := args.Get(1)
@@ -1027,6 +1028,8 @@ func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request o
 	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
+	// Stop the CSMS
+	suite.csms.Stop()
 }
 
 func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocpp.Request, requestJson string, messageId string, handlers ...interface{}) {
@@ -1067,6 +1070,8 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 	assert.Nil(t, err)
 	_, ok := <-resultChannel
 	assert.True(t, ok)
+	// Stop the CSMS
+	suite.csms.Stop()
 }
 
 type GenericTestEntry struct {
