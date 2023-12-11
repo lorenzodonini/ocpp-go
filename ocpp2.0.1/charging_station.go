@@ -603,6 +603,14 @@ func (cs *chargingStation) Start(csmsUrl string) error {
 	return err
 }
 
+func (cs *chargingStation) StartWithRetries(csmsUrl string) {
+	// Start client
+	cs.stopC = make(chan struct{}, 1)
+	cs.client.StartWithRetries(csmsUrl)
+	// Async response handler receives incoming responses/errors and triggers callbacks
+	go cs.asyncCallbackHandler()
+}
+
 func (cs *chargingStation) Stop() {
 	cs.client.Stop()
 }
