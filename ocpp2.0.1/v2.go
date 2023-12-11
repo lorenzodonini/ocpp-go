@@ -165,6 +165,13 @@ type ChargingStation interface {
 	//
 	// No auto-reconnect logic is implemented as of now, but is planned for the future.
 	Start(csmsUrl string) error
+
+	// Connects to the CSMS and starts the charging station routine, it retries if first attempt fails.
+	// The function doesn't block and returns right away, after having attempted to open a connection to the CSMS.
+	// If the connection couldn't be opened, it retries.
+	//
+	// Optional client options must be set before calling this function. Refer to NewChargingStation.
+	StartWithRetries(csmsUrl string)
 	// Stops the charging station routine, disconnecting it from the CSMS.
 	// Any pending requests are discarded.
 	Stop()
