@@ -166,6 +166,45 @@ func TestWebsocketEcho(t *testing.T) {
 	wsServer.Stop()
 }
 
+func TestWebsocketBootRetries(t *testing.T) {
+	verifyConnection := func(client *Client, connected bool) {
+		maxAttempts := 20
+		for i := 0; i <= maxAttempts; i++ {
+			if client.IsConnected() != connected {
+				time.Sleep(time.Duration(2) * time.Second)
+				continue
+			}
+		}
+		assert.Equal(t, connected, client.IsConnected())
+	}
+	wsServer := newWebsocketServer(t, func(data []byte) ([]byte, error) {
+		return data, nil
+	})
+	wsClient := newWebsocketClient(t, func(data []byte) ([]byte, error) {
+		return nil, nil
+	})
+
+	go func() {
+		// Start websocket client
+		host := fmt.Sprintf("localhost:%v", serverPort)
+		u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+		wsClient.StartWithRetries(u.String())
+	}()
+
+	assert.Equal(t, wsClient.IsConnected(), false)
+
+	time.Sleep(time.Duration(3) * time.Second)
+
+	go wsServer.Start(serverPort, serverPath)
+	verifyConnection(wsClient, true)
+
+	wsServer.Stop()
+	verifyConnection(wsClient, false)
+
+	wsServer.Stop()
+	wsClient.Stop()
+}
+
 func TestTLSWebsocketEcho(t *testing.T) {
 	message := []byte("Hello Secure WebSocket!")
 	triggerC := make(chan bool, 1)
