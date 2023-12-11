@@ -722,6 +722,17 @@ type WsClient interface {
 	//
 	// To stop a running client, call the Stop function.
 	Start(url string) error
+	// Starts the client and attempts to connect to the server on a specified URL.
+	// If the connection fails, it keeps retrying with Backoff strategy from TimeoutConfig.
+	//
+	// For example:
+	//	client.StartWithRetries("ws://localhost:8887/ws/1234")
+	//
+	// The function returns only when the connection has been established.
+	// Incoming messages are passed automatically to the callback function, so no explicit read operation is required.
+	//
+	// To stop a running client, call the Stop function.
+	StartWithRetries(url string)
 	// Closes the output of the websocket Channel, effectively closing the connection to the server with a normal closure.
 	Stop()
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
@@ -997,6 +1008,7 @@ func (client *Client) handleReconnection() {
 			return
 		}
 
+		log.Info("reconnecting... attempt", reconnectionAttempts)
 		err := client.Start(client.url.String())
 		if err == nil {
 			// Re-connection was successful
@@ -1038,8 +1050,17 @@ func (client *Client) Write(data []byte) error {
 	return nil
 }
 
+func (client *Client) StartWithRetries(urlStr string) {
+	err := client.Start(urlStr)
+	if err != nil {
+		log.Info("Connection error:", err)
+		client.handleReconnection()
+	}
+}
+
 func (client *Client) Start(urlStr string) error {
 	url, err := url.Parse(urlStr)
+	client.url = *url
 	if err != nil {
 		return err
 	}
@@ -1072,7 +1093,7 @@ func (client *Client) Start(urlStr string) error {
 
 	// The id of the charge point is the final path element
 	id := path.Base(url.Path)
-	client.url = *url
+
 	client.webSocket = WebSocket{
 		connection:         ws,
 		id:                 id,

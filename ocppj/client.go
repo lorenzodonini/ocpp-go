@@ -123,6 +123,17 @@ func (c *Client) Start(serverURL string) error {
 	return err
 }
 
+func (c *Client) StartWithRetries(serverURL string) {
+	// Set internal message handler
+	c.client.SetMessageHandler(c.ocppMessageHandler)
+	c.client.SetDisconnectedHandler(c.onDisconnected)
+	c.client.SetReconnectedHandler(c.onReconnected)
+	// Connect & run
+	fullUrl := fmt.Sprintf("%v/%v", serverURL, c.Id)
+	c.client.StartWithRetries(fullUrl)
+	c.dispatcher.Start()
+}
+
 // Stops the client.
 // The underlying I/O loop is stopped and all pending requests are cleared.
 func (c *Client) Stop() {
