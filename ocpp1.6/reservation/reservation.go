@@ -14,7 +14,7 @@ type ChargePointHandler interface {
 }
 
 // The profile name
-const ProfileName = "reservation"
+const ProfileName = "Reservation"
 
 // Provides support for for reservation of a Charge Point.
 var Profile = ocpp.NewProfile(
