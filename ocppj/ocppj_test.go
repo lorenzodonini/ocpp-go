@@ -865,4 +865,5 @@ func TestMockOcppJ(t *testing.T) {
 	suite.Run(t, new(ClientDispatcherTestSuite))
 	suite.Run(t, new(ServerDispatcherTestSuite))
 	suite.Run(t, new(OcppJTestSuite))
+	suite.Run(t, new(CustomTypeTestSuite))
 }
