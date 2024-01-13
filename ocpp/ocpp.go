@@ -79,7 +79,7 @@ func (p *Profile) AddFeature(feature Feature) {
 	p.Features[feature.GetFeatureName()] = feature
 }
 
-// SupportsFeature returns true if a feature matching the the passed name is registered with this profile, false otherwise.
+// SupportsFeature returns true if a feature matching the passed name is registered with this profile, false otherwise.
 func (p *Profile) SupportsFeature(name string) bool {
 	_, ok := p.Features[name]
 	return ok
@@ -91,26 +91,24 @@ func (p *Profile) GetFeature(name string) Feature {
 	return p.Features[name]
 }
 
-// ParseRequest checks whether a feature is supported and passes the rawRequest message to the requestParser function.
-// The type of the request message is passed to the requestParser function, which has to perform type assertion.
-func (p *Profile) ParseRequest(featureName string, rawRequest interface{}, requestParser func(raw interface{}, requestType reflect.Type) (Request, error)) (Request, error) {
+// GetFeatureRequestType checks whether a feature is supported and retrieves the internal type of the request message.
+// This information may be used to then parse the request message into a struct of the returned type.
+func (p *Profile) GetFeatureRequestType(featureName string) (reflect.Type, error) {
 	feature, ok := p.Features[featureName]
 	if !ok {
 		return nil, fmt.Errorf("Feature %s not found", featureName)
 	}
-	requestType := feature.GetRequestType()
-	return requestParser(rawRequest, requestType)
+	return feature.GetRequestType(), nil
 }
 
-// ParseRequest checks whether a feature is supported and passes the rawResponse message to the responseParser function.
-// The type of the response message is passed to the responseParser function, which has to perform type assertion.
-func (p *Profile) ParseResponse(featureName string, rawResponse interface{}, responseParser func(raw interface{}, responseType reflect.Type) (Response, error)) (Response, error) {
+// GetFeatureResponseType checks whether a feature is supported and retrieves the internal type of the response message.
+// This information may be used to then parse the response message into a struct of the returned type.
+func (p *Profile) GetFeatureResponseType(featureName string) (reflect.Type, error) {
 	feature, ok := p.Features[featureName]
 	if !ok {
 		return nil, fmt.Errorf("Feature %s not found", featureName)
 	}
-	responseType := feature.GetResponseType()
-	return responseParser(rawResponse, responseType)
+	return feature.GetResponseType(), nil
 }
 
 // Dialect is the OCPP version the Endpoint supports
