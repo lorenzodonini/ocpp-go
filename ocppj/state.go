@@ -24,6 +24,14 @@ type ClientState interface {
 	ClearPendingRequests()
 	// Returns true if there currently is at least one pending request, false otherwise.
 	HasPendingRequest() bool
+	// SetCustomTypeMapper adds a custom type mapper for this specific client-server channel.
+	// The mapper is used to map a custom JSON string to a valid OCPP type and vice-versa.
+	// This is useful when an incoming message is non-spec compliant, but the endpoint still wants to handle it.
+	// A mapper is meant to be read-only and can be shared between multiple endpoints.
+	SetCustomTypeMapper(mapper CustomTypeMapper)
+	// GetCustomTypeMapper retrieves the custom type mapper for this specific client-server channel.
+	// If no mapper is set, nil is returned.
+	GetCustomTypeMapper() CustomTypeMapper
 }
 
 // ----------------------------
@@ -35,9 +43,10 @@ type ClientState interface {
 //
 // Uses a mutex internally for concurrent access to the data struct.
 type clientState struct {
-	requestID      string
-	pendingRequest pendingRequest
-	mutex          sync.RWMutex
+	requestID        string
+	pendingRequest   pendingRequest
+	mutex            sync.RWMutex
+	customTypeMapper CustomTypeMapper
 }
 
 // Creates a simple struct implementing ClientState, to be used by client/server dispatchers.
@@ -84,6 +93,18 @@ func (s *clientState) HasPendingRequest() bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return s.requestID != ""
+}
+
+func (s *clientState) SetCustomTypeMapper(mapper CustomTypeMapper) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.customTypeMapper = mapper
+}
+
+func (s *clientState) GetCustomTypeMapper() CustomTypeMapper {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	return s.customTypeMapper
 }
 
 // Contains the pending request state for messages associated to all client-server channels.

@@ -25,7 +25,7 @@ type Client struct {
 	RequestState          ClientState
 }
 
-// Creates a new Client endpoint.
+// NewClient creates a new Client endpoint.
 // Requires a unique client ID, a websocket client, a struct for queueing/dispatching requests,
 // a state handler and a list of supported profiles (optional).
 //
@@ -100,6 +100,17 @@ func (c *Client) SetOnRequestCanceled(handler func(requestId string, request ocp
 	c.dispatcher.SetOnRequestCanceled(handler)
 }
 
+// SetCustomTypeMapper registers a custom type mapper for this specific client-server channel.
+// The mapper is used to map a custom JSON string to a valid OCPP type and vice-versa.
+// This is useful when an incoming message is non-spec compliant, but the endpoint still wants to handle it.
+//
+// After the mapper is set, any incoming/outgoing request/response may have its payload overriden
+// by a custom type, if such a type exists.
+// The function is thread-safe and may be set at any time.
+func (c *Client) SetCustomTypeMapper(mapper CustomTypeMapper) {
+	c.RequestState.SetCustomTypeMapper(mapper)
+}
+
 // Connects to the given serverURL and starts running the I/O loop for the underlying connection.
 //
 // If the connection is established successfully, the function returns control to the caller immediately.
@@ -168,6 +179,12 @@ func (c *Client) SendRequest(request ocpp.Request) error {
 	if err != nil {
 		return err
 	}
+	// Attempt to override outgoing payload with custom type, if any converter is registered.
+	// If no custom type is registered, the payload is left untouched.
+	err = c.useCustomRequestType(call)
+	if err != nil {
+		return err
+	}
 	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
 		return err
@@ -193,6 +210,12 @@ func (c *Client) SendRequest(request ocpp.Request) error {
 // - a network error occurred
 func (c *Client) SendResponse(requestId string, response ocpp.Response) error {
 	callResult, err := c.CreateCallResult(response, requestId)
+	if err != nil {
+		return err
+	}
+	// Attempt to override outgoing payload with custom type, if any converter is registered.
+	// If no custom type is registered, the payload is left untouched.
+	err = c.useCustomResponseType(callResult)
 	if err != nil {
 		return err
 	}
@@ -331,4 +354,40 @@ func (c *Client) onReconnected() {
 		c.onReconnectedHandler()
 	}
 	c.dispatcher.Resume()
+}
+
+func (c *Client) useCustomRequestType(call *Call) error {
+	// Check whether a custom type mapper is set. If so, run custom serialization.
+	mapper := c.RequestState.GetCustomTypeMapper()
+	if mapper != nil {
+		customReq, ok := mapper.GetCustomRequest(call.Payload.GetFeatureName())
+		if ok {
+			// Serialization from OCPP to custom type is delegated to the custom type.
+			err := customReq.Serialize(call.Payload)
+			if err != nil {
+				return err
+			}
+			// Override payload with custom request.
+			call.Payload = customReq
+		}
+	}
+	return nil
+}
+
+func (c *Client) useCustomResponseType(result *CallResult) error {
+	// Check whether a custom type mapper is set. If so, run custom serialization.
+	mapper := c.RequestState.GetCustomTypeMapper()
+	if mapper != nil {
+		customRes, ok := mapper.GetCustomResponse(result.Payload.GetFeatureName())
+		if ok {
+			// Serialization from OCPP to custom type is delegated to the custom type.
+			err := customRes.Serialize(result.Payload)
+			if err != nil {
+				return err
+			}
+			// Override payload with custom request.
+			result.Payload = customRes
+		}
+	}
+	return nil
 }

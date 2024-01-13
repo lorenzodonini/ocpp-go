@@ -187,7 +187,7 @@ const (
 	NotImplemented                ocpp.ErrorCode = "NotImplemented"                // Requested Action is not known by receiver.
 	NotSupported                  ocpp.ErrorCode = "NotSupported"                  // Requested Action is recognized but not supported by the receiver.
 	InternalError                 ocpp.ErrorCode = "InternalError"                 // An internal error occurred and the receiver was not able to process the requested Action successfully.
-	MessageTypeNotSupported       ocpp.ErrorCode = "MessageTypeNotSupported"       // A message with an Message Type Number received that is not supported by this implementation.
+	MessageTypeNotSupported       ocpp.ErrorCode = "MessageTypeNotSupported"       // A message with a Message Type Number received that is not supported by this implementation.
 	ProtocolError                 ocpp.ErrorCode = "ProtocolError"                 // Payload for Action is incomplete.
 	SecurityError                 ocpp.ErrorCode = "SecurityError"                 // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully.
 	PropertyConstraintViolation   ocpp.ErrorCode = "PropertyConstraintViolation"   // Payload is syntactically correct but at least one field contains an invalid value.
@@ -360,37 +360,57 @@ func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*ocpp.Profil
 	return nil, false
 }
 
-func parseRawJsonRequest(raw interface{}, requestType reflect.Type) (ocpp.Request, error) {
+func parseRawJsonRequest(raw interface{}, requestType reflect.Type, custom CustomRequest) (ocpp.Request, error) {
 	if raw == nil {
 		raw = &struct{}{}
 	}
-	bytes, err := json.Marshal(raw)
+	b, err := json.Marshal(raw)
 	if err != nil {
 		return nil, err
 	}
 	request := reflect.New(requestType).Interface()
-	err = json.Unmarshal(bytes, &request)
+	result := request.(ocpp.Request)
+	if custom != nil {
+		// First unmarshal into custom struct, then convert to OCPP request
+		err = json.Unmarshal(b, custom)
+		if err != nil {
+			return nil, err
+		}
+		err = custom.Parse(result)
+	} else {
+		// Unmarshal straight into OCPP struct
+		err = json.Unmarshal(b, result)
+	}
 	if err != nil {
 		return nil, err
 	}
-	result := request.(ocpp.Request)
 	return result, nil
 }
 
-func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (ocpp.Response, error) {
+func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type, custom CustomResponse) (ocpp.Response, error) {
 	if raw == nil {
 		raw = &struct{}{}
 	}
-	bytes, err := json.Marshal(raw)
+	b, err := json.Marshal(raw)
 	if err != nil {
 		return nil, err
 	}
 	confirmation := reflect.New(confirmationType).Interface()
-	err = json.Unmarshal(bytes, &confirmation)
+	result := confirmation.(ocpp.Response)
+	if custom != nil {
+		// First unmarshal into custom struct, then convert to OCPP request
+		err = json.Unmarshal(b, custom)
+		if err != nil {
+			return nil, err
+		}
+		err = custom.Parse(result)
+	} else {
+		// Unmarshal straight into OCPP struct
+		err = json.Unmarshal(b, &confirmation)
+	}
 	if err != nil {
 		return nil, err
 	}
-	result := confirmation.(ocpp.Response)
 	return result, nil
 }
 
@@ -420,12 +440,21 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		if !ok {
 			return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 2, expected action (string)", arr[2]), uniqueId)
 		}
-
 		profile, ok := endpoint.GetProfileForFeature(action)
 		if !ok {
 			return nil, ocpp.NewError(NotSupported, fmt.Sprintf("Unsupported feature %v", action), uniqueId)
 		}
-		request, err := profile.ParseRequest(action, arr[3], parseRawJsonRequest)
+		typ, err := profile.GetFeatureRequestType(action)
+		if err != nil {
+			return nil, ocpp.NewError(NotSupported, err.Error(), uniqueId)
+		}
+		// Retrieve custom parser, if any
+		var customParser CustomRequest
+		if mapper := pendingRequestState.GetCustomTypeMapper(); mapper != nil {
+			customParser, _ = mapper.GetCustomRequest(action)
+		}
+		// Parse JSON request
+		request, err := parseRawJsonRequest(arr[3], typ, customParser)
 		if err != nil {
 			return nil, ocpp.NewError(FormatErrorType(endpoint), err.Error(), uniqueId)
 		}
@@ -446,15 +475,29 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			log.Infof("No previous request %v sent. Discarding response message", uniqueId)
 			return nil, nil
 		}
-		profile, _ := endpoint.GetProfileForFeature(request.GetFeatureName())
-		confirmation, err := profile.ParseResponse(request.GetFeatureName(), arr[2], parseRawJsonConfirmation)
+		action := request.GetFeatureName()
+		profile, ok := endpoint.GetProfileForFeature(action)
+		if !ok {
+			return nil, ocpp.NewError(NotSupported, fmt.Sprintf("Unsupported feature %v", action), uniqueId)
+		}
+		typ, err := profile.GetFeatureResponseType(action)
+		if err != nil {
+			return nil, ocpp.NewError(NotSupported, err.Error(), uniqueId)
+		}
+		// Retrieve custom parser, if any
+		var customParser CustomResponse
+		if mapper := pendingRequestState.GetCustomTypeMapper(); mapper != nil {
+			customParser, _ = mapper.GetCustomResponse(action)
+		}
+		// Parse JSON response
+		response, err := parseRawJsonConfirmation(arr[2], typ, customParser)
 		if err != nil {
 			return nil, ocpp.NewError(FormatErrorType(endpoint), err.Error(), uniqueId)
 		}
 		callResult := CallResult{
 			MessageTypeId: CALL_RESULT,
 			UniqueId:      uniqueId,
-			Payload:       confirmation,
+			Payload:       response,
 		}
 		err = Validate.Struct(callResult)
 		if err != nil {

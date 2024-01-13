@@ -59,7 +59,12 @@ func NewServer(wsServer ws.WsServer, dispatcher ServerDispatcher, stateHandler S
 	dispatcher.SetPendingRequestState(stateHandler)
 
 	// Create server and add profiles
-	s := Server{Endpoint: Endpoint{}, server: wsServer, RequestState: stateHandler, dispatcher: dispatcher}
+	s := Server{
+		Endpoint:     Endpoint{},
+		server:       wsServer,
+		RequestState: stateHandler,
+		dispatcher:   dispatcher,
+	}
 	for _, profile := range profiles {
 		s.AddProfile(profile)
 	}
@@ -119,6 +124,26 @@ func (s *Server) SetDisconnectedClientHandler(handler ClientHandler) {
 	s.disconnectedClientHandler = handler
 }
 
+// SetClientCustomTypeMapper registers a hook for custom type parsing and serialization for a specific client.
+// The middleware is only used for the passed clientID and may return converters for any supported OCPP messages.
+//
+// For outgoing messages, OCPP-J will attempt to use a custom type serializer to transform a valid OCPP type
+// into a custom type. The resulting message will still be serialized to JSON and sent to the other endpoint.
+//
+// For incoming messages, OCPP-J will attempt to use a custom type parser to read the raw JSON string into a
+// custom type and then transform it into a valid OCPP type.
+//
+// If no middleware is registered for a specific OCPP type,
+// a message of that type is parsed/serialized normally.
+//
+// If no client exists for the passed ID, the operation will have no effect.
+//
+// When a client is deleted, its associated hooks are deleted as well.
+func (s *Server) SetClientCustomTypeMapper(clientID string, mapper CustomTypeMapper) {
+	state := s.RequestState.GetClientState(clientID)
+	state.SetCustomTypeMapper(mapper)
+}
+
 // Starts the underlying Websocket server on a specified listenPort and listenPath.
 //
 // The function runs indefinitely, until the server is stopped.
@@ -163,6 +188,12 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 	if err != nil {
 		return err
 	}
+	// Attempt to override outgoing payload with custom type, if any converter is registered.
+	// If no custom type is registered, the payload is left untouched.
+	err = s.useCustomRequestType(clientID, call)
+	if err != nil {
+		return err
+	}
 	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
 		return err
@@ -176,7 +207,7 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 	return nil
 }
 
-// Sends an OCPP Response to a client, identified by the clientID parameter.
+// SendResponse sends an OCPP Response to a client, identified by the clientID parameter.
 // The requestID parameter is required and identifies the previously received request.
 //
 // Returns an error in the following cases:
@@ -188,6 +219,12 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 // - a network error occurred
 func (s *Server) SendResponse(clientID string, requestId string, response ocpp.Response) error {
 	callResult, err := s.CreateCallResult(response, requestId)
+	if err != nil {
+		return err
+	}
+	// Attempt to override outgoing payload with custom type, if any converter is registered.
+	// If no custom type is registered, the payload is left untouched.
+	err = s.useCustomResponseType(clientID, callResult)
 	if err != nil {
 		return err
 	}
@@ -204,7 +241,7 @@ func (s *Server) SendResponse(clientID string, requestId string, response ocpp.R
 	return nil
 }
 
-// Sends an OCPP Error to a client, identified by the clientID parameter.
+// SendError sends an OCPP Error to a client, identified by the clientID parameter.
 // The requestID parameter is required and identifies the previously received request.
 //
 // Returns an error in the following cases:
@@ -333,4 +370,40 @@ func (s *Server) onClientDisconnected(ws ws.Channel) {
 	if s.disconnectedClientHandler != nil {
 		s.disconnectedClientHandler(ws)
 	}
+}
+
+func (s *Server) useCustomRequestType(clientID string, call *Call) error {
+	state := s.RequestState.GetClientState(clientID)
+	// Check whether a custom type mapper is set. If so, run custom serialization.
+	mapper := state.GetCustomTypeMapper()
+	if mapper == nil {
+		return nil
+	}
+	if customReq, ok := mapper.GetCustomRequest(call.Payload.GetFeatureName()); ok {
+		// Serialization from OCPP to custom type is delegated to the custom type.
+		if err := customReq.Serialize(call.Payload); err != nil {
+			return err
+		}
+		// Override payload with custom request.
+		call.Payload = customReq
+	}
+	return nil
+}
+
+func (s *Server) useCustomResponseType(clientID string, callResult *CallResult) error {
+	state := s.RequestState.GetClientState(clientID)
+	// Check whether a custom type mapper is set. If so, run custom serialization.
+	mapper := state.GetCustomTypeMapper()
+	if mapper == nil {
+		return nil
+	}
+	if customReq, ok := mapper.GetCustomResponse(callResult.Payload.GetFeatureName()); ok {
+		// Serialization from OCPP to custom type is delegated to the custom type.
+		if err := customReq.Serialize(callResult.Payload); err != nil {
+			return err
+		}
+		// Override payload with custom request.
+		callResult.Payload = customReq
+	}
+	return nil
 }
