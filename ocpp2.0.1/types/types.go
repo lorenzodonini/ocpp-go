@@ -266,6 +266,17 @@ type GroupIdToken struct {
 	Type    IdTokenType `json:"type" validate:"required,idTokenType"`
 }
 
+func isValidGroupIdToken(sl validator.StructLevel) {
+	groupIdToken := sl.Current().Interface().(GroupIdToken)
+	// validate required idToken value except `NoAuthorization` type
+	switch groupIdToken.Type {
+	case IdTokenTypeCentral, IdTokenTypeEMAID, IdTokenTypeISO14443, IdTokenTypeISO15693, IdTokenTypeKeyCode, IdTokenTypeLocal, IdTokenTypeMacAddress:
+		if groupIdToken.IdToken == "" {
+			sl.ReportError(groupIdToken.IdToken, "IdToken", "IdToken", "required", "")
+		}
+	}
+}
+
 type IdTokenInfo struct {
 	Status              AuthorizationStatus `json:"status" validate:"required,authorizationStatus201"`
 	CacheExpiryDateTime *DateTime           `json:"cacheExpiryDateTime,omitempty" validate:"omitempty"`
@@ -744,4 +755,5 @@ func init() {
 	_ = Validate.RegisterValidation("costKind", isValidCostKind)
 
 	Validate.RegisterStructValidation(isValidIdToken, IdToken{})
+	Validate.RegisterStructValidation(isValidGroupIdToken, GroupIdToken{})
 }
