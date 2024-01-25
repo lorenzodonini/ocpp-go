@@ -262,7 +262,7 @@ type MessageContent struct {
 }
 
 type GroupIdToken struct {
-	IdToken string      `json:"idToken" validate:"required,max=36"`
+	IdToken string      `json:"idToken" validate:"max=36"`
 	Type    IdTokenType `json:"type" validate:"required,idTokenType"`
 }
 
