@@ -112,3 +112,12 @@ func (p *Profile) ParseResponse(featureName string, rawResponse interface{}, res
 	responseType := feature.GetResponseType()
 	return responseParser(rawResponse, responseType)
 }
+
+// Dialect is the OCPP version the Endpoint supports
+type Dialect int
+
+const (
+	_ Dialect = iota
+	V16
+	V2
+)

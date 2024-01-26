@@ -2,14 +2,13 @@ package types
 
 import (
 	"encoding/json"
-	"strings"
+	"errors"
 	"time"
+
+	"github.com/relvacode/iso8601"
 )
 
-// ISO8601 time format, assuming Zulu timestamp.
-const ISO8601 = "2006-01-02T15:04:05Z"
-
-// DateTimeFormat to be used for all OCPP messages.
+// DateTimeFormat to be used when serializing all OCPP messages.
 //
 // The default dateTime format is RFC3339.
 // Change this if another format is desired.
@@ -25,24 +24,36 @@ func NewDateTime(time time.Time) *DateTime {
 	return &DateTime{Time: time}
 }
 
-func (dt *DateTime) UnmarshalJSON(input []byte) error {
-	strInput := string(input)
-	strInput = strings.Trim(strInput, `"`)
-	if DateTimeFormat == "" {
-		var defaultTime time.Time
-		err := json.Unmarshal(input, &defaultTime)
-		if err != nil {
-			return err
-		}
-		dt.Time = defaultTime.Local()
-	} else {
-		newTime, err := time.Parse(DateTimeFormat, strInput)
-		if err != nil {
-			return err
-		}
-		dt.Time = newTime.Local()
+// Creates a new DateTime struct, containing a time.Now() value.
+func Now() *DateTime {
+	return &DateTime{Time: time.Now()}
+}
+
+func null(b []byte) bool {
+	if len(b) != 4 {
+		return false
 	}
-	return nil
+	if b[0] != 'n' && b[1] != 'u' && b[2] != 'l' && b[3] != 'l' {
+		return false
+	}
+	return true
+}
+
+func (dt *DateTime) UnmarshalJSON(input []byte) error {
+	// Do not parse null timestamps
+	if null(input) {
+		return nil
+	}
+	// Assert that timestamp is a string
+	if len(input) > 0 && input[0] == '"' && input[len(input)-1] == '"' {
+		input = input[1 : len(input)-1]
+	} else {
+		return errors.New("timestamp not enclosed in double quotes")
+	}
+	// Parse ISO8601
+	var err error
+	dt.Time, err = iso8601.Parse(input)
+	return err
 }
 
 func (dt *DateTime) MarshalJSON() ([]byte, error) {

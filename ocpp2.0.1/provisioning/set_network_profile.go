@@ -151,7 +151,7 @@ type APN struct {
 type NetworkConnectionProfile struct {
 	OCPPVersion     OCPPVersion   `json:"ocppVersion" validate:"required,ocppVersion"`     // The OCPP version used for this communication function.
 	OCPPTransport   OCPPTransport `json:"ocppTransport" validate:"required,ocppTransport"` // Defines the transport protocol (only OCPP-J is supported by this library).
-	CSMSUrl         string        `json:"ocppCsmsUrl" validate:"required,max=512,url"`     // URL of the CSMS(s) that this Charging Station communicates with.
+	CSMSUrl         string        `json:"ocppCsmsUrl" validate:"required,max=512"`         // URL of the CSMS(s) that this Charging Station communicates with.
 	MessageTimeout  int           `json:"messageTimeout" validate:"gte=-1"`                // Duration in seconds before a message send by the Charging Station via this network connection times out.
 	SecurityProfile int           `json:"securityProfile"`                                 // The security profile used when connecting to the CSMS with this NetworkConnectionProfile.
 	OCPPInterface   OCPPInterface `json:"ocppInterface" validate:"required,ocppInterface"` // Applicable Network Interface.

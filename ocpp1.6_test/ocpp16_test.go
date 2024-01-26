@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -510,6 +511,7 @@ func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener cor
 	})
 	suite.centralSystem.SetCoreHandler(coreListener)
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
+	suite.mockWsServer.On("Stop").Return()
 	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
 		clientId := args.String(0)
 		data := args.Get(1)
@@ -594,6 +596,8 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	assert.Nil(t, err)
 	_, ok := <-resultChannel
 	assert.True(t, ok)
+	// Stop the central system
+	suite.centralSystem.Stop()
 }
 
 func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request ocpp.Request, requestJson string, messageId string) {
@@ -634,6 +638,8 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	assert.Nil(t, err)
 	_, ok := <-resultChannel
 	assert.True(t, ok)
+	// Stop the central system
+	suite.centralSystem.Stop()
 }
 
 type GenericTestEntry struct {
@@ -708,6 +714,7 @@ func (suite *OcppV16TestSuite) SetupTest() {
 		return defaultMessageId
 	}}
 	ocppj.SetMessageIdGenerator(suite.messageIdGenerator.generateId)
+	types.DateTimeFormat = time.RFC3339
 }
 
 func (suite *OcppV16TestSuite) TestIsConnected() {
@@ -720,8 +727,7 @@ func (suite *OcppV16TestSuite) TestIsConnected() {
 	assert.False(t, suite.chargePoint.IsConnected())
 }
 
-//TODO: implement generic protocol tests
-
+// TODO: implement generic protocol tests
 func TestOcpp16Protocol(t *testing.T) {
 	suite.Run(t, new(OcppV16TestSuite))
 }
