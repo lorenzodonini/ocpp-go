@@ -23,46 +23,27 @@ func (e SignedUpdateFirmwareFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(SignedUpdateFirmwareResponse{})
 }
 
-type SignedUpdateFirmwareType string
-
 type SignedUpdateFirmwareStatus string
 
-const (
-	SignedUpdateFirmwareTypeBootNotification               SignedUpdateFirmwareType = "BootNotification"               // This contains the field definition of a diagnostics log file
-	SignedUpdateFirmwareTypeLogStatusNotification          SignedUpdateFirmwareType = "LogStatusNotification"          // Sent by the CSMS to the Charging Station to request that the Charging Station uploads the security log
-	SignedUpdateFirmwareTypeHeartbeat                      SignedUpdateFirmwareType = "Heartbeat"                      // Accepted this log upload. This does not mean the log file is uploaded is successfully, the Charging Station will now start the log file upload.
-	SignedUpdateFirmwareTypeMeterValues                    SignedUpdateFirmwareType = "MeterValues"                    // Log update request rejected.
-	SignedUpdateFirmwareTypeSignChargingStationCertificate SignedUpdateFirmwareType = "SignChargingStationCertificate" // Accepted this log upload, but in doing this has canceled an ongoing log file upload.
-	SignedUpdateFirmwareTypeFirmwareStatusNotification     SignedUpdateFirmwareType = "FirmwareStatusNotification"     // Accepted this log upload, but in doing this has canceled an ongoing log file upload.
-	SignedUpdateFirmwareTypeStatusNotification             SignedUpdateFirmwareType = "StatusNotification"             // Accepted this log upload, but in doing this has canceled an ongoing log file upload.
+// Indicates whether the Charging Station was able to accept the request.
+type UpdateFirmwareStatus string
 
-	SignedUpdateFirmwareStatusAccepted       SignedUpdateFirmwareStatus = "Accepted"
-	SignedUpdateFirmwareStatusRejected       SignedUpdateFirmwareStatus = "Rejected"
-	SignedUpdateFirmwareStatusNotImplemented SignedUpdateFirmwareStatus = "NotImplemented"
+const (
+	UpdateFirmwareStatusAccepted           UpdateFirmwareStatus = "Accepted"
+	UpdateFirmwareStatusRejected           UpdateFirmwareStatus = "Rejected"
+	UpdateFirmwareStatusAcceptedCanceled   UpdateFirmwareStatus = "AcceptedCanceled"
+	UpdateFirmwareStatusInvalidCertificate UpdateFirmwareStatus = "InvalidCertificate"
+	UpdateFirmwareStatusRevokedCertificate UpdateFirmwareStatus = "RevokedCertificate"
 )
 
-func isValidSignedUpdateFirmwareType(fl validator.FieldLevel) bool {
-	status := SignedUpdateFirmwareType(fl.Field().String())
+func isValidUpdateFirmwareStatus(fl validator.FieldLevel) bool {
+	status := UpdateFirmwareStatus(fl.Field().String())
 	switch status {
-	case SignedUpdateFirmwareTypeBootNotification,
-		SignedUpdateFirmwareTypeLogStatusNotification,
-		SignedUpdateFirmwareTypeHeartbeat,
-		SignedUpdateFirmwareTypeMeterValues,
-		SignedUpdateFirmwareTypeSignChargingStationCertificate,
-		SignedUpdateFirmwareTypeFirmwareStatusNotification,
-		SignedUpdateFirmwareTypeStatusNotification:
-		return true
-	default:
-		return false
-	}
-}
-
-func isValidSignedUpdateFirmwareStatus(fl validator.FieldLevel) bool {
-	status := SignedUpdateFirmwareStatus(fl.Field().String())
-	switch status {
-	case SignedUpdateFirmwareStatusAccepted,
-		SignedUpdateFirmwareStatusRejected,
-		SignedUpdateFirmwareStatusNotImplemented:
+	case UpdateFirmwareStatusAccepted,
+		UpdateFirmwareStatusRejected,
+		UpdateFirmwareStatusAcceptedCanceled,
+		UpdateFirmwareStatusInvalidCertificate,
+		UpdateFirmwareStatusRevokedCertificate:
 		return true
 	default:
 		return false
@@ -71,14 +52,25 @@ func isValidSignedUpdateFirmwareStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the LogStatusNotification request payload sent by a Charging Station to the CSMS.
 type SignedUpdateFirmwareRequest struct {
-	RequestedMessage SignedUpdateFirmwareType `json:"requestedMessage" validate:"required,extendedTriggerMessageType"`
-	ConnectorId      *int                     `json:"connectorId" validate:"gt=0,omitempty"`
+	Retries       *int     `json:"retries,omitempty" validate:"omitempty,gte=0"`       // This specifies how many times Charging Station must try to download the firmware before giving up. If this field is not present, it is left to Charging Station to decide how many times it wants to retry.
+	RetryInterval *int     `json:"retryInterval,omitempty" validate:"omitempty,gte=0"` // The interval in seconds after which a retry may be attempted. If this field is not present, it is left to Charging Station to decide how long to wait between attempts.
+	RequestID     int      `json:"requestId" validate:"gte=0"`                         // The Id of the request.
+	Firmware      Firmware `json:"firmware" validate:"required"`                       // Specifies the firmware to be updated on the Charging Station.
+}
+
+// Represents a copy of the firmware that can be loaded/updated on the Charging Station.
+type Firmware struct {
+	Location           string          `json:"location" validate:"required,max=512,uri"`         // URI defining the origin of the firmware.
+	RetrieveDateTime   *types.DateTime `json:"retrieveDateTime" validate:"required"`             // Date and time at which the firmware shall be retrieved.
+	InstallDateTime    *types.DateTime `json:"installDateTime,omitempty" validate:"omitempty"`   // Date and time at which the firmware shall be installed.
+	SigningCertificate string          `json:"signingCertificate,omitempty" validate:"max=5500"` // Certificate with which the firmware was signed. PEM encoded X.509 certificate.
+	Signature          string          `json:"signature,omitempty" validate:"max=800"`           // Base64 encoded firmware signature.
 }
 
 // This field definition of the LogStatusNotification response payload, sent by the CSMS to the Charging Station in response to a SignedUpdateFirmwareRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type SignedUpdateFirmwareResponse struct {
-	Status SignedUpdateFirmwareStatus `json:"status" validate:"required,extendedTriggerMessageStatus"`
+	Status SignedUpdateFirmwareStatus `json:"status" validate:"required,signedUpdateFirmwareStatus"`
 }
 
 func (r SignedUpdateFirmwareRequest) GetFeatureName() string {
@@ -90,16 +82,15 @@ func (c SignedUpdateFirmwareResponse) GetFeatureName() string {
 }
 
 // Creates a new SignedUpdateFirmwareRequest, containing all required fields. There are no optional fields for this message.
-func NewSignedUpdateFirmwareRequest(requestedMessage SignedUpdateFirmwareType) *SignedUpdateFirmwareRequest {
-	return &SignedUpdateFirmwareRequest{RequestedMessage: requestedMessage}
+func NewSignedUpdateFirmwareRequest(requestId int, firmware Firmware) *SignedUpdateFirmwareRequest {
+	return &SignedUpdateFirmwareRequest{RequestID: requestId, Firmware: firmware}
 }
 
 // Creates a new SignedUpdateFirmwareResponse, which doesn't contain any required or optional fields.
-func NewSignedUpdateFirmwareResponse() *SignedUpdateFirmwareResponse {
-	return &SignedUpdateFirmwareResponse{}
+func NewSignedUpdateFirmwareResponse(status SignedUpdateFirmwareStatus) *SignedUpdateFirmwareResponse {
+	return &SignedUpdateFirmwareResponse{Status: status}
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("extendedTriggerMessageType", isValidSignedUpdateFirmwareType)
-	_ = types.Validate.RegisterValidation("extendedTriggerMessageStatus", isValidSignedUpdateFirmwareStatus)
+	_ = types.Validate.RegisterValidation("signedUpdateFirmwareStatus", isValidUpdateFirmwareStatus)
 }

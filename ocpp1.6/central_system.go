@@ -371,8 +371,8 @@ func (cs *centralSystem) CertificateSigned(clientId string, callback func(*secur
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) SignedUpdateFirmware(clientId string, callback func(*securefirmware.SignedUpdateFirmwareResponse, error), updateType securefirmware.SignedUpdateFirmwareType, props ...func(request *securefirmware.SignedUpdateFirmwareRequest)) error {
-	request := securefirmware.NewSignedUpdateFirmwareRequest(updateType)
+func (cs *centralSystem) SignedUpdateFirmware(clientId string, callback func(*securefirmware.SignedUpdateFirmwareResponse, error), requestId int, firmware securefirmware.Firmware, props ...func(request *securefirmware.SignedUpdateFirmwareRequest)) error {
+	request := securefirmware.NewSignedUpdateFirmwareRequest(requestId, firmware)
 	for _, fn := range props {
 		fn(request)
 	}
