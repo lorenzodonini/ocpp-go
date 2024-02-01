@@ -6,29 +6,39 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/extendedtriggermessage"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/logging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
 
 type chargePoint struct {
-	client               *ocppj.Client
-	coreHandler          core.ChargePointHandler
-	localAuthListHandler localauth.ChargePointHandler
-	firmwareHandler      firmware.ChargePointHandler
-	reservationHandler   reservation.ChargePointHandler
-	remoteTriggerHandler remotetrigger.ChargePointHandler
-	smartChargingHandler smartcharging.ChargePointHandler
-	confirmationHandler  chan ocpp.Response
-	errorHandler         chan error
-	callbacks            callbackqueue.CallbackQueue
-	stopC                chan struct{}
-	errC                 chan error // external error channel
+	client                        *ocppj.Client
+	coreHandler                   core.ChargePointHandler
+	localAuthListHandler          localauth.ChargePointHandler
+	firmwareHandler               firmware.ChargePointHandler
+	reservationHandler            reservation.ChargePointHandler
+	remoteTriggerHandler          remotetrigger.ChargePointHandler
+	smartChargingHandler          smartcharging.ChargePointHandler
+	securityHandler               security.ChargePointHandler
+	logHandler                    logging.ChargePointHandler
+	extendedTriggerMessageHandler extendedtriggermessage.ChargePointHandler
+	secureFirmwareHandler         securefirmware.ChargePointHandler
+	certificateHandler            certificates.ChargePointHandler
+	confirmationHandler           chan ocpp.Response
+	errorHandler                  chan error
+	callbacks                     callbackqueue.CallbackQueue
+	stopC                         chan struct{}
+	errC                          chan error // external error channel
 }
 
 func (cp *chargePoint) error(err error) {
@@ -181,6 +191,54 @@ func (cp *chargePoint) FirmwareStatusNotification(status firmware.FirmwareStatus
 	}
 }
 
+func (cp *chargePoint) SecurityEventNotification(typ string, timestamp *types.DateTime, props ...func(request *security.SecurityEventNotificationRequest)) (*security.SecurityEventNotificationResponse, error) {
+	request := security.NewSecurityEventNotificationRequest(typ, timestamp)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	return confirmation.(*security.SecurityEventNotificationResponse), err
+}
+
+func (cp *chargePoint) SignCertificate(CSR string, props ...func(request *security.SignCertificateRequest)) (*security.SignCertificateResponse, error) {
+	request := security.NewSignCertificateRequest(CSR)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	return confirmation.(*security.SignCertificateResponse), err
+}
+
+func (cp *chargePoint) SignedUpdateFirmwareStatusNotification(status securefirmware.FirmwareStatus, props ...func(request *securefirmware.SignedFirmwareStatusNotificationRequest)) (*securefirmware.SignedFirmwareStatusNotificationResponse, error) {
+	request := securefirmware.NewFirmwareStatusNotificationRequest(status)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	return confirmation.(*securefirmware.SignedFirmwareStatusNotificationResponse), err
+}
+
+func (cp *chargePoint) LogStatusNotification(status logging.UploadLogStatus, requestId int, props ...func(request *logging.LogStatusNotificationRequest)) (*logging.LogStatusNotificationResponse, error) {
+	request := logging.NewLogStatusNotificationRequest(status, requestId)
+	for _, fn := range props {
+		fn(request)
+	}
+	confirmation, err := cp.SendRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	return confirmation.(*logging.LogStatusNotificationResponse), err
+}
+
 func (cp *chargePoint) SetCoreHandler(handler core.ChargePointHandler) {
 	cp.coreHandler = handler
 }
@@ -203,6 +261,26 @@ func (cp *chargePoint) SetRemoteTriggerHandler(handler remotetrigger.ChargePoint
 
 func (cp *chargePoint) SetSmartChargingHandler(handler smartcharging.ChargePointHandler) {
 	cp.smartChargingHandler = handler
+}
+
+func (cp *chargePoint) SetSecurityHandler(handler security.ChargePointHandler) {
+	cp.securityHandler = handler
+}
+
+func (cp *chargePoint) SetLogHandler(handler logging.ChargePointHandler) {
+	cp.logHandler = handler
+}
+
+func (cp *chargePoint) SetExtendedTriggerMessageHandler(handler extendedtriggermessage.ChargePointHandler) {
+	cp.extendedTriggerMessageHandler = handler
+}
+
+func (cp *chargePoint) SetSecureFirmwareHandler(handler securefirmware.ChargePointHandler) {
+	cp.secureFirmwareHandler = handler
+}
+
+func (cp *chargePoint) SetCertificateHandler(handler certificates.ChargePointHandler) {
+	cp.certificateHandler = handler
 }
 
 func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) {
@@ -245,7 +323,10 @@ func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(conf
 	}
 	switch featureName {
 	case core.AuthorizeFeatureName, core.BootNotificationFeatureName, core.DataTransferFeatureName, core.HeartbeatFeatureName, core.MeterValuesFeatureName, core.StartTransactionFeatureName, core.StopTransactionFeatureName, core.StatusNotificationFeatureName,
-		firmware.DiagnosticsStatusNotificationFeatureName, firmware.FirmwareStatusNotificationFeatureName:
+		firmware.DiagnosticsStatusNotificationFeatureName, firmware.FirmwareStatusNotificationFeatureName,
+		logging.LogStatusNotificationFeatureName,
+		securefirmware.SignedFirmwareStatusNotificationFeatureName,
+		security.SecurityEventNotificationFeatureName, security.SignCertificateFeatureName:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charge point, cannot send request", featureName)
@@ -411,6 +492,31 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 				cp.notSupportedError(requestId, action)
 				return
 			}
+		case security.ProfileName:
+			if cp.securityHandler == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
+		case logging.ProfileName:
+			if cp.logHandler == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
+		case extendedtriggermessage.ProfileName:
+			if cp.extendedTriggerMessageHandler == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
+		case securefirmware.ProfileName:
+			if cp.secureFirmwareHandler == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
+		case certificates.ProfileName:
+			if cp.certificateHandler == nil {
+				cp.notSupportedError(requestId, action)
+				return
+			}
 		}
 	}
 	// Process request
@@ -456,6 +562,20 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 		confirmation, err = cp.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
 	case smartcharging.GetCompositeScheduleFeatureName:
 		confirmation, err = cp.smartChargingHandler.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
+	case security.CertificateSignedFeatureName:
+		confirmation, err = cp.securityHandler.OnCertificateSigned(request.(*security.CertificateSignedRequest))
+	case logging.GetLogFeatureName:
+		confirmation, err = cp.logHandler.OnGetLog(request.(*logging.GetLogRequest))
+	case securefirmware.SignedUpdateFirmwareFeatureName:
+		confirmation, err = cp.secureFirmwareHandler.OnSignedUpdateFirmware(request.(*securefirmware.SignedUpdateFirmwareRequest))
+	case certificates.GetInstalledCertificateIdsFeatureName:
+		confirmation, err = cp.certificateHandler.OnGetInstalledCertificateIds(request.(*certificates.GetInstalledCertificateIdsRequest))
+	case certificates.DeleteCertificateFeatureName:
+		confirmation, err = cp.certificateHandler.OnDeleteCertificate(request.(*certificates.DeleteCertificateRequest))
+	case certificates.InstallCertificateFeatureName:
+		confirmation, err = cp.certificateHandler.OnInstallCertificate(request.(*certificates.InstallCertificateRequest))
+	case extendedtriggermessage.ExtendedTriggerMessageFeatureName:
+		confirmation, err = cp.extendedTriggerMessageHandler.OnExtendedTriggerMessage(request.(*extendedtriggermessage.ExtendedTriggerMessageRequest))
 	default:
 		cp.notSupportedError(requestId, action)
 		return
