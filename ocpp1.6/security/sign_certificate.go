@@ -3,7 +3,7 @@ package security
 import (
 	"reflect"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 // -------------------- Sign Certificate (CS -> CSMS) --------------------
