@@ -23,8 +23,6 @@ func (e SignedUpdateFirmwareFeature) GetResponseType() reflect.Type {
 	return reflect.TypeOf(SignedUpdateFirmwareResponse{})
 }
 
-type SignedUpdateFirmwareStatus string
-
 // Indicates whether the Charging Station was able to accept the request.
 type UpdateFirmwareStatus string
 
@@ -70,7 +68,7 @@ type Firmware struct {
 // This field definition of the LogStatusNotification response payload, sent by the CSMS to the Charging Station in response to a SignedUpdateFirmwareRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type SignedUpdateFirmwareResponse struct {
-	Status SignedUpdateFirmwareStatus `json:"status" validate:"required,signedUpdateFirmwareStatus"`
+	Status UpdateFirmwareStatus `json:"status" validate:"required,signedUpdateFirmwareStatus"`
 }
 
 func (r SignedUpdateFirmwareRequest) GetFeatureName() string {
@@ -87,7 +85,7 @@ func NewSignedUpdateFirmwareRequest(requestId int, firmware Firmware) *SignedUpd
 }
 
 // Creates a new SignedUpdateFirmwareResponse, which doesn't contain any required or optional fields.
-func NewSignedUpdateFirmwareResponse(status SignedUpdateFirmwareStatus) *SignedUpdateFirmwareResponse {
+func NewSignedUpdateFirmwareResponse(status UpdateFirmwareStatus) *SignedUpdateFirmwareResponse {
 	return &SignedUpdateFirmwareResponse{Status: status}
 }
 
