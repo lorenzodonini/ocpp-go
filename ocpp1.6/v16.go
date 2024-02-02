@@ -7,11 +7,16 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/extendedtriggermessage"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/logging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
@@ -67,6 +72,14 @@ type ChargePoint interface {
 	// Notifies the central system of a status change during the download of a new firmware version.
 	FirmwareStatusNotification(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationConfirmation, error)
 
+	SecurityEventNotification(typ string, timestamp *types.DateTime, props ...func(request *security.SecurityEventNotificationRequest)) (*security.SecurityEventNotificationResponse, error)
+
+	SignCertificate(CSR string, props ...func(request *security.SignCertificateRequest)) (*security.SignCertificateResponse, error)
+
+	SignedUpdateFirmwareStatusNotification(status securefirmware.FirmwareStatus, props ...func(request *securefirmware.SignedFirmwareStatusNotificationRequest)) (*securefirmware.SignedFirmwareStatusNotificationResponse, error)
+
+	LogStatusNotification(status logging.UploadLogStatus, requestId int, props ...func(request *logging.LogStatusNotificationRequest)) (*logging.LogStatusNotificationResponse, error)
+
 	// Registers a handler for incoming core profile messages
 	SetCoreHandler(listener core.ChargePointHandler)
 	// Registers a handler for incoming local authorization profile messages
@@ -79,6 +92,17 @@ type ChargePoint interface {
 	SetRemoteTriggerHandler(listener remotetrigger.ChargePointHandler)
 	// Registers a handler for incoming smart charging profile messages
 	SetSmartChargingHandler(listener smartcharging.ChargePointHandler)
+	// Registers a handler for incoming security profile messages (Extension of OCPP 1.6j).
+	SetSecurityHandler(handler security.ChargePointHandler)
+	// Registers a handler for incoming log profile messages (Extension of OCPP 1.6j).
+	SetLogHandler(handler logging.ChargePointHandler)
+	// Registers a handler for incoming extended trigger message profile messages (Extension of OCPP 1.6j).
+	SetExtendedTriggerMessageHandler(handler extendedtriggermessage.ChargePointHandler)
+	// Registers a handler for incoming secure firmware profile messages (Extension of OCPP 1.6j).
+	SetSecureFirmwareHandler(handler securefirmware.ChargePointHandler)
+	// Registers a handler for incoming certificate profile messages (Extension of OCPP 1.6j).
+	SetCertificateHandler(handler certificates.ChargePointHandler)
+
 	// Sends a request to the central system.
 	// The central system will respond with a confirmation, or with an error if the request was invalid or could not be processed.
 	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
@@ -142,7 +166,19 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) Charg
 
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
-		endpoint = ocppj.NewClient(id, client, dispatcher, nil, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		endpoint = ocppj.NewClient(id, client, dispatcher, nil,
+			core.Profile,
+			localauth.Profile,
+			firmware.Profile,
+			reservation.Profile,
+			remotetrigger.Profile,
+			smartcharging.Profile,
+			logging.Profile,
+			security.Profile,
+			extendedtriggermessage.Profile,
+			certificates.Profile,
+			securefirmware.Profile,
+		)
 	}
 	endpoint.SetDialect(ocpp.V16)
 
@@ -231,6 +267,20 @@ type CentralSystem interface {
 	// Queries a charge point to the composite smart charging schedules and rules for a specified time interval.
 	GetCompositeSchedule(clientId string, callback func(*smartcharging.GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *smartcharging.GetCompositeScheduleRequest)) error
 
+	TriggerMessageExtended(clientId string, callback func(*extendedtriggermessage.ExtendedTriggerMessageResponse, error), requestedMessage extendedtriggermessage.ExtendedTriggerMessageType, props ...func(request *extendedtriggermessage.ExtendedTriggerMessageRequest)) error
+
+	CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), csr string, props ...func(request *security.SignCertificateRequest)) error
+
+	InstallCertificate(clientId string, callback func(*certificates.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(request *certificates.InstallCertificateRequest)) error
+
+	GetInstalledCertificateIds(clientId string, callback func(*certificates.GetInstalledCertificateIdsResponse, error), props ...func(request *certificates.GetInstalledCertificateIdsRequest)) error
+
+	DeleteCertificate(clientId string, callback func(*certificates.DeleteCertificateResponse, error), certificateHashData types.CertificateHashData, props ...func(request *certificates.DeleteCertificateRequest)) error
+
+	GetLog(clientId string, callback func(*logging.GetLogResponse, error), logType logging.LogType, requestID int, logParameters logging.LogParameters, props ...func(request *logging.GetLogRequest)) error
+
+	SignedUpdateFirmware(clientId string, callback func(*securefirmware.SignedUpdateFirmwareResponse, error), requestId int, firmware securefirmware.Firmware, props ...func(request *securefirmware.SignedUpdateFirmwareRequest)) error
+
 	// Registers a handler for incoming core profile messages.
 	SetCoreHandler(handler core.CentralSystemHandler)
 	// Registers a handler for incoming local authorization profile messages.
@@ -243,6 +293,13 @@ type CentralSystem interface {
 	SetRemoteTriggerHandler(handler remotetrigger.CentralSystemHandler)
 	// Registers a handler for incoming smart charging profile messages.
 	SetSmartChargingHandler(handler smartcharging.CentralSystemHandler)
+	// Registers a handler for incoming security profile messages (Extension of OCPP 1.6j).
+	SetSecurityHandler(handler security.CentralSystemHandler)
+	// Registers a handler for incoming log profile messages (Extension of OCPP 1.6j).
+	SetLogHandler(handler logging.CentralSystemHandler)
+	// Registers a handler for incoming secure firmware profile messages (Extension of OCPP 1.6j).
+	SetSecureFirmwareHandler(handler securefirmware.CentralSystemHandler)
+
 	// Registers a handler for new incoming Charging station connections.
 	SetNewChargingStationValidationHandler(handler ws.CheckClientHandler)
 	// Registers a handler for new incoming charge point connections.
@@ -283,7 +340,17 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.WsServer) CentralSystem 
 	}
 	server.AddSupportedSubprotocol(types.V16Subprotocol)
 	if endpoint == nil {
-		endpoint = ocppj.NewServer(server, nil, nil, core.Profile, localauth.Profile, firmware.Profile, reservation.Profile, remotetrigger.Profile, smartcharging.Profile)
+		endpoint = ocppj.NewServer(server, nil, nil,
+			core.Profile,
+			localauth.Profile,
+			firmware.Profile,
+			reservation.Profile,
+			remotetrigger.Profile,
+			smartcharging.Profile,
+			logging.Profile,
+			security.Profile,
+			securefirmware.Profile,
+		)
 	}
 	cs := newCentralSystem(endpoint)
 	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {

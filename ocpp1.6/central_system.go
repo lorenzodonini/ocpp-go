@@ -6,11 +6,16 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/extendedtriggermessage"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/logging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
@@ -18,15 +23,18 @@ import (
 )
 
 type centralSystem struct {
-	server               *ocppj.Server
-	coreHandler          core.CentralSystemHandler
-	localAuthListHandler localauth.CentralSystemHandler
-	firmwareHandler      firmware.CentralSystemHandler
-	reservationHandler   reservation.CentralSystemHandler
-	remoteTriggerHandler remotetrigger.CentralSystemHandler
-	smartChargingHandler smartcharging.CentralSystemHandler
-	callbackQueue        callbackqueue.CallbackQueue
-	errC                 chan error
+	server                *ocppj.Server
+	coreHandler           core.CentralSystemHandler
+	localAuthListHandler  localauth.CentralSystemHandler
+	firmwareHandler       firmware.CentralSystemHandler
+	reservationHandler    reservation.CentralSystemHandler
+	remoteTriggerHandler  remotetrigger.CentralSystemHandler
+	smartChargingHandler  smartcharging.CentralSystemHandler
+	logHandler            logging.CentralSystemHandler
+	securityHandler       security.CentralSystemHandler
+	secureFirmwareHandler securefirmware.CentralSystemHandler
+	callbackQueue         callbackqueue.CallbackQueue
+	errC                  chan error
 }
 
 func newCentralSystem(server *ocppj.Server) centralSystem {
@@ -338,6 +346,91 @@ func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*sm
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *centralSystem) TriggerMessageExtended(clientId string, callback func(*extendedtriggermessage.ExtendedTriggerMessageResponse, error), requestedMessage extendedtriggermessage.ExtendedTriggerMessageType, props ...func(request *extendedtriggermessage.ExtendedTriggerMessageRequest)) error {
+	request := extendedtriggermessage.NewExtendedTriggerMessageRequest(requestedMessage)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
+		confirmationCasted := confirmation.(*extendedtriggermessage.ExtendedTriggerMessageResponse)
+		callback(confirmationCasted, protoError)
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+
+}
+
+func (cs *centralSystem) CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), csr string, props ...func(request *security.SignCertificateRequest)) error {
+	request := security.NewSignCertificateRequest(csr)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
+		confirmationCasted := confirmation.(*security.CertificateSignedResponse)
+		callback(confirmationCasted, protoError)
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) SignedUpdateFirmware(clientId string, callback func(*securefirmware.SignedUpdateFirmwareResponse, error), requestId int, firmware securefirmware.Firmware, props ...func(request *securefirmware.SignedUpdateFirmwareRequest)) error {
+	request := securefirmware.NewSignedUpdateFirmwareRequest(requestId, firmware)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
+		confirmationCasted := confirmation.(*securefirmware.SignedUpdateFirmwareResponse)
+		callback(confirmationCasted, protoError)
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) GetInstalledCertificateIds(clientId string, callback func(*certificates.GetInstalledCertificateIdsResponse, error), props ...func(request *certificates.GetInstalledCertificateIdsRequest)) error {
+	request := certificates.NewGetInstalledCertificateIdsRequest()
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
+		confirmationCasted := confirmation.(*certificates.GetInstalledCertificateIdsResponse)
+		callback(confirmationCasted, protoError)
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) InstallCertificate(clientId string, callback func(*certificates.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(request *certificates.InstallCertificateRequest)) error {
+	request := certificates.NewInstallCertificateRequest(certificateType, certificate)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
+		confirmationCasted := confirmation.(*certificates.InstallCertificateResponse)
+		callback(confirmationCasted, protoError)
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) DeleteCertificate(clientId string, callback func(*certificates.DeleteCertificateResponse, error), certificateHashData types.CertificateHashData, props ...func(request *certificates.DeleteCertificateRequest)) error {
+	request := certificates.NewDeleteCertificateRequest(certificateHashData)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
+		confirmationCasted := confirmation.(*certificates.DeleteCertificateResponse)
+		callback(confirmationCasted, protoError)
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *centralSystem) GetLog(clientId string, callback func(*logging.GetLogResponse, error), logType logging.LogType, requestID int, logParameters logging.LogParameters, props ...func(request *logging.GetLogRequest)) error {
+	request := logging.NewGetLogRequest(logType, requestID, logParameters)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(confirmation ocpp.Response, protoError error) {
+		confirmationCasted := confirmation.(*logging.GetLogResponse)
+		callback(confirmationCasted, protoError)
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *centralSystem) SetCoreHandler(handler core.CentralSystemHandler) {
 	cs.coreHandler = handler
 }
@@ -360,6 +453,18 @@ func (cs *centralSystem) SetRemoteTriggerHandler(handler remotetrigger.CentralSy
 
 func (cs *centralSystem) SetSmartChargingHandler(handler smartcharging.CentralSystemHandler) {
 	cs.smartChargingHandler = handler
+}
+
+func (cs *centralSystem) SetSecurityHandler(handler security.CentralSystemHandler) {
+	cs.securityHandler = handler
+}
+
+func (cs *centralSystem) SetLogHandler(handler logging.CentralSystemHandler) {
+	cs.logHandler = handler
+}
+
+func (cs *centralSystem) SetSecureFirmwareHandler(handler securefirmware.CentralSystemHandler) {
+	cs.secureFirmwareHandler = handler
 }
 
 func (cs *centralSystem) SetNewChargingStationValidationHandler(handler ws.CheckClientHandler) {
@@ -393,7 +498,12 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 		firmware.GetDiagnosticsFeatureName, firmware.UpdateFirmwareFeatureName,
 		reservation.ReserveNowFeatureName, reservation.CancelReservationFeatureName,
 		remotetrigger.TriggerMessageFeatureName,
-		smartcharging.SetChargingProfileFeatureName, smartcharging.ClearChargingProfileFeatureName, smartcharging.GetCompositeScheduleFeatureName:
+		smartcharging.SetChargingProfileFeatureName, smartcharging.ClearChargingProfileFeatureName, smartcharging.GetCompositeScheduleFeatureName,
+		security.CertificateSignedFeatureName,
+		securefirmware.SignedUpdateFirmwareFeatureName,
+		logging.GetLogFeatureName,
+		extendedtriggermessage.ExtendedTriggerMessageFeatureName,
+		certificates.GetInstalledCertificateIdsFeatureName, certificates.DeleteCertificateFeatureName, certificates.InstallCertificateFeatureName:
 	default:
 		return fmt.Errorf("unsupported action %v on central system, cannot send request", featureName)
 	}
@@ -504,6 +614,21 @@ func (cs *centralSystem) handleIncomingRequest(chargePoint ChargePointConnection
 				cs.notSupportedError(chargePoint.ID(), requestId, action)
 				return
 			}
+		case logging.ProfileName:
+			if cs.logHandler == nil {
+				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				return
+			}
+		case security.ProfileName:
+			if cs.securityHandler == nil {
+				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				return
+			}
+		case securefirmware.ProfileName:
+			if cs.secureFirmwareHandler == nil {
+				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				return
+			}
 		}
 	}
 	var confirmation ocpp.Response
@@ -531,6 +656,14 @@ func (cs *centralSystem) handleIncomingRequest(chargePoint ChargePointConnection
 			confirmation, err = cs.firmwareHandler.OnDiagnosticsStatusNotification(chargePoint.ID(), request.(*firmware.DiagnosticsStatusNotificationRequest))
 		case firmware.FirmwareStatusNotificationFeatureName:
 			confirmation, err = cs.firmwareHandler.OnFirmwareStatusNotification(chargePoint.ID(), request.(*firmware.FirmwareStatusNotificationRequest))
+		case security.SignCertificateFeatureName:
+			confirmation, err = cs.securityHandler.OnSignCertificate(chargePoint.ID(), request.(*security.SignCertificateRequest))
+		case security.SecurityEventNotificationFeatureName:
+			confirmation, err = cs.securityHandler.OnSecurityEventNotification(chargePoint.ID(), request.(*security.SecurityEventNotificationRequest))
+		case logging.LogStatusNotificationFeatureName:
+			confirmation, err = cs.logHandler.OnLogStatusNotification(chargePoint.ID(), request.(*logging.LogStatusNotificationRequest))
+		case securefirmware.SignedFirmwareStatusNotificationFeatureName:
+			confirmation, err = cs.secureFirmwareHandler.OnSignedFirmwareStatusNotification(chargePoint.ID(), request.(*securefirmware.SignedFirmwareStatusNotificationRequest))
 		default:
 			cs.notSupportedError(chargePoint.ID(), requestId, action)
 			return
