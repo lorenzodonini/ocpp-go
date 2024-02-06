@@ -63,6 +63,14 @@ func SetLogger(logger logging.Logger) {
 	log = logger
 }
 
+// Logs a websocket message to the internal logger.
+// introducing seperate function to have the opportunity for a dedicated message logger
+func logMessage(args ...interface{}) {
+	if log != nil {
+		log.Debug(args...)
+	}
+}
+
 // Config contains optional configuration parameters for a websocket server.
 // Setting the parameter allows to define custom timeout intervals for websocket network operations.
 //
@@ -457,6 +465,7 @@ func (server *Server) Write(webSocketId string, data []byte) error {
 		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
 	}
 	log.Debugf("queuing data for websocket %s", webSocketId)
+	logMessage("> ", webSocketId, data)
 	ws.outQueue <- data
 	return nil
 }
@@ -593,6 +602,7 @@ func (server *Server) readPump(ws *WebSocket) {
 
 		if server.messageHandler != nil {
 			var channel Channel = ws
+			logMessage("< ", ws.ID(), message)
 			err = server.messageHandler(channel, message)
 			if err != nil {
 				server.error(fmt.Errorf("handling failed for %s: %w", ws.ID(), err))
@@ -964,6 +974,7 @@ func (client *Client) readPump() {
 
 		log.Debugf("received %v bytes", len(message))
 		if client.messageHandler != nil {
+			logMessage("< ", client.webSocket.ID(), message)
 			err = client.messageHandler(message)
 			if err != nil {
 				client.error(fmt.Errorf("handle failed: %w", err))
@@ -1034,6 +1045,7 @@ func (client *Client) Write(data []byte) error {
 		return fmt.Errorf("client is currently not connected, cannot send data")
 	}
 	log.Debugf("queuing data for server")
+	logMessage("> ", client.webSocket.ID(), data)
 	client.webSocket.outQueue <- data
 	return nil
 }
