@@ -52,6 +52,9 @@ const (
 // The internal verbose logger
 var log logging.Logger
 
+// The internal message logger
+var msgLog logging.Logger
+
 // Sets a custom Logger implementation, allowing the package to log events.
 // By default, a VoidLogger is used, so no logs will be sent to any output.
 //
@@ -63,9 +66,23 @@ func SetLogger(logger logging.Logger) {
 	log = logger
 }
 
+// Sets a custom Logger implementation for messages, allowing the package to log ws messages seperately.
+// By default, a VoidLogger is used, so no logs will be sent to any output.
+//
+// The function panics, if a nil logger is passed.
+func SetMessageLogger(logger logging.Logger) {
+	if logger == nil {
+		panic("cannot set a nil logger")
+	}
+	msgLog = logger
+}
+
 // Logs a websocket message to the internal logger.
 // introducing seperate function to have the opportunity for a dedicated message logger
 func logMessage(args ...interface{}) {
+	if msgLog != nil {
+		msgLog.Debug(args...)
+	}
 	if log != nil {
 		log.Debug(args...)
 	}
@@ -1141,4 +1158,5 @@ func (client *Client) Errors() <-chan error {
 
 func init() {
 	log = &logging.VoidLogger{}
+	msgLog = &logging.VoidLogger{}
 }
