@@ -84,7 +84,7 @@ func logMessage(args ...interface{}) {
 		msgLog.Debug(args...)
 	}
 	if log != nil {
-		log.Debug(args...)
+		log.Info(args...)
 	}
 }
 
@@ -482,7 +482,7 @@ func (server *Server) Write(webSocketId string, data []byte) error {
 		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
 	}
 	log.Debugf("queuing data for websocket %s", webSocketId)
-	logMessage("> ", webSocketId, data)
+	logMessage("> ", webSocketId, string(data))
 	ws.outQueue <- data
 	return nil
 }
@@ -619,7 +619,7 @@ func (server *Server) readPump(ws *WebSocket) {
 
 		if server.messageHandler != nil {
 			var channel Channel = ws
-			logMessage("< ", ws.ID(), message)
+			logMessage("< ", ws.ID(), string(message))
 			err = server.messageHandler(channel, message)
 			if err != nil {
 				server.error(fmt.Errorf("handling failed for %s: %w", ws.ID(), err))
@@ -991,7 +991,7 @@ func (client *Client) readPump() {
 
 		log.Debugf("received %v bytes", len(message))
 		if client.messageHandler != nil {
-			logMessage("< ", client.webSocket.ID(), message)
+			logMessage("< ", client.webSocket.ID(), string(message))
 			err = client.messageHandler(message)
 			if err != nil {
 				client.error(fmt.Errorf("handle failed: %w", err))
@@ -1062,7 +1062,7 @@ func (client *Client) Write(data []byte) error {
 		return fmt.Errorf("client is currently not connected, cannot send data")
 	}
 	log.Debugf("queuing data for server")
-	logMessage("> ", client.webSocket.ID(), data)
+	logMessage("> ", client.webSocket.ID(), string(data))
 	client.webSocket.outQueue <- data
 	return nil
 }
