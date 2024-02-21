@@ -31,7 +31,7 @@ type ChargePointHandler interface {
 }
 
 // THe profile name
-var ProfileName = "core"
+var ProfileName = "Core"
 
 // Provides support for Basic Charge Point functionality comparable with OCPP 1.5.
 var Profile = ocpp.NewProfile(

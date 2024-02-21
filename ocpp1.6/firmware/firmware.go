@@ -18,7 +18,7 @@ type ChargePointHandler interface {
 }
 
 // The profile name
-const ProfileName = "firmwareManagement"
+const ProfileName = "FirmwareManagement"
 
 // Provides support for firmware update management and diagnostic log file download.
 var Profile = ocpp.NewProfile(
