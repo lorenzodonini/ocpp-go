@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -41,51 +42,53 @@ func (suite *OcppV16TestSuite) TestChargePointSendResponseError() {
 	err := suite.chargePoint.Start("someUrl")
 	require.Nil(t, err)
 	resultChannel := make(chan error, 1)
-	// Test 1: occurrence validation error
-	dataTransferConfirmation := core.NewDataTransferConfirmation(core.DataTransferStatusAccepted)
-	dataTransferConfirmation.Data = CustomData{Field1: "", Field2: 42}
-	coreListener.On("OnDataTransfer", mock.Anything).Return(dataTransferConfirmation, nil)
-	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *core.DataTransferConfirmation, err error) {
-		require.Nil(t, confirmation)
-		require.Error(t, err)
-		resultChannel <- err
-	}, "vendor1")
-	require.Nil(t, err)
-	result := <-resultChannel
-	require.IsType(t, &ocpp.Error{}, result)
-	ocppErr = result.(*ocpp.Error)
-	assert.Equal(t, ocppj.OccurrenceConstraintViolation, ocppErr.Code)
-	assert.Equal(t, "Field CallResult.Payload.Data.Field1 required but not found for feature DataTransfer", ocppErr.Description)
-	// Test 2: marshaling error
-	dataTransferConfirmation = core.NewDataTransferConfirmation(core.DataTransferStatusAccepted)
-	dataTransferConfirmation.Data = make(chan struct{})
-	coreListener.ExpectedCalls = nil
-	coreListener.On("OnDataTransfer", mock.Anything).Return(dataTransferConfirmation, nil)
-	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *core.DataTransferConfirmation, err error) {
-		require.Nil(t, confirmation)
-		require.Error(t, err)
-		resultChannel <- err
-	}, "vendor1")
-	require.Nil(t, err)
-	result = <-resultChannel
-	require.IsType(t, &ocpp.Error{}, result)
-	ocppErr = result.(*ocpp.Error)
-	assert.Equal(t, ocppj.GenericError, ocppErr.Code)
-	assert.Equal(t, "json: unsupported type: chan struct {}", ocppErr.Description)
-	// Test 3: no results in callback
-	coreListener.ExpectedCalls = nil
-	coreListener.On("OnDataTransfer", mock.Anything).Return(nil, nil)
-	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *core.DataTransferConfirmation, err error) {
-		require.Nil(t, confirmation)
-		require.Error(t, err)
-		resultChannel <- err
-	}, "vendor1")
-	require.Nil(t, err)
-	result = <-resultChannel
-	require.IsType(t, &ocpp.Error{}, result)
-	ocppErr = result.(*ocpp.Error)
-	assert.Equal(t, ocppj.GenericError, ocppErr.Code)
-	assert.Equal(t, "empty confirmation to request 1234", ocppErr.Description)
+
+	testCases := []struct {
+		name        string
+		confirmData interface{}
+		expectedErr *ocpp.Error
+	}{
+		{
+			name:        "ocurrence validation",
+			confirmData: CustomData{Field1: "", Field2: 42},
+			expectedErr: &ocpp.Error{Code: ocppj.OccurrenceConstraintViolation, Description: "Field CallResult.Payload.Data.Field1 required but not found for feature DataTransfer"},
+		},
+		{
+			name:        "marshaling error",
+			confirmData: make(chan struct{}),
+			expectedErr: &ocpp.Error{Code: ocppj.GenericError, Description: "json: unsupported type: chan struct {}"},
+		},
+		{
+			name:        "empty confirmation",
+			confirmData: nil,
+			expectedErr: &ocpp.Error{Code: ocppj.GenericError, Description: "empty confirmation to request 1234"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(*testing.T) {
+			coreListener.ExpectedCalls = nil
+			if tc.confirmData != nil {
+				dataTransferConfirmation := core.NewDataTransferConfirmation(core.DataTransferStatusAccepted)
+				dataTransferConfirmation.Data = tc.confirmData
+				coreListener.On("OnDataTransfer", mock.Anything).Return(dataTransferConfirmation, nil)
+			} else {
+				coreListener.On("OnDataTransfer", mock.Anything).Return(nil, nil)
+			}
+
+			err = suite.centralSystem.DataTransfer(wsId, func(confirmation *core.DataTransferConfirmation, err error) {
+				require.Nil(t, confirmation)
+				require.Error(t, err)
+				resultChannel <- err
+			}, "vendor1")
+			require.Nil(t, err)
+			result := <-resultChannel
+			require.IsType(t, &ocpp.Error{}, result)
+			ocppErr = result.(*ocpp.Error)
+			assert.Equal(t, tc.expectedErr.Code, ocppErr.Code)
+			assert.Equal(t, tc.expectedErr.Description, ocppErr.Description)
+		})
+	}
 }
 
 func (suite *OcppV16TestSuite) TestCentralSystemSendResponseError() {
