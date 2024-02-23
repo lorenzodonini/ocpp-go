@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -11,7 +12,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestGetLocalListVersionRequestValidation() {
 	t := suite.T()
-	var requestTable = []GenericTestEntry{
+	requestTable := []GenericTestEntry{
 		{localauth.GetLocalListVersionRequest{}, true},
 	}
 	ExecuteGenericTestTable(t, requestTable)
@@ -19,7 +20,7 @@ func (suite *OcppV16TestSuite) TestGetLocalListVersionRequestValidation() {
 
 func (suite *OcppV16TestSuite) TestGetLocalListVersionConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
+	confirmationTable := []GenericTestEntry{
 		{localauth.GetLocalListVersionConfirmation{ListVersion: 1}, true},
 		{localauth.GetLocalListVersionConfirmation{ListVersion: 0}, true},
 		{localauth.GetLocalListVersionConfirmation{}, true},
@@ -47,7 +48,7 @@ func (suite *OcppV16TestSuite) TestGetLocalListVersionE2EMocked() {
 		require.True(t, ok)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetLocalAuthListHandler(localAuthListListener)
+	suite.chargePoint.SetLocalAuthListHandler(&localAuthListListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
