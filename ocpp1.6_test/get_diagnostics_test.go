@@ -14,7 +14,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestGetDiagnosticsRequestValidation() {
 	t := suite.T()
-	var requestTable = []GenericTestEntry{
+	requestTable := []GenericTestEntry{
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10), StartTime: types.NewDateTime(time.Now()), StopTime: types.NewDateTime(time.Now())}, true},
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10), StartTime: types.NewDateTime(time.Now())}, true},
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10)}, true},
@@ -30,7 +30,7 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsRequestValidation() {
 
 func (suite *OcppV16TestSuite) TestGetDiagnosticsConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
+	confirmationTable := []GenericTestEntry{
 		{firmware.GetDiagnosticsConfirmation{FileName: "someFileName"}, true},
 		{firmware.GetDiagnosticsConfirmation{FileName: ""}, true},
 		{firmware.GetDiagnosticsConfirmation{}, true},
@@ -71,7 +71,7 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 		assertDateTimeEquality(t, *stopTime, *request.StopTime)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetFirmwareManagementHandler(firmwareListener)
+	suite.chargePoint.SetFirmwareManagementHandler(&firmwareListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")

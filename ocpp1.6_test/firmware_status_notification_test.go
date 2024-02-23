@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -11,7 +12,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationRequestValidation() {
 	t := suite.T()
-	var requestTable = []GenericTestEntry{
+	requestTable := []GenericTestEntry{
 		{firmware.FirmwareStatusNotificationRequest{Status: firmware.FirmwareStatusDownloaded}, true},
 		{firmware.FirmwareStatusNotificationRequest{}, false},
 		{firmware.FirmwareStatusNotificationRequest{Status: "invalidFirmwareStatus"}, false},
@@ -21,7 +22,7 @@ func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationRequestValidation()
 
 func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
+	confirmationTable := []GenericTestEntry{
 		{firmware.FirmwareStatusNotificationConfirmation{}, true},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
@@ -46,7 +47,7 @@ func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 		assert.Equal(t, status, request.Status)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.centralSystem.SetFirmwareManagementHandler(firmwareListener)
+	suite.centralSystem.SetFirmwareManagementHandler(&firmwareListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")

@@ -2,18 +2,19 @@ package ocpp16_test
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"time"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestGetCompositeScheduleRequestValidation() {
 	t := suite.T()
-	var requestTable = []GenericTestEntry{
+	requestTable := []GenericTestEntry{
 		{smartcharging.GetCompositeScheduleRequest{ConnectorId: 1, Duration: 600, ChargingRateUnit: types.ChargingRateUnitWatts}, true},
 		{smartcharging.GetCompositeScheduleRequest{ConnectorId: 1, Duration: 600}, true},
 		{smartcharging.GetCompositeScheduleRequest{ConnectorId: 1}, true},
@@ -28,7 +29,7 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleRequestValidation() {
 func (suite *OcppV16TestSuite) TestGetCompositeScheduleConfirmationValidation() {
 	t := suite.T()
 	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
-	var confirmationTable = []GenericTestEntry{
+	confirmationTable := []GenericTestEntry{
 		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1), ScheduleStart: types.NewDateTime(time.Now()), ChargingSchedule: chargingSchedule}, true},
 		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1), ScheduleStart: types.NewDateTime(time.Now())}, true},
 		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1)}, true},
@@ -75,7 +76,7 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleE2EMocked() {
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetSmartChargingHandler(smartChargingListener)
+	suite.chargePoint.SetSmartChargingHandler(&smartChargingListener)
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)

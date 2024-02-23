@@ -15,7 +15,7 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileRequestValidation() {
 	t := suite.T()
 	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
 	chargingProfile := types.NewChargingProfile(1, 1, types.ChargingProfilePurposeChargePointMaxProfile, types.ChargingProfileKindAbsolute, chargingSchedule)
-	var requestTable = []GenericTestEntry{
+	requestTable := []GenericTestEntry{
 		{smartcharging.SetChargingProfileRequest{ConnectorId: 1, ChargingProfile: chargingProfile}, true},
 		{smartcharging.SetChargingProfileRequest{ChargingProfile: chargingProfile}, true},
 		{smartcharging.SetChargingProfileRequest{}, false},
@@ -27,7 +27,7 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileRequestValidation() {
 
 func (suite *OcppV16TestSuite) TestSetChargingProfileConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
+	confirmationTable := []GenericTestEntry{
 		{smartcharging.SetChargingProfileConfirmation{Status: smartcharging.ChargingProfileStatusAccepted}, true},
 		{smartcharging.SetChargingProfileConfirmation{Status: "invalidChargingProfileStatus"}, false},
 		{smartcharging.SetChargingProfileConfirmation{}, false},
@@ -91,7 +91,7 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetSmartChargingHandler(smartChargingListener)
+	suite.chargePoint.SetSmartChargingHandler(&smartChargingListener)
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
