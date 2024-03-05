@@ -39,7 +39,7 @@ func isValidAuthorizeCertificateStatus(fl validator.FieldLevel) bool {
 type AuthorizeRequest struct {
 	Certificate         string                      `json:"certificate,omitempty" validate:"max=5500"`
 	IdToken             types.IdToken               `json:"idToken" validate:"required"`
-	CertificateHashData []types.OCSPRequestDataType `json:"15118CertificateHashData,omitempty" validate:"max=4,dive"`
+	CertificateHashData []types.OCSPRequestDataType `json:"iso15118CertificateHashData,omitempty" validate:"max=4,dive"`
 }
 
 // This field definition of the Authorize response payload, sent by the Charging Station to the CSMS in response to an AuthorizeRequest.
