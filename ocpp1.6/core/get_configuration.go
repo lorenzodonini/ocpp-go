@@ -1,12 +1,27 @@
 package core
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 )
 
 // -------------------- Get Configuration (CS -> CP) --------------------
 
 const GetConfigurationFeatureName = "GetConfiguration"
+
+// Be more lenient about ConfigurationKey values
+func (key *ConfigurationKey) UnmarshalJSON(data []byte) error {
+	var v map[string]interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	key.Key = v["key"].(string)
+	key.Readonly = fmt.Sprintf("%v", v["readonly"]) == "true"
+	valueAsString := fmt.Sprintf("%v", v["value"])
+	key.Value = &valueAsString
+	return nil
+}
 
 // Contains information about a specific configuration key. It is returned in GetConfigurationConfirmation
 type ConfigurationKey struct {
