@@ -53,7 +53,7 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 	certHashData := types.OCSPRequestDataType{HashAlgorithm: types.SHA256, IssuerNameHash: "h0", IssuerKeyHash: "h0.1", SerialNumber: "s0", ResponderURL: "http://www.test.org"}
 	status := types.AuthorizationStatusAccepted
 	certificateStatus := authorization.CertificateStatusAccepted
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificate":"%v","idToken":{"idToken":"%v","type":"%v","additionalInfo":[{"additionalIdToken":"%v","type":"%v"}]},"15118CertificateHashData":[{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}]}]`,
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificate":"%v","idToken":{"idToken":"%v","type":"%v","additionalInfo":[{"additionalIdToken":"%v","type":"%v"}]},"iso15118CertificateHashData":[{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}]}]`,
 		messageId, authorization.AuthorizeFeatureName, certificate, idToken.IdToken, idToken.Type, additionalInfo.AdditionalIdToken, additionalInfo.Type, certHashData.HashAlgorithm, certHashData.IssuerNameHash, certHashData.IssuerKeyHash, certHashData.SerialNumber, certHashData.ResponderURL)
 	responseJson := fmt.Sprintf(`[3,"%v",{"certificateStatus":"%v","idTokenInfo":{"status":"%v"}}]`,
 		messageId, certificateStatus, status)
@@ -103,7 +103,7 @@ func (suite *OcppV2TestSuite) TestAuthorizeInvalidEndpoint() {
 	idToken := types.IdToken{IdToken: "tok1", Type: types.IdTokenTypeKeyCode, AdditionalInfo: []types.AdditionalInfo{additionalInfo}}
 	certHashData := types.OCSPRequestDataType{HashAlgorithm: types.SHA256, IssuerNameHash: "h0", IssuerKeyHash: "h0.1", SerialNumber: "s0", ResponderURL: "http://www.test.org"}
 	authorizeRequest := authorization.NewAuthorizationRequest(idToken.IdToken, idToken.Type)
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificate":"%v","idToken":{"idToken":"%v","type":"%v","additionalInfo":[{"additionalIdToken":"%v","type":"%v"}]},"15118CertificateHashData":[{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}]}]`,
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"certificate":"%v","idToken":{"idToken":"%v","type":"%v","additionalInfo":[{"additionalIdToken":"%v","type":"%v"}]},"iso15118CertificateHashData":[{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}]}]`,
 		messageId, authorization.AuthorizeFeatureName, certificate, idToken.IdToken, idToken.Type, additionalInfo.AdditionalIdToken, additionalInfo.Type, certHashData.HashAlgorithm, certHashData.IssuerNameHash, certHashData.IssuerKeyHash, certHashData.SerialNumber, certHashData.ResponderURL)
 	testUnsupportedRequestFromCentralSystem(suite, authorizeRequest, requestJson, messageId)
 }
