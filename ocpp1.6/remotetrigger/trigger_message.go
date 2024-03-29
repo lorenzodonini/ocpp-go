@@ -1,11 +1,12 @@
 package remotetrigger
 
 import (
+	"reflect"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
 )
 
 // -------------------- Trigger Message (CS -> CP) --------------------
@@ -47,7 +48,7 @@ func isValidMessageTrigger(fl validator.FieldLevel) bool {
 // The field definition of the TriggerMessage request payload sent by the Central System to the Charge Point.
 type TriggerMessageRequest struct {
 	RequestedMessage MessageTrigger `json:"requestedMessage" validate:"required,messageTrigger16"`
-	ConnectorId      *int           `json:"connectorId,omitempty" validate:"omitempty,gt=0"`
+	ConnectorId      *int           `json:"connectorId,omitempty" validate:"omitempty,gte=0"`
 }
 
 // This field definition of the TriggerMessage confirmation payload, sent by the Charge Point to the Central System in response to a TriggerMessageRequest.
