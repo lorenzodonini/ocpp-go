@@ -17,7 +17,8 @@ func (suite *OcppV16TestSuite) TestTriggerMessageRequestValidation() {
 		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName, ConnectorId: newInt(1)}, true},
 		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName}, true},
 		{remotetrigger.TriggerMessageRequest{}, false},
-		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName, ConnectorId: newInt(0)}, false},
+		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName, ConnectorId: newInt(0)}, true},
+		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName, ConnectorId: newInt(-1)}, false},
 		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StartTransactionFeatureName}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
