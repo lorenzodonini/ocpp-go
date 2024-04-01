@@ -215,6 +215,12 @@ func main() {
 	centralSystem.SetReservationHandler(handler)
 	centralSystem.SetRemoteTriggerHandler(handler)
 	centralSystem.SetSmartChargingHandler(handler)
+
+	// Add callbacks for OCPP 1.6 security profiles
+	centralSystem.SetSecurityHandler(handler)
+	centralSystem.SetSecureFirmwareHandler(handler)
+	centralSystem.SetLogHandler(handler)
+
 	// Add handlers for dis/connection of charge points
 	centralSystem.SetNewChargePointHandler(func(chargePoint ocpp16.ChargePointConnection) {
 		handler.chargePoints[chargePoint.ID()] = &ChargePointState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
@@ -237,5 +243,5 @@ func init() {
 	log = logrus.New()
 	log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 	// Set this to DebugLevel if you want to retrieve verbose logs from the ocppj and websocket layers
-	log.SetLevel(logrus.InfoLevel)
+	log.SetLevel(logrus.ErrorLevel)
 }
