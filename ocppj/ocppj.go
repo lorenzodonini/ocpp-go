@@ -411,6 +411,9 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 	if !ok {
 		return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", arr[1]), uniqueId)
 	}
+	if uniqueId == "" {
+		return nil, ocpp.NewError(FormatErrorType(endpoint), "Invalid unique ID, cannot be empty", uniqueId)
+	}
 	// Parse message
 	if typeId == CALL {
 		if len(arr) != 4 {
