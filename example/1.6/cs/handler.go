@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/logging"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	"github.com/sirupsen/logrus"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -130,7 +133,7 @@ func (handler *CentralSystemHandler) OnStartTransaction(chargePointId string, re
 	nextTransactionId += 1
 	connector.currentTransaction = transaction.id
 	info.transactions[transaction.id] = transaction
-	//TODO: check billable clients
+	// TODO: check billable clients
 	logDefault(chargePointId, request.GetFeatureName()).Infof("started transaction %v for connector %v", transaction.id, transaction.connectorId)
 	return core.NewStartTransactionConfirmation(types.NewIdTagInfo(types.AuthorizationStatusAccepted), transaction.id), nil
 }
@@ -146,7 +149,7 @@ func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, req
 		connector.currentTransaction = -1
 		transaction.endTime = request.Timestamp
 		transaction.endMeter = request.MeterStop
-		//TODO: bill charging period to client
+		// TODO: bill charging period to client
 	}
 	logDefault(chargePointId, request.GetFeatureName()).Infof("stopped transaction %v - %v", request.TransactionId, request.Reason)
 	for _, mv := range request.TransactionData {
@@ -178,6 +181,26 @@ func (handler *CentralSystemHandler) OnFirmwareStatusNotification(chargePointId 
 }
 
 // No callbacks for Local Auth management, Reservation, Remote trigger or Smart Charging profile on central system
+
+func (handler *CentralSystemHandler) OnSecurityEventNotification(chargingStationID string, request *security.SecurityEventNotificationRequest) (response *security.SecurityEventNotificationResponse, err error) {
+	logDefault(chargingStationID, request.GetFeatureName()).Infof("security event notification received")
+	return security.NewSecurityEventNotificationResponse(), nil
+}
+
+func (handler *CentralSystemHandler) OnSignCertificate(chargingStationID string, request *security.SignCertificateRequest) (response *security.SignCertificateResponse, err error) {
+	logDefault(chargingStationID, request.GetFeatureName()).Infof("certificate signing request received")
+	return security.NewSignCertificateResponse(types.GenericStatusAccepted), nil
+}
+
+func (handler *CentralSystemHandler) OnSignedFirmwareStatusNotification(chargingStationID string, request *securefirmware.SignedFirmwareStatusNotificationRequest) (response *securefirmware.SignedFirmwareStatusNotificationResponse, err error) {
+	logDefault(chargingStationID, request.GetFeatureName()).Infof("signed firmware status notification received")
+	return securefirmware.NewFirmwareStatusNotificationResponse(), nil
+}
+
+func (handler *CentralSystemHandler) OnLogStatusNotification(chargingStationID string, request *logging.LogStatusNotificationRequest) (response *logging.LogStatusNotificationResponse, err error) {
+	logDefault(chargingStationID, request.GetFeatureName()).Infof("log status notification received")
+	return logging.NewLogStatusNotificationResponse(), nil
+}
 
 // Utility functions
 

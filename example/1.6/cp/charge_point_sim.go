@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/logging"
 	"github.com/sirupsen/logrus"
 
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
@@ -80,6 +81,17 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 	logDefault(bootConf.GetFeatureName()).Infof("status: %v, interval: %v, current time: %v", bootConf.Status, bootConf.Interval, bootConf.CurrentTime.String())
 	// Notify connector status
 	updateStatus(stateHandler, 0, core.ChargePointStatusAvailable)
+	// Security event
+	_, err = chargePoint.SecurityEventNotification("Event", types.Now())
+	checkError(err)
+	// Send log notification
+	_, err = chargePoint.LogStatusNotification(logging.UploadLogStatusUploading, 1)
+	checkError(err)
+	// Request cert signing
+	certificate, err := chargePoint.SignCertificate("adsad")
+	checkError(err)
+	logDefault(certificate.GetFeatureName()).Infof("status: %v", certificate.Status)
+
 	// Wait for some time ...
 	time.Sleep(5 * time.Second)
 	// Simulate charging for connector 1
@@ -166,6 +178,13 @@ func main() {
 	chargePoint.SetReservationHandler(handler)
 	chargePoint.SetRemoteTriggerHandler(handler)
 	chargePoint.SetSmartChargingHandler(handler)
+	// OCPP 1.6j Security extension
+	chargePoint.SetCertificateHandler(handler)
+	chargePoint.SetLogHandler(handler)
+	chargePoint.SetSecureFirmwareHandler(handler)
+	chargePoint.SetExtendedTriggerMessageHandler(handler)
+	chargePoint.SetSecurityHandler(handler)
+
 	ocppj.SetLogger(log.WithField("logger", "ocppj"))
 	ws.SetLogger(log.WithField("logger", "websocket"))
 	// Connects to central system
@@ -185,7 +204,7 @@ func init() {
 	log = logrus.New()
 	log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 	// Set this to DebugLevel if you want to retrieve verbose logs from the ocppj and websocket layers
-	log.SetLevel(logrus.InfoLevel)
+	log.SetLevel(logrus.ErrorLevel)
 }
 
 // Utility functions
