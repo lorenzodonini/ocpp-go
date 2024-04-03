@@ -14,7 +14,7 @@ type ChargePointHandler interface {
 }
 
 // The profile name
-const ProfileName = "localAuthList"
+const ProfileName = "LocalAuthListManagement"
 
 // Provides support for managing the local authorization list in Charge Points.
 var Profile = ocpp.NewProfile(

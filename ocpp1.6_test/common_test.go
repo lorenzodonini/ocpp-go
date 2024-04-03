@@ -21,7 +21,7 @@ func newFloat(f float64) *float64 {
 
 // Test
 func (suite *OcppV16TestSuite) TestIdTagInfoValidation() {
-	var testTable = []GenericTestEntry{
+	testTable := []GenericTestEntry{
 		{types.IdTagInfo{ExpiryDate: types.NewDateTime(time.Now()), ParentIdTag: "00000", Status: types.AuthorizationStatusAccepted}, true},
 		{types.IdTagInfo{ExpiryDate: types.NewDateTime(time.Now()), Status: types.AuthorizationStatusAccepted}, true},
 		{types.IdTagInfo{Status: types.AuthorizationStatusAccepted}, true},
@@ -38,7 +38,7 @@ func (suite *OcppV16TestSuite) TestIdTagInfoValidation() {
 
 func (suite *OcppV16TestSuite) TestChargingSchedulePeriodValidation() {
 	t := suite.T()
-	var testTable = []GenericTestEntry{
+	testTable := []GenericTestEntry{
 		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(3)}, true},
 		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0}, true},
 		{types.ChargingSchedulePeriod{StartPeriod: 0}, true},
@@ -55,7 +55,7 @@ func (suite *OcppV16TestSuite) TestChargingScheduleValidation() {
 	chargingSchedulePeriods := make([]types.ChargingSchedulePeriod, 2)
 	chargingSchedulePeriods[0] = types.NewChargingSchedulePeriod(0, 10.0)
 	chargingSchedulePeriods[1] = types.NewChargingSchedulePeriod(100, 8.0)
-	var testTable = []GenericTestEntry{
+	testTable := []GenericTestEntry{
 		{types.ChargingSchedule{Duration: newInt(0), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
 		{types.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, true},
 		{types.ChargingSchedule{Duration: newInt(0), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: chargingSchedulePeriods}, true},
@@ -72,7 +72,7 @@ func (suite *OcppV16TestSuite) TestChargingScheduleValidation() {
 func (suite *OcppV16TestSuite) TestChargingProfileValidation() {
 	t := suite.T()
 	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0), types.NewChargingSchedulePeriod(100, 8.0))
-	var testTable = []GenericTestEntry{
+	testTable := []GenericTestEntry{
 		{types.ChargingProfile{ChargingProfileId: 1, TransactionId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, RecurrencyKind: types.RecurrencyKindDaily, ValidFrom: types.NewDateTime(time.Now()), ValidTo: types.NewDateTime(time.Now().Add(8 * time.Hour)), ChargingSchedule: chargingSchedule}, true},
 		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: chargingSchedule}, true},
 		{types.ChargingProfile{ChargingProfileId: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargePointMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute}, false},
@@ -91,7 +91,7 @@ func (suite *OcppV16TestSuite) TestChargingProfileValidation() {
 
 func (suite *OcppV16TestSuite) TestSampledValueValidation() {
 	t := suite.T()
-	var testTable = []GenericTestEntry{
+	testTable := []GenericTestEntry{
 		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, Unit: types.UnitOfMeasureKW}, true},
 		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}, true},
 		{types.SampledValue{Value: "value", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatRaw, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2}, true},
@@ -110,7 +110,7 @@ func (suite *OcppV16TestSuite) TestSampledValueValidation() {
 }
 
 func (suite *OcppV16TestSuite) TestMeterValueValidation() {
-	var testTable = []GenericTestEntry{
+	testTable := []GenericTestEntry{
 		{types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}, {Value: "value2", Unit: types.UnitOfMeasureKW}}}, true},
 		{types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}, true},
 		{types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{}}, false},
@@ -180,5 +180,5 @@ func (suite *OcppV16TestSuite) TestMarshalDateTime() {
 func (suite *OcppV16TestSuite) TestNowDateTime() {
 	now := types.Now()
 	suite.NotNil(now)
-	suite.True(time.Now().Sub(now.Time) < 1*time.Second)
+	suite.True(time.Since(now.Time) < 1*time.Second)
 }

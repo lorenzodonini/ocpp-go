@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/stretchr/testify/assert"
@@ -12,11 +13,12 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestTriggerMessageRequestValidation() {
 	t := suite.T()
-	var requestTable = []GenericTestEntry{
+	requestTable := []GenericTestEntry{
 		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName, ConnectorId: newInt(1)}, true},
 		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName}, true},
 		{remotetrigger.TriggerMessageRequest{}, false},
-		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName, ConnectorId: newInt(0)}, false},
+		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName, ConnectorId: newInt(0)}, true},
+		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StatusNotificationFeatureName, ConnectorId: newInt(-1)}, false},
 		{remotetrigger.TriggerMessageRequest{RequestedMessage: core.StartTransactionFeatureName}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
@@ -24,7 +26,7 @@ func (suite *OcppV16TestSuite) TestTriggerMessageRequestValidation() {
 
 func (suite *OcppV16TestSuite) TestTriggerMessageConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
+	confirmationTable := []GenericTestEntry{
 		{remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}, true},
 		{remotetrigger.TriggerMessageConfirmation{Status: "invalidTriggerMessageStatus"}, false},
 		{remotetrigger.TriggerMessageConfirmation{}, false},
@@ -55,7 +57,7 @@ func (suite *OcppV16TestSuite) TestTriggerMessageE2EMocked() {
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetRemoteTriggerHandler(remoteTriggerListener)
+	suite.chargePoint.SetRemoteTriggerHandler(&remoteTriggerListener)
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)

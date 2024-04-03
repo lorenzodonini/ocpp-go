@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -11,7 +12,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestCancelReservationRequestValidation() {
 	t := suite.T()
-	var requestTable = []GenericTestEntry{
+	requestTable := []GenericTestEntry{
 		{reservation.CancelReservationRequest{ReservationId: 42}, true},
 		{reservation.CancelReservationRequest{}, true},
 		{reservation.CancelReservationRequest{ReservationId: -1}, true},
@@ -21,7 +22,7 @@ func (suite *OcppV16TestSuite) TestCancelReservationRequestValidation() {
 
 func (suite *OcppV16TestSuite) TestCancelReservationConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
+	confirmationTable := []GenericTestEntry{
 		{reservation.CancelReservationConfirmation{Status: reservation.CancelReservationStatusAccepted}, true},
 		{reservation.CancelReservationConfirmation{Status: "invalidCancelReservationStatus"}, false},
 		{reservation.CancelReservationConfirmation{}, false},
@@ -50,7 +51,7 @@ func (suite *OcppV16TestSuite) TestCancelReservationE2EMocked() {
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetReservationHandler(reservationListener)
+	suite.chargePoint.SetReservationHandler(&reservationListener)
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)

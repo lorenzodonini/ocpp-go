@@ -574,6 +574,22 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidMessageId() {
 	assert.Equal(t, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", invalidMessageId), protoErr.Description)
 }
 
+func (suite *OcppJTestSuite) TestParseMessageEmptyMessageID() {
+	t := suite.T()
+	mockMessage := make([]interface{}, 3)
+	// Test invalid message length
+	mockMessage[0] = float64(ocppj.CALL_RESULT) // Message Type ID
+	mockMessage[1] = ""                         // Empty ID
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
+	suite.Equal("", protoErr.MessageId)
+	suite.Equal(ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
+	suite.Errorf(protoErr, "Invalid unique ID, cannot be empty")
+}
+
 func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
 	t := suite.T()
 	mockMessage := make([]interface{}, 3)

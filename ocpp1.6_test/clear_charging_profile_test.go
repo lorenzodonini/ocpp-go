@@ -2,6 +2,7 @@ package ocpp16_test
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,7 @@ import (
 // Test
 func (suite *OcppV16TestSuite) TestClearChargingProfileRequestValidation() {
 	t := suite.T()
-	var requestTable = []GenericTestEntry{
+	requestTable := []GenericTestEntry{
 		{smartcharging.ClearChargingProfileRequest{Id: newInt(1), ConnectorId: newInt(1), ChargingProfilePurpose: types.ChargingProfilePurposeChargePointMaxProfile, StackLevel: newInt(1)}, true},
 		{smartcharging.ClearChargingProfileRequest{Id: newInt(1), ConnectorId: newInt(1), ChargingProfilePurpose: types.ChargingProfilePurposeChargePointMaxProfile}, true},
 		{smartcharging.ClearChargingProfileRequest{Id: newInt(1), ConnectorId: newInt(1)}, true},
@@ -28,7 +29,7 @@ func (suite *OcppV16TestSuite) TestClearChargingProfileRequestValidation() {
 
 func (suite *OcppV16TestSuite) TestClearChargingProfileConfirmationValidation() {
 	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
+	confirmationTable := []GenericTestEntry{
 		{smartcharging.ClearChargingProfileConfirmation{Status: smartcharging.ClearChargingProfileStatusAccepted}, true},
 		{smartcharging.ClearChargingProfileConfirmation{Status: "invalidClearChargingProfileStatus"}, false},
 		{smartcharging.ClearChargingProfileConfirmation{}, false},
@@ -64,7 +65,7 @@ func (suite *OcppV16TestSuite) TestClearChargingProfileE2EMocked() {
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetSmartChargingHandler(smartChargingListener)
+	suite.chargePoint.SetSmartChargingHandler(&smartChargingListener)
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
