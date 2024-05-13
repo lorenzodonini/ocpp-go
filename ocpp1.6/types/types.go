@@ -233,6 +233,7 @@ const (
 	UnitOfMeasureA                        UnitOfMeasure  = "A"
 	UnitOfMeasureV                        UnitOfMeasure  = "V"
 	UnitOfMeasureCelsius                  UnitOfMeasure  = "Celsius"
+	UnitOfMeasureCelcius                  UnitOfMeasure  = "Celcius"
 	UnitOfMeasureFahrenheit               UnitOfMeasure  = "Fahrenheit"
 	UnitOfMeasureK                        UnitOfMeasure  = "K"
 	UnitOfMeasurePercent                  UnitOfMeasure  = "Percent"
@@ -291,7 +292,7 @@ func isValidLocation(fl validator.FieldLevel) bool {
 func isValidUnitOfMeasure(fl validator.FieldLevel) bool {
 	unitOfMeasure := UnitOfMeasure(fl.Field().String())
 	switch unitOfMeasure {
-	case UnitOfMeasureA, UnitOfMeasureWh, UnitOfMeasureKWh, UnitOfMeasureVarh, UnitOfMeasureKvarh, UnitOfMeasureW, UnitOfMeasureKW, UnitOfMeasureVA, UnitOfMeasureKVA, UnitOfMeasureVar, UnitOfMeasureKvar, UnitOfMeasureV, UnitOfMeasureCelsius, UnitOfMeasureFahrenheit, UnitOfMeasureK, UnitOfMeasurePercent:
+	case UnitOfMeasureA, UnitOfMeasureWh, UnitOfMeasureKWh, UnitOfMeasureVarh, UnitOfMeasureKvarh, UnitOfMeasureW, UnitOfMeasureKW, UnitOfMeasureVA, UnitOfMeasureKVA, UnitOfMeasureVar, UnitOfMeasureKvar, UnitOfMeasureV, UnitOfMeasureCelsius, UnitOfMeasureCelcius, UnitOfMeasureFahrenheit, UnitOfMeasureK, UnitOfMeasurePercent:
 		return true
 	default:
 		return false
