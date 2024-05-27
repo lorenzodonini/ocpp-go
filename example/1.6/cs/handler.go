@@ -78,7 +78,7 @@ func (handler *CentralSystemHandler) OnBootNotification(chargePointId string, re
 }
 
 func (handler *CentralSystemHandler) OnDataTransfer(chargePointId string, request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
-	logDefault(chargePointId, request.GetFeatureName()).Infof("received data %d", request.Data)
+	logDefault(chargePointId, request.GetFeatureName()).Infof("received data %v", request.Data)
 	return core.NewDataTransferConfirmation(core.DataTransferStatusAccepted), nil
 }
 
