@@ -523,7 +523,5 @@ Or you may build requests manually and send them using either the synchronous or
 If you're contributing a code change, you'll want to be sure the tests are passing first; here are the steps to check that:
 
 -   Install [toxiproxy](https://github.com/Shopify/toxiproxy) for your platform
--   Shell 1 - `cd example/1.6 && ./create-test-certificates.sh ; cd ../..`
--   Shell 1 - `cd example/2.0.1 && ./create-test-certificates.sh ; cd ../..`
 -   Shell 1 - `toxiproxy-server -port 8474 -host localhost`
 -   Shell 2 - `go fmt ./... && go vet ./... && go test -v -count=1 -failfast ./...`
