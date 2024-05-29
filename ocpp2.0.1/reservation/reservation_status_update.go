@@ -41,8 +41,9 @@ type ReservationStatusUpdateResponse struct {
 }
 
 // A Charging Station shall cancel an existing reservation when:
-//  - the status of a targeted EVSE changes to either Faulted or Unavailable
-//  - the reservation has expired, before the EV driver started using the Charging Station
+//   - the status of a targeted EVSE changes to either Faulted or Unavailable
+//   - the reservation has expired, before the EV driver started using the Charging Station
+//
 // This message is not triggered, if a reservation is explicitly canceled by the user or the CSMS.
 //
 // The Charging Station sends a ReservationStatusUpdateRequest to the CSMS, with the according status set.

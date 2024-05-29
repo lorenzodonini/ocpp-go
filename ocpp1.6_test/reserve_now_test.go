@@ -56,7 +56,7 @@ func (suite *OcppV16TestSuite) TestReserveNowE2EMocked() {
 	ReserveNowConfirmation := reservation.NewReserveNowConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	reservationListener := MockChargePointReservationListener{}
+	reservationListener := &MockChargePointReservationListener{}
 	reservationListener.On("OnReserveNow", mock.Anything).Return(ReserveNowConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*reservation.ReserveNowRequest)
 		require.True(t, ok)
@@ -70,7 +70,7 @@ func (suite *OcppV16TestSuite) TestReserveNowE2EMocked() {
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetReservationHandler(&reservationListener)
+	suite.chargePoint.SetReservationHandler(reservationListener)
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
