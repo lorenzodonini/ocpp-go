@@ -40,7 +40,7 @@ type GetCompositeScheduleRequest struct {
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetCompositeScheduleConfirmation struct {
 	Status           GetCompositeScheduleStatus `json:"status" validate:"required,compositeScheduleStatus"`
-	ConnectorId      *int                       `json:"connectorId,omitempty" validate:"omitempty,gt=0"`
+	ConnectorId      *int                       `json:"connectorId,omitempty" validate:"omitempty,gte=0"`
 	ScheduleStart    *types.DateTime            `json:"scheduleStart,omitempty"`
 	ChargingSchedule *types.ChargingSchedule    `json:"chargingSchedule,omitempty" validate:"omitempty"`
 }

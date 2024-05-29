@@ -46,12 +46,12 @@ type StatusNotificationResponse struct {
 
 // The Charging Station notifies the CSMS about a connector status change.
 // This may typically be after on of the following events:
-//  - (re)boot
-//  - reset
-//  - any transaction event (start/stop/authorization)
-//  - reservation events
-//  - change availability operations
-//  - remote triggers
+//   - (re)boot
+//   - reset
+//   - any transaction event (start/stop/authorization)
+//   - reservation events
+//   - change availability operations
+//   - remote triggers
 //
 // The charging station sends a StatusNotificationRequest to the CSMS with information about the new status.
 // The CSMS responds with a StatusNotificationResponse.

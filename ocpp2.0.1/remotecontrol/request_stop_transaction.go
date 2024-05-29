@@ -24,9 +24,9 @@ type RequestStopTransactionResponse struct {
 
 // The CSMS may remotely stop an ongoing transaction for a user.
 // This functionality may be triggered by:
-//	- a CSO, to help out a user, that is having trouble stopping a transaction
-//	- a third-party event (e.g. mobile app)
-//  - the ISO15118-1 use-case F2
+//   - a CSO, to help out a user, that is having trouble stopping a transaction
+//   - a third-party event (e.g. mobile app)
+//   - the ISO15118-1 use-case F2
 //
 // The CSMS sends a RequestStopTransactionRequest to the Charging Station.
 // The Charging Stations will reply with a RequestStopTransactionResponse.
