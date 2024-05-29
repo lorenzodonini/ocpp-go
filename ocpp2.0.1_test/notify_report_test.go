@@ -123,7 +123,6 @@ func (suite *OcppV2TestSuite) TestNotifyReportE2EMocked() {
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"requestId":%v,"generatedAt":"%v","tbc":%v,"seqNo":%v,"reportData":[{"component":{"name":"%v"},"variable":{"name":"%v"},"variableAttribute":[{"type":"%v","value":"%v","mutability":"%v"}],"variableCharacteristics":{"unit":"%v","dataType":"%v","maxLimit":%v,"supportsMonitoring":%v}}]}]`,
 		messageId, provisioning.NotifyReportFeatureName, requestID, generatedAt.FormatTimestamp(), tbc, seqNo, reportData.Component.Name, reportData.Variable.Name, variableAttribute.Type, variableAttribute.Value, variableAttribute.Mutability, variableCharacteristics.Unit, variableCharacteristics.DataType, *variableCharacteristics.MaxLimit, variableCharacteristics.SupportsMonitoring)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
-	fmt.Println(responseJson)
 	notifyReportResponse := provisioning.NewNotifyReportResponse()
 	channel := NewMockWebSocket(wsId)
 

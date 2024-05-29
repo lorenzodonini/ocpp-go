@@ -107,7 +107,7 @@ func NewStopTransactionConfirmation() *StopTransactionConfirmation {
 	return &StopTransactionConfirmation{}
 }
 
-//TODO: advanced validation
+// TODO: advanced validation
 func init() {
 	_ = types.Validate.RegisterValidation("reason", isValidReason)
 }

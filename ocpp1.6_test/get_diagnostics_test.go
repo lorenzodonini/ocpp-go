@@ -57,7 +57,7 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 	getDiagnosticsConfirmation.FileName = fileName
 	channel := NewMockWebSocket(wsId)
 
-	firmwareListener := MockChargePointFirmwareManagementListener{}
+	firmwareListener := &MockChargePointFirmwareManagementListener{}
 	firmwareListener.On("OnGetDiagnostics", mock.Anything).Return(getDiagnosticsConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*firmware.GetDiagnosticsRequest)
 		require.NotNil(t, request)
@@ -71,7 +71,7 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 		assertDateTimeEquality(t, *stopTime, *request.StopTime)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetFirmwareManagementHandler(&firmwareListener)
+	suite.chargePoint.SetFirmwareManagementHandler(firmwareListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")

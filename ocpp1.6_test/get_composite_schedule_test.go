@@ -18,6 +18,7 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleRequestValidation() {
 		{smartcharging.GetCompositeScheduleRequest{ConnectorId: 1, Duration: 600, ChargingRateUnit: types.ChargingRateUnitWatts}, true},
 		{smartcharging.GetCompositeScheduleRequest{ConnectorId: 1, Duration: 600}, true},
 		{smartcharging.GetCompositeScheduleRequest{ConnectorId: 1}, true},
+		{smartcharging.GetCompositeScheduleRequest{ConnectorId: 0}, true},
 		{smartcharging.GetCompositeScheduleRequest{}, true},
 		{smartcharging.GetCompositeScheduleRequest{ConnectorId: -1, Duration: 600, ChargingRateUnit: types.ChargingRateUnitWatts}, false},
 		{smartcharging.GetCompositeScheduleRequest{ConnectorId: 1, Duration: -1, ChargingRateUnit: types.ChargingRateUnitWatts}, false},
@@ -33,6 +34,7 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleConfirmationValidation() 
 		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1), ScheduleStart: types.NewDateTime(time.Now()), ChargingSchedule: chargingSchedule}, true},
 		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1), ScheduleStart: types.NewDateTime(time.Now())}, true},
 		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(1)}, true},
+		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted, ConnectorId: newInt(0)}, true},
 		{smartcharging.GetCompositeScheduleConfirmation{Status: smartcharging.GetCompositeScheduleStatusAccepted}, true},
 		{smartcharging.GetCompositeScheduleConfirmation{}, false},
 		{smartcharging.GetCompositeScheduleConfirmation{Status: "invalidGetCompositeScheduleStatus"}, false},
@@ -65,7 +67,7 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleE2EMocked() {
 	getCompositeScheduleConfirmation.ConnectorId = &connectorId
 	channel := NewMockWebSocket(wsId)
 
-	smartChargingListener := MockChargePointSmartChargingListener{}
+	smartChargingListener := &MockChargePointSmartChargingListener{}
 	smartChargingListener.On("OnGetCompositeSchedule", mock.Anything).Return(getCompositeScheduleConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*smartcharging.GetCompositeScheduleRequest)
 		require.True(t, ok)
@@ -76,7 +78,7 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleE2EMocked() {
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetSmartChargingHandler(&smartChargingListener)
+	suite.chargePoint.SetSmartChargingHandler(smartChargingListener)
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)

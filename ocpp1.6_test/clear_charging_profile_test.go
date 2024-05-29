@@ -53,7 +53,7 @@ func (suite *OcppV16TestSuite) TestClearChargingProfileE2EMocked() {
 	ClearChargingProfileConfirmation := smartcharging.NewClearChargingProfileConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	smartChargingListener := MockChargePointSmartChargingListener{}
+	smartChargingListener := &MockChargePointSmartChargingListener{}
 	smartChargingListener.On("OnClearChargingProfile", mock.Anything).Return(ClearChargingProfileConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*smartcharging.ClearChargingProfileRequest)
 		require.True(t, ok)
@@ -65,7 +65,7 @@ func (suite *OcppV16TestSuite) TestClearChargingProfileE2EMocked() {
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetSmartChargingHandler(&smartChargingListener)
+	suite.chargePoint.SetSmartChargingHandler(smartChargingListener)
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
