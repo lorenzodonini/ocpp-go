@@ -19,10 +19,11 @@ func (suite *OcppV2TestSuite) TestSetVariablesRequestValidation() {
 
 	var requestTable = []GenericTestEntry{
 		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeType: types.AttributeTarget, AttributeValue: "dummyValue", Component: component, Variable: variable}}}, true},
+		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeType: types.AttributeActual, AttributeValue: "", Component: component, Variable: variable}}}, true},
 		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Component: component, Variable: variable}}}, true},
 		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Component: types.Component{Name: "component1"}, Variable: variable}}}, true},
 		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Component: component, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{Component: component, Variable: variable}}}, false},
+		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{Component: component, Variable: variable}}}, true}, // empty string is valid value
 		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Variable: variable}}}, false},
 		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Component: component}}}, false},
 		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{}}, false},

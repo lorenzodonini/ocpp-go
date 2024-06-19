@@ -35,7 +35,7 @@ func isValidSetVariableStatus(fl validator.FieldLevel) bool {
 
 type SetVariableData struct {
 	AttributeType  types.Attribute `json:"attributeType,omitempty" validate:"omitempty,attribute"`
-	AttributeValue string          `json:"attributeValue" validate:"required,max=1000"`
+	AttributeValue string          `json:"attributeValue" validate:"max=1000"`
 	Component      types.Component `json:"component" validate:"required"`
 	Variable       types.Variable  `json:"variable" validate:"required"`
 }
