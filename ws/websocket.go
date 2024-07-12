@@ -900,7 +900,7 @@ func (client *Client) writePump() {
 		ticker.Stop()
 		client.cleanup()
 		// Invoke callback
-		if client.onDisconnected != nil {
+		if err != nil && client.onDisconnected != nil {
 			client.onDisconnected(err)
 		}
 	}
