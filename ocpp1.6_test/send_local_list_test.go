@@ -68,7 +68,7 @@ func (suite *OcppV16TestSuite) TestSendLocalListE2EMocked() {
 	sendLocalListConfirmation := localauth.NewSendLocalListConfirmation(status)
 	channel := NewMockWebSocket(wsId)
 
-	localAuthListListener := MockChargePointLocalAuthListListener{}
+	localAuthListListener := &MockChargePointLocalAuthListListener{}
 	localAuthListListener.On("OnSendLocalList", mock.Anything).Return(sendLocalListConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*localauth.SendLocalListRequest)
 		require.NotNil(t, request)
@@ -83,7 +83,7 @@ func (suite *OcppV16TestSuite) TestSendLocalListE2EMocked() {
 		assertDateTimeEquality(t, *localAuthEntry.IdTagInfo.ExpiryDate, *request.LocalAuthorizationList[0].IdTagInfo.ExpiryDate)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
-	suite.chargePoint.SetLocalAuthListHandler(&localAuthListListener)
+	suite.chargePoint.SetLocalAuthListHandler(localAuthListListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")

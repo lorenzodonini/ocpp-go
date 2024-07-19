@@ -39,7 +39,7 @@ func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	firmwareStatusNotificationConfirmation := firmware.NewFirmwareStatusNotificationConfirmation()
 	channel := NewMockWebSocket(wsId)
 
-	firmwareListener := MockCentralSystemFirmwareManagementListener{}
+	firmwareListener := &MockCentralSystemFirmwareManagementListener{}
 	firmwareListener.On("OnFirmwareStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(firmwareStatusNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*firmware.FirmwareStatusNotificationRequest)
 		require.True(t, ok)
@@ -47,7 +47,7 @@ func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 		assert.Equal(t, status, request.Status)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
-	suite.centralSystem.SetFirmwareManagementHandler(&firmwareListener)
+	suite.centralSystem.SetFirmwareManagementHandler(firmwareListener)
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
