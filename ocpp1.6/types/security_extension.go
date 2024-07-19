@@ -11,6 +11,16 @@ const (
 	ChargingStationCert CertificateSigningUse = "ChargingStationCertificate"
 )
 
+func isValidCertificateSigningUse(fl validator.FieldLevel) bool {
+	status := CertificateSigningUse(fl.Field().String())
+	switch status {
+	case ChargingStationCert:
+		return true
+	default:
+		return false
+	}
+}
+
 // Generic Status
 type GenericStatus string
 
@@ -18,6 +28,16 @@ const (
 	GenericStatusAccepted GenericStatus = "Accepted"
 	GenericStatusRejected GenericStatus = "Rejected"
 )
+
+func isValidGenericStatus(fl validator.FieldLevel) bool {
+	status := GenericStatus(fl.Field().String())
+	switch status {
+	case GenericStatusAccepted, GenericStatusRejected:
+		return true
+	default:
+		return false
+	}
+}
 
 // StatusInfo is an element providing more information about the message status.
 type StatusInfo struct {
@@ -72,4 +92,14 @@ type CertificateHashDataChain struct {
 	CertificateType          CertificateUse        `json:"certificateType" validate:"required,certificateUse"`
 	CertificateHashData      CertificateHashData   `json:"certificateHashData" validate:"required"`
 	ChildCertificateHashData []CertificateHashData `json:"childCertificateHashData,omitempty" validate:"omitempty,dive"`
+}
+
+func isValidHashAlgorithmType(fl validator.FieldLevel) bool {
+	algorithm := HashAlgorithmType(fl.Field().String())
+	switch algorithm {
+	case SHA256, SHA384, SHA512:
+		return true
+	default:
+		return false
+	}
 }
