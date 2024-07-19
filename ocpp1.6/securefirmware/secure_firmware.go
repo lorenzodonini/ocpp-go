@@ -1,4 +1,4 @@
-// The diagnostics functional block contains OCPP 2.0 features than enable remote diagnostics of problems with a charging station.
+// The diagnostics functional block contains OCPP 1.6J extension features than enable remote firmware updates on charging stations.
 package securefirmware
 
 import "github.com/lorenzodonini/ocpp-go/ocpp"
