@@ -9,21 +9,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/extendedtriggermessage"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -692,14 +695,47 @@ func (suite *OcppV16TestSuite) SetupTest() {
 	reservationProfile := reservation.Profile
 	remoteTriggerProfile := remotetrigger.Profile
 	smartChargingProfile := smartcharging.Profile
+	certificatesProfile := certificates.Profile
+	secureFirmwareUpdateProfile := securefirmware.Profile
+	extendedTriggerMessageProfile := extendedtriggermessage.Profile
+	securityProfile := security.Profile
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
 	suite.clientDispatcher = ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(queueCapacity))
 	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(queueCapacity))
-	suite.ocppjChargePoint = ocppj.NewClient("test_id", suite.mockWsClient, suite.clientDispatcher, nil, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
-	suite.ocppjCentralSystem = ocppj.NewServer(suite.mockWsServer, suite.serverDispatcher, nil, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
+	suite.ocppjChargePoint = ocppj.NewClient(
+		"test_id",
+		suite.mockWsClient,
+		suite.clientDispatcher,
+		nil,
+		coreProfile,
+		localAuthListProfile,
+		firmwareProfile,
+		reservationProfile,
+		remoteTriggerProfile,
+		smartChargingProfile,
+		certificatesProfile,
+		extendedTriggerMessageProfile,
+		securityProfile,
+		secureFirmwareUpdateProfile,
+	)
+	suite.ocppjCentralSystem = ocppj.NewServer(
+		suite.mockWsServer,
+		suite.serverDispatcher,
+		nil,
+		coreProfile,
+		localAuthListProfile,
+		firmwareProfile,
+		reservationProfile,
+		remoteTriggerProfile,
+		smartChargingProfile,
+		certificatesProfile,
+		extendedTriggerMessageProfile,
+		securityProfile,
+		secureFirmwareUpdateProfile,
+	)
 	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {

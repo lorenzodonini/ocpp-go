@@ -48,7 +48,7 @@ func isValidUpdateFirmwareStatus(fl validator.FieldLevel) bool {
 	}
 }
 
-// The field definition of the LogStatusNotification request payload sent by a Charging Station to the CSMS.
+// The field definition of the SignedUpdateFirmwareRequest request payload sent by a Charging Station to the CSMS.
 type SignedUpdateFirmwareRequest struct {
 	Retries       *int     `json:"retries,omitempty" validate:"omitempty,gte=0"`       // This specifies how many times Charging Station must try to download the firmware before giving up. If this field is not present, it is left to Charging Station to decide how many times it wants to retry.
 	RetryInterval *int     `json:"retryInterval,omitempty" validate:"omitempty,gte=0"` // The interval in seconds after which a retry may be attempted. If this field is not present, it is left to Charging Station to decide how long to wait between attempts.
