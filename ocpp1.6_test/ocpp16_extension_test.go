@@ -1,4 +1,4 @@
-package ocpp16
+package ocpp16_test
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
