@@ -359,8 +359,8 @@ func (cs *centralSystem) TriggerMessageExtended(clientId string, callback func(*
 
 }
 
-func (cs *centralSystem) CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), csr string, props ...func(request *security.SignCertificateRequest)) error {
-	request := security.NewSignCertificateRequest(csr)
+func (cs *centralSystem) CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), csr string, props ...func(request *security.CertificateSignedRequest)) error {
+	request := security.NewCertificateSignedRequest(csr)
 	for _, fn := range props {
 		fn(request)
 	}
