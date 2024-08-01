@@ -1,0 +1,139 @@
+with-expecter: true
+dir: "{{.InterfaceDir}}/mocks"
+outpkg: mocks
+filename: "mock_{{.InterfaceName}}.go"
+mockname: "Mock{{.InterfaceName}}"
+all: true
+
+packages:
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/core:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_core_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockCore{{.InterfaceName}}"
+    interfaces:
+      CentralSystemHandler:
+      ChargePointHandler:
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_certificates_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockCertificates{{.InterfaceName}}"
+
+    interfaces:
+      ChargePointHandler:
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/logging:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_logging_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockLog{{.InterfaceName}}"
+
+    interfaces:
+      CentralSystemHandler:
+      ChargePointHandler:
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/extendedtriggermessage:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_extended_trigger_message_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockExtendedTriggerMessage{{.InterfaceName}}"
+
+    interfaces:
+      ChargePointHandler:
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_firmware_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockFirmware{{.InterfaceName}}"
+
+    interfaces:
+      CentralSystemHandler:
+      ChargePointHandler:
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_local_auth_list_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockLocalAuthList{{.InterfaceName}}"
+
+    interfaces:
+      CentralSystemHandler:
+      ChargePointHandler:
+
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_remote_trigger_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockRemoteTrigger{{.InterfaceName}}"
+
+    interfaces:
+      CentralSystemHandler:
+      ChargePointHandler:
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_reservation_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockReservation{{.InterfaceName}}"
+
+    interfaces:
+      CentralSystemHandler:
+      ChargePointHandler:
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_secure_firmware_{{.InterfaceName}}.go"
+      mockname: "MockSecureFirmware{{.InterfaceName}}"
+
+    interfaces:
+      CentralSystemHandler:
+      ChargePointHandler:
+
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/security:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_security_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockSecurity{{.InterfaceName}}"
+
+    interfaces:
+      CentralSystemHandler:
+      ChargePointHandler:
+
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_smart_charging_{{.InterfaceName|snakecase}}.go"
+      mockname: "MockSmartCharging{{.InterfaceName}}"
+
+    interfaces:
+      CentralSystemHandler:
+      ChargePointHandler:
+
+
+  github.com/lorenzodonini/ocpp-go/ocpp1.6:
+    config:
+      dir: "ocpp1.6_test/mocks"
+      filename: "mock_ocpp16.go"
+
+    interfaces:
+      ChargePointConnection:
+      ChargePoint:
+      CentralSystem:
+
+  github.com/lorenzodonini/ocpp-go/ocppj:
+    interfaces:
+      ServerQueueMap:
+      RequestQueue:
+
+  github.com/lorenzodonini/ocpp-go/ws:
+    interfaces:
+      WsClient:
+      WsServer:
+      Channel:
