@@ -8,11 +8,16 @@ import (
 	"time"
 
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/extendedtriggermessage"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/logging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
@@ -142,7 +147,7 @@ func (handler *ChargePointHandler) OnRemoteStopTransaction(request *core.RemoteS
 }
 
 func (handler *ChargePointHandler) OnReset(request *core.ResetRequest) (confirmation *core.ResetConfirmation, err error) {
-	//TODO: stop all ongoing transactions
+	// TODO: stop all ongoing transactions
 	logDefault(request.GetFeatureName()).Warn("no reset logic implemented yet")
 	return core.NewResetConfirmation(core.ResetStatusAccepted), nil
 }
@@ -183,7 +188,7 @@ func (handler *ChargePointHandler) OnSendLocalList(request *localauth.SendLocalL
 // ------------- Firmware management profile callbacks -------------
 
 func (handler *ChargePointHandler) OnGetDiagnostics(request *firmware.GetDiagnosticsRequest) (confirmation *firmware.GetDiagnosticsConfirmation, err error) {
-	//TODO: perform diagnostics upload out-of-band
+	// TODO: perform diagnostics upload out-of-band
 	logDefault(request.GetFeatureName()).Warn("no diagnostics upload logic implemented yet")
 	return firmware.NewGetDiagnosticsConfirmation(), nil
 }
@@ -209,7 +214,7 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 	status := remotetrigger.TriggerMessageStatusRejected
 	switch request.RequestedMessage {
 	case core.BootNotificationFeatureName:
-		//TODO: schedule boot notification message
+		// TODO: schedule boot notification message
 		break
 	case firmware.DiagnosticsStatusNotificationFeatureName:
 		// Schedule diagnostics status notification request
@@ -220,7 +225,7 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 		}()
 		status = remotetrigger.TriggerMessageStatusAccepted
 	case firmware.FirmwareStatusNotificationFeatureName:
-		//TODO: schedule firmware status notification message
+		// TODO: schedule firmware status notification message
 		break
 	case core.HeartbeatFeatureName:
 		// Schedule heartbeat request
@@ -231,7 +236,7 @@ func (handler *ChargePointHandler) OnTriggerMessage(request *remotetrigger.Trigg
 		}()
 		status = remotetrigger.TriggerMessageStatusAccepted
 	case core.MeterValuesFeatureName:
-		//TODO: schedule meter values message
+		// TODO: schedule meter values message
 		break
 	case core.StatusNotificationFeatureName:
 		connectorID := *request.ConnectorId
@@ -291,21 +296,56 @@ func (handler *ChargePointHandler) OnCancelReservation(request *reservation.Canc
 // ------------- Smart charging profile callbacks -------------
 
 func (handler *ChargePointHandler) OnSetChargingProfile(request *smartcharging.SetChargingProfileRequest) (confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
-	//TODO: handle logic
+	// TODO: handle logic
 	logDefault(request.GetFeatureName()).Warn("no set charging profile logic implemented yet")
 	return smartcharging.NewSetChargingProfileConfirmation(smartcharging.ChargingProfileStatusNotSupported), nil
 }
 
 func (handler *ChargePointHandler) OnClearChargingProfile(request *smartcharging.ClearChargingProfileRequest) (confirmation *smartcharging.ClearChargingProfileConfirmation, err error) {
-	//TODO: handle logic
+	// TODO: handle logic
 	logDefault(request.GetFeatureName()).Warn("no clear charging profile logic implemented yet")
 	return smartcharging.NewClearChargingProfileConfirmation(smartcharging.ClearChargingProfileStatusUnknown), nil
 }
 
 func (handler *ChargePointHandler) OnGetCompositeSchedule(request *smartcharging.GetCompositeScheduleRequest) (confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
-	//TODO: handle logic
+	// TODO: handle logic
 	logDefault(request.GetFeatureName()).Warn("no get composite schedule logic implemented yet")
 	return smartcharging.NewGetCompositeScheduleConfirmation(smartcharging.GetCompositeScheduleStatusRejected), nil
+}
+
+func (handler *ChargePointHandler) OnDeleteCertificate(request *certificates.DeleteCertificateRequest) (response *certificates.DeleteCertificateResponse, err error) {
+	logDefault(request.GetFeatureName()).Infof("certificate %v deleted", request.CertificateHashData)
+	return certificates.NewDeleteCertificateResponse(certificates.DeleteCertificateStatusAccepted), nil
+}
+
+func (handler *ChargePointHandler) OnGetInstalledCertificateIds(request *certificates.GetInstalledCertificateIdsRequest) (response *certificates.GetInstalledCertificateIdsResponse, err error) {
+	logDefault(request.GetFeatureName()).Infof("returning installed certificate ids")
+	return certificates.NewGetInstalledCertificateIdsResponse(certificates.GetInstalledCertificateStatusAccepted), nil
+}
+
+func (handler *ChargePointHandler) OnInstallCertificate(request *certificates.InstallCertificateRequest) (response *certificates.InstallCertificateResponse, err error) {
+	logDefault(request.GetFeatureName()).Infof("certificate installed")
+	return certificates.NewInstallCertificateResponse(certificates.CertificateStatusAccepted), nil
+}
+
+func (handler *ChargePointHandler) OnGetLog(request *logging.GetLogRequest) (response *logging.GetLogResponse, err error) {
+	logDefault(request.GetFeatureName()).Infof("returning log")
+	return logging.NewGetLogResponse(logging.LogStatusAccepted), nil
+}
+
+func (handler *ChargePointHandler) OnSignedUpdateFirmware(request *securefirmware.SignedUpdateFirmwareRequest) (response *securefirmware.SignedUpdateFirmwareResponse, err error) {
+	logDefault(request.GetFeatureName()).Infof("signed update firmware request received")
+	return securefirmware.NewSignedUpdateFirmwareResponse(securefirmware.UpdateFirmwareStatusAccepted), nil
+}
+
+func (handler *ChargePointHandler) OnExtendedTriggerMessage(request *extendedtriggermessage.ExtendedTriggerMessageRequest) (response *extendedtriggermessage.ExtendedTriggerMessageResponse, err error) {
+	logDefault(request.GetFeatureName()).Infof("extended trigger message received")
+	return extendedtriggermessage.NewExtendedTriggerMessageResponse(extendedtriggermessage.ExtendedTriggerMessageStatusAccepted), nil
+}
+
+func (handler *ChargePointHandler) OnCertificateSigned(request *security.CertificateSignedRequest) (response *security.CertificateSignedResponse, err error) {
+	logDefault(request.GetFeatureName()).Infof("certificate signed")
+	return security.NewCertificateSignedResponse(security.CertificateSignedStatusAccepted), nil
 }
 
 func checkError(err error) {
