@@ -50,7 +50,7 @@ func NewHandlerError(errorCode ErrorCode, description string) *Error {
 	return &Error{Code: errorCode, Description: description, MessageId: ""}
 }
 
-func (err *Error) Error() string {
+func (err Error) Error() string {
 	return fmt.Sprintf("ocpp message (%s): %v - %v", err.MessageId, err.Code, err.Description)
 }
 
