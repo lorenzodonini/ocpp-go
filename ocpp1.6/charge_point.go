@@ -413,9 +413,9 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 			}
 		}
 	}
+
 	// Process request
 	var confirmation ocpp.Response
-	cp.client.GetProfileForFeature(action)
 	var err error
 	switch action {
 	case core.ChangeAvailabilityFeatureName:
