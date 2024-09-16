@@ -28,13 +28,13 @@ type ExtendedTriggerMessageType string
 type ExtendedTriggerMessageStatus string
 
 const (
-	ExtendedTriggerMessageTypeBootNotification               ExtendedTriggerMessageType = "BootNotification"               // This contains the field definition of a diagnostics log file
-	ExtendedTriggerMessageTypeLogStatusNotification          ExtendedTriggerMessageType = "LogStatusNotification"          // Sent by the CSMS to the Charging Station to request that the Charging Station uploads the security log
-	ExtendedTriggerMessageTypeHeartbeat                      ExtendedTriggerMessageType = "Heartbeat"                      // Accepted this log upload. This does not mean the log file is uploaded is successfully, the Charging Station will now start the log file upload.
-	ExtendedTriggerMessageTypeMeterValues                    ExtendedTriggerMessageType = "MeterValues"                    // Log update request rejected.
-	ExtendedTriggerMessageTypeSignChargingStationCertificate ExtendedTriggerMessageType = "SignChargingStationCertificate" // Accepted this log upload, but in doing this has canceled an ongoing log file upload.
-	ExtendedTriggerMessageTypeFirmwareStatusNotification     ExtendedTriggerMessageType = "FirmwareStatusNotification"     // Accepted this log upload, but in doing this has canceled an ongoing log file upload.
-	ExtendedTriggerMessageTypeStatusNotification             ExtendedTriggerMessageType = "StatusNotification"             // Accepted this log upload, but in doing this has canceled an ongoing log file upload.
+	ExtendedTriggerMessageTypeBootNotification               ExtendedTriggerMessageType = "BootNotification"           // This contains the field definition of a diagnostics log file
+	ExtendedTriggerMessageTypeLogStatusNotification          ExtendedTriggerMessageType = "LogStatusNotification"      // Sent by the CSMS to the Charging Station to request that the Charging Station uploads the security log
+	ExtendedTriggerMessageTypeHeartbeat                      ExtendedTriggerMessageType = "Heartbeat"                  // Accepted this log upload. This does not mean the log file is uploaded is successfully, the Charging Station will now start the log file upload.
+	ExtendedTriggerMessageTypeMeterValues                    ExtendedTriggerMessageType = "MeterValues"                // Log update request rejected.
+	ExtendedTriggerMessageTypeSignChargingStationCertificate ExtendedTriggerMessageType = "SignChargePointCertificate" // Accepted this log upload, but in doing this has canceled an ongoing log file upload.
+	ExtendedTriggerMessageTypeFirmwareStatusNotification     ExtendedTriggerMessageType = "FirmwareStatusNotification" // Accepted this log upload, but in doing this has canceled an ongoing log file upload.
+	ExtendedTriggerMessageTypeStatusNotification             ExtendedTriggerMessageType = "StatusNotification"         // Accepted this log upload, but in doing this has canceled an ongoing log file upload.
 
 	ExtendedTriggerMessageStatusAccepted       ExtendedTriggerMessageStatus = "Accepted"
 	ExtendedTriggerMessageStatusRejected       ExtendedTriggerMessageStatus = "Rejected"

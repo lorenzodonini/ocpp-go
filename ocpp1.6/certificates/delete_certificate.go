@@ -39,8 +39,7 @@ type DeleteCertificateRequest struct {
 // This field definition of the DeleteCertificate response payload, sent by the Charging Station to the CSMS in response to a DeleteCertificateRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type DeleteCertificateResponse struct {
-	Status     DeleteCertificateStatus `json:"status" validate:"required,deleteCertificateStatus16"`
-	StatusInfo *types.StatusInfo       `json:"statusInfo,omitempty" validate:"omitempty"`
+	Status DeleteCertificateStatus `json:"status" validate:"required,deleteCertificateStatus16"`
 }
 
 // The CSMS requests the Charging Station to delete a specific installed certificate by sending a DeleteCertificateRequest.
