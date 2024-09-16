@@ -14,6 +14,9 @@ services:
       - sim
     tty: true
   charge-point:
+    depends_on:
+      central-system:
+        condition: service_started
     build:
       context: ../..
       dockerfile: cp/Dockerfile
