@@ -201,7 +201,7 @@ const (
 	MeasurandPowerReactiveExport          Measurand      = "Power.Reactive.Export"
 	MeasurandPowerReactiveImport          Measurand      = "Power.Reactive.Import"
 	MeasurandRPM                          Measurand      = "RPM"
-	MeasueandSoC                          Measurand      = "SoC"
+	MeasurandSoC                          Measurand      = "SoC"
 	MeasurandTemperature                  Measurand      = "Temperature"
 	MeasurandVoltage                      Measurand      = "Voltage"
 	PhaseL1                               Phase          = "L1"
@@ -261,7 +261,7 @@ func isValidValueFormat(fl validator.FieldLevel) bool {
 func isValidMeasurand(fl validator.FieldLevel) bool {
 	measurand := Measurand(fl.Field().String())
 	switch measurand {
-	case MeasueandSoC, MeasurandCurrentExport, MeasurandCurrentImport, MeasurandCurrentOffered, MeasurandEnergyActiveExportInterval, MeasurandEnergyActiveExportRegister, MeasurandEnergyReactiveExportInterval, MeasurandEnergyReactiveExportRegister, MeasurandEnergyReactiveImportRegister, MeasurandEnergyReactiveImportInterval, MeasurandEnergyActiveImportInterval, MeasurandEnergyActiveImportRegister, MeasurandFrequency, MeasurandPowerActiveExport, MeasurandPowerActiveImport, MeasurandPowerReactiveImport, MeasurandPowerReactiveExport, MeasurandPowerOffered, MeasurandPowerFactor, MeasurandVoltage, MeasurandTemperature, MeasurandRPM:
+	case MeasurandSoC, MeasurandCurrentExport, MeasurandCurrentImport, MeasurandCurrentOffered, MeasurandEnergyActiveExportInterval, MeasurandEnergyActiveExportRegister, MeasurandEnergyReactiveExportInterval, MeasurandEnergyReactiveExportRegister, MeasurandEnergyReactiveImportRegister, MeasurandEnergyReactiveImportInterval, MeasurandEnergyActiveImportInterval, MeasurandEnergyActiveImportRegister, MeasurandFrequency, MeasurandPowerActiveExport, MeasurandPowerActiveImport, MeasurandPowerReactiveImport, MeasurandPowerReactiveExport, MeasurandPowerOffered, MeasurandPowerFactor, MeasurandVoltage, MeasurandTemperature, MeasurandRPM:
 		return true
 	default:
 		return false
