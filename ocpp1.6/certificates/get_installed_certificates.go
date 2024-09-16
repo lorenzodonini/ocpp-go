@@ -36,9 +36,8 @@ type GetInstalledCertificateIdsRequest struct {
 
 // The field definition of the GetInstalledCertificateIds response payload sent by the Charging Station to the CSMS in response to a GetInstalledCertificateIdsRequest.
 type GetInstalledCertificateIdsResponse struct {
-	Status                   GetInstalledCertificateStatus    `json:"status" validate:"required,getInstalledCertificateStatus16"`
-	StatusInfo               *types.StatusInfo                `json:"statusInfo,omitempty" validate:"omitempty"`
-	CertificateHashDataChain []types.CertificateHashDataChain `json:"certificateHashData,omitempty" validate:"omitempty,dive"`
+	Status              GetInstalledCertificateStatus `json:"status" validate:"required,getInstalledCertificateStatus16"`
+	CertificateHashData []types.CertificateHashData   `json:"certificateHashData,omitempty" validate:"omitempty,dive"`
 }
 
 // To facilitate the management of the Charging Station’s installed certificates, a method of retrieving the installed certificates is provided.

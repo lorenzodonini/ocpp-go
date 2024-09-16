@@ -86,20 +86,3 @@ type CertificateHashData struct {
 	IssuerKeyHash  string            `json:"issuerKeyHash" validate:"required,max=128"`
 	SerialNumber   string            `json:"serialNumber" validate:"required,max=40"`
 }
-
-// CertificateHashDataChain
-type CertificateHashDataChain struct {
-	CertificateType          CertificateUse        `json:"certificateType" validate:"required,certificateUse"`
-	CertificateHashData      CertificateHashData   `json:"certificateHashData" validate:"required"`
-	ChildCertificateHashData []CertificateHashData `json:"childCertificateHashData,omitempty" validate:"omitempty,dive"`
-}
-
-func isValidHashAlgorithmType(fl validator.FieldLevel) bool {
-	algorithm := HashAlgorithmType(fl.Field().String())
-	switch algorithm {
-	case SHA256, SHA384, SHA512:
-		return true
-	default:
-		return false
-	}
-}

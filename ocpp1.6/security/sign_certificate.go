@@ -19,8 +19,7 @@ type SignCertificateRequest struct {
 // This field definition of the SignCertificate response payload, sent by the CSMS to the Charging Station in response to a SignCertificateRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type SignCertificateResponse struct {
-	Status     types.GenericStatus `json:"status" validate:"required,genericStatus16"` // Specifies whether the CSMS can process the request.
-	StatusInfo *types.StatusInfo   `json:"statusInfo,omitempty" validate:"omitempty"`  // Detailed status information.
+	Status types.GenericStatus `json:"status" validate:"required,genericStatus16"` // Specifies whether the CSMS can process the request.
 }
 
 // If a Charging Station detected, that its certificate is due to expire, it will generate a new public/private key pair,

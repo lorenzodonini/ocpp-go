@@ -30,12 +30,28 @@ const (
 	FirmwareStatusInstallVerificationFailed FirmwareStatus = "InstallVerificationFailed"
 	FirmwareStatusInvalidSignature          FirmwareStatus = "InvalidSignature"
 	FirmwareStatusSignatureVerified         FirmwareStatus = "SignatureVerified"
+	FirmwareStatusCertificateVerified       FirmwareStatus = "CertificateVerified"
+	FirmwareStatusInvalidCertificate        FirmwareStatus = "InvalidCertificate"
+	FirmwareStatusRevokedCertificate        FirmwareStatus = "RevokedCertificate"
 )
 
 func isValidFirmwareStatus(fl validator.FieldLevel) bool {
 	status := FirmwareStatus(fl.Field().String())
 	switch status {
-	case FirmwareStatusDownloaded, FirmwareStatusDownloadFailed, FirmwareStatusDownloading, FirmwareStatusDownloadScheduled, FirmwareStatusDownloadPaused, FirmwareStatusIdle, FirmwareStatusInstallationFailed, FirmwareStatusInstalling, FirmwareStatusInstalled, FirmwareStatusInstallRebooting, FirmwareStatusInstallScheduled, FirmwareStatusInstallVerificationFailed, FirmwareStatusInvalidSignature, FirmwareStatusSignatureVerified:
+	case FirmwareStatusDownloaded,
+		FirmwareStatusDownloadFailed,
+		FirmwareStatusDownloading,
+		FirmwareStatusDownloadScheduled,
+		FirmwareStatusDownloadPaused,
+		FirmwareStatusIdle,
+		FirmwareStatusInstallationFailed,
+		FirmwareStatusInstalling,
+		FirmwareStatusInstalled,
+		FirmwareStatusInstallRebooting,
+		FirmwareStatusInstallScheduled,
+		FirmwareStatusInstallVerificationFailed,
+		FirmwareStatusInvalidSignature,
+		FirmwareStatusSignatureVerified:
 		return true
 	default:
 		return false

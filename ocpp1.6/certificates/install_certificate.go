@@ -39,8 +39,7 @@ type InstallCertificateRequest struct {
 // This field definition of the InstallCertificate response payload, sent by the Charging Station to the CSMS in response to a InstallCertificateRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type InstallCertificateResponse struct {
-	Status     InstallCertificateStatus `json:"status" validate:"required,installCertificateStatus16"`
-	StatusInfo *types.StatusInfo        `json:"statusInfo,omitempty" validate:"omitempty"`
+	Status InstallCertificateStatus `json:"status" validate:"required,installCertificateStatus16"`
 }
 
 // The CSMS requests the Charging Station to install a new certificate by sending an InstallCertificateRequest.

@@ -32,14 +32,12 @@ func isValidCertificateSignedStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the CertificateSignedRequest PDU sent by the CSMS to the Charging Station.
 type CertificateSignedRequest struct {
-	CertificateChain  string                      `json:"certificateChain" validate:"required,max=10000"`
-	TypeOfCertificate types.CertificateSigningUse `json:"certificateType,omitempty" validate:"omitempty,certificateSigningUse16"`
+	CertificateChain string `json:"certificateChain" validate:"required,max=10000"`
 }
 
 // The field definition of the CertificateSignedResponse payload sent by the Charging Station to the CSMS in response to a CertificateSignedRequest.
 type CertificateSignedResponse struct {
-	Status     CertificateSignedStatus `json:"status" validate:"required,certificateSignedStatus16"`
-	StatusInfo *types.StatusInfo       `json:"statusInfo,omitempty" validate:"omitempty"`
+	Status CertificateSignedStatus `json:"status" validate:"required,certificateSignedStatus16"`
 }
 
 // During the a certificate update procedure, the CSMS sends a new certificate, signed by a CA,
@@ -69,6 +67,7 @@ func (c CertificateSignedResponse) GetFeatureName() string {
 }
 
 // Creates a new CertificateSignedRequest, containing all required fields. Additional optional fields may be set afterwards.
+// The maximum size of this field is be limited by the configuration key: CertificateSignedMaxSize
 func NewCertificateSignedRequest(certificateChain string) *CertificateSignedRequest {
 	return &CertificateSignedRequest{CertificateChain: certificateChain}
 }
