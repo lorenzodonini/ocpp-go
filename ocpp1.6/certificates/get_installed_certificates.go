@@ -66,8 +66,8 @@ func (c GetInstalledCertificateIdsResponse) GetFeatureName() string {
 }
 
 // Creates a new GetInstalledCertificateIdsRequest, containing all required fields. There are no optional fields for this message.
-func NewGetInstalledCertificateIdsRequest() *GetInstalledCertificateIdsRequest {
-	return &GetInstalledCertificateIdsRequest{}
+func NewGetInstalledCertificateIdsRequest(certificateType types.CertificateUse) *GetInstalledCertificateIdsRequest {
+	return &GetInstalledCertificateIdsRequest{CertificateType: certificateType}
 }
 
 // Creates a new NewGetInstalledCertificateIdsResponse, containing all required fields. Additional optional fields may be set afterwards.

@@ -383,8 +383,8 @@ func (cs *centralSystem) SignedUpdateFirmware(clientId string, callback func(*se
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetInstalledCertificateIds(clientId string, callback func(*certificates.GetInstalledCertificateIdsResponse, error), props ...func(request *certificates.GetInstalledCertificateIdsRequest)) error {
-	request := certificates.NewGetInstalledCertificateIdsRequest()
+func (cs *centralSystem) GetInstalledCertificateIds(clientId string, callback func(*certificates.GetInstalledCertificateIdsResponse, error), certificateType types.CertificateUse, props ...func(request *certificates.GetInstalledCertificateIdsRequest)) error {
+	request := certificates.NewGetInstalledCertificateIdsRequest(certificateType)
 	for _, fn := range props {
 		fn(request)
 	}
