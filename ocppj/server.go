@@ -226,6 +226,7 @@ func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.Err
 		return ocpp.NewError(GenericError, err.Error(), requestId)
 	}
 	log.Debugf("sent CALL ERROR [%s] for %s", callError.UniqueId, clientID)
+	log.Debugf("sent JSON message to %s: %s", clientID, string(jsonMessage))
 	return nil
 }
 
