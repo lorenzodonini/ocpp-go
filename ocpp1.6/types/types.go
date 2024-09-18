@@ -330,6 +330,6 @@ func init() {
 	_ = Validate.RegisterValidation("location16", isValidLocation)
 	_ = Validate.RegisterValidation("unitOfMeasure", isValidUnitOfMeasure)
 	_ = Validate.RegisterValidation("certificateSigningUse16", isValidCertificateSigningUse)
-	_ = Validate.RegisterValidation("isValidCertificateUse", isValidCertificateUse)
+	_ = Validate.RegisterValidation("certificateUse16", isValidCertificateUse)
 	_ = Validate.RegisterValidation("genericStatus16", isValidGenericStatus)
 }
