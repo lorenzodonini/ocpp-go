@@ -354,6 +354,8 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.WsServer) CentralSystem 
 			smartcharging.Profile,
 			logging.Profile,
 			security.Profile,
+			extendedtriggermessage.Profile,
+			certificates.Profile,
 			securefirmware.Profile,
 		)
 	}
