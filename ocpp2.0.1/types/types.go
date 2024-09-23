@@ -30,7 +30,7 @@ const (
 	AuthorizationStatusInvalid            AuthorizationStatus = "Invalid"
 	AuthorizationStatusConcurrentTx       AuthorizationStatus = "ConcurrentTx"
 	AuthorizationStatusNoCredit           AuthorizationStatus = "NoCredit"
-	AuthorizationStatusNotAllowedTypeEVSE AuthorizationStatus = "NotAllowedTypeEVS"
+	AuthorizationStatusNotAllowedTypeEVSE AuthorizationStatus = "NotAllowedTypeEVSE"
 	AuthorizationStatusNotAtThisLocation  AuthorizationStatus = "NotAtThisLocation"
 	AuthorizationStatusNotAtThisTime      AuthorizationStatus = "NotAtThisTime"
 	AuthorizationStatusUnknown            AuthorizationStatus = "Unknown"
