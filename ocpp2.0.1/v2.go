@@ -421,8 +421,24 @@ func NewCSMS(endpoint *ocppj.Server, server ws.WsServer) CSMS {
 	}
 	server.AddSupportedSubprotocol(types.V201Subprotocol)
 	if endpoint == nil {
-		dispatcher := ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(0))
-		endpoint = ocppj.NewServer(server, dispatcher, nil, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
+		endpoint = ocppj.NewServer(server, nil, nil,
+			authorization.Profile,
+			availability.Profile,
+			data.Profile,
+			diagnostics.Profile,
+			display.Profile,
+			firmware.Profile,
+			iso15118.Profile,
+			localauth.Profile,
+			meter.Profile,
+			provisioning.Profile,
+			remotecontrol.Profile,
+			reservation.Profile,
+			security.Profile,
+			smartcharging.Profile,
+			tariffcost.Profile,
+			transactions.Profile,
+		)
 	}
 	cs := newCSMS(endpoint)
 	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {
