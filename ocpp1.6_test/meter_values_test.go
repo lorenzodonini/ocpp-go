@@ -38,11 +38,12 @@ func (suite *OcppV16TestSuite) TestMeterValuesE2EMocked() {
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	connectorId := 1
+	transactionId := newInt(9223372036854775807)
 	mockValue := "value"
 	mockUnit := types.UnitOfMeasureKW
 	meterValues := []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: mockValue, Unit: mockUnit}}}}
 	timestamp := types.DateTime{Time: time.Now()}
-	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"meterValue":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.MeterValuesFeatureName, connectorId, timestamp.FormatTimestamp(), mockValue, mockUnit)
+	requestJson := fmt.Sprintf(`[2,"%v","%v",{"connectorId":%v,"transactionId":%v,"meterValue":[{"timestamp":"%v","sampledValue":[{"value":"%v","unit":"%v"}]}]}]`, messageId, core.MeterValuesFeatureName, connectorId, *transactionId, timestamp.FormatTimestamp(), mockValue, mockUnit)
 	responseJson := fmt.Sprintf(`[3,"%v",{}]`, messageId)
 	meterValuesConfirmation := core.NewMeterValuesConfirmation()
 	channel := NewMockWebSocket(wsId)
@@ -67,7 +68,9 @@ func (suite *OcppV16TestSuite) TestMeterValuesE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.MeterValues(connectorId, meterValues)
+	confirmation, err := suite.chargePoint.MeterValues(connectorId, meterValues, func(request *core.MeterValuesRequest) {
+		request.TransactionId = transactionId
+	})
 	require.Nil(t, err)
 	require.NotNil(t, confirmation)
 }
