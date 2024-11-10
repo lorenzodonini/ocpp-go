@@ -3,6 +3,7 @@ on: [ push, pull_request, workflow_dispatch ]
 jobs:
   unit:
     runs-on: ubuntu-latest
+    name: Unit tests
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,10 +21,11 @@ jobs:
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
-          name: coverage
+          name: unit_coverage
           path: ./coverage.out
 
   integration:
+    name: Integration tests
     runs-on: ubuntu-latest
     needs: unit
     steps:
@@ -32,7 +34,7 @@ jobs:
       - name: Download coverage from unit tests
         uses: actions/download-artifact@v4
         with:
-          name: coverage
+          name: unit_coverage
       - name: Run integration tests
         run: |
           docker compose -f docker-compose.test.yaml up integration_test
