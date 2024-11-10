@@ -6,9 +6,9 @@ jobs:
     name: Unit tests
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - name: Install Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5.1.0
         with:
           go-version: ^1.18
           cache: true
@@ -30,7 +30,7 @@ jobs:
     needs: unit
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.2.2
       - name: Download coverage from unit tests
         uses: actions/download-artifact@v4
         with:
@@ -60,10 +60,10 @@ jobs:
     name: Publish coverage
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.2.2
       - name: Install goveralls
         run: go install github.com/mattn/goveralls@latest
-      - name: Download coverage from unit tests
+      - name: Download coverage from tests
         uses: actions/download-artifact@v4
         with:
           name: coverage
