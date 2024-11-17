@@ -352,8 +352,11 @@ func (cs *centralSystem) TriggerMessageExtended(clientId string, callback func(*
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
-		confirmationCasted := confirmation.(*extendedtriggermessage.ExtendedTriggerMessageResponse)
-		callback(confirmationCasted, protoError)
+		if confirmation != nil {
+			callback(confirmation.(*extendedtriggermessage.ExtendedTriggerMessageResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
 	}
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 
@@ -365,8 +368,11 @@ func (cs *centralSystem) CertificateSigned(clientId string, callback func(*secur
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
-		confirmationCasted := confirmation.(*security.CertificateSignedResponse)
-		callback(confirmationCasted, protoError)
+		if confirmation != nil {
+			callback(confirmation.(*security.CertificateSignedResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
 	}
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
@@ -377,20 +383,26 @@ func (cs *centralSystem) SignedUpdateFirmware(clientId string, callback func(*se
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
-		confirmationCasted := confirmation.(*securefirmware.SignedUpdateFirmwareResponse)
-		callback(confirmationCasted, protoError)
+		if confirmation != nil {
+			callback(confirmation.(*securefirmware.SignedUpdateFirmwareResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
 	}
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetInstalledCertificateIds(clientId string, callback func(*certificates.GetInstalledCertificateIdsResponse, error), props ...func(request *certificates.GetInstalledCertificateIdsRequest)) error {
-	request := certificates.NewGetInstalledCertificateIdsRequest()
+func (cs *centralSystem) GetInstalledCertificateIds(clientId string, callback func(*certificates.GetInstalledCertificateIdsResponse, error), certificateType types.CertificateUse, props ...func(request *certificates.GetInstalledCertificateIdsRequest)) error {
+	request := certificates.NewGetInstalledCertificateIdsRequest(certificateType)
 	for _, fn := range props {
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
-		confirmationCasted := confirmation.(*certificates.GetInstalledCertificateIdsResponse)
-		callback(confirmationCasted, protoError)
+		if confirmation != nil {
+			callback(confirmation.(*certificates.GetInstalledCertificateIdsResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
 	}
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
@@ -401,8 +413,11 @@ func (cs *centralSystem) InstallCertificate(clientId string, callback func(*cert
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
-		confirmationCasted := confirmation.(*certificates.InstallCertificateResponse)
-		callback(confirmationCasted, protoError)
+		if confirmation != nil {
+			callback(confirmation.(*certificates.InstallCertificateResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
 	}
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
@@ -413,8 +428,11 @@ func (cs *centralSystem) DeleteCertificate(clientId string, callback func(*certi
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
-		confirmationCasted := confirmation.(*certificates.DeleteCertificateResponse)
-		callback(confirmationCasted, protoError)
+		if confirmation != nil {
+			callback(confirmation.(*certificates.DeleteCertificateResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
 	}
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
@@ -425,8 +443,11 @@ func (cs *centralSystem) GetLog(clientId string, callback func(*logging.GetLogRe
 		fn(request)
 	}
 	genericCallback := func(confirmation ocpp.Response, protoError error) {
-		confirmationCasted := confirmation.(*logging.GetLogResponse)
-		callback(confirmationCasted, protoError)
+		if confirmation != nil {
+			callback(confirmation.(*logging.GetLogResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
 	}
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }

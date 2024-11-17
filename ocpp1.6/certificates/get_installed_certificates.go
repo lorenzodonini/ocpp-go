@@ -31,7 +31,7 @@ func isValidGetInstalledCertificateStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the GetInstalledCertificateIdsRequest PDU sent by the CSMS to the Charging Station.
 type GetInstalledCertificateIdsRequest struct {
-	CertificateTypes []types.CertificateUse `json:"certificateType" validate:"omitempty,dive,certificateUse16"`
+	CertificateType types.CertificateUse `json:"certificateType" validate:"required,certificateUse16"`
 }
 
 // The field definition of the GetInstalledCertificateIds response payload sent by the Charging Station to the CSMS in response to a GetInstalledCertificateIdsRequest.
@@ -66,8 +66,8 @@ func (c GetInstalledCertificateIdsResponse) GetFeatureName() string {
 }
 
 // Creates a new GetInstalledCertificateIdsRequest, containing all required fields. There are no optional fields for this message.
-func NewGetInstalledCertificateIdsRequest() *GetInstalledCertificateIdsRequest {
-	return &GetInstalledCertificateIdsRequest{}
+func NewGetInstalledCertificateIdsRequest(certificateType types.CertificateUse) *GetInstalledCertificateIdsRequest {
+	return &GetInstalledCertificateIdsRequest{CertificateType: certificateType}
 }
 
 // Creates a new NewGetInstalledCertificateIdsResponse, containing all required fields. Additional optional fields may be set afterwards.

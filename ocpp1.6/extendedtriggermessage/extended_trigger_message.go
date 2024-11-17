@@ -72,7 +72,7 @@ func isValidExtendedTriggerMessageStatus(fl validator.FieldLevel) bool {
 // The field definition of the LogStatusNotification request payload sent by a Charging Station to the CSMS.
 type ExtendedTriggerMessageRequest struct {
 	RequestedMessage ExtendedTriggerMessageType `json:"requestedMessage" validate:"required,extendedTriggerMessageType"`
-	ConnectorId      *int                       `json:"connectorId" validate:"gt=0,omitempty"`
+	ConnectorId      *int                       `json:"connectorId,omitempty" validate:"omitempty,gte=0"`
 }
 
 // This field definition of the LogStatusNotification response payload, sent by the CSMS to the Charging Station in response to a ExtendedTriggerMessageRequest.
