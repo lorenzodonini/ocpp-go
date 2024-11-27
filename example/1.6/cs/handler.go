@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	nextTransactionId = 0
+	nextTransactionId = 1
 )
 
 // TransactionInfo contains info about a transaction
