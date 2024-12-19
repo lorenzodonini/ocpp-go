@@ -297,6 +297,64 @@ func (s *WebSocketSuite) TestWebsocketEcho() {
 	}
 }
 
+func (s *WebSocketSuite) TestWebsocketChargePointIdResolver() {
+	connected := make(chan string)
+	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+		s.Fail("no message should be received from client!")
+		return nil, nil
+	})
+	s.server.SetChargePointIdResolver(func(*http.Request) (string, error) {
+		return "my-custom-id", nil
+	})
+	s.server.SetNewClientHandler(func(ws Channel) {
+		connected <- ws.ID()
+	})
+	go s.server.Start(serverPort, serverPath)
+	time.Sleep(500 * time.Millisecond)
+
+	// Test message
+	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+		s.Fail("no message should be received from server!")
+		return nil, nil
+	})
+
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	// Attempt to connect and expect the custom resolved charge point id
+	err := s.client.Start(u.String())
+	s.NoError(err)
+	result := <-connected
+	s.Equal("my-custom-id", result)
+}
+
+func (s *WebSocketSuite) TestWebsocketChargePointIdResolverFailure() {
+	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+		s.Fail("no message should be received from client!")
+		return nil, nil
+	})
+	s.server.SetChargePointIdResolver(func(*http.Request) (string, error) {
+		return "", fmt.Errorf("test error")
+	})
+	go s.server.Start(serverPort, serverPath)
+	time.Sleep(500 * time.Millisecond)
+
+	// Test message
+	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+		s.Fail("no message should be received from server!")
+		return nil, nil
+	})
+
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	// Attempt to connect and expect the custom resolved charge point id
+	err := s.client.Start(u.String())
+	s.Error(err)
+	httpErr, ok := err.(HttpConnectionError)
+	s.True(ok)
+	s.Equal(http.StatusNotFound, httpErr.HttpCode)
+	s.Equal("websocket: bad handshake", httpErr.Message)
+}
+
 func (s *WebSocketSuite) TestWebsocketBootRetries() {
 	verifyConnection := func(client *client, connected bool) {
 		maxAttempts := 20
@@ -1276,7 +1334,7 @@ func (s *WebSocketSuite) TestClientErrors() {
 	conn := s.server.connections[path.Base(testPath)]
 	s.NotNil(conn)
 	err = conn.WriteManual(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
-	//err = conn.connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
+	// err = conn.connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
 	s.NoError(err)
 	r = <-triggerC
 	s.NotNil(r)
