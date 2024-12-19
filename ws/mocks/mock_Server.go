@@ -244,6 +244,39 @@ func (_c *MockServer_SetBasicAuthHandler_Call) RunAndReturn(run func(func(string
 	return _c
 }
 
+// SetChargePointIdResolver provides a mock function with given fields: resolver
+func (_m *MockServer) SetChargePointIdResolver(resolver func(*http.Request) (string, error)) {
+	_m.Called(resolver)
+}
+
+// MockServer_SetChargePointIdResolver_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetChargePointIdResolver'
+type MockServer_SetChargePointIdResolver_Call struct {
+	*mock.Call
+}
+
+// SetChargePointIdResolver is a helper method to define mock.On call
+//   - resolver func(*http.Request)(string , error)
+func (_e *MockServer_Expecter) SetChargePointIdResolver(resolver interface{}) *MockServer_SetChargePointIdResolver_Call {
+	return &MockServer_SetChargePointIdResolver_Call{Call: _e.mock.On("SetChargePointIdResolver", resolver)}
+}
+
+func (_c *MockServer_SetChargePointIdResolver_Call) Run(run func(resolver func(*http.Request) (string, error))) *MockServer_SetChargePointIdResolver_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(*http.Request) (string, error)))
+	})
+	return _c
+}
+
+func (_c *MockServer_SetChargePointIdResolver_Call) Return() *MockServer_SetChargePointIdResolver_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MockServer_SetChargePointIdResolver_Call) RunAndReturn(run func(func(*http.Request) (string, error))) *MockServer_SetChargePointIdResolver_Call {
+	_c.Run(run)
+	return _c
+}
+
 // SetCheckClientHandler provides a mock function with given fields: handler
 func (_m *MockServer) SetCheckClientHandler(handler ws.CheckClientHandler) {
 	_m.Called(handler)
