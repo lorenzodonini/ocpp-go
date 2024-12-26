@@ -54,7 +54,7 @@ type ClientDispatcher interface {
 	// Sets the network client, so the dispatcher may send requests using the networking layer directly.
 	//
 	// This needs to be set before calling the Start method. If not, sending requests will fail.
-	SetNetworkClient(client ws.WsClient)
+	SetNetworkClient(client ws.Client)
 	// Sets the state manager for pending requests in the dispatcher.
 	//
 	// The state should only be accessed by the dispatcher while running.
@@ -90,7 +90,7 @@ type DefaultClientDispatcher struct {
 	requestChannel      chan bool
 	readyForDispatch    chan bool
 	pendingRequestState ClientState
-	network             ws.WsClient
+	network             ws.Client
 	mutex               sync.RWMutex
 	onRequestCancel     func(requestID string, request ocpp.Request, err *ocpp.Error)
 	timer               *time.Timer
@@ -149,7 +149,7 @@ func (d *DefaultClientDispatcher) Stop() {
 	// TODO: clear pending requests?
 }
 
-func (d *DefaultClientDispatcher) SetNetworkClient(client ws.WsClient) {
+func (d *DefaultClientDispatcher) SetNetworkClient(client ws.Client) {
 	d.network = client
 }
 
@@ -335,7 +335,7 @@ type ServerDispatcher interface {
 	// Sets the network server, so the dispatcher may send requests using the networking layer directly.
 	//
 	// This needs to be set before calling the Start method. If not, sending requests will fail.
-	SetNetworkServer(server ws.WsServer)
+	SetNetworkServer(server ws.Server)
 	// Sets the state manager for pending requests in the dispatcher.
 	//
 	// The state should only be accessed by the dispatcher while running.
@@ -371,7 +371,7 @@ type DefaultServerDispatcher struct {
 	running             bool
 	stoppedC            chan struct{}
 	onRequestCancel     CanceledRequestHandler
-	network             ws.WsServer
+	network             ws.Server
 	mutex               sync.RWMutex
 }
 
@@ -442,7 +442,7 @@ func (d *DefaultServerDispatcher) DeleteClient(clientID string) {
 	}
 }
 
-func (d *DefaultServerDispatcher) SetNetworkServer(server ws.WsServer) {
+func (d *DefaultServerDispatcher) SetNetworkServer(server ws.Server) {
 	d.network = server
 }
 
@@ -491,7 +491,7 @@ func (d *DefaultServerDispatcher) messagePump() {
 	for {
 		select {
 		case <-d.stoppedC:
-			// Server was stopped
+			// server was stopped
 			d.queueMap.Init()
 			log.Info("stopped processing requests")
 			return
@@ -547,7 +547,7 @@ func (d *DefaultServerDispatcher) messagePump() {
 				clientCtx.cancel()
 				clientContextMap[clientID] = clientTimeoutContext{}
 			}
-			// Client can now transmit again
+			// client can now transmit again
 			clientQueue, ok = d.queueMap.Get(clientID)
 			if ok {
 				// Ready to transmit
@@ -620,7 +620,7 @@ func (d *DefaultServerDispatcher) waitForTimeout(clientID string, clientCtx clie
 			log.Debugf("timeout canceled for %s", clientID)
 		}
 	case <-d.stoppedC:
-		// Server was stopped, every pending timeout gets canceled
+		// server was stopped, every pending timeout gets canceled
 	}
 }
 

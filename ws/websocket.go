@@ -1,7 +1,7 @@
 // The package is a wrapper around gorilla websockets,
 // aimed at simplifying the creation and usage of a websocket client/server.
 //
-// Check the Client and Server structure to get started.
+// Check the client and server structure to get started.
 package ws
 
 import (
@@ -186,8 +186,6 @@ type PingConfig struct {
 	PongWait   time.Duration // The timeout for waiting for a pong from the connected peer. After a timeout, the connection is closed.
 }
 
-type WebSocketConfigurator func(cfg *WebSocketConfig)
-
 // NewDefaultWebSocketConfig creates a new websocket config struct with the passed values.
 // If sendPing is set, the websocket will be configured to send out periodic pings.
 //
@@ -226,7 +224,7 @@ type message struct {
 // webSocket is a wrapper for a single websocket channel.
 // The connection itself is provided by the gorilla websocket package.
 //
-// Don't use a websocket directly, but refer to WsServer and WsClient.
+// Don't use a websocket directly, but refer to Server and Client.
 type webSocket struct {
 	connection         *websocket.Conn
 	mutex              sync.RWMutex

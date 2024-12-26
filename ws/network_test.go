@@ -20,19 +20,19 @@ type NetworkTestSuite struct {
 	suite.Suite
 	proxy     *toxiproxy.Proxy
 	proxyPort int
-	server    *Server
-	client    *Client
+	server    *server
+	client    *client
 }
 
 func (s *NetworkTestSuite) SetupSuite() {
-	client := toxiproxy.NewClient("localhost:8474")
+	c := toxiproxy.NewClient("localhost:8474")
 	s.proxyPort = 8886
 	// Proxy listens on 8886 and upstreams to 8887 (where ocpp server is actually listening)
-	oldProxy, err := client.Proxy("ocpp")
+	oldProxy, err := c.Proxy("ocpp")
 	if oldProxy != nil {
 		oldProxy.Delete()
 	}
-	p, err := client.CreateProxy("ocpp", "localhost:8886", fmt.Sprintf("localhost:%v", serverPort))
+	p, err := c.CreateProxy("ocpp", "localhost:8886", fmt.Sprintf("localhost:%v", serverPort))
 	s.NoError(err)
 	s.proxy = p
 }
@@ -184,7 +184,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 func (s *NetworkTestSuite) TestClientPongTimeout() {
 	// Set timeouts for test
 	// Will attempt to send ping after 1 second, and server expects ping within 1.4 seconds
-	// Server will close connection
+	// server will close connection
 	s.client.timeoutConfig.PongWait = 2 * time.Second
 	s.client.timeoutConfig.PingPeriod = (s.client.timeoutConfig.PongWait * 5) / 10
 	s.client.timeoutConfig.RetryBackOffWaitMinimum = 1 * time.Second

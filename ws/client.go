@@ -16,7 +16,7 @@ import (
 
 // ---------------------- CLIENT ----------------------
 
-// WsClient defines a websocket client, needed to connect to a websocket server.
+// Client defines a websocket client, needed to connect to a websocket server.
 // The offered API are of asynchronous nature, and each incoming message is handled using callbacks.
 //
 // To create a new ws client, use:
@@ -50,7 +50,7 @@ import (
 //
 // To receive incoming messages, you will need to set your own handler using SetMessageHandler.
 // To write data on the open socket, simply call the Write function.
-type WsClient interface {
+type Client interface {
 	// Starts the client and attempts to connect to the server on a specified URL.
 	// If the connection fails, an error is returned.
 	//
@@ -120,10 +120,10 @@ type WsClient interface {
 	SetHeaderValue(key string, value string)
 }
 
-// Client is the default implementation of a Websocket client.
+// client is the default implementation of a Websocket client.
 //
 // Use the NewClient or NewTLSClient functions to create a new client.
-type Client struct {
+type client struct {
 	webSocket      *webSocket
 	url            url.URL
 	messageHandler func(data []byte) error
@@ -144,8 +144,8 @@ type Client struct {
 //
 // By default, the client will not neogtiate any subprotocol. This value needs to be set via the
 // respective SetRequestedSubProtocol method.
-func NewClient() *Client {
-	return &Client{
+func NewClient() Client {
+	return &client{
 		dialOptions:   []func(*websocket.Dialer){},
 		timeoutConfig: NewClientTimeoutConfig(),
 		reconnectC:    make(chan struct{}, 1),
@@ -172,43 +172,43 @@ func NewClient() *Client {
 // self-signed certificate (do not use in production!), pass:
 //
 //	InsecureSkipVerify: true
-func NewTLSClient(tlsConfig *tls.Config) *Client {
-	client := &Client{
+func NewTLSClient(tlsConfig *tls.Config) Client {
+	c := &client{
 		dialOptions:   []func(*websocket.Dialer){},
 		timeoutConfig: NewClientTimeoutConfig(),
 		reconnectC:    make(chan struct{}, 1),
 		header:        http.Header{},
 	}
-	client.dialOptions = append(client.dialOptions, func(dialer *websocket.Dialer) {
+	c.dialOptions = append(c.dialOptions, func(dialer *websocket.Dialer) {
 		dialer.TLSClientConfig = tlsConfig
 	})
-	return client
+	return c
 }
 
-func (client *Client) SetMessageHandler(handler func(data []byte) error) {
-	client.messageHandler = handler
+func (c *client) SetMessageHandler(handler func(data []byte) error) {
+	c.messageHandler = handler
 }
 
-func (client *Client) SetTimeoutConfig(config ClientTimeoutConfig) {
-	client.timeoutConfig = config
+func (c *client) SetTimeoutConfig(config ClientTimeoutConfig) {
+	c.timeoutConfig = config
 }
 
-func (client *Client) SetDisconnectedHandler(handler func(err error)) {
-	client.onDisconnected = handler
+func (c *client) SetDisconnectedHandler(handler func(err error)) {
+	c.onDisconnected = handler
 }
 
-func (client *Client) SetReconnectedHandler(handler func()) {
-	client.onReconnected = handler
+func (c *client) SetReconnectedHandler(handler func()) {
+	c.onReconnected = handler
 }
 
-func (client *Client) AddOption(option interface{}) {
+func (c *client) AddOption(option interface{}) {
 	dialOption, ok := option.(func(*websocket.Dialer))
 	if ok {
-		client.dialOptions = append(client.dialOptions, dialOption)
+		c.dialOptions = append(c.dialOptions, dialOption)
 	}
 }
 
-func (client *Client) SetRequestedSubProtocol(subProto string) {
+func (c *client) SetRequestedSubProtocol(subProto string) {
 	opt := func(dialer *websocket.Dialer) {
 		alreadyExists := false
 		for _, proto := range dialer.Subprotocols {
@@ -221,207 +221,103 @@ func (client *Client) SetRequestedSubProtocol(subProto string) {
 			dialer.Subprotocols = append(dialer.Subprotocols, subProto)
 		}
 	}
-	client.AddOption(opt)
+	c.AddOption(opt)
 }
 
-func (client *Client) SetBasicAuth(username string, password string) {
-	client.header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(username+":"+password)))
+func (c *client) SetBasicAuth(username string, password string) {
+	c.header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(username+":"+password)))
 }
 
-func (client *Client) SetHeaderValue(key string, value string) {
-	client.header.Set(key, value)
+func (c *client) SetHeaderValue(key string, value string) {
+	c.header.Set(key, value)
 }
 
-func (client *Client) getReadTimeout() time.Time {
-	if client.timeoutConfig.PongWait == 0 {
+func (c *client) getReadTimeout() time.Time {
+	if c.timeoutConfig.PongWait == 0 {
 		return time.Time{}
 	}
-	return time.Now().Add(client.timeoutConfig.PongWait)
+	return time.Now().Add(c.timeoutConfig.PongWait)
 }
 
-//func (client *Client) writePump() {
-//	ticker := time.NewTicker(client.timeoutConfig.PingPeriod)
-//	conn := client.webSocket.connection
-//	// Closure function correctly closes the current connection
-//	closure := func(err error) {
-//		ticker.Stop()
-//		client.cleanup()
-//		// Invoke callback
-//		if client.onDisconnected != nil {
-//			client.onDisconnected(err)
-//		}
-//	}
-//
-//	for {
-//		select {
-//		case data := <-client.webSocket.outQueue:
-//			// Send data
-//			log.Debugf("sending data")
-//			_ = conn.SetWriteDeadline(time.Now().Add(client.timeoutConfig.WriteWait))
-//			err := conn.WriteMessage(websocket.TextMessage, data)
-//			if err != nil {
-//				client.error(fmt.Errorf("write failed: %w", err))
-//				closure(err)
-//				client.handleReconnection()
-//				return
-//			}
-//			log.Debugf("written %d bytes", len(data))
-//		case <-ticker.C:
-//			// Send periodic ping
-//			_ = conn.SetWriteDeadline(time.Now().Add(client.timeoutConfig.WriteWait))
-//			if err := conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-//				client.error(fmt.Errorf("failed to send ping message: %w", err))
-//				closure(err)
-//				client.handleReconnection()
-//				return
-//			}
-//			log.Debugf("ping sent")
-//		case closeErr := <-client.webSocket.closeC:
-//			log.Debugf("closing connection")
-//			// Closing connection gracefully
-//			if err := conn.WriteControl(
-//				websocket.CloseMessage,
-//				websocket.FormatCloseMessage(closeErr.Code, closeErr.Text),
-//				time.Now().Add(client.timeoutConfig.WriteWait),
-//			); err != nil {
-//				client.error(fmt.Errorf("failed to write close message: %w", err))
-//			}
-//			// Disconnected by user command. Not calling auto-reconnect.
-//			// Passing nil will also not call onDisconnected.
-//			closure(nil)
-//			return
-//		case closed, ok := <-client.webSocket.forceCloseC:
-//			log.Debugf("handling forced close signal")
-//			// Read pump sent a forceClose signal (reading failed -> aborting the connection)
-//			if !ok || closed != nil {
-//				closure(closed)
-//				client.handleReconnection()
-//				return
-//			}
-//		}
-//	}
-//}
-
-//func (client *Client) readPump() {
-//	conn := client.webSocket.connection
-//	_ = conn.SetReadDeadline(client.getReadTimeout())
-//	conn.SetPongHandler(func(string) error {
-//		log.Debugf("pong received")
-//		return conn.SetReadDeadline(client.getReadTimeout())
-//	})
-//	for {
-//		_, message, err := conn.ReadMessage()
-//		if err != nil {
-//			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
-//				client.error(fmt.Errorf("read failed: %w", err))
-//			}
-//			// Notify writePump of error. Forced close will be handled there
-//			client.webSocket.forceCloseC <- err
-//			return
-//		}
-//
-//		log.Debugf("received %v bytes", len(message))
-//		if client.messageHandler != nil {
-//			err = client.messageHandler(message)
-//			if err != nil {
-//				client.error(fmt.Errorf("handle failed: %w", err))
-//				continue
-//			}
-//		}
-//	}
-//}
-
-// Frees internal resources after a websocket connection was signaled to be closed.
-// From this moment onwards, no new messages may be sent.
-//func (client *Client) cleanup() {
-//	client.setConnected(false)
-//	ws := client.webSocket
-//	_ = ws.connection.Close()
-//	client.mutex.Lock()
-//	defer client.mutex.Unlock()
-//	close(ws.outQueue)
-//	close(ws.closeC)
-//}
-
-func (client *Client) handleReconnection() {
+func (c *client) handleReconnection() {
 	log.Info("started automatic reconnection handler")
-	delay := client.timeoutConfig.RetryBackOffWaitMinimum + time.Duration(rand.Intn(client.timeoutConfig.RetryBackOffRandomRange+1))*time.Second
+	delay := c.timeoutConfig.RetryBackOffWaitMinimum + time.Duration(rand.Intn(c.timeoutConfig.RetryBackOffRandomRange+1))*time.Second
 	reconnectionAttempts := 1
 	for {
 		// Wait before reconnecting
 		select {
 		case <-time.After(delay):
-		case <-client.reconnectC:
+		case <-c.reconnectC:
 			log.Info("automatic reconnection aborted")
 			return
 		}
 
 		log.Info("reconnecting... attempt", reconnectionAttempts)
-		err := client.Start(client.url.String())
+		err := c.Start(c.url.String())
 		if err == nil {
 			// Re-connection was successful
 			log.Info("reconnected successfully to server")
-			if client.onReconnected != nil {
-				client.onReconnected()
+			if c.onReconnected != nil {
+				c.onReconnected()
 			}
 			return
 		}
-		client.error(fmt.Errorf("reconnection failed: %w", err))
+		c.error(fmt.Errorf("reconnection failed: %w", err))
 
-		if reconnectionAttempts < client.timeoutConfig.RetryBackOffRepeatTimes {
+		if reconnectionAttempts < c.timeoutConfig.RetryBackOffRepeatTimes {
 			// Re-connection failed, double the delay
 			delay *= 2
-			delay += time.Duration(rand.Intn(client.timeoutConfig.RetryBackOffRandomRange+1)) * time.Second
+			delay += time.Duration(rand.Intn(c.timeoutConfig.RetryBackOffRandomRange+1)) * time.Second
 		}
 		reconnectionAttempts += 1
 	}
 }
 
-func (client *Client) IsConnected() bool {
-	if client.webSocket == nil {
+func (c *client) IsConnected() bool {
+	if c.webSocket == nil {
 		return false
 	}
-	return client.webSocket.IsConnected()
+	return c.webSocket.IsConnected()
 }
 
-func (client *Client) Write(data []byte) error {
-	if !client.IsConnected() {
+func (c *client) Write(data []byte) error {
+	if !c.IsConnected() {
 		return fmt.Errorf("client is currently not connected, cannot send data")
 	}
 	log.Debugf("queuing data for server")
-	return client.webSocket.Write(data)
+	return c.webSocket.Write(data)
 }
 
-func (client *Client) StartWithRetries(urlStr string) {
-	err := client.Start(urlStr)
+func (c *client) StartWithRetries(urlStr string) {
+	err := c.Start(urlStr)
 	if err != nil {
 		log.Info("Connection error:", err)
-		client.handleReconnection()
+		c.handleReconnection()
 	}
 }
 
-func (client *Client) Start(urlStr string) error {
+func (c *client) Start(urlStr string) error {
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return err
 	}
-	client.url = *u
-	if client.reconnectC == nil {
-		client.reconnectC = make(chan struct{}, 1)
+	c.url = *u
+	if c.reconnectC == nil {
+		c.reconnectC = make(chan struct{}, 1)
 	}
 
 	dialer := websocket.Dialer{
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
-		HandshakeTimeout: client.timeoutConfig.HandshakeTimeout,
+		HandshakeTimeout: c.timeoutConfig.HandshakeTimeout,
 		Subprotocols:     []string{},
 	}
-	for _, option := range client.dialOptions {
+	for _, option := range c.dialOptions {
 		option(&dialer)
 	}
 	// Connect
 	log.Info("connecting to server")
-	ws, resp, err := dialer.Dial(urlStr, client.header)
+	ws, resp, err := dialer.Dial(urlStr, c.header)
 	if err != nil {
 		if resp != nil {
 			httpError := HttpConnectionError{Message: err.Error(), HttpStatus: resp.Status, HttpCode: resp.StatusCode}
@@ -440,90 +336,90 @@ func (client *Client) Start(urlStr string) error {
 	id := path.Base(u.Path)
 
 	// Create web socket, state is automatically set to connected
-	client.webSocket = newWebSocket(
+	c.webSocket = newWebSocket(
 		id,
 		ws,
 		resp.TLS,
 		NewDefaultWebSocketConfig(
 			true,
-			client.timeoutConfig.WriteWait,
+			c.timeoutConfig.WriteWait,
 			0,
-			client.timeoutConfig.PingPeriod,
-			client.timeoutConfig.PongWait,
+			c.timeoutConfig.PingPeriod,
+			c.timeoutConfig.PongWait,
 		),
-		client.handleMessage,
-		client.handleDisconnect,
+		c.handleMessage,
+		c.handleDisconnect,
 		func(_ Channel, err error) {
-			client.error(err)
+			c.error(err)
 		},
 	)
 	log.Infof("connected to server as %s", id)
 	// Start reader and write routine
-	client.webSocket.run()
+	c.webSocket.run()
 	return nil
 }
 
-func (client *Client) Stop() {
+func (c *client) Stop() {
 	log.Infof("closing connection to server")
-	if client.IsConnected() {
+	if c.IsConnected() {
 		// Attempt to gracefully shut down the connection
-		err := client.webSocket.Close(websocket.CloseError{Code: websocket.CloseNormalClosure, Text: ""})
+		err := c.webSocket.Close(websocket.CloseError{Code: websocket.CloseNormalClosure, Text: ""})
 		if err != nil {
-			client.error(err)
+			c.error(err)
 		}
 	}
 	// Notify reconnection goroutine to stop (if any)
 	select {
-	case <-client.reconnectC:
+	case <-c.reconnectC:
 		// Already closed, ignore
 		break
 	default:
 		// Channel is open, signal reconnection to stop
-		client.reconnectC <- struct{}{}
+		c.reconnectC <- struct{}{}
 	}
 	// Close error channel if any
 	select {
-	case <-client.errC:
+	case <-c.errC:
 		// Already closed, ignore
 		break
 	default:
 		// Channel is open, close it
-		if client.errC != nil {
-			close(client.errC)
+		if c.errC != nil {
+			close(c.errC)
 		}
 	}
 	// Connection will close asynchronously and invoke the onDisconnected handler
 }
 
-func (client *Client) Errors() <-chan error {
-	if client.errC == nil {
-		client.errC = make(chan error, 1)
+func (c *client) Errors() <-chan error {
+	if c.errC == nil {
+		c.errC = make(chan error, 1)
 	}
-	return client.errC
+	return c.errC
 }
 
-// --------- Internal callbacks webSocket -> Client ---------
-func (client *Client) handleMessage(_ Channel, data []byte) error {
-	if client.messageHandler != nil {
-		return client.messageHandler(data)
+// --------- Internal callbacks webSocket -> client ---------
+func (c *client) handleMessage(_ Channel, data []byte) error {
+	if c.messageHandler != nil {
+		return c.messageHandler(data)
 	}
 	return fmt.Errorf("no message handler set")
 }
 
-func (client *Client) handleDisconnect(_ Channel, err error) {
-	if client.onDisconnected != nil {
+func (c *client) handleDisconnect(_ Channel, err error) {
+	if c.onDisconnected != nil {
 		// Notify upper layer of disconnect
-		client.onDisconnected(err)
+		c.onDisconnected(err)
 	}
 	if err != nil {
 		// Disconnect was forced, do reconnect
-		client.handleReconnection()
+		c.handleReconnection()
 	}
 }
 
-func (client *Client) error(err error) {
+func (c *client) error(err error) {
 	log.Error(err)
-	if client.errC != nil {
-		client.errC <- err
+	if c.errC != nil {
+		c.errC <- err
 	}
 }

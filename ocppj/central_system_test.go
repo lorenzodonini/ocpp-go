@@ -400,7 +400,7 @@ func (suite *OcppJTestSuite) TestCentralSystemNewClientHandler() {
 	suite.mockServer.NewClientHandler(channel)
 	ok := <-connectedC
 	assert.True(t, ok)
-	// Client state was created
+	// client state was created
 	_, ok = suite.serverRequestMap.Get(mockClientID)
 	assert.True(t, ok)
 }
