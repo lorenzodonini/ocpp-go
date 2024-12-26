@@ -13,7 +13,7 @@ import (
 // During message exchange, the two roles may be reversed (depending on the message direction), but a client struct remains associated to a charge point/charging station.
 type Client struct {
 	Endpoint
-	client                ws.WsClient
+	client                ws.Client
 	Id                    string
 	requestHandler        func(request ocpp.Request, requestId string, action string)
 	responseHandler       func(response ocpp.Response, requestId string)
@@ -35,7 +35,7 @@ type Client struct {
 //
 // The wsClient parameter cannot be nil. Refer to the ws package for information on how to create and
 // customize a websocket client.
-func NewClient(id string, wsClient ws.WsClient, dispatcher ClientDispatcher, stateHandler ClientState, profiles ...*ocpp.Profile) *Client {
+func NewClient(id string, wsClient ws.Client, dispatcher ClientDispatcher, stateHandler ClientState, profiles ...*ocpp.Profile) *Client {
 	endpoint := Endpoint{}
 	if wsClient == nil {
 		panic("wsClient parameter cannot be nil")

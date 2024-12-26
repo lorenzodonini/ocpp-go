@@ -207,8 +207,8 @@ type ChargingStation interface {
 //	})
 //
 // For more advanced options, or if a custom networking/occpj layer is required,
-// please refer to ocppj.Client and ws.WsClient.
-func NewChargingStation(id string, endpoint *ocppj.Client, client ws.WsClient) ChargingStation {
+// please refer to ocppj.Client and ws.Client.
+func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) ChargingStation {
 	if client == nil {
 		client = ws.NewClient()
 	}
@@ -415,7 +415,7 @@ type CSMS interface {
 // If you need a TLS server, you may use the following:
 //
 //	csms := NewCSMS(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
-func NewCSMS(endpoint *ocppj.Server, server ws.WsServer) CSMS {
+func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
 	if server == nil {
 		server = ws.NewServer()
 	}

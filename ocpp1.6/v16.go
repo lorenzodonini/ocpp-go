@@ -158,8 +158,8 @@ type ChargePoint interface {
 //	})
 //
 // For more advanced options, or if a customer networking/occpj layer is required,
-// please refer to ocppj.Client and ws.WsClient.
-func NewChargePoint(id string, endpoint *ocppj.Client, client ws.WsClient) ChargePoint {
+// please refer to ocppj.Client and ws.Client.
+func NewChargePoint(id string, endpoint *ocppj.Client, client ws.Client) ChargePoint {
 	if client == nil {
 		client = ws.NewClient()
 	}
@@ -339,7 +339,7 @@ type CentralSystem interface {
 // If you need a TLS server, you may use the following:
 //
 //	cs := NewServer(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
-func NewCentralSystem(endpoint *ocppj.Server, server ws.WsServer) CentralSystem {
+func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) CentralSystem {
 	if server == nil {
 		server = ws.NewServer()
 	}

@@ -19,7 +19,7 @@ import (
 
 type CheckClientHandler func(id string, r *http.Request) bool
 
-// WsServer defines a websocket server, which passively listens for incoming connections on ws or wss protocol.
+// Server defines a websocket server, which passively listens for incoming connections on ws or wss protocol.
 // The offered API are of asynchronous nature, and each incoming connection/message is handled using callbacks.
 //
 // To create a new ws server, use:
@@ -50,7 +50,7 @@ type CheckClientHandler func(id string, r *http.Request) bool
 //
 // To receive incoming messages, you will need to set your own handler using SetMessageHandler.
 // To write data on the open socket, simply call the Write function.
-type WsServer interface {
+type Server interface {
 	// Starts and runs the websocket server on a specific port and URL.
 	// After start, incoming connections and messages are handled automatically, so no explicit read operation is required.
 	//
@@ -122,7 +122,7 @@ type WsServer interface {
 // Default implementation of a Websocket server.
 //
 // Use the NewServer or NewTLSServer functions to create a new server.
-type Server struct {
+type server struct {
 	connections         map[string]*webSocket
 	httpServer          *http.Server
 	messageHandler      func(ws Channel, data []byte) error
@@ -141,9 +141,9 @@ type Server struct {
 }
 
 // Creates a new simple websocket server (the websockets are not secured).
-func NewServer() *Server {
+func NewServer() Server {
 	router := mux.NewRouter()
-	return &Server{
+	return &server{
 		httpServer:    &http.Server{},
 		timeoutConfig: NewServerTimeoutConfig(),
 		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
@@ -165,9 +165,9 @@ func NewServer() *Server {
 //
 // If no tlsConfig parameter is passed, the server will by default
 // not perform any client certificate verification.
-func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.Config) *Server {
+func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.Config) Server {
 	router := mux.NewRouter()
-	return &Server{
+	return &server{
 		tlsCertificatePath: certificatePath,
 		tlsCertificateKey:  certificateKey,
 		httpServer: &http.Server{
@@ -179,123 +179,123 @@ func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.
 	}
 }
 
-func (server *Server) SetMessageHandler(handler MessageHandler) {
-	server.messageHandler = handler
+func (s *server) SetMessageHandler(handler MessageHandler) {
+	s.messageHandler = handler
 }
 
-func (server *Server) SetCheckClientHandler(handler CheckClientHandler) {
-	server.checkClientHandler = handler
+func (s *server) SetCheckClientHandler(handler CheckClientHandler) {
+	s.checkClientHandler = handler
 }
 
-func (server *Server) SetNewClientHandler(handler ConnectedHandler) {
-	server.newClientHandler = handler
+func (s *server) SetNewClientHandler(handler ConnectedHandler) {
+	s.newClientHandler = handler
 }
 
-func (server *Server) SetDisconnectedClientHandler(handler func(ws Channel)) {
-	server.disconnectedHandler = handler
+func (s *server) SetDisconnectedClientHandler(handler func(ws Channel)) {
+	s.disconnectedHandler = handler
 }
 
-func (server *Server) SetTimeoutConfig(config ServerTimeoutConfig) {
-	server.timeoutConfig = config
+func (s *server) SetTimeoutConfig(config ServerTimeoutConfig) {
+	s.timeoutConfig = config
 }
 
-func (server *Server) AddSupportedSubprotocol(subProto string) {
-	for _, sub := range server.upgrader.Subprotocols {
+func (s *server) AddSupportedSubprotocol(subProto string) {
+	for _, sub := range s.upgrader.Subprotocols {
 		if sub == subProto {
 			// Don't add duplicates
 			return
 		}
 	}
-	server.upgrader.Subprotocols = append(server.upgrader.Subprotocols, subProto)
+	s.upgrader.Subprotocols = append(s.upgrader.Subprotocols, subProto)
 }
 
-func (server *Server) SetBasicAuthHandler(handler func(username string, password string) bool) {
-	server.basicAuthHandler = handler
+func (s *server) SetBasicAuthHandler(handler func(username string, password string) bool) {
+	s.basicAuthHandler = handler
 }
 
-func (server *Server) SetCheckOriginHandler(handler func(r *http.Request) bool) {
-	server.upgrader.CheckOrigin = handler
+func (s *server) SetCheckOriginHandler(handler func(r *http.Request) bool) {
+	s.upgrader.CheckOrigin = handler
 }
 
-func (server *Server) error(err error) {
+func (s *server) error(err error) {
 	log.Error(err)
-	if server.errC != nil {
-		server.errC <- err
+	if s.errC != nil {
+		s.errC <- err
 	}
 }
 
-func (server *Server) Errors() <-chan error {
-	if server.errC == nil {
-		server.errC = make(chan error, 1)
+func (s *server) Errors() <-chan error {
+	if s.errC == nil {
+		s.errC = make(chan error, 1)
 	}
-	return server.errC
+	return s.errC
 }
 
-func (server *Server) Addr() *net.TCPAddr {
-	return server.addr
+func (s *server) Addr() *net.TCPAddr {
+	return s.addr
 }
 
-func (server *Server) AddHttpHandler(listenPath string, handler func(w http.ResponseWriter, r *http.Request)) {
-	server.httpHandler.HandleFunc(listenPath, handler)
+func (s *server) AddHttpHandler(listenPath string, handler func(w http.ResponseWriter, r *http.Request)) {
+	s.httpHandler.HandleFunc(listenPath, handler)
 }
 
-func (server *Server) Start(port int, listenPath string) {
-	server.connMutex.Lock()
-	server.connections = make(map[string]*webSocket)
-	server.connMutex.Unlock()
+func (s *server) Start(port int, listenPath string) {
+	s.connMutex.Lock()
+	s.connections = make(map[string]*webSocket)
+	s.connMutex.Unlock()
 
-	if server.httpServer == nil {
-		server.httpServer = &http.Server{}
+	if s.httpServer == nil {
+		s.httpServer = &http.Server{}
 	}
 
 	addr := fmt.Sprintf(":%v", port)
-	server.httpServer.Addr = addr
+	s.httpServer.Addr = addr
 
-	server.AddHttpHandler(listenPath, func(w http.ResponseWriter, r *http.Request) {
-		server.wsHandler(w, r)
+	s.AddHttpHandler(listenPath, func(w http.ResponseWriter, r *http.Request) {
+		s.wsHandler(w, r)
 	})
-	server.httpServer.Handler = server.httpHandler
+	s.httpServer.Handler = s.httpHandler
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		server.error(fmt.Errorf("failed to listen: %w", err))
+		s.error(fmt.Errorf("failed to listen: %w", err))
 		return
 	}
 
-	server.addr = ln.Addr().(*net.TCPAddr)
+	s.addr = ln.Addr().(*net.TCPAddr)
 
 	defer ln.Close()
 
 	log.Infof("listening on tcp network %v", addr)
-	server.httpServer.RegisterOnShutdown(server.stopConnections)
-	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
-		err = server.httpServer.ServeTLS(ln, server.tlsCertificatePath, server.tlsCertificateKey)
+	s.httpServer.RegisterOnShutdown(s.stopConnections)
+	if s.tlsCertificatePath != "" && s.tlsCertificateKey != "" {
+		err = s.httpServer.ServeTLS(ln, s.tlsCertificatePath, s.tlsCertificateKey)
 	} else {
-		err = server.httpServer.Serve(ln)
+		err = s.httpServer.Serve(ln)
 	}
 
 	if !errors.Is(err, http.ErrServerClosed) {
-		server.error(fmt.Errorf("failed to listen: %w", err))
+		s.error(fmt.Errorf("failed to listen: %w", err))
 	}
 }
 
-func (server *Server) Stop() {
+func (s *server) Stop() {
 	log.Info("stopping websocket server")
-	err := server.httpServer.Shutdown(context.TODO())
+	err := s.httpServer.Shutdown(context.TODO())
 	if err != nil {
-		server.error(fmt.Errorf("shutdown failed: %w", err))
+		s.error(fmt.Errorf("shutdown failed: %w", err))
 	}
 
-	if server.errC != nil {
-		close(server.errC)
-		server.errC = nil
+	if s.errC != nil {
+		close(s.errC)
+		s.errC = nil
 	}
 }
 
-func (server *Server) StopConnection(id string, closeError websocket.CloseError) error {
-	server.connMutex.RLock()
-	w, ok := server.connections[id]
-	server.connMutex.RUnlock()
+func (s *server) StopConnection(id string, closeError websocket.CloseError) error {
+	s.connMutex.RLock()
+	w, ok := s.connections[id]
+	s.connMutex.RUnlock()
 
 	if !ok {
 		return fmt.Errorf("couldn't stop websocket connection. No connection with id %s is open", id)
@@ -304,18 +304,18 @@ func (server *Server) StopConnection(id string, closeError websocket.CloseError)
 	return w.Close(closeError)
 }
 
-func (server *Server) stopConnections() {
-	server.connMutex.RLock()
-	defer server.connMutex.RUnlock()
-	for _, conn := range server.connections {
+func (s *server) stopConnections() {
+	s.connMutex.RLock()
+	defer s.connMutex.RUnlock()
+	for _, conn := range s.connections {
 		_ = conn.Close(websocket.CloseError{Code: websocket.CloseNormalClosure, Text: ""})
 	}
 }
 
-func (server *Server) Write(webSocketId string, data []byte) error {
-	server.connMutex.RLock()
-	defer server.connMutex.RUnlock()
-	w, ok := server.connections[webSocketId]
+func (s *server) Write(webSocketId string, data []byte) error {
+	s.connMutex.RLock()
+	defer s.connMutex.RUnlock()
+	w, ok := s.connections[webSocketId]
 	if !ok {
 		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
 	}
@@ -323,7 +323,7 @@ func (server *Server) Write(webSocketId string, data []byte) error {
 	return w.Write(data)
 }
 
-func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	responseHeader := http.Header{}
 	url := r.URL
 	id := path.Base(url.Path)
@@ -333,13 +333,13 @@ func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	negotiatedSubProtocol := ""
 out:
 	for _, requestedProto := range clientSubProtocols {
-		if len(server.upgrader.Subprotocols) == 0 {
+		if len(s.upgrader.Subprotocols) == 0 {
 			// All subProtocols are accepted, pick first
 			negotiatedSubProtocol = requestedProto
 			break
 		}
 		// Check if requested suprotocol is supported by server
-		for _, supportedProto := range server.upgrader.Subprotocols {
+		for _, supportedProto := range s.upgrader.Subprotocols {
 			if requestedProto == supportedProto {
 				negotiatedSubProtocol = requestedProto
 				break out
@@ -350,54 +350,54 @@ out:
 		responseHeader.Add("Sec-WebSocket-Protocol", negotiatedSubProtocol)
 	}
 	// Handle client authentication
-	if server.basicAuthHandler != nil {
+	if s.basicAuthHandler != nil {
 		username, password, ok := r.BasicAuth()
 		if ok {
-			ok = server.basicAuthHandler(username, password)
+			ok = s.basicAuthHandler(username, password)
 		}
 		if !ok {
-			server.error(fmt.Errorf("basic auth failed: credentials invalid"))
+			s.error(fmt.Errorf("basic auth failed: credentials invalid"))
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 	}
 	// Custom client checks
-	if server.checkClientHandler != nil {
-		ok := server.checkClientHandler(id, r)
+	if s.checkClientHandler != nil {
+		ok := s.checkClientHandler(id, r)
 		if !ok {
-			server.error(fmt.Errorf("client validation: invalid client"))
+			s.error(fmt.Errorf("client validation: invalid client"))
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 	}
 
 	// Upgrade websocket
-	conn, err := server.upgrader.Upgrade(w, r, responseHeader)
+	conn, err := s.upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
-		server.error(fmt.Errorf("upgrade failed: %w", err))
+		s.error(fmt.Errorf("upgrade failed: %w", err))
 		return
 	}
 
 	log.Debugf("upgraded websocket connection for %s from %s", id, conn.RemoteAddr().String())
 	// If unsupported sub-protocol, terminate the connection immediately
 	if negotiatedSubProtocol == "" {
-		server.error(fmt.Errorf("unsupported subprotocols %v for new client %v (%v)", clientSubProtocols, id, r.RemoteAddr))
+		s.error(fmt.Errorf("unsupported subprotocols %v for new client %v (%v)", clientSubProtocols, id, r.RemoteAddr))
 		_ = conn.WriteControl(websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.CloseProtocolError, "invalid or unsupported subprotocol"),
-			time.Now().Add(server.timeoutConfig.WriteWait))
+			time.Now().Add(s.timeoutConfig.WriteWait))
 		_ = conn.Close()
 		return
 	}
 	// Check whether client exists
-	server.connMutex.Lock()
+	s.connMutex.Lock()
 	// There is already a connection with the same ID. Close the new one immediately with a PolicyViolation.
-	if _, exists := server.connections[id]; exists {
-		server.connMutex.Unlock()
-		server.error(fmt.Errorf("client %s already exists, closing duplicate client", id))
+	if _, exists := s.connections[id]; exists {
+		s.connMutex.Unlock()
+		s.error(fmt.Errorf("client %s already exists, closing duplicate client", id))
 		_ = conn.WriteControl(websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "a connection with this ID already exists"),
-			time.Now().Add(server.timeoutConfig.WriteWait))
+			time.Now().Add(s.timeoutConfig.WriteWait))
 		_ = conn.Close()
 		return
 	}
@@ -408,140 +408,42 @@ out:
 		r.TLS,
 		NewDefaultWebSocketConfig(
 			false,
-			server.timeoutConfig.WriteWait,
-			server.timeoutConfig.PingWait,
+			s.timeoutConfig.WriteWait,
+			s.timeoutConfig.PingWait,
 			0,
 			0),
-		server.handleMessage,
-		server.handleDisconnect,
+		s.handleMessage,
+		s.handleDisconnect,
 		func(_ Channel, err error) {
-			server.error(err)
+			s.error(err)
 		},
 	)
 	// Add new client
-	server.connections[ws.id] = ws
-	server.connMutex.Unlock()
+	s.connections[ws.id] = ws
+	s.connMutex.Unlock()
 	// Start reader and write routine
 	ws.run()
-	if server.newClientHandler != nil {
+	if s.newClientHandler != nil {
 		var channel Channel = ws
-		server.newClientHandler(channel)
+		s.newClientHandler(channel)
 	}
 }
 
-//func (server *Server) getReadTimeout() time.Time {
-//	if server.timeoutConfig.PingWait == 0 {
-//		return time.Time{}
-//	}
-//	return time.Now().Add(server.timeoutConfig.PingWait)
-//}
-
-//func (server *Server) readPump(ws *webSocket) {
-//	conn := ws.connection
-//
-//	conn.SetPingHandler(func(appData string) error {
-//		log.Debugf("ping received from %s", ws.ID())
-//		ws.pingMessage <- []byte(appData)
-//		err := conn.SetReadDeadline(server.getReadTimeout())
-//		return err
-//	})
-//	_ = conn.SetReadDeadline(server.getReadTimeout())
-//
-//	for {
-//		_, message, err := conn.ReadMessage()
-//		if err != nil {
-//			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
-//				server.error(fmt.Errorf("read failed unexpectedly for %s: %w", ws.ID(), err))
-//			}
-//			log.Debugf("handling read error for %s: %v", ws.ID(), err.Error())
-//			// Notify writePump of error. Force close will be handled there
-//			ws.forceCloseC <- err
-//			return
-//		}
-//
-//		if server.messageHandler != nil {
-//			var channel Channel = ws
-//			err = server.messageHandler(channel, message)
-//			if err != nil {
-//				server.error(fmt.Errorf("handling failed for %s: %w", ws.ID(), err))
-//				continue
-//			}
-//		}
-//		_ = conn.SetReadDeadline(server.getReadTimeout())
-//	}
-//}
-//
-//func (server *Server) writePump(ws *webSocket) {
-//	conn := ws.connection
-//
-//	for {
-//		select {
-//		case data, ok := <-ws.outQueue:
-//			_ = conn.SetWriteDeadline(time.Now().Add(server.timeoutConfig.WriteWait))
-//			if !ok {
-//				// Unexpected closed queue, should never happen
-//				server.error(fmt.Errorf("output queue for socket %v was closed, forcefully closing", ws.id))
-//				// Don't invoke cleanup
-//				return
-//			}
-//			// Send data
-//			err := conn.WriteMessage(websocket.TextMessage, data)
-//			if err != nil {
-//				server.error(fmt.Errorf("write failed for %s: %w", ws.ID(), err))
-//				// Invoking cleanup, as socket was forcefully closed
-//				server.cleanupConnection(ws)
-//				return
-//			}
-//			log.Debugf("written %d bytes to %s", len(data), ws.ID())
-//		case ping := <-ws.pingMessage:
-//			_ = conn.SetWriteDeadline(time.Now().Add(server.timeoutConfig.WriteWait))
-//			err := conn.WriteMessage(websocket.PongMessage, ping)
-//			if err != nil {
-//				server.error(fmt.Errorf("write failed for %s: %w", ws.ID(), err))
-//				// Invoking cleanup, as socket was forcefully closed
-//				server.cleanupConnection(ws)
-//				return
-//			}
-//			log.Debugf("pong sent to %s", ws.ID())
-//		case closeErr := <-ws.closeC:
-//			log.Debugf("closing connection to %s", ws.ID())
-//			// Closing connection gracefully
-//			if err := conn.WriteControl(
-//				websocket.CloseMessage,
-//				websocket.FormatCloseMessage(closeErr.Code, closeErr.Text),
-//				time.Now().Add(server.timeoutConfig.WriteWait),
-//			); err != nil {
-//				server.error(fmt.Errorf("failed to write close message for connection %s: %w", ws.id, err))
-//			}
-//			// Invoking cleanup
-//			server.cleanupConnection(ws)
-//			return
-//		case closed, ok := <-ws.forceCloseC:
-//			if !ok || closed != nil {
-//				// Connection was forcefully closed, invoke cleanup
-//				log.Debugf("handling forced close signal for %s", ws.ID())
-//				server.cleanupConnection(ws)
-//			}
-//			return
-//		}
-//	}
-//}
-
-// --------- Internal callbacks webSocket -> Server ---------
-func (server *Server) handleMessage(w Channel, data []byte) error {
-	if server.messageHandler != nil {
-		return server.messageHandler(w, data)
+// --------- Internal callbacks webSocket -> server ---------
+func (s *server) handleMessage(w Channel, data []byte) error {
+	if s.messageHandler != nil {
+		return s.messageHandler(w, data)
 	}
 	return fmt.Errorf("no message handler set")
 }
 
-func (server *Server) handleDisconnect(w Channel, _ error) {
-	// Server never attempts to auto-reconnect to client. Resources are simply freed up
-	server.connMutex.Lock()
-	delete(server.connections, w.ID())
-	server.connMutex.Unlock()
+func (s *server) handleDisconnect(w Channel, _ error) {
+	// server never attempts to auto-reconnect to client. Resources are simply freed up
+	s.connMutex.Lock()
+	delete(s.connections, w.ID())
+	s.connMutex.Unlock()
 	log.Infof("closed connection to %s", w.ID())
-	if server.disconnectedHandler != nil {
-		server.disconnectedHandler(w)
+	if s.disconnectedHandler != nil {
+		s.disconnectedHandler(w)
 	}
 }

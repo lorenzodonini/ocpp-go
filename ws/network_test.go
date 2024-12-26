@@ -28,8 +28,8 @@ type NetworkTestSuite struct {
 	suite.Suite
 	proxy     *toxiproxy.Proxy
 	proxyPort int
-	server    *Server
-	client    *Client
+	server    *server
+	client    *client
 }
 
 func (s *NetworkTestSuite) SetupSuite() {
@@ -197,7 +197,7 @@ func (s *NetworkTestSuite) TestClientAutoReconnect() {
 func (s *NetworkTestSuite) TestClientPongTimeout() {
 	// Set timeouts for test
 	// Will attempt to send ping after 1 second, and server expects ping within 1.4 seconds
-	// Server will close connection
+	// server will close connection
 	s.client.timeoutConfig.PongWait = 2 * time.Second
 	s.client.timeoutConfig.PingPeriod = (s.client.timeoutConfig.PongWait * 5) / 10
 	s.client.timeoutConfig.RetryBackOffWaitMinimum = 1 * time.Second
