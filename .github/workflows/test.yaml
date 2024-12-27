@@ -61,13 +61,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
-      - name: Install goveralls
-        run: go install github.com/mattn/goveralls@latest
       - name: Download coverage from tests
         uses: actions/download-artifact@v4
         with:
           name: coverage
       - name: Publish
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage.out
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: goveralls -coverprofile=coverage.out -service=github
