@@ -99,7 +99,7 @@ func (handler *ChargePointHandler) OnGetConfiguration(request *core.GetConfigura
 	for _, key := range request.Key {
 		configKey, ok := handler.configuration[key]
 		if !ok {
-			unknownKeys = append(unknownKeys, *configKey.Value)
+			unknownKeys = append(unknownKeys, key)
 		} else {
 			resultKeys = append(resultKeys, configKey)
 		}
