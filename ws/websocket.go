@@ -52,6 +52,9 @@ const (
 // The internal verbose logger
 var log logging.Logger
 
+// The internal message logger
+var msgLog logging.Logger
+
 // Sets a custom Logger implementation, allowing the package to log events.
 // By default, a VoidLogger is used, so no logs will be sent to any output.
 //
@@ -61,6 +64,28 @@ func SetLogger(logger logging.Logger) {
 		panic("cannot set a nil logger")
 	}
 	log = logger
+}
+
+// Sets a custom Logger implementation for messages, allowing the package to log ws messages seperately.
+// By default, a VoidLogger is used, so no logs will be sent to any output.
+//
+// The function panics, if a nil logger is passed.
+func SetMessageLogger(logger logging.Logger) {
+	if logger == nil {
+		panic("cannot set a nil logger")
+	}
+	msgLog = logger
+}
+
+// Logs a websocket message to the internal logger.
+// introducing seperate function to have the opportunity for a dedicated message logger
+func logMessage(args ...interface{}) {
+	if msgLog != nil {
+		msgLog.Debug(args...)
+	}
+	if log != nil {
+		log.Info(args...)
+	}
 }
 
 // Config contains optional configuration parameters for a websocket server.
@@ -457,6 +482,7 @@ func (server *Server) Write(webSocketId string, data []byte) error {
 		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
 	}
 	log.Debugf("queuing data for websocket %s", webSocketId)
+	logMessage("> ", webSocketId, string(data))
 	ws.outQueue <- data
 	return nil
 }
@@ -593,6 +619,7 @@ func (server *Server) readPump(ws *WebSocket) {
 
 		if server.messageHandler != nil {
 			var channel Channel = ws
+			logMessage("< ", ws.ID(), string(message))
 			err = server.messageHandler(channel, message)
 			if err != nil {
 				server.error(fmt.Errorf("handling failed for %s: %w", ws.ID(), err))
@@ -975,6 +1002,7 @@ func (client *Client) readPump() {
 
 		log.Debugf("received %v bytes", len(message))
 		if client.messageHandler != nil {
+			logMessage("< ", client.webSocket.ID(), string(message))
 			err = client.messageHandler(message)
 			if err != nil {
 				client.error(fmt.Errorf("handle failed: %w", err))
@@ -1046,6 +1074,7 @@ func (client *Client) Write(data []byte) error {
 		return fmt.Errorf("client is currently not connected, cannot send data")
 	}
 	log.Debugf("queuing data for server")
+	logMessage("> ", client.webSocket.ID(), string(data))
 	client.webSocket.outQueue <- data
 	return nil
 }
@@ -1150,4 +1179,5 @@ func (client *Client) Errors() <-chan error {
 
 func init() {
 	log = &logging.VoidLogger{}
+	msgLog = &logging.VoidLogger{}
 }
