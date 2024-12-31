@@ -13,7 +13,7 @@ jobs:
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
-          name: unit_coverage
+          name: unit_coverage_${{ github.sha }}
           path: ./coverage.out
 
   integration:
@@ -26,7 +26,7 @@ jobs:
       - name: Download coverage from unit tests
         uses: actions/download-artifact@v4
         with:
-          name: unit_coverage
+          name: unit_coverage_${{ github.sha }}
       - name: Run integration tests
         run: |
           docker compose -f docker-compose.test.yaml up integration_test --abort-on-container-failure
@@ -36,7 +36,7 @@ jobs:
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
-          name: coverage
+          name: coverage_${{ github.sha }}
           path: ./coverage.out
 
   publish_coverage:
@@ -50,7 +50,7 @@ jobs:
       - name: Download coverage from tests
         uses: actions/download-artifact@v4
         with:
-          name: coverage
+          name: coverage_${{ github.sha }}
       - name: Publish
         uses: shogo82148/actions-goveralls@v1
         with:
