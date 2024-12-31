@@ -14,10 +14,7 @@ jobs:
           cache: true
       - name: Run tests
         run: |
-          go test -v -covermode=count -coverprofile=ocpp16.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp1.6/... github.com/lorenzodonini/ocpp-go/ocpp1.6_test
-          go test -v -covermode=count -coverprofile=ocpp201.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp2.0.1/... github.com/lorenzodonini/ocpp-go/ocpp2.0.1_test
-          sed '1d;$d' ocpp16.out >> coverage.out
-          sed '1d;$d' ocpp201.out >> coverage.out
+          docker compose -f docker-compose.test.yaml up unit_test --abort-on-container-failure
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
@@ -37,7 +34,7 @@ jobs:
           name: unit_coverage
       - name: Run integration tests
         run: |
-          docker compose -f docker-compose.test.yaml up integration_test
+          docker compose -f docker-compose.test.yaml up integration_test --abort-on-container-failure
       - name: Wait for integration_test to finish
         run: |
           while [ "$(docker inspect -f '{{.State.Running}}' $(docker compose -f docker-compose.test.yaml ps -q integration_test))" == "true" ]; do
