@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   toxiproxy:
-    image: shopify/toxiproxy:2.1.4
+    image: ghcr.io/shopify/toxiproxy:2.11.0
     hostname: toxiproxy
 
   unit_test:
@@ -16,8 +16,12 @@ services:
       - /bin/bash
       - -c
       - |
+        go test -v -covermode=count -coverprofile=ocppj.out ./ocppj
         go test -v -covermode=count -coverprofile=ocpp16.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp1.6/... github.com/lorenzodonini/ocpp-go/ocpp1.6_test
         go test -v -covermode=count -coverprofile=ocpp201.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp2.0.1/... github.com/lorenzodonini/ocpp-go/ocpp2.0.1_test
+        sed '1d;$d' ocppj.out >> coverage.out
+        sed '1d;$d' ocpp16.out >> coverage.out
+        sed '1d;$d' ocpp201.out >> coverage.out
 
   integration_test:
     image: cimg/go:1.22.5
@@ -28,13 +32,13 @@ services:
     environment:
       - TOXIPROXY_HOST=toxiproxy
       - TOXIPROXY_PORT=8474
-      - PROXY_OCPP_LISTENER=
-      - PROXY_OCPP_UPSTREAM=
+      - PROXY_OCPP_LISTENER=toxiproxy:8886
+      - PROXY_OCPP_UPSTREAM=integration_test:8887
     depends_on:
       - toxiproxy
     command:
       - /bin/bash
       - -c
-      - go test ./ws ./ocppj -v -covermode=count -coverprofile=integration_coverage.out
+      - go test ./ws -v -covermode=count -coverprofile=integration_coverage.out
     volumes:
       - .:/etc/ocpp-go:rw

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,6 +18,13 @@ import (
 
 	toxiproxy "github.com/Shopify/toxiproxy/client"
 )
+
+type proxyConfig struct {
+	ToxiProxyHost     string `env:"TOXIPROXY_HOST" envDefault:"localhost"`
+	ToxiProxyPort     int    `env:"TOXIPROXY_PORT" envDefault:"8474"`
+	ProxyOcppListener string `env:"PROXY_OCPP_LISTENER" envDefault:"localhost:8886"`
+	ProxyOcppUpstream string `env:"PROXY_OCPP_UPSTREAM" envDefault:"localhost:8887"`
+}
 
 type NetworkTestSuite struct {
 	suite.Suite
@@ -27,20 +35,26 @@ type NetworkTestSuite struct {
 }
 
 func (s *NetworkTestSuite) SetupSuite() {
-	client := toxiproxy.NewClient("localhost:8474")
+	var cfg proxyConfig
+	err := env.Parse(&cfg)
+	s.Require().NoError(err)
+
+	endpoint := fmt.Sprintf("%v:%v", cfg.ToxiProxyHost, cfg.ToxiProxyPort)
+	client := toxiproxy.NewClient(endpoint)
 	s.proxyPort = 8886
 	// Proxy listens on 8886 and upstreams to 8887 (where ocpp server is actually listening)
 	oldProxy, err := client.Proxy("ocpp")
 	if oldProxy != nil {
-		oldProxy.Delete()
+		s.Require().NoError(oldProxy.Delete())
 	}
-	p, err := client.CreateProxy("ocpp", "localhost:8886", fmt.Sprintf("localhost:%v", serverPort))
-	require.NoError(s.T(), err)
+
+	p, err := client.CreateProxy("ocpp", cfg.ProxyOcppListener, cfg.ProxyOcppUpstream)
+	s.Require().NoError(err)
 	s.proxy = p
 }
 
 func (s *NetworkTestSuite) TearDownSuite() {
-	s.proxy.Delete()
+	s.Require().NoError(s.proxy.Delete())
 }
 
 func (s *NetworkTestSuite) SetupTest() {
