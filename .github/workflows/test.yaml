@@ -7,11 +7,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
-      - name: Install Go
-        uses: actions/setup-go@v5.1.0
-        with:
-          go-version: ^1.18
-          cache: true
       - name: Run tests
         run: |
           docker compose -f docker-compose.test.yaml up unit_test --abort-on-container-failure
@@ -35,12 +30,6 @@ jobs:
       - name: Run integration tests
         run: |
           docker compose -f docker-compose.test.yaml up integration_test --abort-on-container-failure
-      - name: Wait for integration_test to finish
-        run: |
-          while [ "$(docker inspect -f '{{.State.Running}}' $(docker compose -f docker-compose.test.yaml ps -q integration_test))" == "true" ]; do
-            echo "Waiting for integration_test to finish..."
-            sleep 5
-          done
       - name: Merge coverage
         run: |
           sed '1d;$d' integration_coverage.out >> coverage.out
