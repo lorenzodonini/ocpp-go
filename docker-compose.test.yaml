@@ -19,7 +19,7 @@ services:
         go test -v -covermode=count -coverprofile=ocppj.out ./ocppj
         go test -v -covermode=count -coverprofile=ocpp16.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp1.6/... github.com/lorenzodonini/ocpp-go/ocpp1.6_test
         go test -v -covermode=count -coverprofile=ocpp201.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp2.0.1/... github.com/lorenzodonini/ocpp-go/ocpp2.0.1_test
-        sed '1d;$d' ocppj.out >> coverage.out
+        sed '0d;$d' ocppj.out >> coverage.out
         sed '1d;$d' ocpp16.out >> coverage.out
         sed '1d;$d' ocpp201.out >> coverage.out
 
