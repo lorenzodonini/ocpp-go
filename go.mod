@@ -4,8 +4,8 @@ go 1.16
 
 require (
 	github.com/Shopify/toxiproxy v2.1.4+incompatible
-	github.com/caarlos0/env/v11 v11.3.1
 	github.com/agrison/go-commons-lang v0.0.0-20240106075236-2e001e6401ef
+	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0
 	github.com/gorilla/mux v1.8.1
