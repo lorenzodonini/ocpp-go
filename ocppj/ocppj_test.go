@@ -103,7 +103,7 @@ func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client
 	websocketServer.MethodCalled("NewClient", websocketId, client)
 }
 
-func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler func(id string, r *http.Request) bool) {
+func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler func(id string, r *http.Request) (string, bool)) {
 	websocketServer.CheckClientHandler = handler
 }
 

@@ -715,8 +715,8 @@ func TestCustomCheckClientHandler(t *testing.T) {
 	wsServer.SetNewClientHandler(func(ws Channel) {
 		connected <- true
 	})
-	wsServer.SetCheckClientHandler(func(clientId string, r *http.Request) bool {
-		return id == clientId
+	wsServer.SetCheckClientHandler(func(clientId string, r *http.Request) (string, bool) {
+		return clientId, id == clientId
 	})
 	go wsServer.Start(serverPort, serverPath)
 	time.Sleep(500 * time.Millisecond)
