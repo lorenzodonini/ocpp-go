@@ -51,7 +51,7 @@ func (suite *OcppV16TestSuite) TestChargePointSendResponseError() {
 		{
 			name:        "ocurrence validation",
 			confirmData: CustomData{Field1: "", Field2: 42},
-			expectedErr: &ocpp.Error{Code: ocppj.OccurrenceConstraintViolation, Description: "Field CallResult.Payload.Data.Field1 required but not found for feature DataTransfer"},
+			expectedErr: &ocpp.Error{Code: ocppj.OccurenceConstraintViolation, Description: "Field CallResult.Payload.Data.Field1 required but not found for feature DataTransfer"},
 		},
 		{
 			name:        "marshaling error",
@@ -130,7 +130,7 @@ func (suite *OcppV16TestSuite) TestCentralSystemSendResponseError() {
 	require.Error(t, err)
 	require.IsType(t, &ocpp.Error{}, err)
 	ocppErr = err.(*ocpp.Error)
-	assert.Equal(t, ocppj.OccurrenceConstraintViolation, ocppErr.Code)
+	assert.Equal(t, ocppj.OccurenceConstraintViolation, ocppErr.Code)
 	assert.Equal(t, "Field CallResult.Payload.Data.Field1 required but not found for feature DataTransfer", ocppErr.Description)
 	// Test 2: marshaling error
 	dataTransferConfirmation = core.NewDataTransferConfirmation(core.DataTransferStatusAccepted)

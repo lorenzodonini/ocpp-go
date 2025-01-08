@@ -184,18 +184,18 @@ func (callError *CallError) MarshalJSON() ([]byte, error) {
 }
 
 const (
-	NotImplemented                ocpp.ErrorCode = "NotImplemented"                // Requested Action is not known by receiver.
-	NotSupported                  ocpp.ErrorCode = "NotSupported"                  // Requested Action is recognized but not supported by the receiver.
-	InternalError                 ocpp.ErrorCode = "InternalError"                 // An internal error occurred and the receiver was not able to process the requested Action successfully.
-	MessageTypeNotSupported       ocpp.ErrorCode = "MessageTypeNotSupported"       // A message with an Message Type Number received that is not supported by this implementation.
-	ProtocolError                 ocpp.ErrorCode = "ProtocolError"                 // Payload for Action is incomplete.
-	SecurityError                 ocpp.ErrorCode = "SecurityError"                 // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully.
-	PropertyConstraintViolation   ocpp.ErrorCode = "PropertyConstraintViolation"   // Payload is syntactically correct but at least one field contains an invalid value.
-	OccurrenceConstraintViolation ocpp.ErrorCode = "OccurrenceConstraintViolation" // Payload for Action is syntactically correct but at least one of the fields violates occurrence constraints.
-	TypeConstraintViolation       ocpp.ErrorCode = "TypeConstraintViolation"       // Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. “somestring”: 12).
-	GenericError                  ocpp.ErrorCode = "GenericError"                  // Any other error not covered by the previous ones.
-	FormatViolationV2             ocpp.ErrorCode = "FormatViolation"               // Payload for Action is syntactically incorrect. This is only valid for OCPP 2.0.1
-	FormatViolationV16            ocpp.ErrorCode = "FormationViolation"            // Payload for Action is syntactically incorrect or not conform the PDU structure for Action. This is only valid for OCPP 1.6
+	NotImplemented               ocpp.ErrorCode = "NotImplemented"               // Requested Action is not known by receiver.
+	NotSupported                 ocpp.ErrorCode = "NotSupported"                 // Requested Action is recognized but not supported by the receiver.
+	InternalError                ocpp.ErrorCode = "InternalError"                // An internal error occurred and the receiver was not able to process the requested Action successfully.
+	MessageTypeNotSupported      ocpp.ErrorCode = "MessageTypeNotSupported"      // A message with an Message Type Number received that is not supported by this implementation.
+	ProtocolError                ocpp.ErrorCode = "ProtocolError"                // Payload for Action is incomplete.
+	SecurityError                ocpp.ErrorCode = "SecurityError"                // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully.
+	PropertyConstraintViolation  ocpp.ErrorCode = "PropertyConstraintViolation"  // Payload is syntactically correct but at least one field contains an invalid value.
+	OccurenceConstraintViolation ocpp.ErrorCode = "OccurenceConstraintViolation" // Payload for Action is syntactically correct but at least one of the fields violates occurrence constraints.
+	TypeConstraintViolation      ocpp.ErrorCode = "TypeConstraintViolation"      // Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. “somestring”: 12).
+	GenericError                 ocpp.ErrorCode = "GenericError"                 // Any other error not covered by the previous ones.
+	FormatViolationV2            ocpp.ErrorCode = "FormatViolation"              // Payload for Action is syntactically incorrect. This is only valid for OCPP 2.0.1
+	FormatViolationV16           ocpp.ErrorCode = "FormationViolation"           // Payload for Action is syntactically incorrect or not conform the PDU structure for Action. This is only valid for OCPP 1.6
 )
 
 type dialector interface {
@@ -216,7 +216,7 @@ func FormatErrorType(d dialector) ocpp.ErrorCode {
 func IsErrorCodeValid(fl validator.FieldLevel) bool {
 	code := ocpp.ErrorCode(fl.Field().String())
 	switch code {
-	case NotImplemented, NotSupported, InternalError, MessageTypeNotSupported, ProtocolError, SecurityError, FormatViolationV16, FormatViolationV2, PropertyConstraintViolation, OccurrenceConstraintViolation, TypeConstraintViolation, GenericError:
+	case NotImplemented, NotSupported, InternalError, MessageTypeNotSupported, ProtocolError, SecurityError, FormatViolationV16, FormatViolationV2, PropertyConstraintViolation, OccurenceConstraintViolation, TypeConstraintViolation, GenericError:
 		return true
 	}
 	return false
@@ -268,7 +268,7 @@ func occurenceViolation(fieldError validator.FieldError, messageId, feature stri
 	if feature != "" {
 		description = fmt.Sprintf("%s for feature %s", description, feature)
 	}
-	return ocpp.NewError(OccurrenceConstraintViolation, description, messageId)
+	return ocpp.NewError(OccurenceConstraintViolation, description, messageId)
 }
 
 func propertyConstraintViolation(fieldError validator.FieldError, details, messageId, feature string) *ocpp.Error {
