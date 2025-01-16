@@ -451,12 +451,17 @@ func (server *Server) stopConnections() {
 
 func (server *Server) Write(webSocketId string, data []byte) error {
 	server.connMutex.RLock()
-	defer server.connMutex.RUnlock()
 	ws, ok := server.connections[webSocketId]
+	server.connMutex.RUnlock()
 	if !ok {
 		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
 	}
 	log.Debugf("queuing data for websocket %s", webSocketId)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Debugf("couldn't write to already closed websocket with id %v", webSocketId)
+		}
+	}()
 	ws.outQueue <- data
 	return nil
 }
