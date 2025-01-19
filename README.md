@@ -14,7 +14,8 @@ There are currently no plans of supporting OCPP-S.
 
 ## Status & Roadmap
 
-**Note: Releases 0.10.0 introduced breaking changes in some API, due to refactoring. The functionality remains the same, but naming changed.**
+**Note: Releases 0.10.0 introduced breaking changes in some API, due to refactoring. The functionality remains the same,
+but naming changed.**
 
 Planned milestones and features:
 
@@ -38,45 +39,49 @@ export GO111MODULE=on
 go mod download
 ```
 
-Your application may either act as a [Central System](#central-system) (server) or as a [Charge Point](#charge-point) (client).
+Your application may either act as a [Central System](#central-system) (server) or as a [Charge Point](#charge-point) (
+client).
 
 ### Central System
 
-If you want to integrate the library into your custom Central System, you must implement the callbacks defined in the profile interfaces, e.g.:
+If you want to integrate the library into your custom Central System, you must implement the callbacks defined in the
+profile interfaces, e.g.:
 
 ```go
 import (
-    "github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-    "github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-    "time"
+"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+"time"
 )
 
 const defaultHeartbeatInterval = 600
 
 type CentralSystemHandler struct {
-	// ... your own state variables
+// ... your own state variables
 }
 
 func (handler *CentralSystemHandler) OnAuthorize(chargePointId string, request *core.AuthorizeRequest) (confirmation *core.AuthorizeConfirmation, err error) {
-	// ... your own custom logic
-	return core.NewAuthorizationConfirmation(types.NewIdTagInfo(types.AuthorizationStatusAccepted)), nil
+// ... your own custom logic
+return core.NewAuthorizationConfirmation(types.NewIdTagInfo(types.AuthorizationStatusAccepted)), nil
 }
 
 func (handler *CentralSystemHandler) OnBootNotification(chargePointId string, request *core.BootNotificationRequest) (confirmation *core.BootNotificationConfirmation, err error) {
-	// ... your own custom logic
-	return core.NewBootNotificationConfirmation(types.NewDateTime(time.Now()), defaultHeartbeatInterval, core.RegistrationStatusAccepted), nil
+// ... your own custom logic
+return core.NewBootNotificationConfirmation(types.NewDateTime(time.Now()), defaultHeartbeatInterval, core.RegistrationStatusAccepted), nil
 }
 
 // further callbacks...
 ```
 
 Every time a request from the charge point comes in, the respective callback function is called.
-For every callback you must return either a confirmation or an error. The result will be sent back automatically to the charge point.
+For every callback you must return either a confirmation or an error. The result will be sent back automatically to the
+charge point.
 The callback is invoked inside a dedicated goroutine, so you don't have to worry about synchronization.
 
 You need to implement at least all other callbacks defined in the `core.CentralSystemHandler` interface.
 
-Depending on which OCPP profiles you want to support in your application, you will need to implement additional callbacks as well.
+Depending on which OCPP profiles you want to support in your application, you will need to implement additional
+callbacks as well.
 
 To start a central system instance, simply run the following:
 
@@ -84,11 +89,11 @@ To start a central system instance, simply run the following:
 centralSystem := ocpp16.NewCentralSystem(nil, nil)
 
 // Set callback handlers for connect/disconnect
-centralSystem.SetNewChargePointHandler(func(chargePointId string) {
-	log.Printf("new charge point %v connected", chargePointId)
+centralSystem.SetNewChargePointHandler(func (chargePointId string) {
+log.Printf("new charge point %v connected", chargePointId)
 })
-centralSystem.SetChargePointDisconnectedHandler(func(chargePointId string) {
-	log.Printf("charge point %v disconnected", chargePointId)
+centralSystem.SetChargePointDisconnectedHandler(func (chargePointId string) {
+log.Printf("charge point %v disconnected", chargePointId)
 })
 
 // Set handler for profile callbacks
@@ -109,7 +114,7 @@ To send requests to the charge point, you may either use the simplified API:
 ```go
 err := centralSystem.ChangeAvailability("1234", myCallback, 1, core.AvailabilityTypeInoperative)
 if err != nil {
-	log.Printf("error sending message: %v", err)
+log.Printf("error sending message: %v", err)
 }
 ```
 
@@ -119,7 +124,7 @@ or create a message manually:
 request := core.NewChangeAvailabilityRequest(1, core.AvailabilityTypeInoperative)
 err := centralSystem.SendRequestAsync("clientId", request, callbackFunction)
 if err != nil {
-	log.Printf("error sending message: %v", err)
+log.Printf("error sending message: %v", err)
 }
 ```
 
@@ -127,17 +132,18 @@ In both cases, the request is sent asynchronously and the function returns right
 You need to write the callback function to check for errors and handle the confirmation on your own:
 
 ```go
-myCallback := func(confirmation *core.ChangeAvailabilityConfirmation, e error) {
-	if e != nil {
-		log.Printf("operation failed: %v", e)
-	} else {
-		log.Printf("status: %v", confirmation.Status)
-		// ... your own custom logic
-	}
+myCallback := func (confirmation *core.ChangeAvailabilityConfirmation, e error) {
+if e != nil {
+log.Printf("operation failed: %v", e)
+} else {
+log.Printf("status: %v", confirmation.Status)
+// ... your own custom logic
+}
 }
 ```
 
-Since the initial `centralSystem.Start` call blocks forever, you may want to wrap it in a goroutine (that is, if you need to run other operations on the main thread).
+Since the initial `centralSystem.Start` call blocks forever, you may want to wrap it in a goroutine (that is, if you
+need to run other operations on the main thread).
 
 #### Example
 
@@ -165,7 +171,8 @@ docker-compose -f example/1.6/docker-compose.yml up central-system
 
 #### TLS
 
-If you wish to test the central system using TLS, make sure you put your self-signed certificates inside the `example/1.6/certs` folder.
+If you wish to test the central system using TLS, make sure you put your self-signed certificates inside the
+`example/1.6/certs` folder.
 
 Feel free to use the utility script `cd example/1.6 && ./create-test-certificates.sh` for generating test certificates.
 
@@ -177,37 +184,40 @@ docker-compose -f example/1.6/docker-compose.tls.yml up central-system
 
 ### Charge Point
 
-If you want to integrate the library into your custom Charge Point, you must implement the callbacks defined in the profile interfaces, e.g.:
+If you want to integrate the library into your custom Charge Point, you must implement the callbacks defined in the
+profile interfaces, e.g.:
 
 ```go
 import (
-    "github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-    "github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 type ChargePointHandler struct {
-	// ... your own state variables
+// ... your own state variables
 }
 
 func (handler *ChargePointHandler) OnChangeAvailability(request *core.ChangeAvailabilityRequest) (confirmation *core.ChangeAvailabilityConfirmation, err error) {
-	// ... your own custom logic
-	return core.NewChangeAvailabilityConfirmation(core.AvailabilityStatusAccepted), nil
+// ... your own custom logic
+return core.NewChangeAvailabilityConfirmation(core.AvailabilityStatusAccepted), nil
 }
 
 func (handler *ChargePointHandler) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
-	// ... your own custom logic
-	return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusAccepted), nil
+// ... your own custom logic
+return core.NewChangeConfigurationConfirmation(core.ConfigurationStatusAccepted), nil
 }
 
 // further callbacks...
 ```
 
 When a request from the central system comes in, the respective callback function gets invoked.
-For every callback you must return either a confirmation or an error. The result will be sent back automatically to the central system.
+For every callback you must return either a confirmation or an error. The result will be sent back automatically to the
+central system.
 
 You need to implement at least all other callbacks defined in the `core.ChargePointHandler` interface.
 
-Depending on which OCPP profiles you want to support in your application, you will need to implement additional callbacks as well.
+Depending on which OCPP profiles you want to support in your application, you will need to implement additional
+callbacks as well.
 
 To start a charge point instance, simply run the following:
 
@@ -223,10 +233,10 @@ chargePoint.SetCoreHandler(handler)
 // Connects to central system
 err := chargePoint.Start(csUrl)
 if err != nil {
-	log.Println(err)
+log.Println(err)
 } else {
-	log.Printf("connected to central system at %v", csUrl)
-	mainRoutine() // ... your program logic goes here
+log.Printf("connected to central system at %v", csUrl)
+mainRoutine() // ... your program logic goes here
 }
 
 // Disconnect
@@ -236,14 +246,15 @@ log.Printf("disconnected from central system")
 
 #### Sending requests
 
-To send requests to the central station, you have two options. You may either use the simplified synchronous blocking API (recommended):
+To send requests to the central station, you have two options. You may either use the simplified synchronous blocking
+API (recommended):
 
 ```go
 bootConf, err := chargePoint.BootNotification("model1", "vendor1")
 if err != nil {
-	log.Fatal(err)
+log.Fatal(err)
 } else {
-	log.Printf("status: %v, interval: %v, current time: %v", bootConf.Status, bootConf.Interval, bootConf.CurrentTime.String())
+log.Printf("status: %v, interval: %v, current time: %v", bootConf.Status, bootConf.Interval, bootConf.CurrentTime.String())
 }
 // ... do something with the confirmation
 ```
@@ -260,7 +271,7 @@ You can then decide to send the message using a synchronous blocking call:
 // Synchronous call
 confirmation, err := chargePoint.SendRequest(request)
 if err != nil {
-	log.Printf("error sending message: %v", err)
+log.Printf("error sending message: %v", err)
 }
 bootConf := confirmation.(*core.BootNotificationConfirmation)
 // ... do something with the confirmation
@@ -272,25 +283,26 @@ or an asynchronous call:
 // Asynchronous call
 err := chargePoint.SendRequestAsync(request, callbackFunction)
 if err != nil {
-	log.Printf("error sending message: %v", err)
+log.Printf("error sending message: %v", err)
 }
 ```
 
 In the latter case, you need to write the callback function and check for errors on your own:
 
 ```go
-callback := func(confirmation ocpp.Response, e error) {
-	bootConf := confirmation.(*core.BootNotificationConfirmation)
-	if e != nil {
-		log.Printf("operation failed: %v", e)
-	} else {
-		log.Printf("status: %v", bootConf.Status)
-		// ... your own custom logic
-	}
+callback := func (confirmation ocpp.Response, e error) {
+bootConf := confirmation.(*core.BootNotificationConfirmation)
+if e != nil {
+log.Printf("operation failed: %v", e)
+} else {
+log.Printf("status: %v", bootConf.Status)
+// ... your own custom logic
+}
 }
 ```
 
-When creating a message manually, you always need to perform type assertion yourself, as the `SendRequest` and `SendRequestAsync` APIs use generic `Request` and `Confirmation` interfaces.
+When creating a message manually, you always need to perform type assertion yourself, as the `SendRequest` and
+`SendRequestAsync` APIs use generic `Request` and `Confirmation` interfaces.
 
 #### Example
 
@@ -301,7 +313,8 @@ To run it, simply execute:
 CLIENT_ID=chargePointSim CENTRAL_SYSTEM_URL=ws://<host>:8887 go run example/1.6/cp/*.go
 ```
 
-You need to specify the URL of a running central station server via environment variable, so the charge point can reach it.
+You need to specify the URL of a running central station server via environment variable, so the charge point can reach
+it.
 
 #### Docker
 
@@ -322,7 +335,8 @@ docker-compose -f example/1.6/docker-compose.yml up charge-point
 
 #### TLS
 
-If you wish to test the charge point using TLS, make sure you put your self-signed certificates inside the `example/1.6/certs` folder.
+If you wish to test the charge point using TLS, make sure you put your self-signed certificates inside the
+`example/1.6/certs` folder.
 
 Feel free to use the utility script `cd example/1.6 && ./create-test-certificates.sh` for generating test certificates.
 
@@ -338,7 +352,8 @@ The library offers several advanced features, especially at websocket and ocpp-j
 
 ### Automatic message validation
 
-All incoming and outgoing messages are validated by default, using the [validator](gopkg.in/go-playground/validator) package.
+All incoming and outgoing messages are validated by default, using the [validator](gopkg.in/go-playground/validator)
+package.
 Constraints are defined on every request/response struct, as per OCPP specs.
 
 Validation may be disabled at a package level if needed:
@@ -369,7 +384,8 @@ ocppj.SetLogger(log.WithField("logger", "ocppj"))
 The logger you pass needs to conform to the `logging.Logger` interface.
 Commonly used logging libraries, such as zap or logrus, adhere to this interface out-of-the-box.
 
-If you are using a logger, that isn't conform, you can simply write an adapter between the `Logger` interface and your own logging system.
+If you are using a logger, that isn't conform, you can simply write an adapter between the `Logger` interface and your
+own logging system.
 
 ### Websocket ping-pong
 
@@ -417,11 +433,11 @@ import "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
 csms := ocpp2.NewCSMS(nil, nil)
 
 // Set callback handlers for connect/disconnect
-csms.SetNewChargingStationHandler(func(chargingStation ocpp2.ChargingStationConnection) {
-	log.Printf("new charging station %v connected", chargingStation.ID())
+csms.SetNewChargingStationHandler(func (chargingStation ocpp2.ChargingStationConnection) {
+log.Printf("new charging station %v connected", chargingStation.ID())
 })
-csms.SetChargingStationDisconnectedHandler(func(chargingStation ocpp2.ChargingStationConnection) {
-	log.Printf("charging station %v disconnected", chargingStation.ID())
+csms.SetChargingStationDisconnectedHandler(func (chargingStation ocpp2.ChargingStationConnection) {
+log.Printf("charging station %v disconnected", chargingStation.ID())
 })
 
 // Set handler for profile callbacks
@@ -452,7 +468,7 @@ Similarly to v1.6, you may send requests using the simplified API, e.g.
 ```go
 err := csms.GetLocalListVersion(chargingStationID, myCallback)
 if err != nil {
-	log.Printf("error sending message: %v", err)
+log.Printf("error sending message: %v", err)
 }
 ```
 
@@ -492,10 +508,10 @@ chargingStation.SetTransactionsHandler(handler)
 // Connects to CSMS
 err := chargingStation.Start(csmsUrl)
 if err != nil {
-	log.Println(err)
+log.Println(err)
 } else {
-	log.Printf("connected to CSMS at %v", csmsUrl)
-	mainRoutine() // ... your program logic goes here
+log.Printf("connected to CSMS at %v", csmsUrl)
+mainRoutine() // ... your program logic goes here
 }
 
 // Disconnect
@@ -510,9 +526,9 @@ Similarly to v1.6 you may send requests using the simplified API (recommended), 
 ```go
 bootResp, err := chargingStation.BootNotification(provisioning.BootReasonPowerUp, "model1", "vendor1")
 if err != nil {
-	log.Printf("error sending message: %v", err)
+log.Printf("error sending message: %v", err)
 } else {
-	log.Printf("status: %v, interval: %v, current time: %v", bootResp.Status, bootResp.Interval, bootResp.CurrentTime.String())
+log.Printf("status: %v, interval: %v, current time: %v", bootResp.Status, bootResp.Interval, bootResp.CurrentTime.String())
 }
 ```
 
@@ -520,8 +536,26 @@ Or you may build requests manually and send them using either the synchronous or
 
 #### Contributing
 
-If you're contributing a code change, you'll want to be sure the tests are passing first; here are the steps to check that:
+If you're contributing a code change, you'll want to be sure the tests are passing first; here are the steps to check
+that:
 
--   Install [toxiproxy](https://github.com/Shopify/toxiproxy) for your platform
--   Shell 1 - `toxiproxy-server -port 8474 -host localhost`
--   Shell 2 - `go fmt ./... && go vet ./... && go test -v -count=1 -failfast ./...`
+- Install [toxiproxy](https://github.com/Shopify/toxiproxy) for your platform
+- Shell 1 - `toxiproxy-server -port 8474 -host localhost`
+- Shell 2 - `go fmt ./... && go vet ./... && go test -v -count=1 -failfast ./...`
+
+#### Generating mocks
+
+For generating mocks, the `mockery` tool is used. For `mockery` installation, follow the instructions on
+the [official docs](https://vektra.github.io/mockery/latest/).
+
+When adding new interfaces and needing to generate mocks, you should:
+
+1. Add the package/interface to the `.mockery.yaml` file. Be mindful of the naming conventions. The mocks should mostly
+   be generated in the same package as the interface, be snake case and suffixed with `_mock.go`. Following the existing
+   examples should give you a good idea of how to proceed.
+
+2. Run the following command:
+   ```sh
+   mockery 
+   ```
+
