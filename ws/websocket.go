@@ -253,6 +253,10 @@ type WsServer interface {
 	// Addr gives the address on which the server is listening, useful if, for
 	// example, the port is system-defined (set to 0).
 	Addr() *net.TCPAddr
+	// Connections retrieves a WebSocket connection by its unique identifier.
+	// If a connection with the given ID exists, it returns the corresponding WebSocket instance.
+	// If no connection is found with the specified ID, it returns nil.
+	Connections(websocketId string) *WebSocket
 }
 
 // Default implementation of a Websocket server.
@@ -369,6 +373,10 @@ func (server *Server) Errors() <-chan error {
 
 func (server *Server) Addr() *net.TCPAddr {
 	return server.addr
+}
+
+func (server *Server) Connections(websocketId string) *WebSocket {
+	return server.connections[websocketId]
 }
 
 func (server *Server) AddHttpHandler(listenPath string, handler func(w http.ResponseWriter, r *http.Request)) {
