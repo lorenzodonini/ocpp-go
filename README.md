@@ -20,6 +20,7 @@ but naming changed.**
 Planned milestones and features:
 
 -   [x] OCPP 1.6
+-   [x] OCPP 1.6 Security extension (experimental)
 -   [x] OCPP 2.0.1 (examples working, but will need more real-world testing)
 -   [ ] Dedicated package for configuration management
 
@@ -344,6 +345,102 @@ Then run the following:
 
 ```
 docker-compose -f example/1.6/docker-compose.tls.yml up charge-point
+```
+
+## OCPP 1.6 Security extension
+
+The library supports the OCPP 1.6 Security extension, which adds support for additional messages that aren't a part of
+original OCPP 1.6 specification. The security extension is optional, but recommended to implement.
+
+There aren't any clear examples how to determine if a charge point supports security extensions via `SupportedProfiles`
+configuration key or which profiles are required to be implemented in order to support the security extension.
+As of now, the security extension is split into multiple profiles/functional blocks:
+
+- `ExtendedTriggerMessage`
+- `Certificates` (certificate management)
+- `Security` (event notifications, certificate signing)
+- `SecureFirmware` (secure firmware update)
+- `Logging`
+
+### HTTP Basic Auth
+
+The security extension specifies how to secure the communication between charge points and central systems
+using HTTP Basic Auth and/or certificates. These are already provided in the websocket server/client
+implementation.
+
+Example charge point:
+
+```go
+wsClient := ws.NewClient()
+wsClient.SetBasicAuth("foo", "bar")
+cp := ocpp16.NewChargePoint(chargePointID, nil, wsClient)
+```
+
+Example central system:
+
+```go
+server := ws.NewServer()
+server.SetBasicAuthHandler(func (username string, password string) bool {
+// todo Handle basic auth
+return true
+})
+cs := ocpp16.NewCentralSystem(nil, server)
+```
+
+### Certificate-based authentication (mTLS)
+
+The security extension specifies how to secure the communication between charge points and central systems
+using mTLS (client certificates). The library provides the necessary functionality to configure TLS,
+but mTLS itself is not in scope and should be handled by the user.
+
+### Additional configuration keys
+
+The OCPP 1.6 security extension introduces additional configuration keys.
+These are not a part of the standard library, but they impact how the charge point should behave.
+
+The charge point websocket client should be restarted when the `AuthorizationKey` configuration changes.
+
+### Central System
+
+To add support for security extension in the central system, you have the following handlers:
+
+```go
+// Support callbacks for all OCPP 1.6 profiles
+handler := &CentralSystemHandler{chargePoints: map[string]*ChargePointState{}}
+centralSystem.SetCoreHandler(handler)
+centralSystem.SetLocalAuthListHandler(handler)
+centralSystem.SetFirmwareManagementHandler(handler)
+centralSystem.SetReservationHandler(handler)
+centralSystem.SetRemoteTriggerHandler(handler)
+centralSystem.SetSmartChargingHandler(handler)
+
+// Add callbacks for OCPP 1.6 security profiles
+centralSystem.SetSecurityHandler(handler)
+centralSystem.SetSecureFirmwareHandler(handler)
+centralSystem.SetLogHandler(handler)
+
+```
+
+### Charge Point
+
+To add support for security extension in the charge point, you have the following handlers:
+
+```go
+handler := &ChargePointHandler{}
+// Support callbacks for all OCPP 1.6 profiles
+chargePoint.SetCoreHandler(handler)
+chargePoint.SetFirmwareManagementHandler(handler)
+chargePoint.SetLocalAuthListHandler(handler)
+chargePoint.SetReservationHandler(handler)
+chargePoint.SetRemoteTriggerHandler(handler)
+chargePoint.SetSmartChargingHandler(handler)
+// OCPP 1.6j Security extension
+chargePoint.SetCertificateHandler(handler)
+chargePoint.SetLogHandler(handler)
+chargePoint.SetSecureFirmwareHandler(handler)
+chargePoint.SetExtendedTriggerMessageHandler(handler)
+chargePoint.SetSecurityHandler(handler)
+
 ```
 
 ## Advanced Features
