@@ -141,6 +141,15 @@ func (m *ocppMetrics) IncrementInboundRequests(ctx context.Context, chargePointI
 	m.requestsIn.Record(ctx, 1, metricAttrs)
 }
 
+func (m *ocppMetrics) IncrementInboundFailedRequests(ctx context.Context, chargePointId, requestName string, error OcppMetricsError) {
+	attrs := []attribute.KeyValue{
+		attribute.String(attributeChargePointId, chargePointId),
+		attribute.String(attributeFeature, requestName),
+		attribute.String(attributeError, string(error)),
+	}
+	m.requestsInFailed.Record(ctx, 1, metric.WithAttributes(attrs...))
+}
+
 func (m *ocppMetrics) IncrementOutboundRequests(ctx context.Context, chargePointId, requestName string, error *OcppMetricsError) {
 	attrs := []attribute.KeyValue{
 		attribute.String(attributeChargePointId, chargePointId),
@@ -157,4 +166,13 @@ func (m *ocppMetrics) IncrementOutboundRequests(ctx context.Context, chargePoint
 	}
 
 	m.requestsOut.Record(ctx, 1, metricAttrs)
+}
+
+func (m *ocppMetrics) IncrementOutboundFailedRequests(ctx context.Context, chargePointId, requestName string, error OcppMetricsError) {
+	attrs := []attribute.KeyValue{
+		attribute.String(attributeChargePointId, chargePointId),
+		attribute.String(attributeFeature, requestName),
+		attribute.String(attributeError, string(error)),
+	}
+	m.requestsOutFailed.Record(ctx, 1, metric.WithAttributes(attrs...))
 }
