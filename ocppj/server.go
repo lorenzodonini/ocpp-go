@@ -3,6 +3,7 @@ package ocppj
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -173,26 +174,30 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 	if !s.dispatcher.IsRunning() {
 		return fmt.Errorf("ocppj server is not started, couldn't send request")
 	}
+
+	var metricErr *OcppMetricsError
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		s.metrics.IncrementOutboundRequests(ctx, clientID, request.GetFeatureName(), metricErr)
+	}()
+
 	call, err := s.CreateCall(request)
 	if err != nil {
-		s.metrics.IncrementOutboundRequests(context.Background(), clientID, request.GetFeatureName(), nil)
 		return err
 	}
 
 	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
-		s.metrics.IncrementOutboundRequests(context.Background(), clientID, request.GetFeatureName(), nil)
 		return err
 	}
 
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
 	if err = s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage}); err != nil {
 		log.Errorf("error dispatching request [%s, %s] to %s: %v", call.UniqueId, call.Action, clientID, err)
-		s.metrics.IncrementOutboundRequests(context.Background(), clientID, request.GetFeatureName(), nil)
 		return err
 	}
 
-	s.metrics.IncrementOutboundRequests(context.Background(), clientID, request.GetFeatureName(), nil)
 	log.Debugf("enqueued CALL [%s, %s] for %s", call.UniqueId, call.Action, clientID)
 	return nil
 }
