@@ -1,0 +1,33 @@
+services:
+  # Grafana stack is used for CPMS observability purposes.
+  # For capturing metrics, you can configure the exporters via environment variables
+  # to either Prometheus or OTel Collector (default).
+  # Prometheus needs to be configured so it can scrape your application instance(s).
+  # To simplify testing and development, we will use the Otel collector as the default.
+  # Your CPMS backend will push the metrics in OTLP format to the Otel collector.
+  # The collector comes as a part of the LGTM stack.
+  grafana-lgtm-stack:
+    image: grafana/otel-lgtm
+    container_name: lgtm-stack
+    hostname: lgtm-stack
+    #environment:
+    #  - GF_SECURITY_ADMIN_USER="admin"
+    #  - GF_SECURITY_ADMIN_PASSWORD="admin"
+    volumes:
+      - prometheus:/prometheus
+      - loki:/data/loki
+      - grafana:/var/lib/grafana
+    networks:
+      - sim
+    ports:
+      - "3000:3000"
+      - "4317:4317"
+
+networks:
+  sim:
+    driver: bridge
+
+volumes:
+  prometheus:
+  loki:
+  grafana:
