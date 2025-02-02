@@ -12,6 +12,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel"
 )
 
 // WsServer defines a websocket server, which passively listens for incoming connections on ws or wss protocol.
@@ -130,16 +132,35 @@ type Server struct {
 	connMutex           sync.RWMutex
 	addr                *net.TCPAddr
 	httpHandler         *mux.Router
+	metrics             *metrics
 }
 
 // Creates a new simple websocket server (the websockets are not secured).
-func NewServer() *Server {
+func NewServer(opts ...ServerOpt) *Server {
 	router := mux.NewRouter()
+
+	defaultOpts := ServerOpts{}
+	for _, opt := range opts {
+		opt(&defaultOpts)
+	}
+
+	meterProvider := otel.GetMeterProvider()
+	// Override the global meter provider if a custom one is provided
+	if defaultOpts.meterProvider != nil {
+		meterProvider = defaultOpts.meterProvider
+	}
+
+	m, err := newMetrics(meterProvider)
+	if err != nil {
+		return nil
+	}
+
 	return &Server{
 		httpServer:    &http.Server{},
 		timeoutConfig: NewServerTimeoutConfig(),
 		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
 		httpHandler:   router,
+		metrics:       m,
 	}
 }
 
@@ -157,8 +178,25 @@ func NewServer() *Server {
 //
 // If no tlsConfig parameter is passed, the server will by default
 // not perform any client certificate verification.
-func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.Config) *Server {
+func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.Config, opts ...ServerOpt) *Server {
 	router := mux.NewRouter()
+
+	defaultOpts := ServerOpts{}
+	for _, opt := range opts {
+		opt(&defaultOpts)
+	}
+
+	meterProvider := otel.GetMeterProvider()
+	// Override the global meter provider if a custom one is provided
+	if defaultOpts.meterProvider != nil {
+		meterProvider = defaultOpts.meterProvider
+	}
+
+	m, err := newMetrics(meterProvider)
+	if err != nil {
+		return nil
+	}
+
 	return &Server{
 		tlsCertificatePath: certificatePath,
 		tlsCertificateKey:  certificateKey,
@@ -168,6 +206,7 @@ func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.
 		timeoutConfig: NewServerTimeoutConfig(),
 		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
 		httpHandler:   router,
+		metrics:       m,
 	}
 }
 
@@ -259,20 +298,20 @@ func (server *Server) Start(port int, listenPath string) {
 		server.error(fmt.Errorf("failed to listen: %w", err))
 		return
 	}
+	defer ln.Close()
 
 	server.addr = ln.Addr().(*net.TCPAddr)
 
-	defer ln.Close()
-
 	log.Infof("listening on tcp network %v", addr)
 	server.httpServer.RegisterOnShutdown(server.stopConnections)
+
 	if server.tlsCertificatePath != "" && server.tlsCertificateKey != "" {
 		err = server.httpServer.ServeTLS(ln, server.tlsCertificatePath, server.tlsCertificateKey)
 	} else {
 		err = server.httpServer.Serve(ln)
 	}
 
-	if err != http.ErrServerClosed {
+	if !errors.Is(err, http.ErrServerClosed) {
 		server.error(fmt.Errorf("failed to listen: %w", err))
 	}
 }
@@ -414,6 +453,10 @@ out:
 	// Add new client
 	server.connections[ws.id] = &ws
 	server.connMutex.Unlock()
+
+	// Increment metric
+	server.metrics.IncrementChargePoints()
+
 	// Read and write routines are started in separate goroutines and function will return immediately
 	go server.writePump(&ws)
 	go server.readPump(&ws)
@@ -530,6 +573,7 @@ func (server *Server) cleanupConnection(ws *WebSocket) {
 	close(ws.closeC)
 	delete(server.connections, ws.id)
 	server.connMutex.Unlock()
+	server.metrics.DecrementChargePoints()
 	log.Infof("closed connection to %s", ws.ID())
 	if server.disconnectedHandler != nil {
 		server.disconnectedHandler(ws)
