@@ -117,6 +117,10 @@ type Server interface {
 	// Addr gives the address on which the server is listening, useful if, for
 	// example, the port is system-defined (set to 0).
 	Addr() *net.TCPAddr
+	// GetChannel retrieves an active Channel connection by its unique identifier.
+	// If a connection with the given ID exists, it returns the corresponding webSocket instance.
+	// If no connection is found with the specified ID, it returns nil and a false flag.
+	GetChannel(websocketId string) (Channel, bool)
 }
 
 // Default implementation of a Websocket server.
@@ -302,6 +306,13 @@ func (s *server) StopConnection(id string, closeError websocket.CloseError) erro
 	}
 	log.Debugf("sending stop signal for websocket %s", w.ID())
 	return w.Close(closeError)
+}
+
+func (s *server) GetChannel(websocketId string) (Channel, bool) {
+	s.connMutex.RLock()
+	defer s.connMutex.RUnlock()
+	c, ok := s.connections[websocketId]
+	return c, ok
 }
 
 func (s *server) stopConnections() {
