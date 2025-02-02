@@ -376,6 +376,8 @@ func (server *Server) Addr() *net.TCPAddr {
 }
 
 func (server *Server) Connections(websocketId string) *WebSocket {
+	server.connMutex.RLock()
+	defer server.connMutex.RUnlock()
 	return server.connections[websocketId]
 }
 
