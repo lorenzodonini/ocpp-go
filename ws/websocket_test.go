@@ -486,6 +486,7 @@ func (s *WebSocketSuite) TestServerStopConnection() {
 		Code: websocket.CloseGoingAway,
 		Text: "CloseClientConnection",
 	}
+	wsID := "testws"
 	s.server = newWebsocketServer(s.T(), nil)
 	s.server.SetNewClientHandler(func(ws Channel) {
 		triggerC <- struct{}{}
@@ -508,14 +509,25 @@ func (s *WebSocketSuite) TestServerStopConnection() {
 	// Start server
 	go s.server.Start(serverPort, serverPath)
 	time.Sleep(100 * time.Millisecond)
+	var c Channel
+	var ok bool
+	c, ok = s.server.GetChannel(wsID)
+	s.False(ok)
+	s.Nil(c)
 	// Connect client
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
 	err := s.client.Start(u.String())
 	s.NoError(err)
 	// Wait for client to connect
-	_, ok := <-triggerC
+	_, ok = <-triggerC
 	s.True(ok)
+	// Verify channel
+	c, ok = s.server.GetChannel(wsID)
+	s.True(ok)
+	s.NotNil(c)
+	s.Equal(wsID, c.ID())
+	s.True(c.IsConnected())
 	// Close connection and wait for client to be closed
 	err = s.server.StopConnection(path.Base(testPath), closeError)
 	s.NoError(err)
