@@ -160,7 +160,7 @@ func (e HttpConnectionError) Error() string {
 
 // ---------------------- SERVER ----------------------
 
-type CheckClientHandler func(id string, r *http.Request) bool
+type CheckClientHandler func(id string, r *http.Request) (string, bool)
 
 // WsServer defines a websocket server, which passively listens for incoming connections on ws or wss protocol.
 // The offered API are of asynchronous nature, and each incoming connection/message is handled using callbacks.
@@ -249,7 +249,7 @@ type WsServer interface {
 	SetCheckOriginHandler(handler func(r *http.Request) bool)
 	// SetCheckClientHandler sets a handler for validate incoming websocket connections, allowing to perform
 	// custom client connection checks.
-	SetCheckClientHandler(handler func(id string, r *http.Request) bool)
+	SetCheckClientHandler(handler func(id string, r *http.Request) (string, bool))
 	// Addr gives the address on which the server is listening, useful if, for
 	// example, the port is system-defined (set to 0).
 	Addr() *net.TCPAddr
@@ -266,7 +266,7 @@ type Server struct {
 	connections         map[string]*WebSocket
 	httpServer          *http.Server
 	messageHandler      func(ws Channel, data []byte) error
-	checkClientHandler  func(id string, r *http.Request) bool
+	checkClientHandler  func(id string, r *http.Request) (string, bool)
 	newClientHandler    func(ws Channel)
 	disconnectedHandler func(ws Channel)
 	basicAuthHandler    func(username string, password string) bool
@@ -323,7 +323,7 @@ func (server *Server) SetMessageHandler(handler func(ws Channel, data []byte) er
 	server.messageHandler = handler
 }
 
-func (server *Server) SetCheckClientHandler(handler func(id string, r *http.Request) bool) {
+func (server *Server) SetCheckClientHandler(handler func(id string, r *http.Request) (string, bool)) {
 	server.checkClientHandler = handler
 }
 
@@ -512,11 +512,14 @@ out:
 	}
 
 	if server.checkClientHandler != nil {
-		ok := server.checkClientHandler(id, r)
+		newId, ok := server.checkClientHandler(id, r)
 		if !ok {
 			server.error(fmt.Errorf("client validation: invalid client"))
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
+		}
+		if len(newId) > 0 {
+			id = newId
 		}
 	}
 
