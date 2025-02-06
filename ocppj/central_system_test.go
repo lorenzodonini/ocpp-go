@@ -332,7 +332,7 @@ func (suite *OcppJTestSuite) TestCentralSystemHandleFailedResponse() {
 	require.Nil(t, callResult)
 	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, mockResponse.GetFeatureName())
 	rawResponse := <-msgC
-	expectedErr := fmt.Sprintf(`[4,"%v","%v","Field %s required but not found for feature %s",{}]`, mockUniqueID, ocppj.OccurrenceConstraintViolation, mockField, mockResponse.GetFeatureName())
+	expectedErr := fmt.Sprintf(`[4,"%v","%v","Field %s required but not found for feature %s",{}]`, mockUniqueID, ocppj.OccurenceConstraintViolation, mockField, mockResponse.GetFeatureName())
 	assert.Equal(t, expectedErr, string(rawResponse))
 	// 2. property constraint validation error
 	val := "len4"
