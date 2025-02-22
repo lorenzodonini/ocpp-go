@@ -260,7 +260,7 @@ func (_c *MockClientDispatcher_SendRequest_Call) RunAndReturn(run func(ocppj.Req
 }
 
 // SetNetworkClient provides a mock function with given fields: client
-func (_m *MockClientDispatcher) SetNetworkClient(client ws.WsClient) {
+func (_m *MockClientDispatcher) SetNetworkClient(client ws.Client) {
 	_m.Called(client)
 }
 
@@ -270,14 +270,14 @@ type MockClientDispatcher_SetNetworkClient_Call struct {
 }
 
 // SetNetworkClient is a helper method to define mock.On call
-//   - client ws.WsClient
+//   - client ws.Client
 func (_e *MockClientDispatcher_Expecter) SetNetworkClient(client interface{}) *MockClientDispatcher_SetNetworkClient_Call {
 	return &MockClientDispatcher_SetNetworkClient_Call{Call: _e.mock.On("SetNetworkClient", client)}
 }
 
-func (_c *MockClientDispatcher_SetNetworkClient_Call) Run(run func(client ws.WsClient)) *MockClientDispatcher_SetNetworkClient_Call {
+func (_c *MockClientDispatcher_SetNetworkClient_Call) Run(run func(client ws.Client)) *MockClientDispatcher_SetNetworkClient_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ws.WsClient))
+		run(args[0].(ws.Client))
 	})
 	return _c
 }
@@ -287,7 +287,7 @@ func (_c *MockClientDispatcher_SetNetworkClient_Call) Return() *MockClientDispat
 	return _c
 }
 
-func (_c *MockClientDispatcher_SetNetworkClient_Call) RunAndReturn(run func(ws.WsClient)) *MockClientDispatcher_SetNetworkClient_Call {
+func (_c *MockClientDispatcher_SetNetworkClient_Call) RunAndReturn(run func(ws.Client)) *MockClientDispatcher_SetNetworkClient_Call {
 	_c.Run(run)
 	return _c
 }
