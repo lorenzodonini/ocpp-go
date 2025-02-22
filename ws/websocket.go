@@ -61,10 +61,10 @@ func SetLogger(logger logging.Logger) {
 // To set a custom configuration, refer to the server's SetTimeoutConfig method.
 // If no configuration is passed, a default configuration is generated via the NewServerTimeoutConfig function.
 type ServerTimeoutConfig struct {
-	WriteWait   time.Duration // The timeout for network write operations. After a timeout, the connection is closed.
-	PingWait    time.Duration // The timeout for waiting for a ping from the client. After a timeout, the connection is closed.
-	PingEnabled bool          // Whether the server should send ping messages to each client.
-	PingPeriod  time.Duration // The interval for sending ping messages to a client. This is only relevant if PingEnabled is true.
+	WriteWait  time.Duration // The timeout for network write operations. After a timeout, the connection is closed.
+	PingWait   time.Duration // The timeout for waiting for a ping from the client. After a timeout, the connection is closed.
+	PingPeriod time.Duration // The interval for sending ping messages to a client. If set to 0, no pings are sent.
+	PongWait   time.Duration // The timeout for waiting for a pong from the server. After a timeout, the connection is closed. Needs to be set, if server is configured to send ping messages.
 }
 
 // NewServerTimeoutConfig creates a default timeout configuration for a websocket endpoint.
@@ -73,10 +73,10 @@ type ServerTimeoutConfig struct {
 // You may change fields arbitrarily and pass the struct to a SetTimeoutConfig method.
 func NewServerTimeoutConfig() ServerTimeoutConfig {
 	return ServerTimeoutConfig{
-		WriteWait:   defaultWriteWait,
-		PingWait:    defaultPingWait,
-		PingEnabled: false,
-		PingPeriod:  defaultPingPeriod,
+		WriteWait:  defaultWriteWait,
+		PingWait:   defaultPingWait,
+		PingPeriod: 0,
+		PongWait:   0,
 	}
 }
 
@@ -88,8 +88,8 @@ func NewServerTimeoutConfig() ServerTimeoutConfig {
 type ClientTimeoutConfig struct {
 	WriteWait               time.Duration // The timeout for network write operations. After a timeout, the connection is closed.
 	HandshakeTimeout        time.Duration // The timeout for the initial handshake to complete.
-	PongWait                time.Duration // The timeout for waiting for a pong from the server. After a timeout, the connection is closed.
-	PingPeriod              time.Duration
+	PongWait                time.Duration // The timeout for waiting for a pong from the server. After a timeout, the connection is closed. Needs to be set, if client is configured to send ping messages.
+	PingPeriod              time.Duration // The interval for sending ping messages to a server. If set to 0, no pings are sent.
 	RetryBackOffRepeatTimes int
 	RetryBackOffRandomRange int
 	RetryBackOffWaitMinimum time.Duration
@@ -191,13 +191,12 @@ type PingConfig struct {
 //
 // No custom configuration functions are run. Overrides need to be applied externally.
 func NewDefaultWebSocketConfig(
-	sendPing bool,
 	writeWait time.Duration,
 	readWait time.Duration,
 	pingPeriod time.Duration,
 	pongWait time.Duration) WebSocketConfig {
 	var pingCfg *PingConfig
-	if sendPing {
+	if pingPeriod > 0 {
 		pingCfg = &PingConfig{
 			PingPeriod: pingPeriod,
 			PongWait:   pongWait,

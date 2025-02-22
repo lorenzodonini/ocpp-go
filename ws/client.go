@@ -341,7 +341,6 @@ func (c *client) Start(urlStr string) error {
 		ws,
 		resp.TLS,
 		NewDefaultWebSocketConfig(
-			true,
 			c.timeoutConfig.WriteWait,
 			0,
 			c.timeoutConfig.PingPeriod,
