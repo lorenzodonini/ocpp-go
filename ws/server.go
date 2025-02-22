@@ -418,11 +418,10 @@ out:
 		conn,
 		r.TLS,
 		NewDefaultWebSocketConfig(
-			false,
 			s.timeoutConfig.WriteWait,
 			s.timeoutConfig.PingWait,
-			0,
-			0),
+			s.timeoutConfig.PingPeriod,
+			s.timeoutConfig.PongWait),
 		s.handleMessage,
 		s.handleDisconnect,
 		func(_ Channel, err error) {
