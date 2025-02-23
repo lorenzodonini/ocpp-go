@@ -202,9 +202,9 @@ type ChargingStation interface {
 //	if !ok {
 //		log.Fatal("couldn't parse PEM certificate")
 //	}
-//	cs := NewChargingStation("someUniqueId", nil, ws.NewTLSClient(&tls.Config{
+//	cs := NewChargingStation("someUniqueId", nil, ws.NewClient(ws.WithClientTLSConfig(&tls.Config{
 //		RootCAs: certPool,
-//	})
+//	}))
 //
 // For more advanced options, or if a custom networking/occpj layer is required,
 // please refer to ocppj.Client and ws.Client.
@@ -414,7 +414,7 @@ type CSMS interface {
 //
 // If you need a TLS server, you may use the following:
 //
-//	csms := NewCSMS(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
+//	csms := NewCSMS(nil, ws.NewServer(ws.WithServerTLSConfig("certificatePath", "privateKeyPath", nil)))
 func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
 	if server == nil {
 		server = ws.NewServer()

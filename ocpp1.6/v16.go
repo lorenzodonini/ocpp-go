@@ -153,9 +153,9 @@ type ChargePoint interface {
 //	if !ok {
 //		log.Fatal("couldn't parse PEM certificate")
 //	}
-//	cp := NewClient("someUniqueId", nil, ws.NewTLSClient(&tls.Config{
+//	cp := NewClient("someUniqueId", nil, ws.NewClient(ws.WithClientTLSConfig(&tls.Config{
 //		RootCAs: certPool,
-//	})
+//	}))
 //
 // For more advanced options, or if a customer networking/occpj layer is required,
 // please refer to ocppj.Client and ws.Client.
@@ -338,7 +338,7 @@ type CentralSystem interface {
 //
 // If you need a TLS server, you may use the following:
 //
-//	cs := NewServer(nil, ws.NewTLSServer("certificatePath", "privateKeyPath"))
+//	cs := NewServer(nil, ws.NewServer(ws.WithServerTLSConfig("certificatePath", "privateKeyPath", nil)))
 func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) CentralSystem {
 	if server == nil {
 		server = ws.NewServer()
