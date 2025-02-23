@@ -166,6 +166,68 @@ func TestWebsocketEcho(t *testing.T) {
 	wsServer.Stop()
 }
 
+func TestWebsocketChargePointIdResolver(t *testing.T) {
+	connected := make(chan string)
+	wsServer := newWebsocketServer(t, func(data []byte) ([]byte, error) {
+		assert.Fail(t, "no message should be received from client!")
+		return nil, nil
+	})
+	wsServer.SetChargePointIdResolver(func(*http.Request) (string, error) {
+		return "my-custom-id", nil
+	})
+	wsServer.SetNewClientHandler(func(ws Channel) {
+		connected <- ws.ID()
+	})
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(500 * time.Millisecond)
+
+	// Test message
+	wsClient := newWebsocketClient(t, func(data []byte) ([]byte, error) {
+		assert.Fail(t, "no message should be received from server!")
+		return nil, nil
+	})
+
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	// Attempt to connect and expect the custom resolved charge point id
+	err := wsClient.Start(u.String())
+	require.NoError(t, err)
+	result := <-connected
+	assert.Equal(t, "my-custom-id", result)
+	// Cleanup
+	wsServer.Stop()
+}
+
+func TestWebsocketChargePointIdResolverFailure(t *testing.T) {
+	wsServer := newWebsocketServer(t, func(data []byte) ([]byte, error) {
+		assert.Fail(t, "no message should be received from client!")
+		return nil, nil
+	})
+	wsServer.SetChargePointIdResolver(func(*http.Request) (string, error) {
+		return "", fmt.Errorf("test error")
+	})
+	go wsServer.Start(serverPort, serverPath)
+	time.Sleep(500 * time.Millisecond)
+
+	// Test message
+	wsClient := newWebsocketClient(t, func(data []byte) ([]byte, error) {
+		assert.Fail(t, "no message should be received from server!")
+		return nil, nil
+	})
+
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	// Attempt to connect and expect the custom resolved charge point id
+	err := wsClient.Start(u.String())
+	require.Error(t, err)
+	httpErr, ok := err.(HttpConnectionError)
+	require.True(t, ok)
+	assert.Equal(t, http.StatusNotFound, httpErr.HttpCode)
+	assert.Equal(t, "websocket: bad handshake", httpErr.Message)
+	// Cleanup
+	wsServer.Stop()
+}
+
 func TestWebsocketBootRetries(t *testing.T) {
 	verifyConnection := func(client *Client, connected bool) {
 		maxAttempts := 20

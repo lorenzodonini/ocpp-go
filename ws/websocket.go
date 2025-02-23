@@ -237,6 +237,9 @@ type WsServer interface {
 	//
 	// Duplicates will be removed automatically.
 	AddSupportedSubprotocol(subProto string)
+	// SetChargePointIdResolver sets the callback function to use for resolving the charge point ID of a charger connecting to
+	// the websocket server. By default, this will just be the path in the URL used by the client.
+	SetChargePointIdResolver(resolver func(r *http.Request) (string, error))
 	// SetBasicAuthHandler enables HTTP Basic Authentication and requires clients to pass credentials.
 	// The handler function is called whenever a new client attempts to connect, to check for credentials correctness.
 	// The handler must return true if the credentials were correct, false otherwise.
@@ -263,21 +266,22 @@ type WsServer interface {
 //
 // Use the NewServer or NewTLSServer functions to create a new server.
 type Server struct {
-	connections         map[string]*WebSocket
-	httpServer          *http.Server
-	messageHandler      func(ws Channel, data []byte) error
-	checkClientHandler  func(id string, r *http.Request) bool
-	newClientHandler    func(ws Channel)
-	disconnectedHandler func(ws Channel)
-	basicAuthHandler    func(username string, password string) bool
-	tlsCertificatePath  string
-	tlsCertificateKey   string
-	timeoutConfig       ServerTimeoutConfig
-	upgrader            websocket.Upgrader
-	errC                chan error
-	connMutex           sync.RWMutex
-	addr                *net.TCPAddr
-	httpHandler         *mux.Router
+	connections           map[string]*WebSocket
+	httpServer            *http.Server
+	messageHandler        func(ws Channel, data []byte) error
+	chargePointIdResolver func(*http.Request) (string, error)
+	checkClientHandler    func(id string, r *http.Request) bool
+	newClientHandler      func(ws Channel)
+	disconnectedHandler   func(ws Channel)
+	basicAuthHandler      func(username string, password string) bool
+	tlsCertificatePath    string
+	tlsCertificateKey     string
+	timeoutConfig         ServerTimeoutConfig
+	upgrader              websocket.Upgrader
+	errC                  chan error
+	connMutex             sync.RWMutex
+	addr                  *net.TCPAddr
+	httpHandler           *mux.Router
 }
 
 // Creates a new simple websocket server (the websockets are not secured).
@@ -288,6 +292,10 @@ func NewServer() *Server {
 		timeoutConfig: NewServerTimeoutConfig(),
 		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
 		httpHandler:   router,
+		chargePointIdResolver: func(r *http.Request) (string, error) {
+			url := r.URL
+			return path.Base(url.Path), nil
+		},
 	}
 }
 
@@ -347,6 +355,10 @@ func (server *Server) AddSupportedSubprotocol(subProto string) {
 		}
 	}
 	server.upgrader.Subprotocols = append(server.upgrader.Subprotocols, subProto)
+}
+
+func (server *Server) SetChargePointIdResolver(resolver func(r *http.Request) (string, error)) {
+	server.chargePointIdResolver = resolver
 }
 
 func (server *Server) SetBasicAuthHandler(handler func(username string, password string) bool) {
@@ -473,8 +485,13 @@ func (server *Server) Write(webSocketId string, data []byte) error {
 
 func (server *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	responseHeader := http.Header{}
-	url := r.URL
-	id := path.Base(url.Path)
+	id, err := server.chargePointIdResolver(r)
+	if err != nil {
+		server.error(fmt.Errorf("failed to resolve charge point id"))
+		http.Error(w, "NotFound", http.StatusNotFound)
+		return
+	}
+
 	log.Debugf("handling new connection for %s from %s", id, r.RemoteAddr)
 	// Negotiate sub-protocol
 	clientSubprotocols := websocket.Subprotocols(r)
