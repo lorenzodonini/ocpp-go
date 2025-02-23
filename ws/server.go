@@ -26,9 +26,9 @@ type CheckClientHandler func(id string, r *http.Request) bool
 //
 //	server := NewServer()
 //
-// If you need a TLS ws server instead, use:
+// If you need a server with TLS support, pass the following option:
 //
-//	server := NewTLSServer("cert.pem", "privateKey.pem")
+//	server := NewServer(WithServerTLSConfig("cert.pem", "privateKey.pem", nil))
 //
 // To support client basic authentication, use:
 //
@@ -125,7 +125,7 @@ type Server interface {
 
 // Default implementation of a Websocket server.
 //
-// Use the NewServer or NewTLSServer functions to create a new server.
+// Use the NewServer function to create a new server.
 type server struct {
 	connections         map[string]*webSocket
 	httpServer          *http.Server
@@ -144,43 +144,50 @@ type server struct {
 	httpHandler         *mux.Router
 }
 
-// Creates a new simple websocket server (the websockets are not secured).
-func NewServer() Server {
+// ServerOpt is a function that can be used to set options on a server during creation.
+type ServerOpt func(s *server)
+
+// WithServerTLSConfig sets the TLS configuration for the server.
+// If the passed tlsConfig is nil, the client will not use TLS.
+func WithServerTLSConfig(certificatePath string, certificateKey string, tlsConfig *tls.Config) ServerOpt {
+	return func(s *server) {
+		s.tlsCertificatePath = certificatePath
+		s.tlsCertificateKey = certificateKey
+		if tlsConfig != nil {
+			s.httpServer.TLSConfig = tlsConfig
+		}
+	}
+}
+
+// NewServer Creates a new websocket server.
+//
+// Additional options may be added using the AddOption function.
+//
+// By default, the websockets are not secure, and the server will not perform any client certificate verification.
+//
+// To add TLS support to the server, a valid server certificate path and key must be passed.
+// To also add support for client certificate verification, a valid TLSConfig needs to be configured.
+// For example:
+//
+//		tlsConfig := &tls.Config{
+//			ClientAuth: tls.RequireAndVerifyClientCert,
+//			ClientCAs: clientCAs,
+//		}
+//	 server := ws.NewServer(ws.WithServerTLSConfig("cert.pem", "privateKey.pem", tlsConfig))
+//
+// When TLS is correctly configured, the server will automatically use it for all created websocket channels.
+func NewServer(opts ...ServerOpt) Server {
 	router := mux.NewRouter()
-	return &server{
+	s := &server{
 		httpServer:    &http.Server{},
 		timeoutConfig: NewServerTimeoutConfig(),
 		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
 		httpHandler:   router,
 	}
-}
-
-// NewTLSServer creates a new secure websocket server. All created websocket channels will use TLS.
-//
-// You need to pass a filepath to the server TLS certificate and key.
-//
-// It is recommended to pass a valid TLSConfig for the server to use.
-// For example to require client certificate verification:
-//
-//	tlsConfig := &tls.Config{
-//		ClientAuth: tls.RequireAndVerifyClientCert,
-//		ClientCAs: clientCAs,
-//	}
-//
-// If no tlsConfig parameter is passed, the server will by default
-// not perform any client certificate verification.
-func NewTLSServer(certificatePath string, certificateKey string, tlsConfig *tls.Config) Server {
-	router := mux.NewRouter()
-	return &server{
-		tlsCertificatePath: certificatePath,
-		tlsCertificateKey:  certificateKey,
-		httpServer: &http.Server{
-			TLSConfig: tlsConfig,
-		},
-		timeoutConfig: NewServerTimeoutConfig(),
-		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
-		httpHandler:   router,
+	for _, o := range opts {
+		o(s)
 	}
+	return s
 }
 
 func (s *server) SetMessageHandler(handler MessageHandler) {

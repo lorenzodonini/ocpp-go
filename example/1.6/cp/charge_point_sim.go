@@ -64,10 +64,10 @@ func setupTlsChargePoint(chargePointID string) ocpp16.ChargePoint {
 		}
 	}
 	// Create client with TLS config
-	client := ws.NewTLSClient(&tls.Config{
+	client := ws.NewClient(ws.WithClientTLSConfig(&tls.Config{
 		RootCAs:      certPool,
 		Certificates: clientCertificates,
-	})
+	}))
 	return ocpp16.NewChargePoint(chargePointID, nil, client)
 }
 
