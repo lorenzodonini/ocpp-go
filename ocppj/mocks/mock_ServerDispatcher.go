@@ -217,7 +217,7 @@ func (_c *MockServerDispatcher_SendRequest_Call) RunAndReturn(run func(string, o
 }
 
 // SetNetworkServer provides a mock function with given fields: server
-func (_m *MockServerDispatcher) SetNetworkServer(server ws.WsServer) {
+func (_m *MockServerDispatcher) SetNetworkServer(server ws.Server) {
 	_m.Called(server)
 }
 
@@ -227,14 +227,14 @@ type MockServerDispatcher_SetNetworkServer_Call struct {
 }
 
 // SetNetworkServer is a helper method to define mock.On call
-//   - server ws.WsServer
+//   - server ws.Server
 func (_e *MockServerDispatcher_Expecter) SetNetworkServer(server interface{}) *MockServerDispatcher_SetNetworkServer_Call {
 	return &MockServerDispatcher_SetNetworkServer_Call{Call: _e.mock.On("SetNetworkServer", server)}
 }
 
-func (_c *MockServerDispatcher_SetNetworkServer_Call) Run(run func(server ws.WsServer)) *MockServerDispatcher_SetNetworkServer_Call {
+func (_c *MockServerDispatcher_SetNetworkServer_Call) Run(run func(server ws.Server)) *MockServerDispatcher_SetNetworkServer_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ws.WsServer))
+		run(args[0].(ws.Server))
 	})
 	return _c
 }
@@ -244,7 +244,7 @@ func (_c *MockServerDispatcher_SetNetworkServer_Call) Return() *MockServerDispat
 	return _c
 }
 
-func (_c *MockServerDispatcher_SetNetworkServer_Call) RunAndReturn(run func(ws.WsServer)) *MockServerDispatcher_SetNetworkServer_Call {
+func (_c *MockServerDispatcher_SetNetworkServer_Call) RunAndReturn(run func(ws.Server)) *MockServerDispatcher_SetNetworkServer_Call {
 	_c.Run(run)
 	return _c
 }

@@ -70,10 +70,10 @@ func setupTlsCentralSystem() ocpp2.CSMS {
 	if !ok {
 		log.Fatalf("no required %v found", envVarServerCertificateKey)
 	}
-	server := ws.NewTLSServer(certificate, key, &tls.Config{
+	server := ws.NewServer(ws.WithServerTLSConfig(certificate, key, &tls.Config{
 		ClientAuth: tls.RequireAndVerifyClientCert,
 		ClientCAs:  certPool,
-	})
+	}))
 	return ocpp2.NewCSMS(nil, server)
 }
 

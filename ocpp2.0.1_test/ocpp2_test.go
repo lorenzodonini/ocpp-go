@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"net/http"
 	"reflect"
 	"testing"
 	"time"
@@ -59,6 +58,10 @@ func (websocket MockWebSocket) TLSConnectionState() *tls.ConnectionState {
 	return nil
 }
 
+func (websocket MockWebSocket) IsConnected() bool {
+	return true
+}
+
 func NewMockWebSocket(id string) MockWebSocket {
 	return MockWebSocket{id: id}
 }
@@ -67,7 +70,7 @@ func NewMockWebSocket(id string) MockWebSocket {
 
 type MockWebsocketServer struct {
 	mock.Mock
-	ws.WsServer
+	ws.Server
 	MessageHandler            func(ws ws.Channel, data []byte) error
 	NewClientHandler          func(ws ws.Channel)
 	CheckClientHandler        ws.CheckClientHandler
@@ -87,11 +90,11 @@ func (websocketServer *MockWebsocketServer) Write(webSocketId string, data []byt
 	return args.Error(0)
 }
 
-func (websocketServer *MockWebsocketServer) SetMessageHandler(handler func(ws ws.Channel, data []byte) error) {
+func (websocketServer *MockWebsocketServer) SetMessageHandler(handler ws.MessageHandler) {
 	websocketServer.MessageHandler = handler
 }
 
-func (websocketServer *MockWebsocketServer) SetNewClientHandler(handler func(ws ws.Channel)) {
+func (websocketServer *MockWebsocketServer) SetNewClientHandler(handler ws.ConnectedHandler) {
 	websocketServer.NewClientHandler = handler
 }
 
@@ -106,7 +109,7 @@ func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client
 	websocketServer.MethodCalled("NewClient", websocketId, client)
 }
 
-func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler func(id string, r *http.Request) bool) {
+func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler ws.CheckClientHandler) {
 	websocketServer.CheckClientHandler = handler
 }
 
@@ -114,7 +117,7 @@ func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler func(i
 
 type MockWebsocketClient struct {
 	mock.Mock
-	ws.WsClient
+	ws.Client
 	MessageHandler      func(data []byte) error
 	ReconnectedHandler  func()
 	DisconnectedHandler func(err error)
@@ -812,42 +815,6 @@ func (handler *MockCSMSTransactionsHandler) OnTransactionEvent(chargingStationID
 }
 
 // ---------------------- COMMON UTILITY METHODS ----------------------
-
-func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
-	wsServer := ws.Server{}
-	wsServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
-		assert.NotNil(t, ws)
-		assert.NotNil(t, data)
-		if onMessage != nil {
-			response, err := onMessage(data)
-			assert.Nil(t, err)
-			if response != nil {
-				err = wsServer.Write(ws.ID(), data)
-				assert.Nil(t, err)
-			}
-		}
-		return nil
-	})
-	return &wsServer
-}
-
-func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Client {
-	wsClient := ws.Client{}
-	wsClient.SetMessageHandler(func(data []byte) error {
-		assert.NotNil(t, data)
-		if onMessage != nil {
-			response, err := onMessage(data)
-			assert.Nil(t, err)
-			if response != nil {
-				err = wsClient.Write(data)
-				assert.Nil(t, err)
-			}
-		}
-		return nil
-	})
-	return &wsClient
-}
-
 type expectedCSMSOptions struct {
 	clientId              string
 	rawWrittenMessage     []byte

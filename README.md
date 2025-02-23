@@ -486,18 +486,27 @@ own logging system.
 
 ### Websocket ping-pong
 
-The websocket package currently supports client-initiated pings only.
+The websocket package supports configuring ping pong for both endpoints.
 
-If your setup requires the server to be the initiator of a ping-pong (e.g. for web-based charge points),
-you may disable ping-pong entirely and just rely on the heartbeat mechanism:
+By default, the client sends a ping every 54 seconds and waits for a pong for 60 seconds, before timing out.
+The values can be configured as follows:
+```go
+cfg := ws.NewClientTimeoutConfig()
+cfg.PingPeriod = 10 * time.Second
+cfg.PongWait = 20 * time.Second
+websocketClient.SetTimeoutConfig(cfg)
+```
 
+By default, the server does not send out any pings and waits for a ping from the client for 60 seconds, before timing out.
+To configure the server to send out pings, the `PingPeriod` and `PongWait` must be set to a value greater than 0:
 ```go
 cfg := ws.NewServerTimeoutConfig()
-cfg.PingWait = 0 // this instructs the server to wait forever
+cfg.PingPeriod = 10 * time.Second
+cfg.PongWait = 20 * time.Second
 websocketServer.SetTimeoutConfig(cfg)
 ```
 
-> A server-initiated ping may be supported in a future release.
+To disable sending ping messages, set the `PingPeriod` value to `0`.
 
 ## OCPP 2.0.1 Usage
 

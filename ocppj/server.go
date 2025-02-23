@@ -13,7 +13,7 @@ import (
 // During message exchange, the two roles may be reversed (depending on the message direction), but a server struct remains associated to a central system.
 type Server struct {
 	Endpoint
-	server                    ws.WsServer
+	server                    ws.Server
 	checkClientHandler        ws.CheckClientHandler
 	newClientHandler          ClientHandler
 	disconnectedClientHandler ClientHandler
@@ -40,7 +40,7 @@ type InvalidMessageHook func(client ws.Channel, err *ocpp.Error, rawJson string,
 //	s := ocppj.NewServer(ws.NewServer(), nil, nil)
 //
 // The dispatcher's associated ClientState will be set during initialization.
-func NewServer(wsServer ws.WsServer, dispatcher ServerDispatcher, stateHandler ServerState, profiles ...*ocpp.Profile) *Server {
+func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler ServerState, profiles ...*ocpp.Profile) *Server {
 	if dispatcher == nil {
 		dispatcher = NewDefaultServerDispatcher(NewFIFOQueueMap(0))
 	}
