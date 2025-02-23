@@ -22,7 +22,7 @@ Planned milestones and features:
 -   [x] OCPP 1.6
 -   [x] OCPP 1.6 Security extension (experimental)
 -   [x] OCPP 2.0.1 (examples working, but will need more real-world testing)
--   [ ] Dedicated package for configuration management
+-   [x] Dedicated package for configuration management (OCPP 1.6 supported)
 
 ## OCPP 1.6 Usage
 
@@ -630,6 +630,71 @@ log.Printf("status: %v, interval: %v, current time: %v", bootResp.Status, bootRe
 ```
 
 Or you may build requests manually and send them using either the synchronous or asynchronous API.
+
+### OCPP configuration manager (OCPP 1.6)
+
+```go
+package main
+
+import (
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
+	log "github.com/sirupsen/logrus"
+	configManager "github.com/lorenzodonini/ocpp-go/ocpp1.6/ocpp_v16_config_manager"
+)
+
+func main() {
+	log.SetLevel(log.DebugLevel)
+
+	supportedProfiles := []string{core.ProfileName, smartcharging.ProfileName}
+	defaultConfig, err := configManager.DefaultConfiguration(supportedProfiles...)
+	if err != nil {
+		log.Errorf("Error getting default configuration: %v", err)
+		return
+	}
+
+	manager, err := configManager.NewV16ConfigurationManager(defaultConfig, supportedProfiles...)
+
+	// Get value
+	value, err := manager.GetConfigurationValue(configManager.AuthorizeRemoteTxRequests)
+	if err != nil {
+		log.Errorf("Error getting configuration value: %v", err)
+		return
+	}
+
+	log.Println(*value)
+
+	// Update key
+	val := "false"
+	err = manager.UpdateKey(ocpp_v16.AuthorizeRemoteTxRequests, &val)
+	if err != nil {
+		log.Errorf("Error updating key: %v", err)
+		return
+	}
+
+	// Get value
+	value, err = manager.GetConfigurationValue(configManager.AuthorizeRemoteTxRequests)
+	if err != nil {
+		log.Errorf("Error getting configuration value: %v", err)
+		return
+	}
+
+	log.Println(*value)
+
+	// Register custom key validator, which will prevent the key from being updated
+	manager.RegisterCustomKeyValidator(func(key ocpp_v16.Key, value *string) bool {
+		return key != ocpp_v16.AuthorizeRemoteTxRequests
+	})
+
+	// Update key
+	val = "true"
+	err = manager.UpdateKey(configManager.AuthorizeRemoteTxRequests, &val)
+	if err != nil {
+		log.Errorf("Error updating key: %v", err)
+		return
+	}
+}
+```
 
 #### Contributing
 
