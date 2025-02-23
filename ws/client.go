@@ -23,14 +23,14 @@ import (
 //
 //	client := NewClient()
 //
-// If you need a TLS ws client instead, use:
+// If you need a secure websocket client instead, pass a tls.Config to the NewClient function:
 //
 //	certPool, err := x509.SystemCertPool()
 //	if err != nil {
 //		log.Fatal(err)
 //	}
-//	// You may add more trusted certificates to the pool before creating the TLSClientConfig
-//	client := NewTLSClient(&tls.Config{
+//	// You may add more trusted certificates to the pool before creating the TLS Config
+//	client := NewClient(&tls.Config{
 //		RootCAs: certPool,
 //	})
 //
@@ -122,7 +122,7 @@ type Client interface {
 
 // client is the default implementation of a Websocket client.
 //
-// Use the NewClient or NewTLSClient functions to create a new client.
+// Use the NewClient function to create a new client.
 type client struct {
 	webSocket      *webSocket
 	url            url.URL
@@ -136,52 +136,57 @@ type client struct {
 	reconnectC     chan struct{} // used for signaling, that a reconnection attempt should be interrupted
 }
 
-// Creates a new simple websocket client (the channel is not secured).
-//
-// Additional options may be added using the AddOption function.
-//
-// Basic authentication can be set using the SetBasicAuth function.
-//
-// By default, the client will not neogtiate any subprotocol. This value needs to be set via the
-// respective SetRequestedSubProtocol method.
-func NewClient() Client {
-	return &client{
-		dialOptions:   []func(*websocket.Dialer){},
-		timeoutConfig: NewClientTimeoutConfig(),
-		reconnectC:    make(chan struct{}, 1),
-		header:        http.Header{},
+// ClientOpt is a function that can be used to set options on a client during creation.
+type ClientOpt func(c *client)
+
+// WithClientTLSConfig sets the TLS configuration for the client.
+// If the passed tlsConfig is nil, the client will not use TLS.
+func WithClientTLSConfig(tlsConfig *tls.Config) ClientOpt {
+	return func(c *client) {
+		if tlsConfig != nil {
+			c.dialOptions = append(c.dialOptions, func(dialer *websocket.Dialer) {
+				dialer.TLSClientConfig = tlsConfig
+			})
+		}
 	}
 }
 
-// NewTLSClient creates a new secure websocket client. If supported by the server, the websocket channel will use TLS.
+// NewClient creates a new websocket client.
+//
+// If the optional tlsConfig is not nil, and the server supports secure communication,
+// the websocket channel will use TLS.
 //
 // Additional options may be added using the AddOption function.
+//
 // Basic authentication can be set using the SetBasicAuth function.
+//
+// By default, the client will not negotiate any sub-protocol. This value needs to be set via the
+// respective SetRequestedSubProtocol method.
 //
 // To set a client certificate, you may do:
 //
 //	certificate, _ := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
 //	clientCertificates := []tls.Certificate{certificate}
-//	client := ws.NewTLSClient(&tls.Config{
+//	client := ws.NewClient(ws.WithClientTLSConfig(&tls.Config{
 //		RootCAs:      certPool,
 //		Certificates: clientCertificates,
-//	})
+//	}))
 //
-// You can set any other TLS option within the same constructor as well.
+// You can set any other TLS option within the same constructor config as well.
 // For example, if you wish to test connecting to a server having a
 // self-signed certificate (do not use in production!), pass:
 //
 //	InsecureSkipVerify: true
-func NewTLSClient(tlsConfig *tls.Config) Client {
+func NewClient(opts ...ClientOpt) Client {
 	c := &client{
 		dialOptions:   []func(*websocket.Dialer){},
 		timeoutConfig: NewClientTimeoutConfig(),
 		reconnectC:    make(chan struct{}, 1),
 		header:        http.Header{},
 	}
-	c.dialOptions = append(c.dialOptions, func(dialer *websocket.Dialer) {
-		dialer.TLSClientConfig = tlsConfig
-	})
+	for _, o := range opts {
+		o(c)
+	}
 	return c
 }
 
