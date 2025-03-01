@@ -180,6 +180,7 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 
 	var metricErr *ocppMetricsError
 	defer func() {
+		// Report a metric after request was sent.
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		s.metrics.IncrementOutboundRequests(ctx, clientID, request.GetFeatureName(), metricErr)
@@ -322,6 +323,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			if s.errorHandler != nil {
 				s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
 			}
+			// todo add metric for error
 		}
 	}
 	return nil
