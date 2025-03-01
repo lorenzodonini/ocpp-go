@@ -74,6 +74,7 @@ func (m *ocppMetrics) IncrementInboundRequests(ctx context.Context, chargePointI
 	attrs := []attribute.KeyValue{
 		attribute.String(attributeChargePointId, chargePointId),
 	}
+
 	// Optionally add a request name. Should be present most of the time, except when we cannot unmarshal the request.
 	if requestName != "" {
 		attribute.String(attributeFeature, requestName)

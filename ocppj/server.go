@@ -66,6 +66,7 @@ func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler Ser
 	metrics, err := newOcppMetrics(meterProvider, "")
 	if err != nil {
 		log.Error(errors.Wrapf(err, "failed to create OCPP metrics"))
+		// todo improve error handling
 		return nil
 	}
 
@@ -259,9 +260,12 @@ func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.Err
 }
 
 func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
+	metricCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	parsedJson, err := ParseRawJsonMessage(data)
 	if err != nil {
-		s.metrics.IncrementOutboundRequests(context.Background(), wsChannel.ID(), "", &payloadError)
+		s.metrics.IncrementOutboundRequests(metricCtx, wsChannel.ID(), "", &payloadError)
 		log.Error(err)
 		return err
 	}
@@ -271,7 +275,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 	pending := s.RequestState.GetClientState(wsChannel.ID())
 	message, err := s.ParseMessage(parsedJson, pending)
 	if err != nil {
-		s.metrics.IncrementOutboundRequests(context.Background(), wsChannel.ID(), "", &validationError)
+		s.metrics.IncrementOutboundRequests(metricCtx, wsChannel.ID(), "", &validationError)
 		ocppErr := err.(*ocpp.Error)
 		messageID := ocppErr.MessageId
 		// Support ad-hoc callback for invalid message handling
@@ -302,7 +306,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			if s.requestHandler != nil {
 				s.requestHandler(wsChannel, call.Payload, call.UniqueId, call.Action)
 			}
-			s.metrics.IncrementInboundRequests(context.Background(), wsChannel.ID(), call.Payload.GetFeatureName(), nil)
+			s.metrics.IncrementInboundRequests(metricCtx, wsChannel.ID(), call.Payload.GetFeatureName(), nil)
 		case CALL_RESULT:
 			callResult := message.(*CallResult)
 			log.Debugf("handling incoming CALL RESULT [%s] from %s", callResult.UniqueId, wsChannel.ID())
@@ -310,7 +314,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			if s.responseHandler != nil {
 				s.responseHandler(wsChannel, callResult.Payload, callResult.UniqueId)
 			}
-			s.metrics.IncrementOutboundRequests(context.Background(), wsChannel.ID(), callResult.Payload.GetFeatureName(), nil)
+			s.metrics.IncrementOutboundRequests(metricCtx, wsChannel.ID(), callResult.Payload.GetFeatureName(), nil)
 		case CALL_ERROR:
 			callError := message.(*CallError)
 			log.Debugf("handling incoming CALL RESULT [%s] from %s", callError.UniqueId, wsChannel.ID())
