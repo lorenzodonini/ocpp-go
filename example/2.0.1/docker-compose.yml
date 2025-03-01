@@ -3,11 +3,13 @@ services:
   csms:
     build:
       context: ../..
-      dockerfile: csms/Dockerfile
+      dockerfile: example/2.0.1/csms/Dockerfile
     image: ldonini/ocpp2.0.1-csms:latest
     container_name: csms
     environment:
       - SERVER_LISTEN_PORT=8887
+      - METRICS_ENABLED=${METRICS_ENABLED:-false}
+      - METRICS_ADDRESS=${METRICS_ADDRESS:-lgtm-stack:4317}
     ports:
       - "8887:8887"
     networks:
@@ -16,7 +18,7 @@ services:
   charging-station:
     build:
       context: ../..
-      dockerfile: chargingstation/Dockerfile
+      dockerfile: example/2.0.1/chargingstation/Dockerfile
     image: ldonini/ocpp2.0.1-chargingstation:latest
     container_name: charging-station
     environment:

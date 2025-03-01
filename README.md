@@ -26,7 +26,7 @@ Planned milestones and features:
 
 ## OCPP 1.6 Usage
 
-Go version 1.13+ is required.
+Go version 1.22+ is required.
 
 ```sh
 go get github.com/lorenzodonini/ocpp-go
@@ -490,6 +490,7 @@ The websocket package supports configuring ping pong for both endpoints.
 
 By default, the client sends a ping every 54 seconds and waits for a pong for 60 seconds, before timing out.
 The values can be configured as follows:
+
 ```go
 cfg := ws.NewClientTimeoutConfig()
 cfg.PingPeriod = 10 * time.Second
@@ -497,8 +498,10 @@ cfg.PongWait = 20 * time.Second
 websocketClient.SetTimeoutConfig(cfg)
 ```
 
-By default, the server does not send out any pings and waits for a ping from the client for 60 seconds, before timing out.
+By default, the server does not send out any pings and waits for a ping from the client for 60 seconds, before timing
+out.
 To configure the server to send out pings, the `PingPeriod` and `PongWait` must be set to a value greater than 0:
+
 ```go
 cfg := ws.NewServerTimeoutConfig()
 cfg.PingPeriod = 10 * time.Second
@@ -507,6 +510,74 @@ websocketServer.SetTimeoutConfig(cfg)
 ```
 
 To disable sending ping messages, set the `PingPeriod` value to `0`.
+
+### Metrics
+
+The library currently supports only websocket and ocpp-j server metrics, which are exported via OpenTelemetry.
+To enable metrics, you simply need to set the metrics exporter on the server:
+
+```go
+// sets up OTLP metrics exporter
+func setupMetrics(address string) error {
+grpcOpts := []grpc.DialOption{
+grpc.WithTransportCredentials(insecure.NewCredentials()),
+}
+
+client, err := grpc.NewClient(address, grpcOpts...)
+
+if err != nil {
+return errors.Wrap(err, "failed to create gRPC connection to collector")
+}
+
+ctx := context.Background()
+
+exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(client))
+if err != nil {
+return errors.Wrap(err, "failed to create otlp metric exporter")
+}
+
+resource, err := resource.New(ctx,
+resource.WithAttributes(
+semconv.ServiceNameKey.String("centralSystem-demo"),
+semconv.ServiceVersionKey.String("example"),
+),
+resource.WithFromEnv(),
+resource.WithContainer(),
+resource.WithOS(),
+resource.WithOSType(),
+resource.WithHost(),
+)
+if err != nil {
+return errors.Wrap(err, "failed to create resource")
+}
+
+meterProvider := metricsdk.NewMeterProvider(
+metricsdk.WithReader(
+metricsdk.NewPeriodicReader(
+exporter,
+metricsdk.WithInterval(10*time.Second),
+),
+),
+metricsdk.WithResource(resource),
+)
+
+otel.SetMeterProvider(meterProvider)
+return nil
+}
+```
+
+You can check out the [reference implementation](example/1.6/cs/central_system_sim.go), and deploy it with:
+
+```bash
+make example-ocpp16-observability
+```
+
+> Note: Deploying the example requires docker and docker compose to be installed.
+
+The deployment will start a central system with metrics enabled and a full observability
+stack (https://github.com/grafana/docker-otel-lgtm).
+
+You can log in to Grafana at http://localhost:3000 with the credentials admin/admin.
 
 ## OCPP 2.0.1 Usage
 
