@@ -202,7 +202,7 @@ func NewServer(opts ...ServerOpt) Server {
 	websocketMetrics, err := newMetrics(meterProvider)
 	if err != nil {
 		// todo improve error handling
-		return nil
+		log.Error(errors.Wrap(err, "Error creating websocket metrics"))
 	}
 
 	router := mux.NewRouter()
