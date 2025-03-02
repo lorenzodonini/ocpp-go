@@ -57,7 +57,7 @@ func (suite *OcppV2TestSuite) TestChargePointSendResponseError() {
 	result := <-resultChannel
 	require.IsType(t, &ocpp.Error{}, result)
 	ocppErr = result.(*ocpp.Error)
-	assert.Equal(t, ocppj.OccurrenceConstraintViolation, ocppErr.Code)
+	assert.Equal(t, ocppj.OccurrenceConstraintViolationV2, ocppErr.Code)
 	assert.Equal(t, "Field CallResult.Payload.Data.Field1 required but not found for feature DataTransfer", ocppErr.Description)
 	// Test 2: marshaling error
 	dataTransferResponse = data.NewDataTransferResponse(data.DataTransferStatusAccepted)
@@ -132,7 +132,7 @@ func (suite *OcppV2TestSuite) TestCentralSystemSendResponseError() {
 	require.Error(t, err)
 	require.IsType(t, &ocpp.Error{}, err)
 	ocppErr = err.(*ocpp.Error)
-	assert.Equal(t, ocppj.OccurrenceConstraintViolation, ocppErr.Code)
+	assert.Equal(t, ocppj.OccurrenceConstraintViolationV2, ocppErr.Code)
 	assert.Equal(t, "Field CallResult.Payload.Data.Field1 required but not found for feature DataTransfer", ocppErr.Description)
 	// Test 2: marshaling error
 	dataTransferResponse = data.NewDataTransferResponse(data.DataTransferStatusAccepted)
@@ -160,4 +160,5 @@ func (suite *OcppV2TestSuite) TestCentralSystemSendResponseError() {
 
 func (suite *OcppV2TestSuite) TestErrorCodes() {
 	suite.Equal(ocppj.FormatViolationV2, ocppj.FormatErrorType(suite.ocppjServer))
+	suite.Equal(ocppj.OccurrenceConstraintViolationV2, ocppj.OccurrenceConstraintErrorType(suite.ocppjServer))
 }

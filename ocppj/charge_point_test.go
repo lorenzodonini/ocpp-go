@@ -306,7 +306,7 @@ func (suite *OcppJTestSuite) TestChargePointHandleFailedResponse() {
 	require.Nil(t, callResult)
 	suite.chargePoint.HandleFailedResponseError(mockUniqueID, err, mockResponse.GetFeatureName())
 	rawResponse := <-msgC
-	expectedErr := fmt.Sprintf(`[4,"%v","%v","Field %s required but not found for feature %s",{}]`, mockUniqueID, ocppj.OccurrenceConstraintViolation, mockField, mockResponse.GetFeatureName())
+	expectedErr := fmt.Sprintf(`[4,"%v","%v","Field %s required but not found for feature %s",{}]`, mockUniqueID, ocppj.OccurrenceConstraintErrorType(suite.chargePoint), mockField, mockResponse.GetFeatureName())
 	assert.Equal(t, expectedErr, string(rawResponse))
 	// 2. property constraint validation error
 	val := "len4"
