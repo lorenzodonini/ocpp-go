@@ -103,7 +103,7 @@ type Server interface {
 	// SetBasicAuthHandler enables HTTP Basic Authentication and requires clients to pass credentials.
 	// The handler function is called whenever a new client attempts to connect, to check for credentials correctness.
 	// The handler must return true if the credentials were correct, false otherwise.
-	SetBasicAuthHandler(handler func(username string, password string) bool)
+	SetBasicAuthHandler(handler func(chargePointID string, username string, password string) bool)
 	// SetCheckOriginHandler sets a handler for incoming websocket connections, allowing to perform
 	// custom cross-origin checks.
 	//
@@ -137,7 +137,7 @@ type server struct {
 	checkClientHandler    CheckClientHandler
 	newClientHandler      func(ws Channel)
 	disconnectedHandler   func(ws Channel)
-	basicAuthHandler      func(username string, password string) bool
+	basicAuthHandler      func(chargePointID string, username string, password string) bool
 	tlsCertificatePath    string
 	tlsCertificateKey     string
 	timeoutConfig         ServerTimeoutConfig
@@ -232,7 +232,7 @@ func (s *server) SetChargePointIdResolver(resolver func(r *http.Request) (string
 	s.chargePointIdResolver = resolver
 }
 
-func (s *server) SetBasicAuthHandler(handler func(username string, password string) bool) {
+func (s *server) SetBasicAuthHandler(handler func(chargePointID string, username string, password string) bool) {
 	s.basicAuthHandler = handler
 }
 
@@ -387,7 +387,7 @@ out:
 	if s.basicAuthHandler != nil {
 		username, password, ok := r.BasicAuth()
 		if ok {
-			ok = s.basicAuthHandler(username, password)
+			ok = s.basicAuthHandler(id, username, password)
 		}
 		if !ok {
 			s.error(fmt.Errorf("basic auth failed: credentials invalid"))
