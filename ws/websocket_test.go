@@ -691,7 +691,8 @@ func (s *WebSocketSuite) TestValidBasicAuth() {
 	s.server, ok = tlsServer.(*server)
 	s.True(ok)
 	// Add basic auth handler
-	s.server.SetBasicAuthHandler(func(username string, password string) bool {
+	s.server.SetBasicAuthHandler(func(chargePointID string, username string, password string) bool {
+		s.Equal(testPath, chargePointID)
 		s.Equal(authUsername, username)
 		s.Equal(authPassword, password)
 		return true
@@ -746,8 +747,8 @@ func (s *WebSocketSuite) TestInvalidBasicAuth() {
 	s.server, ok = tlsServer.(*server)
 	s.True(ok)
 	// Add basic auth handler
-	s.server.SetBasicAuthHandler(func(username string, password string) bool {
-		validCredentials := authUsername == username && authPassword == password
+	s.server.SetBasicAuthHandler(func(chargePointID string, username string, password string) bool {
+		validCredentials := testPath == chargePointID && authUsername == username && authPassword == password
 		s.False(validCredentials)
 		return validCredentials
 	})
@@ -1276,7 +1277,7 @@ func (s *WebSocketSuite) TestClientErrors() {
 	conn := s.server.connections[path.Base(testPath)]
 	s.NotNil(conn)
 	err = conn.WriteManual(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
-	//err = conn.connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
+	// err = conn.connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
 	s.NoError(err)
 	r = <-triggerC
 	s.NotNil(r)
