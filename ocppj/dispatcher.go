@@ -531,8 +531,19 @@ func (d *DefaultServerDispatcher) messagePump() {
 			}
 			if d.pendingRequestState.HasPendingRequest(clientID) {
 				// Current request for client timed out. Removing request and triggering cancel callback
-				q, _ := d.queueMap.Get(clientID)
-				bundle, _ := q.Peek().(RequestBundle)
+				q, found := d.queueMap.Get(clientID)
+				if !found {
+					// Possible race condition: queue was already removed
+					log.Errorf("dispatcher timeout for client %s triggered, but no request queue found", clientID)
+					continue
+				}
+				el := q.Peek()
+				if el == nil {
+					// Should never happen
+					log.Error("dispatcher timeout for client %s triggered, but no pending request found", clientID)
+					continue
+				}
+				bundle, _ := el.(RequestBundle)
 				d.CompleteRequest(clientID, bundle.Call.UniqueId)
 				log.Infof("request %v for %v timed out", bundle.Call.UniqueId, clientID)
 				if d.onRequestCancel != nil {
