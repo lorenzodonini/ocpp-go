@@ -44,9 +44,9 @@ type GetCompositeScheduleRequest struct {
 // This field definition of the GetCompositeSchedule response payload, sent by the Charging System to the CSMS in response to a GetCompositeScheduleRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetCompositeScheduleResponse struct {
-	Status   GetCompositeScheduleStatus `json:"status" validate:"required,getCompositeScheduleStatus"`
-	EvseID   int                        `json:"evseId" validate:"gte=0"`
-	Schedule *CompositeSchedule         `json:"schedule,omitempty" validate:"omitempty"`
+	Status     GetCompositeScheduleStatus `json:"status" validate:"required,getCompositeScheduleStatus"`
+	StatusInfo *types.StatusInfo          `json:"statusInfo,omitempty" validate:"omitempty"`
+	Schedule   *CompositeSchedule         `json:"schedule,omitempty" validate:"omitempty"`
 }
 
 // The CSMS MAY request the Charging System to report the Composite Charging Schedule by sending a GetCompositeScheduleRequest.
@@ -82,8 +82,8 @@ func NewGetCompositeScheduleRequest(duration int, evseId int) *GetCompositeSched
 }
 
 // Creates a new GetCompositeScheduleResponse, containing all required fields. Optional fields may be set afterwards.
-func NewGetCompositeScheduleResponse(status GetCompositeScheduleStatus, evseId int) *GetCompositeScheduleResponse {
-	return &GetCompositeScheduleResponse{Status: status, EvseID: evseId}
+func NewGetCompositeScheduleResponse(status GetCompositeScheduleStatus) *GetCompositeScheduleResponse {
+	return &GetCompositeScheduleResponse{Status: status}
 }
 
 func init() {
