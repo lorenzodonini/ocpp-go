@@ -3,8 +3,8 @@ package localauth
 import (
 	"reflect"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Send Local List (CSMS -> CS) --------------------
