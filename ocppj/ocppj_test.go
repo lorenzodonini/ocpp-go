@@ -740,7 +740,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRequest() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.Code)
+	assert.Equal(t, ocppj.OccurrenceConstraintErrorType(suite.chargePoint), protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockRequest.MockValue = "somelongvalue"
 	message, err = suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
@@ -769,7 +769,7 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	protoErr := err.(*ocpp.Error)
 	require.NotNil(t, protoErr)
 	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.OccurrenceConstraintViolation, protoErr.Code)
+	assert.Equal(t, ocppj.OccurrenceConstraintErrorType(suite.chargePoint), protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockConfirmation.MockValue = "min"
 	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that responses are not rejected
