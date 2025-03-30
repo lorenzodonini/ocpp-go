@@ -31,17 +31,16 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with: # Grab a specific tag
           repo: vektra/mockery
-          tag: v2.51.0
+          tag: v2.53.3
 
       - name: Generate mocks
         run: mockery
-
-        # Commit all changed files back to the repository
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        #with:
-        #  commit_message: [ Autogen ] Generated mocks
-        #  # Mockery can generate new files, so we need to add them to the commit as well
-        #  add_options: '$(git ls-files -o --exclude-standard)'
-        #  file_pattern: '*.go' # Only commit changes to Go files
-        #  # Only create a branch when the workflow is triggered manually
-        #  create_branch: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Cache generated mocks
+        uses: actions/cache@v4
+        with:
+          path: |
+            ocpp1.6_test/mocks/
+            ocpp2.0.1_test/mocks/
+            ocppj/mocks/
+            ws/mocks/
+          key: ${{ runner.os }}-mocks-${{ github.sha }}
