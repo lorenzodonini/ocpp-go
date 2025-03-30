@@ -1,5 +1,9 @@
 name: Test
 on:
+  workflow_run:
+    workflows: ["Autogenerate"]
+    types:
+      - completed
   push:
     paths-ignore:
       - "**.md"
@@ -13,12 +17,59 @@ on:
   workflow_dispatch:
 
 jobs:
+  autogen:
+    name: Generate mocks
+    runs-on: ubuntu-latest
+
+    # Permissions are needed to push the changes back to the repository
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.17
+      - name: Install Mockery
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with: # Grab a specific tag
+          repo: vektra/mockery
+          tag: v2.53.3
+      - name: Generate mocks
+        run: mockery
+      - name: Cache generated mocks
+        uses: actions/cache@v4
+        with:
+          path: |
+            ocpp1.6_test/mocks/
+            ocpp2.0.1_test/mocks/
+            ocppj/mocks/
+            ws/mocks/
+          key: ${{ runner.os }}-mocks-${{ github.sha }}
   unit:
     runs-on: ubuntu-latest
     name: Unit tests
+    needs: autogen
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
+      - name: Restore generated mocks
+        id: cache-mocks
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ocpp1.6_test/mocks/
+            ocpp2.0.1_test/mocks/
+            ocppj/mocks/
+            ws/mocks/
+          key: ${{ runner.os }}-mocks-${{ github.sha }}
+      - name: Check cache hit
+        if: steps.cache-mocks.outputs.cache-hit != 'true'
+        run: exit 1
       - name: Run tests
         run: |
           docker compose -f docker-compose.test.yaml up unit_test --abort-on-container-exit
@@ -54,7 +105,7 @@ jobs:
   publish_coverage:
     runs-on: ubuntu-latest
     # Unit and integration tests must be run before publishing coverage
-    needs: [ unit, integration ]
+    needs: [unit, integration]
     name: Publish coverage
     steps:
       - name: Checkout code
