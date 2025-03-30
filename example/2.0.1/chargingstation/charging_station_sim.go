@@ -66,10 +66,10 @@ func setupTlsChargingStation(chargingStationID string) ocpp2.ChargingStation {
 		}
 	}
 	// Create client with TLS config
-	client := ws.NewTLSClient(&tls.Config{
+	client := ws.NewClient(ws.WithClientTLSConfig(&tls.Config{
 		RootCAs:      certPool,
 		Certificates: clientCertificates,
-	})
+	}))
 	return ocpp2.NewChargingStation(chargingStationID, nil, client)
 }
 

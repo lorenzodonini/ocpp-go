@@ -1,0 +1,38 @@
+name: '❔ Question'
+description: 'Submit a general question to the community.'
+title: '❔ Question: '
+labels: [ 'type: question' ]
+body:
+  - type: textarea
+    id: description
+    validations:
+      required: true
+    attributes:
+      label: '❔ What is your question?'
+      description: 'The stage is yours. Ask away! Try to provide as much context as possible.'
+      placeholder: 'What is the best way to ...'
+  - type: checkboxes
+    id: ocpp-version
+    attributes:
+      label: 'Which OCPP version referring to?'
+      options:
+        - label: "OCPP 1.6"
+          required: false
+        - label: "OCPP 2.0.1"
+          required: false
+  - type: checkboxes
+    id: ocpp-extensions
+    attributes:
+      label: 'Are you using any OCPP extensions?'
+      options:
+        - label: "OCPP 1.6 Security"
+          required: false
+        - label: "OCPP 1.6 Plug and Charge"
+          required: false
+  - type: checkboxes
+    id: no-duplicate-issues
+    attributes:
+      label: '👀 Have you spent some time to check if this question has been asked before?'
+      options:
+        - label: "I checked and didn't find a similar issue"
+          required: true

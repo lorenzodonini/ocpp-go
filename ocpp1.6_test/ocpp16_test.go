@@ -4,26 +4,28 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"net/http"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/extendedtriggermessage"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,6 +49,10 @@ func (websocket MockWebSocket) TLSConnectionState() *tls.ConnectionState {
 	return nil
 }
 
+func (websocket MockWebSocket) IsConnected() bool {
+	return true
+}
+
 func NewMockWebSocket(id string) MockWebSocket {
 	return MockWebSocket{id: id}
 }
@@ -54,7 +60,7 @@ func NewMockWebSocket(id string) MockWebSocket {
 // ---------------------- MOCK WEBSOCKET SERVER ----------------------
 type MockWebsocketServer struct {
 	mock.Mock
-	ws.WsServer
+	ws.Server
 	MessageHandler            func(ws ws.Channel, data []byte) error
 	NewClientHandler          func(ws ws.Channel)
 	CheckClientHandler        ws.CheckClientHandler
@@ -74,11 +80,11 @@ func (websocketServer *MockWebsocketServer) Write(webSocketId string, data []byt
 	return args.Error(0)
 }
 
-func (websocketServer *MockWebsocketServer) SetMessageHandler(handler func(ws ws.Channel, data []byte) error) {
+func (websocketServer *MockWebsocketServer) SetMessageHandler(handler ws.MessageHandler) {
 	websocketServer.MessageHandler = handler
 }
 
-func (websocketServer *MockWebsocketServer) SetNewClientHandler(handler func(ws ws.Channel)) {
+func (websocketServer *MockWebsocketServer) SetNewClientHandler(handler ws.ConnectedHandler) {
 	websocketServer.NewClientHandler = handler
 }
 
@@ -93,14 +99,14 @@ func (websocketServer *MockWebsocketServer) NewClient(websocketId string, client
 	websocketServer.MethodCalled("NewClient", websocketId, client)
 }
 
-func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler func(id string, r *http.Request) bool) {
+func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler ws.CheckClientHandler) {
 	websocketServer.CheckClientHandler = handler
 }
 
 // ---------------------- MOCK WEBSOCKET CLIENT ----------------------
 type MockWebsocketClient struct {
 	mock.Mock
-	ws.WsClient
+	ws.Client
 	MessageHandler      func(data []byte) error
 	ReconnectedHandler  func()
 	DisconnectedHandler func(err error)
@@ -442,41 +448,6 @@ func (smartChargingListener *MockChargePointSmartChargingListener) OnGetComposit
 }
 
 // ---------------------- COMMON UTILITY METHODS ----------------------
-func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Server {
-	wsServer := ws.Server{}
-	wsServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
-		assert.NotNil(t, ws)
-		assert.NotNil(t, data)
-		if onMessage != nil {
-			response, err := onMessage(data)
-			assert.Nil(t, err)
-			if response != nil {
-				err = wsServer.Write(ws.ID(), data)
-				assert.Nil(t, err)
-			}
-		}
-		return nil
-	})
-	return &wsServer
-}
-
-func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ws.Client {
-	wsClient := ws.Client{}
-	wsClient.SetMessageHandler(func(data []byte) error {
-		assert.NotNil(t, data)
-		if onMessage != nil {
-			response, err := onMessage(data)
-			assert.Nil(t, err)
-			if response != nil {
-				err = wsClient.Write(data)
-				assert.Nil(t, err)
-			}
-		}
-		return nil
-	})
-	return &wsClient
-}
-
 type expectedCentralSystemOptions struct {
 	clientId              string
 	rawWrittenMessage     []byte
@@ -692,14 +663,47 @@ func (suite *OcppV16TestSuite) SetupTest() {
 	reservationProfile := reservation.Profile
 	remoteTriggerProfile := remotetrigger.Profile
 	smartChargingProfile := smartcharging.Profile
+	certificatesProfile := certificates.Profile
+	secureFirmwareUpdateProfile := securefirmware.Profile
+	extendedTriggerMessageProfile := extendedtriggermessage.Profile
+	securityProfile := security.Profile
 	mockClient := MockWebsocketClient{}
 	mockServer := MockWebsocketServer{}
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
 	suite.clientDispatcher = ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(queueCapacity))
 	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(queueCapacity))
-	suite.ocppjChargePoint = ocppj.NewClient("test_id", suite.mockWsClient, suite.clientDispatcher, nil, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
-	suite.ocppjCentralSystem = ocppj.NewServer(suite.mockWsServer, suite.serverDispatcher, nil, coreProfile, localAuthListProfile, firmwareProfile, reservationProfile, remoteTriggerProfile, smartChargingProfile)
+	suite.ocppjChargePoint = ocppj.NewClient(
+		"test_id",
+		suite.mockWsClient,
+		suite.clientDispatcher,
+		nil,
+		coreProfile,
+		localAuthListProfile,
+		firmwareProfile,
+		reservationProfile,
+		remoteTriggerProfile,
+		smartChargingProfile,
+		certificatesProfile,
+		extendedTriggerMessageProfile,
+		securityProfile,
+		secureFirmwareUpdateProfile,
+	)
+	suite.ocppjCentralSystem = ocppj.NewServer(
+		suite.mockWsServer,
+		suite.serverDispatcher,
+		nil,
+		coreProfile,
+		localAuthListProfile,
+		firmwareProfile,
+		reservationProfile,
+		remoteTriggerProfile,
+		smartChargingProfile,
+		certificatesProfile,
+		extendedTriggerMessageProfile,
+		securityProfile,
+		secureFirmwareUpdateProfile,
+	)
 	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
 	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
