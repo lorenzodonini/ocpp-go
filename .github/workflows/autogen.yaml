@@ -28,7 +28,7 @@ jobs:
           go-version: 1.17
 
       - name: Install Mockery
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        uses: jaxxstorm/action-install-gh-release@v2.0.0
         with: # Grab a specific tag
           repo: vektra/mockery
           tag: v2.51.0
