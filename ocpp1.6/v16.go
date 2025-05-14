@@ -325,6 +325,9 @@ type CentralSystem interface {
 	Stop()
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	Errors() <-chan error
+
+	// SetMessageHooks sets a function that will be called whenever a message is received or sent.
+	SetMessageHooks(logger func(direction, chargePointID, messageType string, payload []byte))
 }
 
 // Creates a new OCPP 1.6 central system.
@@ -345,7 +348,7 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) CentralSystem {
 	}
 	server.AddSupportedSubprotocol(types.V16Subprotocol)
 	if endpoint == nil {
-		endpoint = ocppj.NewServer(server, nil, nil,
+		endpoint = ocppj.NewServer(server, nil, nil, nil,
 			core.Profile,
 			localauth.Profile,
 			firmware.Profile,

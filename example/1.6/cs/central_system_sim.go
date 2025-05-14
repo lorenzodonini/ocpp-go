@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -230,6 +231,10 @@ func main() {
 	centralSystem.SetChargePointDisconnectedHandler(func(chargePoint ocpp16.ChargePointConnection) {
 		log.WithField("client", chargePoint.ID()).Info("charge point disconnected")
 		delete(handler.chargePoints, chargePoint.ID())
+	})
+	// set message hook
+	centralSystem.SetMessageHooks(func(direction, chargePointID, msgType string, payload []byte) {
+		fmt.Printf("direction：%s \n cpid：%s \n msgType: %s \n payload: %s\n", direction, chargePointID, msgType, string(payload))
 	})
 	ocppj.SetLogger(log.WithField("logger", "ocppj"))
 	ws.SetLogger(log.WithField("logger", "websocket"))
