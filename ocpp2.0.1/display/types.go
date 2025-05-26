@@ -1,8 +1,8 @@
 package display
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // Priority with which a message should be displayed on a Charging Station.
