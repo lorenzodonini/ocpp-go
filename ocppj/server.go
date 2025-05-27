@@ -328,7 +328,12 @@ func (s *Server) onClientConnected(ws ws.Channel) {
 
 func (s *Server) onClientDisconnected(ws ws.Channel) {
 	// Clear state for disconnected client
-	s.dispatcher.DeleteClient(ws.ID())
+	err := s.dispatcher.DeleteClient(ws.ID())
+
+	if err != nil {
+		log.Error(err)
+	}
+
 	s.RequestState.ClearClientPendingRequest(ws.ID())
 	// Invoke callback
 	if s.disconnectedClientHandler != nil {

@@ -354,7 +354,7 @@ type ServerDispatcher interface {
 	// Internal queues for that client are cleared and no further requests will be accepted.
 	// Undelivered pending requests are also cleared.
 	// The OnRequestCanceled callback will be invoked for each discarded request.
-	DeleteClient(clientID string)
+	DeleteClient(clientID string) error
 }
 
 // DefaultServerDispatcher is a default implementation of the ServerDispatcher interface.
@@ -433,13 +433,20 @@ func (d *DefaultServerDispatcher) CreateClient(clientID string) {
 	}
 }
 
-func (d *DefaultServerDispatcher) DeleteClient(clientID string) {
+func (d *DefaultServerDispatcher) DeleteClient(clientID string) error {
 	d.queueMap.Remove(clientID)
 	if d.IsRunning() {
 		d.mutex.RLock()
-		d.requestChannel <- clientID
+		select {
+		case d.requestChannel <- clientID:
+		default:
+			return fmt.Errorf("cannot delete client %v, request channel is full", clientID)
+		}
+
 		d.mutex.RUnlock()
 	}
+
+	return nil
 }
 
 func (d *DefaultServerDispatcher) SetNetworkServer(server ws.WsServer) {
@@ -466,7 +473,13 @@ func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle
 		return err
 	}
 	d.mutex.RLock()
-	d.requestChannel <- clientID
+
+	select {
+	case d.requestChannel <- clientID:
+	default:
+		return fmt.Errorf("cannot send request %v, request channel is full", clientID)
+	}
+
 	d.mutex.RUnlock()
 	return nil
 }

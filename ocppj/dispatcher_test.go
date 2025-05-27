@@ -179,7 +179,10 @@ func (s *ServerDispatcherTestSuite) TestDeleteClient() {
 	_, ok := <-sent
 	assert.True(t, ok)
 	// Delete client
-	s.dispatcher.DeleteClient(clientID)
+	err = s.dispatcher.DeleteClient(clientID)
+	// No error
+	assert.Nil(t, err)
+
 	// Pending request is still expected to be there
 	assert.True(t, s.state.HasPendingRequest(clientID))
 }
