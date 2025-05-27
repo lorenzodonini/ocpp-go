@@ -125,6 +125,8 @@ type ServerQueueMap interface {
 	// Add inserts a new RequestQueue into the map structure.
 	// If such element already exists, it will be replaced with the new queue.
 	Add(clientID string, queue RequestQueue)
+
+	Size() int
 }
 
 // FIFOQueueMap is a default implementation of ServerQueueMap.
@@ -172,6 +174,10 @@ func (f *FIFOQueueMap) Add(clientID string, queue RequestQueue) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 	f.data[clientID] = queue
+}
+
+func (f *FIFOQueueMap) Size() int {
+	return len(f.data)
 }
 
 // NewFIFOQueueMap creates a new FIFOQueueMap, which will automatically create queues with the specified capacity.

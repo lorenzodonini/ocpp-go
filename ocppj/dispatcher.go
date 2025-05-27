@@ -3,11 +3,25 @@ package ocppj
 import (
 	"context"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"sync"
 	"time"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
+)
+
+var (
+	dispatcherRequestChannelSize = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "ocpp_server_dispatcher_request_channel_size",
+		Help: "Size of the requests channel",
+	})
+
+	dispatcherClientQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "ocpp_server_dispatcher_client_request_queues",
+		Help: "Number of client request queues",
+	})
 )
 
 // ClientDispatcher contains the state and logic for handling outgoing messages on a client endpoint.
@@ -354,7 +368,7 @@ type ServerDispatcher interface {
 	// Internal queues for that client are cleared and no further requests will be accepted.
 	// Undelivered pending requests are also cleared.
 	// The OnRequestCanceled callback will be invoked for each discarded request.
-	DeleteClient(clientID string)
+	DeleteClient(clientID string) error
 }
 
 // DefaultServerDispatcher is a default implementation of the ServerDispatcher interface.
@@ -433,13 +447,20 @@ func (d *DefaultServerDispatcher) CreateClient(clientID string) {
 	}
 }
 
-func (d *DefaultServerDispatcher) DeleteClient(clientID string) {
+func (d *DefaultServerDispatcher) DeleteClient(clientID string) error {
 	d.queueMap.Remove(clientID)
 	if d.IsRunning() {
 		d.mutex.RLock()
-		d.requestChannel <- clientID
+		select {
+		case d.requestChannel <- clientID:
+		default:
+			return fmt.Errorf("cannot delete client %v, request channel is full", clientID)
+		}
+
 		d.mutex.RUnlock()
 	}
+
+	return nil
 }
 
 func (d *DefaultServerDispatcher) SetNetworkServer(server ws.WsServer) {
@@ -466,7 +487,13 @@ func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle
 		return err
 	}
 	d.mutex.RLock()
-	d.requestChannel <- clientID
+
+	select {
+	case d.requestChannel <- clientID:
+	default:
+		return fmt.Errorf("cannot send request %v, request channel is full", clientID)
+	}
+
 	d.mutex.RUnlock()
 	return nil
 }
@@ -555,6 +582,9 @@ func (d *DefaultServerDispatcher) messagePump() {
 			}
 			log.Debugf("%v ready to transmit again", clientID)
 		}
+
+		dispatcherRequestChannelSize.Set(float64(len(d.requestChannel)))
+		dispatcherClientQueueSize.Set(float64(d.queueMap.Size()))
 
 		// Only dispatch request if able to send and request queue isn't empty
 		if rdy && clientQueue != nil && !clientQueue.IsEmpty() {

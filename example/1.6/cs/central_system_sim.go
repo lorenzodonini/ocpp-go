@@ -3,6 +3,8 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -231,6 +233,12 @@ func main() {
 		log.WithField("client", chargePoint.ID()).Info("charge point disconnected")
 		delete(handler.chargePoints, chargePoint.ID())
 	})
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(":2112", nil)
+	}()
+
 	ocppj.SetLogger(log.WithField("logger", "ocppj"))
 	ws.SetLogger(log.WithField("logger", "websocket"))
 	// Run central system
