@@ -451,13 +451,13 @@ func (d *DefaultServerDispatcher) DeleteClient(clientID string) error {
 	d.queueMap.Remove(clientID)
 	if d.IsRunning() {
 		d.mutex.RLock()
+		defer d.mutex.RUnlock()
+
 		select {
 		case d.requestChannel <- clientID:
 		default:
 			return fmt.Errorf("cannot delete client %v, request channel is full", clientID)
 		}
-
-		d.mutex.RUnlock()
 	}
 
 	return nil
@@ -487,6 +487,7 @@ func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle
 		return err
 	}
 	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 
 	select {
 	case d.requestChannel <- clientID:
@@ -494,7 +495,6 @@ func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle
 		return fmt.Errorf("cannot send request %v, request channel is full", clientID)
 	}
 
-	d.mutex.RUnlock()
 	return nil
 }
 
