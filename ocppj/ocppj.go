@@ -2,7 +2,6 @@
 package ocppj
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -30,9 +29,11 @@ func SetHTMLEscape(flag bool) {
 type MessageType int
 
 const (
-	CALL        MessageType = 2
-	CALL_RESULT MessageType = 3
-	CALL_ERROR  MessageType = 4
+	CALL              MessageType = 2
+	CALL_RESULT       MessageType = 3
+	CALL_ERROR        MessageType = 4
+	CALL_RESULT_ERROR MessageType = 5
+	SEND              MessageType = 6
 )
 
 // An OCPP-J message.
@@ -148,12 +149,41 @@ func (callError *CallError) MarshalJSON() ([]byte, error) {
 	return ocppMessageToJson(fields)
 }
 
+// -------------------- Call --------------------
+
+// An OCPP-J SEND message, containing an OCPP Request.
+type Send struct {
+	Message       `validate:"-"`
+	MessageTypeId MessageType  `json:"messageTypeId" validate:"required,eq=2"`
+	UniqueId      string       `json:"uniqueId" validate:"required,max=36"`
+	Action        string       `json:"action" validate:"required,max=36"`
+	Payload       ocpp.Request `json:"payload" validate:"required"`
+}
+
+func (call *Send) GetMessageTypeId() MessageType {
+	return call.MessageTypeId
+}
+
+func (call *Send) GetUniqueId() string {
+	return call.UniqueId
+}
+
+func (call *Send) MarshalJSON() ([]byte, error) {
+	fields := make([]interface{}, 4)
+	fields[0] = int(call.MessageTypeId)
+	fields[1] = call.UniqueId
+	fields[2] = call.Action
+	fields[3] = call.Payload
+	return jsonMarshal(fields)
+}
+
 const (
 	NotImplemented                   ocpp.ErrorCode = "NotImplemented"                // Requested Action is not known by receiver.
 	NotSupported                     ocpp.ErrorCode = "NotSupported"                  // Requested Action is recognized but not supported by the receiver.
 	InternalError                    ocpp.ErrorCode = "InternalError"                 // An internal error occurred and the receiver was not able to process the requested Action successfully.
 	MessageTypeNotSupported          ocpp.ErrorCode = "MessageTypeNotSupported"       // A message with a Message Type Number received that is not supported by this implementation.
 	ProtocolError                    ocpp.ErrorCode = "ProtocolError"                 // Payload for Action is incomplete.
+	RpcFrameworkError                ocpp.ErrorCode = "RpcFrameworkError"             // Content of the call is not a valid RPC Request, for example: MessageId could not be read.
 	SecurityError                    ocpp.ErrorCode = "SecurityError"                 // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully.
 	PropertyConstraintViolation      ocpp.ErrorCode = "PropertyConstraintViolation"   // Payload is syntactically correct but at least one field contains an invalid value.
 	OccurrenceConstraintViolationV2  ocpp.ErrorCode = "OccurrenceConstraintViolation" // Payload for Action is syntactically correct but at least one of the fields violates occurrence constraints.
@@ -172,7 +202,7 @@ func FormatErrorType(d dialector) ocpp.ErrorCode {
 	switch d.Dialect() {
 	case ocpp.V16:
 		return FormatViolationV16
-	case ocpp.V2:
+	case ocpp.V2, ocpp.V21:
 		return FormatViolationV2
 	default:
 		panic(fmt.Sprintf("invalid dialect: %v", d))
@@ -183,7 +213,7 @@ func OccurrenceConstraintErrorType(d dialector) ocpp.ErrorCode {
 	switch d.Dialect() {
 	case ocpp.V16:
 		return OccurrenceConstraintViolationV16
-	case ocpp.V2:
+	case ocpp.V2, ocpp.V21:
 		return OccurrenceConstraintViolationV2
 	default:
 		panic(fmt.Sprintf("invalid dialect: %v", d))
@@ -193,31 +223,16 @@ func OccurrenceConstraintErrorType(d dialector) ocpp.ErrorCode {
 func IsErrorCodeValid(fl validator.FieldLevel) bool {
 	code := ocpp.ErrorCode(fl.Field().String())
 	switch code {
-	case NotImplemented, NotSupported, InternalError, MessageTypeNotSupported, ProtocolError, SecurityError, FormatViolationV16, FormatViolationV2, PropertyConstraintViolation, OccurrenceConstraintViolationV16, OccurrenceConstraintViolationV2, TypeConstraintViolation, GenericError:
+	case NotImplemented, NotSupported, InternalError, MessageTypeNotSupported,
+		ProtocolError, SecurityError, FormatViolationV16, FormatViolationV2,
+		PropertyConstraintViolation, OccurrenceConstraintViolationV16, OccurrenceConstraintViolationV2,
+		TypeConstraintViolation, GenericError:
 		return true
 	}
 	return false
 }
 
 // -------------------- Logic --------------------
-
-// Unmarshals an OCPP-J json object from a byte array.
-// Returns the array of elements contained in the message.
-func ParseRawJsonMessage(dataJson []byte) ([]interface{}, error) {
-	var arr []interface{}
-	err := json.Unmarshal(dataJson, &arr)
-	if err != nil {
-		return nil, err
-	}
-	return arr, nil
-}
-
-// Unmarshals an OCPP-J json object from a JSON string.
-// Returns the array of elements contained in the message.
-func ParseJsonMessage(dataJson string) ([]interface{}, error) {
-	rawJson := []byte(dataJson)
-	return ParseRawJsonMessage(rawJson)
-}
 
 func ocppMessageToJson(message interface{}) ([]byte, error) {
 	jsonData, err := jsonMarshal(message)
@@ -282,15 +297,6 @@ func errorFromValidation(d dialector, validationErrors validator.ValidationError
 	return ocpp.NewError(GenericError, fmt.Sprintf("%v", validationErrors.Error()), messageId)
 }
 
-// Marshals data by manipulating EscapeHTML property of encoder
-func jsonMarshal(t interface{}) ([]byte, error) {
-	buffer := &bytes.Buffer{}
-	encoder := json.NewEncoder(buffer)
-	encoder.SetEscapeHTML(EscapeHTML.Load())
-	err := encoder.Encode(t)
-	return bytes.TrimRight(buffer.Bytes(), "\n"), err
-}
-
 // -------------------- Endpoint --------------------
 
 // An OCPP-J endpoint is one of the two entities taking part in the communication.
@@ -337,40 +343,6 @@ func (endpoint *Endpoint) GetProfileForFeature(featureName string) (*ocpp.Profil
 	return nil, false
 }
 
-func parseRawJsonRequest(raw interface{}, requestType reflect.Type) (ocpp.Request, error) {
-	if raw == nil {
-		raw = &struct{}{}
-	}
-	bytes, err := json.Marshal(raw)
-	if err != nil {
-		return nil, err
-	}
-	request := reflect.New(requestType).Interface()
-	err = json.Unmarshal(bytes, &request)
-	if err != nil {
-		return nil, err
-	}
-	result := request.(ocpp.Request)
-	return result, nil
-}
-
-func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (ocpp.Response, error) {
-	if raw == nil {
-		raw = &struct{}{}
-	}
-	bytes, err := json.Marshal(raw)
-	if err != nil {
-		return nil, err
-	}
-	confirmation := reflect.New(confirmationType).Interface()
-	err = json.Unmarshal(bytes, &confirmation)
-	if err != nil {
-		return nil, err
-	}
-	result := confirmation.(ocpp.Response)
-	return result, nil
-}
-
 // Parses an OCPP-J message. The function expects an array of elements, as contained in the JSON message.
 //
 // Pending requests are automatically cleared, in case the received message is a CallResponse or CallError.
@@ -379,20 +351,25 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 	if len(arr) < 3 {
 		return nil, ocpp.NewError(FormatErrorType(endpoint), "Invalid message. Expected array length >= 3", "")
 	}
+
 	rawTypeId, ok := arr[0].(float64)
 	if !ok {
 		return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 0, expected message type (int)", arr[0]), "")
 	}
+
 	typeId := MessageType(rawTypeId)
 	uniqueId, ok := arr[1].(string)
 	if !ok {
 		return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", arr[1]), uniqueId)
 	}
+
 	if uniqueId == "" {
 		return nil, ocpp.NewError(FormatErrorType(endpoint), "Invalid unique ID, cannot be empty", uniqueId)
 	}
-	// Parse message
-	if typeId == CALL {
+
+	// Parse message base on type
+	switch typeId {
+	case CALL:
 		if len(arr) != 4 {
 			return nil, ocpp.NewError(FormatErrorType(endpoint), "Invalid Call message. Expected array length 4", uniqueId)
 		}
@@ -420,7 +397,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			return nil, errorFromValidation(endpoint, err.(validator.ValidationErrors), uniqueId, action)
 		}
 		return &call, nil
-	} else if typeId == CALL_RESULT {
+	case CALL_RESULT:
 		request, ok := pendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
 			// No logger available in Endpoint.ParseMessage - this is expected to be called from Server/Client which have loggers
@@ -441,7 +418,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			return nil, errorFromValidation(endpoint, err.(validator.ValidationErrors), uniqueId, request.GetFeatureName())
 		}
 		return &callResult, nil
-	} else if typeId == CALL_ERROR {
+	case CALL_ERROR, CALL_RESULT_ERROR:
 		_, ok := pendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
 			// No logger available in Endpoint.ParseMessage - this is expected to be called from Server/Client which have loggers
@@ -475,7 +452,16 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			return nil, errorFromValidation(endpoint, err.(validator.ValidationErrors), uniqueId, "")
 		}
 		return &callError, nil
-	} else {
+
+	case SEND:
+		// SEND can be only sent in OCPP 2.1
+		if endpoint.Dialect() != ocpp.V21 {
+			return nil, ocpp.NewError(MessageTypeNotSupported, "SEND message is not supported in this OCPP version", uniqueId)
+		}
+
+		// Send does not expect a confirmation, so it is not added to the pending requests.
+		return nil, nil
+	default:
 		return nil, ocpp.NewError(MessageTypeNotSupported, fmt.Sprintf("Invalid message type ID %v", typeId), uniqueId)
 	}
 }

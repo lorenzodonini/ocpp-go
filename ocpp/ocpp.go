@@ -120,4 +120,5 @@ const (
 	_ Dialect = iota
 	V16
 	V2
+	V21
 )
