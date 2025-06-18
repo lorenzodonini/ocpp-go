@@ -151,6 +151,14 @@ func WithClientTLSConfig(tlsConfig *tls.Config) ClientOpt {
 	}
 }
 
+func WithClientCompression(enable bool) ClientOpt {
+	return func(c *client) {
+		c.dialOptions = append(c.dialOptions, func(dialer *websocket.Dialer) {
+			dialer.EnableCompression = enable
+		})
+	}
+}
+
 // NewClient creates a new websocket client.
 //
 // If the optional tlsConfig is not nil, and the server supports secure communication,
