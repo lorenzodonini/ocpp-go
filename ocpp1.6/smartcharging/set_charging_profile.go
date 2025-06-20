@@ -3,8 +3,8 @@ package smartcharging
 import (
 	"reflect"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Set Charging Profile (CS -> CP) --------------------

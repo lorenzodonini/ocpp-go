@@ -11,6 +11,7 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/logging"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -18,7 +19,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // ---------------------- MOCK WEBSOCKET ----------------------

@@ -126,10 +126,10 @@ type Server interface {
 	GetChannel(websocketId string) (Channel, bool)
 }
 
-// Default implementation of a Websocket server.
+// Default implementation of a Websocket ServerImpl.
 //
-// Use the NewServer function to create a new server.
-type server struct {
+// Use the NewServer function to create a new ServerImpl.
+type ServerImpl struct {
 	connections           map[string]*webSocket
 	httpServer            *http.Server
 	messageHandler        func(ws Channel, data []byte) error
@@ -149,12 +149,12 @@ type server struct {
 }
 
 // ServerOpt is a function that can be used to set options on a server during creation.
-type ServerOpt func(s *server)
+type ServerOpt func(s *ServerImpl)
 
 // WithServerTLSConfig sets the TLS configuration for the server.
 // If the passed tlsConfig is nil, the client will not use TLS.
 func WithServerTLSConfig(certificatePath string, certificateKey string, tlsConfig *tls.Config) ServerOpt {
-	return func(s *server) {
+	return func(s *ServerImpl) {
 		s.tlsCertificatePath = certificatePath
 		s.tlsCertificateKey = certificateKey
 		if tlsConfig != nil {
@@ -182,7 +182,7 @@ func WithServerTLSConfig(certificatePath string, certificateKey string, tlsConfi
 // When TLS is correctly configured, the server will automatically use it for all created websocket channels.
 func NewServer(opts ...ServerOpt) Server {
 	router := mux.NewRouter()
-	s := &server{
+	s := &ServerImpl{
 		httpServer:    &http.Server{},
 		timeoutConfig: NewServerTimeoutConfig(),
 		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
@@ -198,27 +198,27 @@ func NewServer(opts ...ServerOpt) Server {
 	return s
 }
 
-func (s *server) SetMessageHandler(handler MessageHandler) {
+func (s *ServerImpl) SetMessageHandler(handler MessageHandler) {
 	s.messageHandler = handler
 }
 
-func (s *server) SetCheckClientHandler(handler CheckClientHandler) {
+func (s *ServerImpl) SetCheckClientHandler(handler CheckClientHandler) {
 	s.checkClientHandler = handler
 }
 
-func (s *server) SetNewClientHandler(handler ConnectedHandler) {
+func (s *ServerImpl) SetNewClientHandler(handler ConnectedHandler) {
 	s.newClientHandler = handler
 }
 
-func (s *server) SetDisconnectedClientHandler(handler func(ws Channel)) {
+func (s *ServerImpl) SetDisconnectedClientHandler(handler func(ws Channel)) {
 	s.disconnectedHandler = handler
 }
 
-func (s *server) SetTimeoutConfig(config ServerTimeoutConfig) {
+func (s *ServerImpl) SetTimeoutConfig(config ServerTimeoutConfig) {
 	s.timeoutConfig = config
 }
 
-func (s *server) AddSupportedSubprotocol(subProto string) {
+func (s *ServerImpl) AddSupportedSubprotocol(subProto string) {
 	for _, sub := range s.upgrader.Subprotocols {
 		if sub == subProto {
 			// Don't add duplicates
@@ -228,41 +228,41 @@ func (s *server) AddSupportedSubprotocol(subProto string) {
 	s.upgrader.Subprotocols = append(s.upgrader.Subprotocols, subProto)
 }
 
-func (s *server) SetChargePointIdResolver(resolver func(r *http.Request) (string, error)) {
+func (s *ServerImpl) SetChargePointIdResolver(resolver func(r *http.Request) (string, error)) {
 	s.chargePointIdResolver = resolver
 }
 
-func (s *server) SetBasicAuthHandler(handler func(username string, password string) bool) {
+func (s *ServerImpl) SetBasicAuthHandler(handler func(username string, password string) bool) {
 	s.basicAuthHandler = handler
 }
 
-func (s *server) SetCheckOriginHandler(handler func(r *http.Request) bool) {
+func (s *ServerImpl) SetCheckOriginHandler(handler func(r *http.Request) bool) {
 	s.upgrader.CheckOrigin = handler
 }
 
-func (s *server) error(err error) {
+func (s *ServerImpl) error(err error) {
 	log.Error(err)
 	if s.errC != nil {
 		s.errC <- err
 	}
 }
 
-func (s *server) Errors() <-chan error {
+func (s *ServerImpl) Errors() <-chan error {
 	if s.errC == nil {
 		s.errC = make(chan error, 1)
 	}
 	return s.errC
 }
 
-func (s *server) Addr() *net.TCPAddr {
+func (s *ServerImpl) Addr() *net.TCPAddr {
 	return s.addr
 }
 
-func (s *server) AddHttpHandler(listenPath string, handler func(w http.ResponseWriter, r *http.Request)) {
+func (s *ServerImpl) AddHttpHandler(listenPath string, handler func(w http.ResponseWriter, r *http.Request)) {
 	s.httpHandler.HandleFunc(listenPath, handler)
 }
 
-func (s *server) Start(port int, listenPath string) {
+func (s *ServerImpl) Start(port int, listenPath string) {
 	s.connMutex.Lock()
 	s.connections = make(map[string]*webSocket)
 	s.connMutex.Unlock()
@@ -302,7 +302,7 @@ func (s *server) Start(port int, listenPath string) {
 	}
 }
 
-func (s *server) Stop() {
+func (s *ServerImpl) Stop() {
 	log.Info("stopping websocket server")
 	err := s.httpServer.Shutdown(context.TODO())
 	if err != nil {
@@ -315,7 +315,7 @@ func (s *server) Stop() {
 	}
 }
 
-func (s *server) StopConnection(id string, closeError websocket.CloseError) error {
+func (s *ServerImpl) StopConnection(id string, closeError websocket.CloseError) error {
 	s.connMutex.RLock()
 	w, ok := s.connections[id]
 	s.connMutex.RUnlock()
@@ -327,14 +327,14 @@ func (s *server) StopConnection(id string, closeError websocket.CloseError) erro
 	return w.Close(closeError)
 }
 
-func (s *server) GetChannel(websocketId string) (Channel, bool) {
+func (s *ServerImpl) GetChannel(websocketId string) (Channel, bool) {
 	s.connMutex.RLock()
 	defer s.connMutex.RUnlock()
 	c, ok := s.connections[websocketId]
 	return c, ok
 }
 
-func (s *server) stopConnections() {
+func (s *ServerImpl) stopConnections() {
 	s.connMutex.RLock()
 	defer s.connMutex.RUnlock()
 	for _, conn := range s.connections {
@@ -342,7 +342,7 @@ func (s *server) stopConnections() {
 	}
 }
 
-func (s *server) Write(webSocketId string, data []byte) error {
+func (s *ServerImpl) Write(webSocketId string, data []byte) error {
 	s.connMutex.RLock()
 	defer s.connMutex.RUnlock()
 	w, ok := s.connections[webSocketId]
@@ -353,7 +353,7 @@ func (s *server) Write(webSocketId string, data []byte) error {
 	return w.Write(data)
 }
 
-func (s *server) wsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *ServerImpl) wsHandler(w http.ResponseWriter, r *http.Request) {
 	responseHeader := http.Header{}
 	id, err := s.chargePointIdResolver(r)
 	if err != nil {
@@ -463,14 +463,14 @@ out:
 }
 
 // --------- Internal callbacks webSocket -> server ---------
-func (s *server) handleMessage(w Channel, data []byte) error {
+func (s *ServerImpl) handleMessage(w Channel, data []byte) error {
 	if s.messageHandler != nil {
 		return s.messageHandler(w, data)
 	}
 	return fmt.Errorf("no message handler set")
 }
 
-func (s *server) handleDisconnect(w Channel, _ error) {
+func (s *ServerImpl) handleDisconnect(w Channel, _ error) {
 	// server never attempts to auto-reconnect to client. Resources are simply freed up
 	s.connMutex.Lock()
 	delete(s.connections, w.ID())
