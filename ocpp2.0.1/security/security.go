@@ -17,7 +17,7 @@ type ChargingStationHandler interface {
 	OnCertificateSigned(request *CertificateSignedRequest) (response *CertificateSignedResponse, err error)
 }
 
-const ProfileName = "security"
+const ProfileName = "Security"
 
 var Profile = ocpp.NewProfile(
 	ProfileName,

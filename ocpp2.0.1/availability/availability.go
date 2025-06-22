@@ -18,7 +18,7 @@ type ChargingStationHandler interface {
 	OnChangeAvailability(request *ChangeAvailabilityRequest) (response *ChangeAvailabilityResponse, err error)
 }
 
-const ProfileName = "availability"
+const ProfileName = "Availability"
 
 var Profile = ocpp.NewProfile(
 	ProfileName,
