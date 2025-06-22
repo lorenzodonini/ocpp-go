@@ -31,7 +31,7 @@ type ChargingStationHandler interface {
 	OnSetChargingProfile(request *SetChargingProfileRequest) (response *SetChargingProfileResponse, err error)
 }
 
-const ProfileName = "smartCharging"
+const ProfileName = "SmartCharging"
 
 var Profile = ocpp.NewProfile(
 	ProfileName,

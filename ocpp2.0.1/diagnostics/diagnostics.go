@@ -33,7 +33,7 @@ type ChargingStationHandler interface {
 	OnSetVariableMonitoring(request *SetVariableMonitoringRequest) (response *SetVariableMonitoringResponse, err error)
 }
 
-const ProfileName = "diagnostics"
+const ProfileName = "Diagnostics"
 
 var Profile = ocpp.NewProfile(
 	ProfileName,

@@ -25,7 +25,7 @@ type ChargingStationHandler interface {
 	OnInstallCertificate(request *InstallCertificateRequest) (response *InstallCertificateResponse, err error)
 }
 
-const ProfileName = "iso15118"
+const ProfileName = "ISO15118"
 
 var Profile = ocpp.NewProfile(
 	ProfileName,

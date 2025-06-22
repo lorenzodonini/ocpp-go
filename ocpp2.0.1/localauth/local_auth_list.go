@@ -16,7 +16,7 @@ type ChargingStationHandler interface {
 	OnSendLocalList(request *SendLocalListRequest) (response *SendLocalListResponse, err error)
 }
 
-const ProfileName = "localAuthList"
+const ProfileName = "LocalAuthList"
 
 var Profile = ocpp.NewProfile(
 	ProfileName,
