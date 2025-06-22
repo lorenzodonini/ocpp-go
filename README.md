@@ -58,6 +58,7 @@ Planned milestones and features:
 -   [x] OCPP 2.0.1 (examples working, but will need more real-world testing) (documentation
     available [here](docs/ocpp-2.0.1.md))
 -   [x] Dedicated package for configuration management
+-   [x] OCPP 2.1 (beta) (documentation available [here](docs/ocpp-2.1.md))
 
 ### Features
 
