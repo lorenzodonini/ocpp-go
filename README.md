@@ -47,6 +47,7 @@ Planned milestones and features:
 -   [x] OCPP 1.6 Security extension (documentation available [here](docs/ocpp1.6-security-extension.md))
 -   [x] OCPP 2.0.1 (examples working, but will need more real-world testing) (documentation
     available [here](docs/ocpp-2.0.1.md))
+-  [x] OCPP 2.1 (beta) (documentation available [here](docs/ocpp-2.1.md))
 
 ### Features
 
@@ -95,6 +96,7 @@ The websocket package supports configuring ping pong for both endpoints.
 
 By default, the client sends a ping every 54 seconds and waits for a pong for 60 seconds, before timing out.
 The values can be configured as follows:
+
 ```go
 cfg := ws.NewClientTimeoutConfig()
 cfg.PingPeriod = 10 * time.Second
@@ -102,8 +104,10 @@ cfg.PongWait = 20 * time.Second
 websocketClient.SetTimeoutConfig(cfg)
 ```
 
-By default, the server does not send out any pings and waits for a ping from the client for 60 seconds, before timing out.
+By default, the server does not send out any pings and waits for a ping from the client for 60 seconds, before timing
+out.
 To configure the server to send out pings, the `PingPeriod` and `PongWait` must be set to a value greater than 0:
+
 ```go
 cfg := ws.NewServerTimeoutConfig()
 cfg.PingPeriod = 10 * time.Second
