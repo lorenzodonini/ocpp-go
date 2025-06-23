@@ -36,9 +36,9 @@ type TransactionEventRequest struct {
 	EvseSleep             *bool                  `json:"evseSleep,omitempty"`
 	TransactionInfo       Transaction            `json:"transactionInfo" validate:"required"` // Contains transaction specific information.
 	IDToken               *types.IdToken         `json:"idToken,omitempty" validate:"omitempty,dive"`
-	Evse                  *types.EVSE            `json:"evse,omitempty" validate:"omitempty"`            // Identifies which evse (and connector) of the Charging Station is used.
-	MeterValue            []types.MeterValue     `json:"meterValue,omitempty" validate:"omitempty,dive"` // Contains the relevant meter values.
-	// todo	CostDetails types.Cos
+	Evse                  *types.EVSE            `json:"evse,omitempty" validate:"omitempty"`             // Identifies which evse (and connector) of the Charging Station is used.
+	MeterValue            []types.MeterValue     `json:"meterValue,omitempty" validate:"omitempty,dive"`  // Contains the relevant meter values.
+	CostDetails           *types.CostDetails     `json:"costDetails,omitempty" validate:"omitempty,dive"` // Contains the cost details for this transaction. This can be used to inform the CSMS about the cost of this transaction.
 }
 
 // This field definition of the TransactionEventResponse payload, sent by the CSMS to the Charging Station in response to a TransactionEventRequest.

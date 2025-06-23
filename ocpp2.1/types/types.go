@@ -193,6 +193,8 @@ func init() {
 	_ = Validate.RegisterValidation("15118EVCertificate21", isValidCertificate15118EVStatus)
 	_ = Validate.RegisterValidation("costKind21", isValidCostKind)
 	_ = Validate.RegisterValidation("operationMode21", isValidOperationMode)
+	_ = Validate.RegisterValidation("tariffCost21", isValidTariffCost)
+	_ = Validate.RegisterValidation("costDimension21", isValidCostDimensionType)
 
 	Validate.RegisterStructValidation(isValidIdToken, IdToken{})
 	Validate.RegisterStructValidation(isValidGroupIdToken, GroupIdToken{})

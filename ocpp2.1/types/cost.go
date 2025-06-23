@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -73,4 +74,88 @@ func NewSalesTariff(id int, salesTariffEntries []SalesTariffEntry) *SalesTariff 
 		ID:               id,
 		SalesTariffEntry: salesTariffEntries,
 	}
+}
+
+type TariffCost string
+
+const (
+	TariffCostNormal  = "NormalCost"
+	TariffCostMinimum = "MinCost"
+	TariffCostMaximum = "MaxCost"
+)
+
+func isValidTariffCost(fl validator.FieldLevel) bool {
+	costType := TariffCost(fl.Field().String())
+	switch costType {
+	case TariffCostNormal, TariffCostMinimum, TariffCostMaximum:
+		return true
+	default:
+		return false
+	}
+}
+
+type CostDimensionType string
+
+const (
+	CostDimensionTypeEnergy       CostDimensionType = "Energy"       // Cost dimension for energy consumed.
+	CostDimensionTypeChargingTime CostDimensionType = "ChargingTime" // Cost dimension for the time the EV was charging.
+	CostDimensionTypeIdleTime     CostDimensionType = "IdleTime"     // Cost dimension for the time the EV was idle.
+	CostDimensionMinCurrent       CostDimensionType = "MinCurrent"   // Cost dimension for the minimum current used during the charging session.
+	CostDimensionMaxCurrent       CostDimensionType = "MaxCurrent"   // Cost dimension for the maximum current used during the charging session.
+	CostDimensionMinPower         CostDimensionType = "MinPower"     // Cost dimension for the minimum power used during the charging session.
+	CostDimensionMaxPower         CostDimensionType = "MaxPower"     // Cost dimension for the maximum power used during the charging session.
+)
+
+func isValidCostDimensionType(fl validator.FieldLevel) bool {
+	dimensionType := CostDimensionType(fl.Field().String())
+	switch dimensionType {
+	case CostDimensionTypeEnergy, CostDimensionTypeChargingTime, CostDimensionTypeIdleTime,
+		CostDimensionMinCurrent, CostDimensionMaxCurrent, CostDimensionMinPower, CostDimensionMaxPower:
+		return true
+	default:
+		return false
+	}
+}
+
+type CostDetails struct {
+	FailureToCalculate *bool            `json:"failureToCalculate,omitempty"`
+	FailureReason      *string          `json:"failureReason,omitempty" validate:"omitempty,max=500"`
+	ChargingPeriods    []ChargingPeriod `json:"chargingPeriods,omitempty" validate:"omitempty,dive"`
+	TotalCost          TotalCost        `json:"totalCost" validate:"required,dive"`
+	TotalUsage         TotalUsage       `json:"totalUsage" validate:"required,dive"` // Total usage of the EV during the charging session.
+}
+
+type TotalCost struct {
+	Currency         string     `json:"currency" validate:"required,max=3"`          // The currency of the total cost.
+	TypeOfCost       TariffCost `json:"typeOfCost" validate:"required,tariffCost21"` // The type of cost, e.g. NormalCost, MinCost, MaxCost.
+	Fixed            *Price     `json:"fixedPrice,omitempty" validate:"omitempty,dive"`
+	Energy           *Price     `json:"energy,omitempty" validate:"omitempty,dive"`
+	ChargingTime     *Price     `json:"chargingTime,omitempty" validate:"omitempty,dive"`
+	IdleTime         *Price     `json:"idleTime,omitempty" validate:"omitempty,dive"`
+	ReservationTime  *Price     `json:"reservationTime,omitempty" validate:"omitempty,dive"`
+	Total            TotalPrice `json:"total" validate:"required,dive"` // Total cost of the charging session.
+	ReservationFixed *Price     `json:"reservationFixed,omitempty" validate:"omitempty,dive"`
+}
+
+type TotalPrice struct {
+	ExclTax *float64 `json:"exclTax,omitempty" validate:"omitempty"` // Total price excluding tax.
+	InclTax *float64 `json:"inclTax,omitempty" validate:"omitempty"` // Total price including tax.
+}
+
+type TotalUsage struct {
+	Energy          float64 `json:"energy" validate:"required"`
+	ChargingTime    int     `json:"chargingTime" validate:"required"`
+	IdleTime        int     `json:"idleTime" validate:"required"`                   // Total idle time of the EV during the charging session, in seconds.
+	ReservationTime *int    `json:"reservationTime,omitempty" validate:"omitempty"` // Total reservation time of the EV during the charging session, in seconds.
+}
+
+type ChargingPeriod struct {
+	TariffId    *string         `json:"tariffId,omitempty" validate:"omitempty,max=60"` // The ID of the tariff used for this charging period.
+	StartPeriod types.DateTime  `json:"startPeriod" validate:"required"`                // The start of the charging period.
+	Dimensions  []CostDimension `json:"dimensions,omitempty" validate:"omitempty,dive"`
+}
+
+type CostDimension struct {
+	Type   CostDimensionType `json:"type" validate:"required,costDimension21"`
+	Volume float64           `json:"volume" validate:"required"`
 }
