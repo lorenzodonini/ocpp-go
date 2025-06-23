@@ -13,6 +13,12 @@ type CSMSHandler interface {
 	OnNotifyEvent(chargingStationID string, request *NotifyEventRequest) (response *NotifyEventResponse, err error)
 	// OnNotifyMonitoringReport is called on the CSMS whenever a NotifyMonitoringReportRequest is received from a Charging Station.
 	OnNotifyMonitoringReport(chargingStationID string, request *NotifyMonitoringReportRequest) (response *NotifyMonitoringReportResponse, err error)
+	// OnOpenPeriodicEventStream is called on the CSMS whenever a OpenPeriodicEventStreamRequest is received from a Charging Station.
+	OnOpenPeriodicEventStream(chargingStationID string, request *OpenPeriodicEventStreamRequest) (response *OpenPeriodicEventStreamResponse, err error)
+	// OnClosePeriodicEventStream is called on the CSMS whenever a ClosePeriodicEventStreamRequest is received from a Charging Station.
+	OnClosePeriodicEventStream(chargingStationID string, request *ClosePeriodicEventStreamRequest) (response *ClosePeriodicEventStreamResponse, err error)
+	// OnNotifyPeriodicEventStream is called on the CSMS whenever a NotifyPeriodicEventStream is received from a Charging Station. It requires no response.
+	OnNotifyPeriodicEventStream(chargingStationID string, request *NotifyPeriodicEventStream)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.1 Diagnostics profile.
@@ -31,6 +37,10 @@ type ChargingStationHandler interface {
 	OnSetMonitoringLevel(request *SetMonitoringLevelRequest) (response *SetMonitoringLevelResponse, err error)
 	// OnSetVariableMonitoring is called on a charging station whenever a SetVariableMonitoringRequest is received from the CSMS.
 	OnSetVariableMonitoring(request *SetVariableMonitoringRequest) (response *SetVariableMonitoringResponse, err error)
+	// OnGetPeriodicEventStream is called on a charging station whenever a GetPeriodicEventStreamRequest is received from the CSMS.
+	OnGetPeriodicEventStream(request *GetPeriodicEventStreamRequest) (response *GetPeriodicEventStreamResponse, err error)
+	// OnAdjustPeriodicEventStream is called on a charging station whenever an AdjustPeriodicEventStreamRequest is received from the CSMS.
+	OnAdjustPeriodicEventStream(request *AdjustPeriodicEventStreamRequest) (response *AdjustPeriodicEventStreamResponse, err error)
 }
 
 const ProfileName = "Diagnostics"
@@ -48,4 +58,9 @@ var Profile = ocpp.NewProfile(
 	SetMonitoringBaseFeature{},
 	SetMonitoringLevelFeature{},
 	SetVariableMonitoringFeature{},
+	OpenPeriodicEventStreamFeature{},
+	ClosePeriodicEventStreamFeature{},
+	GetPeriodicEventStreamFeature{},
+	AdjustPeriodicEventStreamFeature{},
+	NotifyPeriodicEventStreamFeature{},
 )

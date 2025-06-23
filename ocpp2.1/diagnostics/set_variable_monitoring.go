@@ -35,19 +35,19 @@ func isValidSetMonitoringStatus(fl validator.FieldLevel) bool {
 
 // Hold parameters of a SetVariableMonitoring request.
 type SetMonitoringData struct {
-	ID                  *int                      `json:"id,omitempty" validate:"omitempty"`    // An id SHALL only be given to replace an existing monitor. The Charging Station handles the generation of id’s for new monitors.
-	Transaction         bool                      `json:"transaction,omitempty"`                // Monitor only active when a transaction is ongoing on a component relevant to this transaction.
-	Value               float64                   `json:"value"`                                // Value for threshold or delta monitoring. For Periodic or PeriodicClockAligned this is the interval in seconds.
-	Type                MonitorType               `json:"type" validate:"required,monitorType"` // The type of this monitor, e.g. a threshold, delta or periodic monitor.
-	Severity            int                       `json:"severity" validate:"min=0,max=9"`      // The severity that will be assigned to an event that is triggered by this monitor. The severity range is 0-9, with 0 as the highest and 9 as the lowest severity level.
-	Component           types.Component           `json:"component" validate:"required"`        // Component for which monitor is set.
-	Variable            types.Variable            `json:"variable" validate:"required"`         // Variable for which monitor is set.
-	PeriodicEventStream PeriodicEventStreamParams `json:"periodicEventStream,omitempty" validate:"omitempty,dive"`
+	ID                  *int                       `json:"id,omitempty" validate:"omitempty"`    // An id SHALL only be given to replace an existing monitor. The Charging Station handles the generation of id’s for new monitors.
+	Transaction         bool                       `json:"transaction,omitempty"`                // Monitor only active when a transaction is ongoing on a component relevant to this transaction.
+	Value               float64                    `json:"value"`                                // Value for threshold or delta monitoring. For Periodic or PeriodicClockAligned this is the interval in seconds.
+	Type                MonitorType                `json:"type" validate:"required,monitorType"` // The type of this monitor, e.g. a threshold, delta or periodic monitor.
+	Severity            int                        `json:"severity" validate:"min=0,max=9"`      // The severity that will be assigned to an event that is triggered by this monitor. The severity range is 0-9, with 0 as the highest and 9 as the lowest severity level.
+	Component           types.Component            `json:"component" validate:"required"`        // Component for which monitor is set.
+	Variable            types.Variable             `json:"variable" validate:"required"`         // Variable for which monitor is set.
+	PeriodicEventStream *PeriodicEventStreamParams `json:"periodicEventStream,omitempty" validate:"omitempty,dive"`
 }
 
 type PeriodicEventStreamParams struct {
-	Interval     *int `json:"interval,omitempty" validate:"omitempty,gte=0"` // Interval in seconds for periodic monitoring.
-	ClockAligned *int `json:"clockAligned,omitempty" validate:"omitempty,gte=0"`
+	Interval *int `json:"interval,omitempty" validate:"omitempty,gte=0"` // Interval in seconds for periodic monitoring.
+	Values   *int `json:"Values,omitempty" validate:"omitempty,gte=0"`
 }
 
 // Holds the result of SetVariableMonitoring request.
