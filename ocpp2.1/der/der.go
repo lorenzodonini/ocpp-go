@@ -18,7 +18,7 @@ type ChargingStationHandler interface {
 	OnClearDERControl(chargingStationId string, req *ClearDERControlRequest) (res *ClearDERControlResponse, err error)
 }
 
-const ProfileName = "DER"
+const ProfileName = "DERControl"
 
 var Profile = ocpp.NewProfile(
 	ProfileName,
