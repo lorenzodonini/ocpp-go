@@ -52,6 +52,11 @@ Planned milestones and features:
 
 The library offers several advanced features, especially at websocket and ocpp-j level.
 
+- [x] Automatic message validation
+- [x] Verbose logging
+- [x] Websocket ping-pong
+- [x] Extensive OCPP 1.6 configuration management
+
 #### Automatic message validation
 
 All incoming and outgoing messages are validated by default, using the [validator](gopkg.in/go-playground/validator)
