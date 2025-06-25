@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -49,15 +50,17 @@ type csms struct {
 	errC                 chan error
 }
 
-func newCSMS(server *ocppj.Server) csms {
+func newCSMS(server *ocppj.Server) (csms, error) {
 	if server == nil {
-		panic("server must not be nil")
+		return csms{}, errors.New("server must not be nil")
 	}
+
 	server.SetDialect(ocpp.V2)
+
 	return csms{
 		server:        server,
 		callbackQueue: callbackqueue.New(),
-	}
+	}, nil
 }
 
 func (cs *csms) error(err error) {

@@ -159,10 +159,11 @@ type ChargePoint interface {
 //
 // For more advanced options, or if a customer networking/occpj layer is required,
 // please refer to ocppj.Client and ws.Client.
-func NewChargePoint(id string, endpoint *ocppj.Client, client ws.Client) ChargePoint {
+func NewChargePoint(id string, endpoint *ocppj.Client, client ws.Client) (ChargePoint, error) {
 	if client == nil {
 		client = ws.NewClient()
 	}
+
 	client.SetRequestedSubProtocol(types.V16Subprotocol)
 
 	if endpoint == nil {
@@ -204,7 +205,8 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.Client) ChargeP
 		cp.errorHandler <- err
 	})
 	cp.client.SetRequestHandler(cp.handleIncomingRequest)
-	return &cp
+
+	return &cp, nil
 }
 
 // -------------------- v1.6 Central System --------------------
@@ -339,11 +341,12 @@ type CentralSystem interface {
 // If you need a TLS server, you may use the following:
 //
 //	cs := NewServer(nil, ws.NewServer(ws.WithServerTLSConfig("certificatePath", "privateKeyPath", nil)))
-func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) CentralSystem {
+func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) (CentralSystem, error) {
 	if server == nil {
 		server = ws.NewServer()
 	}
 	server.AddSupportedSubprotocol(types.V16Subprotocol)
+
 	if endpoint == nil {
 		endpoint = ocppj.NewServer(server, nil, nil,
 			core.Profile,
@@ -359,7 +362,12 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) CentralSystem {
 			securefirmware.Profile,
 		)
 	}
-	cs := newCentralSystem(endpoint)
+
+	cs, err := newCentralSystem(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
 	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {
 		cs.handleIncomingRequest(client, request, requestId, action)
 	})
@@ -372,5 +380,5 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) CentralSystem {
 	cs.server.SetCanceledRequestHandler(func(clientID string, requestID string, request ocpp.Request, err *ocpp.Error) {
 		cs.handleCanceledRequest(clientID, request, err)
 	})
-	return &cs
+	return &cs, nil
 }

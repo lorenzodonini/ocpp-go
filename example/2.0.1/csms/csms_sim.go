@@ -37,7 +37,8 @@ var log *logrus.Logger
 var csms ocpp2.CSMS
 
 func setupCentralSystem() ocpp2.CSMS {
-	return ocpp2.NewCSMS(nil, nil)
+	csms, _ := ocpp2.NewCSMS(nil, nil)
+	return csms
 }
 
 func setupTlsCentralSystem() ocpp2.CSMS {
@@ -74,7 +75,9 @@ func setupTlsCentralSystem() ocpp2.CSMS {
 		ClientAuth: tls.RequireAndVerifyClientCert,
 		ClientCAs:  certPool,
 	}))
-	return ocpp2.NewCSMS(nil, server)
+
+	csms, _ := ocpp2.NewCSMS(nil, server)
+	return csms
 }
 
 // Run for every connected Charging Station, to simulate some functionality
