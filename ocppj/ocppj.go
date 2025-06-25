@@ -149,7 +149,41 @@ func (callError *CallError) MarshalJSON() ([]byte, error) {
 	return ocppMessageToJson(fields)
 }
 
-// -------------------- Call --------------------
+// -------------------- Call Result Error --------------------
+
+// An OCPP-J CallResultError message, containing an OCPP Result Error.
+type CallResultError struct {
+	Message
+	MessageTypeId    MessageType    `json:"messageTypeId" validate:"required,eq=4"`
+	UniqueId         string         `json:"uniqueId" validate:"required,max=36"`
+	ErrorCode        ocpp.ErrorCode `json:"errorCode" validate:"errorCode"`
+	ErrorDescription string         `json:"errorDescription" validate:"omitempty,max=255"`
+	ErrorDetails     interface{}    `json:"errorDetails" validate:"omitempty"`
+}
+
+func (callError *CallResultError) GetMessageTypeId() MessageType {
+	return callError.MessageTypeId
+}
+
+func (callError *CallResultError) GetUniqueId() string {
+	return callError.UniqueId
+}
+
+func (callError *CallResultError) MarshalJSON() ([]byte, error) {
+	fields := make([]interface{}, 5)
+	fields[0] = int(callError.MessageTypeId)
+	fields[1] = callError.UniqueId
+	fields[2] = callError.ErrorCode
+	fields[3] = callError.ErrorDescription
+	if callError.ErrorDetails == nil {
+		fields[4] = struct{}{}
+	} else {
+		fields[4] = callError.ErrorDetails
+	}
+	return ocppMessageToJson(fields)
+}
+
+// -------------------- Send --------------------
 
 // An OCPP-J SEND message, containing an OCPP Request.
 type Send struct {
@@ -226,7 +260,7 @@ func IsErrorCodeValid(fl validator.FieldLevel) bool {
 	case NotImplemented, NotSupported, InternalError, MessageTypeNotSupported,
 		ProtocolError, SecurityError, FormatViolationV16, FormatViolationV2,
 		PropertyConstraintViolation, OccurrenceConstraintViolationV16, OccurrenceConstraintViolationV2,
-		TypeConstraintViolation, GenericError:
+		TypeConstraintViolation, GenericError, RpcFrameworkError:
 		return true
 	}
 	return false
@@ -491,6 +525,47 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 		}
 	}
 	return &call, nil
+}
+
+func (endpoint *Endpoint) CreateSend(request ocpp.Request) (*Send, error) {
+	action := request.GetFeatureName()
+	profile, _ := endpoint.GetProfileForFeature(action)
+	if profile == nil {
+		return nil, fmt.Errorf("Couldn't create Send for unsupported action %v", action)
+	}
+	// TODO: handle collisions?
+	uniqueId := messageIdGenerator()
+	call := Send{
+		MessageTypeId: SEND,
+		UniqueId:      uniqueId,
+		Action:        action,
+		Payload:       request,
+	}
+	if validationEnabled {
+		err := Validate.Struct(call)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &call, nil
+}
+
+// Creates a CallResultError message, given the message's unique ID and the error.
+func (endpoint *Endpoint) CreateCallResultError(uniqueId string, code ocpp.ErrorCode, description string, details interface{}) (*CallResultError, error) {
+	callError := CallResultError{
+		MessageTypeId:    CALL_RESULT_ERROR,
+		UniqueId:         uniqueId,
+		ErrorCode:        code,
+		ErrorDescription: description,
+		ErrorDetails:     details,
+	}
+	if validationEnabled {
+		err := Validate.Struct(callError)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &callError, nil
 }
 
 // Creates a CallResult message, given an OCPP response and the message's unique ID.
