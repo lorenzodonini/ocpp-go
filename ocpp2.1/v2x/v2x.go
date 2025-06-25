@@ -10,8 +10,8 @@ type CSMSHandler interface {
 
 // Needs to be implemented by Charging stations for handling messages part of the V2X.
 type ChargingStationHandler interface {
-	OnAFRRSignal(chargingStationId string, request *AFRRSignalRequest) (*AFRRSignalResponse, error)
-	OnNotifyAllowedEnergyTransfer(chargingStationId string, request *NotifyAllowedEnergyTransferRequest) (*NotifyAllowedEnergyTransferResponse, error)
+	OnAFRRSignal(request *AFRRSignalRequest) (*AFRRSignalResponse, error)
+	OnNotifyAllowedEnergyTransfer(request *NotifyAllowedEnergyTransferRequest) (*NotifyAllowedEnergyTransferResponse, error)
 }
 
 const ProfileName = "V2X"

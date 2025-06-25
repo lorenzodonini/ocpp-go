@@ -3,13 +3,13 @@ package ocpp21
 
 import (
 	"crypto/tls"
-	"net"
-
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/authorization"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/availability"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/battery_swap"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/data"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/der"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/diagnostics"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/display"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/firmware"
@@ -24,8 +24,10 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/tariffcost"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/v2x"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
+	"net"
 )
 
 type ChargingStationConnection interface {
@@ -113,6 +115,15 @@ type ChargingStation interface {
 	StatusNotification(timestamp *types.DateTime, status availability.ConnectorStatus, evseID int, connectorID int, props ...func(request *availability.StatusNotificationRequest)) (*availability.StatusNotificationResponse, error)
 	// Sends information to the CSMS about a transaction, used for billing purposes.
 	TransactionEvent(t transactions.TransactionEvent, timestamp *types.DateTime, reason transactions.TriggerReason, seqNo int, info transactions.Transaction, props ...func(request *transactions.TransactionEventRequest)) (*transactions.TransactionEventResponse, error)
+
+	BatterySwap(request battery_swap.BatterySwapRequest, props ...func(request *battery_swap.BatterySwapRequest)) (*battery_swap.BatterySwapResponse, error)
+	NotifyDERAlarm(request der.NotifyDERAlarmRequest, props ...func(request *der.NotifyDERAlarmRequest)) (*der.NotifyDERAlarmResponse, error)
+	NotifyDERStartStop(request der.NotifyDERStartStopRequest, props ...func(request *der.NotifyDERStartStopRequest)) (*der.NotifyDERStartStopResponse, error)
+	ReportDERControl(request der.ReportDERControlRequest, props ...func(request *der.ReportDERControlRequest)) (*der.ReportDERControlResponse, error)
+	ClosePeriodicEventStream(id int, props ...func(request *diagnostics.ClosePeriodicEventStreamRequest)) (*diagnostics.ClosePeriodicEventStreamResponse, error)
+	OpenPeriodicEventStream(periodicEventStream diagnostics.PeriodicEventStreamParams, props ...func(request *diagnostics.OpenPeriodicEventStreamRequest)) (*diagnostics.OpenPeriodicEventStreamResponse, error)
+	NotifyPeriodicEventStream(periodicEventStream diagnostics.NotifyPeriodicEventStream, props ...func(request *diagnostics.NotifyPeriodicEventStream))
+
 	// Registers a handler for incoming security profile messages
 	SetSecurityHandler(handler security.ChargingStationHandler)
 	// Registers a handler for incoming provisioning profile messages
@@ -145,6 +156,13 @@ type ChargingStation interface {
 	SetDisplayHandler(handler display.ChargingStationHandler)
 	// Registers a handler for incoming data transfer messages
 	SetDataHandler(handler data.ChargingStationHandler)
+	// Registers a handler for incoming DER control messages
+	SetDerHandler(handler der.ChargingStationHandler)
+	// Registers a handler for incoming battery swap messages
+	SetBatterySwapHandler(handler battery_swap.ChargingStationHandler)
+	// Registers a handler for incoming V2X messages
+	SetV2XHandler(handler v2x.ChargingStationHandler)
+
 	// Sends a request to the CSMS.
 	// The CSMS will respond with a confirmation, or with an error if the request was invalid or could not be processed.
 	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
@@ -183,7 +201,7 @@ type ChargingStation interface {
 	Errors() <-chan error
 }
 
-// Creates a new OCPP 2.0 charging station client.
+// Creates a new OCPP 2.1 charging station client.
 // The id parameter is required to uniquely identify the charge point.
 //
 // The endpoint and client parameters may be omitted, in order to use a default configuration:
@@ -216,7 +234,31 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) Cha
 
 	if endpoint == nil {
 		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
-		endpoint = ocppj.NewClient(id, client, dispatcher, nil, authorization.Profile, availability.Profile, data.Profile, diagnostics.Profile, display.Profile, firmware.Profile, iso15118.Profile, localauth.Profile, meter.Profile, provisioning.Profile, remotecontrol.Profile, reservation.Profile, security.Profile, smartcharging.Profile, tariffcost.Profile, transactions.Profile)
+		endpoint = ocppj.NewClient(
+			id,
+			client,
+			dispatcher,
+			nil,
+			authorization.Profile,
+			availability.Profile,
+			data.Profile,
+			diagnostics.Profile,
+			display.Profile,
+			firmware.Profile,
+			iso15118.Profile,
+			localauth.Profile,
+			meter.Profile,
+			provisioning.Profile,
+			remotecontrol.Profile,
+			reservation.Profile,
+			security.Profile,
+			smartcharging.Profile,
+			tariffcost.Profile,
+			transactions.Profile,
+			v2x.Profile,
+			battery_swap.Profile,
+			der.Profile,
+		)
 	}
 	endpoint.SetDialect(ocpp.V2)
 
@@ -240,7 +282,7 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) Cha
 	return &cs
 }
 
-// -------------------- v2.0 CSMS --------------------
+// -------------------- v2.1 CSMS --------------------
 
 // A Charging Station Management System (CSMS) manages Charging Stations and has the information for authorizing Management Users for using its Charging Stations.
 // You can instantiate a default CSMS struct by calling the NewCSMS function.
@@ -349,6 +391,23 @@ type CSMS interface {
 	// Instructs a Charging Station to download and install a firmware update.
 	UpdateFirmware(clientId string, callback func(*firmware.UpdateFirmwareResponse, error), requestID int, firmware firmware.Firmware, props ...func(request *firmware.UpdateFirmwareRequest)) error
 
+	ChangeTransactionTariff(clientId string, callback func(*tariffcost.ChangeTransactionTariffResponse, error), transactionId string, tariff types.Tariff, props ...func(request *tariffcost.ChangeTransactionTariffRequest)) error
+
+	GetTariffs(clientId string, callback func(*tariffcost.GetTariffsResponse, error), evseId int, props ...func(request *tariffcost.GetTariffsRequest)) error
+	SetDefaultTariff(clientId string, callback func(*tariffcost.SetDefaultTariffResponse, error), evseId int, tariff types.Tariff, props ...func(request *tariffcost.SetDefaultTariffRequest)) error
+	ClearTariffs(clientId string, callback func(*tariffcost.ClearTariffsResponse, error), props ...func(request *tariffcost.ClearTariffsRequest)) error
+
+	AdjustPeriodicEventStream(clientId string, callback func(*diagnostics.AdjustPeriodicEventStreamResponse, error), id int, periodicEventStream diagnostics.PeriodicEventStreamParams, props ...func(request *diagnostics.AdjustPeriodicEventStreamRequest)) error
+	GetPeriodicEventStream(clientId string, callback func(*diagnostics.GetPeriodicEventStreamResponse, error), props ...func(request *diagnostics.GetPeriodicEventStreamRequest)) error
+
+	RequestBatterySwap(clientId string, callback func(*battery_swap.RequestBatterySwapResponse, error), request battery_swap.RequestBatterySwapRequest, props ...func(request *battery_swap.RequestBatterySwapRequest)) error
+	ClearDERControl(clientId string, callback func(*der.ClearDERControlResponse, error), isDefault bool, props ...func(request *der.ClearDERControlRequest)) error
+	GetDERControl(clientId string, callback func(*der.GetDERControlResponse, error), requestId int, props ...func(request *der.GetDERControlRequest)) error
+	SetDERControl(clientId string, callback func(*der.SetDERControlResponse, error), isDefault bool, controlId string, derControl der.DERControl, props ...func(request *der.SetDERControlRequest)) error
+
+	AFRRSignal(clientId string, callback func(*v2x.AFRRSignalResponse, error), timestamp types.DateTime, signal int, props ...func(request *v2x.AFRRSignalRequest)) error
+	NotifyAllowedEnergyTransfer(clientId string, callback func(*v2x.NotifyAllowedEnergyTransferResponse, error), transactionId string, allowedModes []types.EnergyTransferMode, props ...func(request *v2x.NotifyAllowedEnergyTransferRequest)) error
+
 	// Registers a handler for incoming security profile messages.
 	SetSecurityHandler(handler security.CSMSHandler)
 	// Registers a handler for incoming provisioning profile messages.
@@ -381,6 +440,11 @@ type CSMS interface {
 	SetDisplayHandler(handler display.CSMSHandler)
 	// Registers a handler for incoming data transfer messages
 	SetDataHandler(handler data.CSMSHandler)
+	// Registers a handler for incoming DER control messages
+	SetDERControlHandler(handler der.CSMSHandler)
+	// Registers a handler for incoming battery swap messages
+	SetBatterySwapHandler(handler battery_swap.CSMSHandler)
+
 	// Registers a handler for new incoming Charging station connections.
 	SetNewChargingStationValidationHandler(handler ws.CheckClientHandler)
 	// Registers a handler for new incoming Charging station connections.
@@ -403,14 +467,14 @@ type CSMS interface {
 	Errors() <-chan error
 }
 
-// Creates a new OCPP 2.0 CSMS.
+// Creates a new OCPP 2.1 CSMS.
 //
 // The endpoint and client parameters may be omitted, in order to use a default configuration:
 //
 //	csms := NewCSMS(nil, nil)
 //
 // It is recommended to use the default configuration, unless a custom networking / ocppj layer is required.
-// The default dispatcher supports all implemented OCPP 2.0 features out-of-the-box.
+// The default dispatcher supports all implemented OCPP 2.1 features out-of-the-box.
 //
 // If you need a TLS server, you may use the following:
 //
@@ -438,6 +502,9 @@ func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
 			smartcharging.Profile,
 			tariffcost.Profile,
 			transactions.Profile,
+			v2x.Profile,
+			battery_swap.Profile,
+			der.Profile,
 		)
 	}
 	cs := newCSMS(endpoint)

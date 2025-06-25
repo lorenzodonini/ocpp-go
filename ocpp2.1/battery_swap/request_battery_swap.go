@@ -1,4 +1,4 @@
-package battey_swap
+package battery_swap
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"

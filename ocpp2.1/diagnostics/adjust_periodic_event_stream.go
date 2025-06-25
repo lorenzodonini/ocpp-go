@@ -7,7 +7,7 @@ import (
 
 // --------------------  Adjust Periodic EventStream (CSMS -> CS) --------------------
 
-const AdjustPeriodicEventStream = "ClosePeriodicEventStream"
+const AdjustPeriodicEventStream = "AdjustPeriodicEventStream"
 
 // The field definition of the AdjustPeriodicEventStreamRequest request payload sent by the CSMS to the Charging Station.
 type AdjustPeriodicEventStreamRequest struct {
