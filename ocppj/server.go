@@ -1,13 +1,15 @@
 package ocppj
 
 import (
-	"errors"
+	"context"
 	"fmt"
-
-	"gopkg.in/go-playground/validator.v9"
+	"time"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
+	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // The endpoint waiting for incoming connections from OCPP clients, in an OCPP-J topology.
@@ -24,6 +26,7 @@ type Server struct {
 	invalidMessageHook        InvalidMessageHook
 	dispatcher                ServerDispatcher
 	RequestState              ServerState
+	metrics                   *ocppMetrics
 }
 
 type ClientHandler func(client ws.Channel)
@@ -59,8 +62,22 @@ func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler Ser
 	dispatcher.SetNetworkServer(wsServer)
 	dispatcher.SetPendingRequestState(stateHandler)
 
+	meterProvider := otel.GetMeterProvider()
+	metrics, err := newOcppMetrics(meterProvider, "")
+	if err != nil {
+		log.Error(errors.Wrapf(err, "failed to create OCPP metrics"))
+		// todo improve error handling
+		return nil
+	}
+
 	// Create server and add profiles
-	s := Server{Endpoint: Endpoint{}, server: wsServer, RequestState: stateHandler, dispatcher: dispatcher}
+	s := Server{
+		Endpoint:     Endpoint{},
+		server:       wsServer,
+		RequestState: stateHandler,
+		dispatcher:   dispatcher,
+		metrics:      metrics,
+	}
 	for _, profile := range profiles {
 		s.AddProfile(profile)
 	}
@@ -160,19 +177,31 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 	if !s.dispatcher.IsRunning() {
 		return fmt.Errorf("ocppj server is not started, couldn't send request")
 	}
+
+	var metricErr *ocppMetricsError
+	defer func() {
+		// Report a metric after request was sent.
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		s.metrics.IncrementOutboundRequests(ctx, clientID, request.GetFeatureName(), metricErr)
+	}()
+
 	call, err := s.CreateCall(request)
 	if err != nil {
 		return err
 	}
+
 	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
 		return err
 	}
+
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
 	if err = s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage}); err != nil {
 		log.Errorf("error dispatching request [%s, %s] to %s: %v", call.UniqueId, call.Action, clientID, err)
 		return err
 	}
+
 	log.Debugf("enqueued CALL [%s, %s] for %s", call.UniqueId, call.Action, clientID)
 	return nil
 }
@@ -232,16 +261,22 @@ func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.Err
 }
 
 func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
+	metricCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	parsedJson, err := ParseRawJsonMessage(data)
 	if err != nil {
+		s.metrics.IncrementOutboundRequests(metricCtx, wsChannel.ID(), "", &payloadError)
 		log.Error(err)
 		return err
 	}
+
 	log.Debugf("received JSON message from %s: %s", wsChannel.ID(), string(data))
 	// Get pending requests for client
 	pending := s.RequestState.GetClientState(wsChannel.ID())
 	message, err := s.ParseMessage(parsedJson, pending)
 	if err != nil {
+		s.metrics.IncrementOutboundRequests(metricCtx, wsChannel.ID(), "", &validationError)
 		ocppErr := err.(*ocpp.Error)
 		messageID := ocppErr.MessageId
 		// Support ad-hoc callback for invalid message handling
@@ -272,6 +307,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			if s.requestHandler != nil {
 				s.requestHandler(wsChannel, call.Payload, call.UniqueId, call.Action)
 			}
+			s.metrics.IncrementInboundRequests(metricCtx, wsChannel.ID(), call.Payload.GetFeatureName(), nil)
 		case CALL_RESULT:
 			callResult := message.(*CallResult)
 			log.Debugf("handling incoming CALL RESULT [%s] from %s", callResult.UniqueId, wsChannel.ID())
@@ -279,6 +315,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			if s.responseHandler != nil {
 				s.responseHandler(wsChannel, callResult.Payload, callResult.UniqueId)
 			}
+			s.metrics.IncrementOutboundRequests(metricCtx, wsChannel.ID(), callResult.Payload.GetFeatureName(), nil)
 		case CALL_ERROR:
 			callError := message.(*CallError)
 			log.Debugf("handling incoming CALL RESULT [%s] from %s", callError.UniqueId, wsChannel.ID())
@@ -286,6 +323,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			if s.errorHandler != nil {
 				s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
 			}
+			// todo add metric for error
 		}
 	}
 	return nil
