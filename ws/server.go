@@ -436,7 +436,7 @@ out:
 		return
 	}
 	// Create web socket for client, state is automatically set to connected
-	ws := newWebSocket(
+	ws, err := newWebSocket(
 		id,
 		conn,
 		r.TLS,
@@ -451,6 +451,13 @@ out:
 			s.error(err)
 		},
 	)
+	if err != nil {
+		s.connMutex.Unlock()
+		s.error(fmt.Errorf("failed to create websocket for client %s: %w", id, err))
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	// Add new client
 	s.connections[ws.id] = ws
 	s.connMutex.Unlock()

@@ -1,6 +1,7 @@
 package ocpp16
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -37,15 +38,16 @@ type centralSystem struct {
 	errC                  chan error
 }
 
-func newCentralSystem(server *ocppj.Server) centralSystem {
+func newCentralSystem(server *ocppj.Server) (centralSystem, error) {
 	if server == nil {
-		panic("server must not be nil")
+		return centralSystem{}, errors.New("server must not be nil")
 	}
+
 	server.SetDialect(ocpp.V16)
 	return centralSystem{
 		server:        server,
 		callbackQueue: callbackqueue.New(),
-	}
+	}, nil
 }
 
 func (cs *centralSystem) error(err error) {

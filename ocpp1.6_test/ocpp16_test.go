@@ -704,8 +704,8 @@ func (suite *OcppV16TestSuite) SetupTest() {
 		securityProfile,
 		secureFirmwareUpdateProfile,
 	)
-	suite.chargePoint = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
-	suite.centralSystem = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
+	suite.chargePoint, _ = ocpp16.NewChargePoint("test_id", suite.ocppjChargePoint, suite.mockWsClient)
+	suite.centralSystem, _ = ocpp16.NewCentralSystem(suite.ocppjCentralSystem, suite.mockWsServer)
 	suite.messageIdGenerator = TestRandomIdGenerator{generator: func() string {
 		return defaultMessageId
 	}}
