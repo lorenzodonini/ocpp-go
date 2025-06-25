@@ -2,6 +2,9 @@ package ocpp21
 
 import (
 	"fmt"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/battery_swap"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/der"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/v2x"
 	"reflect"
 
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
@@ -44,6 +47,9 @@ type chargingStation struct {
 	diagnosticsHandler   diagnostics.ChargingStationHandler
 	displayHandler       display.ChargingStationHandler
 	dataHandler          data.ChargingStationHandler
+	derHandler           der.ChargingStationHandler
+	batterySwapHandler   battery_swap.ChargingStationHandler
+	v2xHandler           v2x.ChargingStationHandler
 	responseHandler      chan ocpp.Response
 	errorHandler         chan error
 	callbacks            callbackqueue.CallbackQueue
@@ -396,6 +402,41 @@ func (cs *chargingStation) TransactionEvent(t transactions.TransactionEvent, tim
 	}
 }
 
+func (cs *chargingStation) BatterySwap(request battery_swap.BatterySwapRequest, props ...func(request *battery_swap.BatterySwapRequest)) (*battery_swap.BatterySwapResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (cs *chargingStation) NotifyDERAlarm(request der.NotifyDERAlarmRequest, props ...func(request *der.NotifyDERAlarmRequest)) (*der.NotifyDERAlarmResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (cs *chargingStation) NotifyDERStartStop(request der.NotifyDERStartStopRequest, props ...func(request *der.NotifyDERStartStopRequest)) (*der.NotifyDERStartStopResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (cs *chargingStation) ReportDERControl(request der.ReportDERControlRequest, props ...func(request *der.ReportDERControlRequest)) (*der.ReportDERControlResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (cs *chargingStation) ClosePeriodicEventStream(id int, props ...func(request *diagnostics.ClosePeriodicEventStreamRequest)) (*diagnostics.ClosePeriodicEventStreamResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (cs *chargingStation) OpenPeriodicEventStream(periodicEventStream diagnostics.PeriodicEventStreamParams, props ...func(request *diagnostics.OpenPeriodicEventStreamRequest)) (*diagnostics.OpenPeriodicEventStreamResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (cs *chargingStation) NotifyPeriodicEventStream(periodicEventStream diagnostics.NotifyPeriodicEventStream, props ...func(request *diagnostics.NotifyPeriodicEventStream)) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (cs *chargingStation) SetSecurityHandler(handler security.ChargingStationHandler) {
 	cs.securityHandler = handler
 }
@@ -460,6 +501,18 @@ func (cs *chargingStation) SetDataHandler(handler data.ChargingStationHandler) {
 	cs.dataHandler = handler
 }
 
+func (cs *chargingStation) SetDerHandler(handler der.ChargingStationHandler) {
+	cs.derHandler = handler
+}
+
+func (cs *chargingStation) SetBatterySwapHandler(handler battery_swap.ChargingStationHandler) {
+	cs.batterySwapHandler = handler
+}
+
+func (cs *chargingStation) SetV2XHandler(handler v2x.ChargingStationHandler) {
+	cs.v2xHandler = handler
+}
+
 func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, error) {
 	featureName := request.GetFeatureName()
 	if _, found := cs.client.GetProfileForFeature(featureName); !found {
@@ -489,6 +542,27 @@ func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, err
 	return asyncResult.r, asyncResult.e
 }
 
+func (cs *chargingStation) SendEvent(request ocpp.Request) error {
+	featureName := request.GetFeatureName()
+	if _, found := cs.client.GetProfileForFeature(featureName); !found {
+		return fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send event", featureName)
+	}
+
+	if featureName != diagnostics.NotifyPeriodicEventStreamFeat {
+		return fmt.Errorf("feature %v is not valid, cannot send event", featureName)
+	}
+
+	send := func() error {
+		return cs.client.SendEvent(request)
+	}
+	err := cs.callbacks.TryQueue("main", send, func(confirmation ocpp.Response, err error) {})
+	if err != nil {
+		return fmt.Errorf("unable to queue event %v: %w", featureName, err)
+	}
+
+	return nil
+}
+
 func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(response ocpp.Response, err error)) error {
 	featureName := request.GetFeatureName()
 	if _, found := cs.client.GetProfileForFeature(featureName); !found {
@@ -512,6 +586,9 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 		smartcharging.NotifyEVChargingScheduleFeatureName,
 		diagnostics.NotifyEventFeatureName,
 		diagnostics.NotifyMonitoringReportFeatureName,
+		diagnostics.OpenPeriodicEventStream,
+		diagnostics.ClosePeriodicEventStream,
+		diagnostics.NotifyPeriodicEventStreamFeat,
 		provisioning.NotifyReportFeatureName,
 		firmware.PublishFirmwareStatusNotificationFeatureName,
 		smartcharging.ReportChargingProfilesFeatureName,
@@ -519,11 +596,15 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 		security.SecurityEventNotificationFeatureName,
 		security.SignCertificateFeatureName,
 		availability.StatusNotificationFeatureName,
-		transactions.TransactionEventFeatureName:
+		transactions.TransactionEventFeatureName,
+		battery_swap.BatterySwap,
+		der.NotifyDERAlarm,
+		der.NotifyDERStartStop:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on charging station, cannot send request", featureName)
 	}
+
 	// Response will be retrieved asynchronously via asyncHandler
 	send := func() error {
 		return cs.client.SendRequest(request)
@@ -706,6 +787,18 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 			if cs.transactionsHandler == nil {
 				supported = false
 			}
+		case der.ProfileName:
+			if cs.derHandler == nil {
+				supported = false
+			}
+		case battery_swap.ProfileName:
+			if cs.batterySwapHandler == nil {
+				supported = false
+			}
+		case v2x.ProfileName:
+			if cs.v2xHandler == nil {
+				supported = false
+			}
 		}
 		if !supported {
 			cs.notSupportedError(requestId, action)
@@ -796,6 +889,31 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 		response, err = cs.firmwareHandler.OnUnpublishFirmware(request.(*firmware.UnpublishFirmwareRequest))
 	case firmware.UpdateFirmwareFeatureName:
 		response, err = cs.firmwareHandler.OnUpdateFirmware(request.(*firmware.UpdateFirmwareRequest))
+	case diagnostics.AdjustPeriodicEventStream:
+		response, err = cs.diagnosticsHandler.OnAdjustPeriodicEventStream(request.(*diagnostics.AdjustPeriodicEventStreamRequest))
+	case diagnostics.GetPeriodicEventStream:
+		response, err = cs.diagnosticsHandler.OnGetPeriodicEventStream(request.(*diagnostics.GetPeriodicEventStreamRequest))
+	case der.ClearDERControl:
+		response, err = cs.derHandler.OnClearDERControl(request.(*der.ClearDERControlRequest))
+	case der.GetDERControl:
+		response, err = cs.derHandler.OnGetDERControl(request.(*der.GetDERControlRequest))
+	case der.SetDERControl:
+		response, err = cs.derHandler.OnSetDERControl(request.(*der.SetDERControlRequest))
+	case battery_swap.RequestBatterySwap:
+		response, err = cs.batterySwapHandler.OnRequestBatterySwap(request.(*battery_swap.RequestBatterySwapRequest))
+	case tariffcost.ChangeTransactionTariff:
+		response, err = cs.tariffCostHandler.OnChangeTransactionTariff(request.(*tariffcost.ChangeTransactionTariffRequest))
+	case tariffcost.GetTariffsFeatureName:
+		response, err = cs.tariffCostHandler.OnGetTariffs(request.(*tariffcost.GetTariffsRequest))
+	case tariffcost.SetDefaultTariffFeatureName:
+		response, err = cs.tariffCostHandler.OnSetDefaultTariff(request.(*tariffcost.SetDefaultTariffRequest))
+	case tariffcost.ClearTariffs:
+		response, err = cs.tariffCostHandler.OnClearTariffs(request.(*tariffcost.ClearTariffsRequest))
+	case v2x.AFRRSignal:
+		response, err = cs.v2xHandler.OnAFRRSignal(request.(*v2x.AFRRSignalRequest))
+	case v2x.NotifyAllowedEnergyTransfer:
+		response, err = cs.v2xHandler.OnNotifyAllowedEnergyTransfer(request.(*v2x.NotifyAllowedEnergyTransferRequest))
+
 	default:
 		cs.notSupportedError(requestId, action)
 		return

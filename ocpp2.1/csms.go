@@ -2,13 +2,13 @@ package ocpp21
 
 import (
 	"fmt"
-	"reflect"
-
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/authorization"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/availability"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/battery_swap"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/data"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/der"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/diagnostics"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/display"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/firmware"
@@ -23,8 +23,10 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/tariffcost"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/v2x"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
+	"reflect"
 )
 
 type csms struct {
@@ -45,6 +47,9 @@ type csms struct {
 	diagnosticsHandler   diagnostics.CSMSHandler
 	displayHandler       display.CSMSHandler
 	dataHandler          data.CSMSHandler
+	batterySwapHandler   battery_swap.CSMSHandler
+	derControlHandler    der.CSMSHandler
+	v2xHandler           v2x.CSMSHandler
 	callbackQueue        callbackqueue.CallbackQueue
 	errC                 chan error
 }
@@ -673,6 +678,185 @@ func (cs *csms) UpdateFirmware(clientId string, callback func(*firmware.UpdateFi
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
+func (cs *csms) ChangeTransactionTariff(clientId string, callback func(*tariffcost.ChangeTransactionTariffResponse, error), transactionId string, tariff types.Tariff, props ...func(request *tariffcost.ChangeTransactionTariffRequest)) error {
+	request := tariffcost.NewChangeTransactionTariffRequest(transactionId, tariff)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*tariffcost.ChangeTransactionTariffResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) GetTariffs(clientId string, callback func(*tariffcost.GetTariffsResponse, error), evseId int, props ...func(request *tariffcost.GetTariffsRequest)) error {
+	request := tariffcost.NewGetTariffsRequest(evseId)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*tariffcost.GetTariffsResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) SetDefaultTariff(clientId string, callback func(*tariffcost.SetDefaultTariffResponse, error), evseId int, tariff types.Tariff, props ...func(request *tariffcost.SetDefaultTariffRequest)) error {
+	request := tariffcost.NewSetDefaultTariffRequest(evseId, tariff)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*tariffcost.SetDefaultTariffResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) ClearTariffs(clientId string, callback func(*tariffcost.ClearTariffsResponse, error), props ...func(request *tariffcost.ClearTariffsRequest)) error {
+	request := tariffcost.NewClearTariffsRequest()
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*tariffcost.ClearTariffsResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) AdjustPeriodicEventStream(clientId string, callback func(*diagnostics.AdjustPeriodicEventStreamResponse, error), id int, periodicEventStream diagnostics.PeriodicEventStreamParams, props ...func(request *diagnostics.AdjustPeriodicEventStreamRequest)) error {
+	request := diagnostics.NewAdjustPeriodicEventStreamsRequest(id, periodicEventStream)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*diagnostics.AdjustPeriodicEventStreamResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) GetPeriodicEventStream(clientId string, callback func(*diagnostics.GetPeriodicEventStreamResponse, error), props ...func(request *diagnostics.GetPeriodicEventStreamRequest)) error {
+	request := diagnostics.NewGetPeriodicEventStreamsRequest()
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*diagnostics.GetPeriodicEventStreamResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) RequestBatterySwap(clientId string, callback func(*battery_swap.RequestBatterySwapResponse, error), request battery_swap.RequestBatterySwapRequest, props ...func(request *battery_swap.RequestBatterySwapRequest)) error {
+	for _, fn := range props {
+		fn(&request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*battery_swap.RequestBatterySwapResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) ClearDERControl(clientId string, callback func(*der.ClearDERControlResponse, error), isDefault bool, props ...func(request *der.ClearDERControlRequest)) error {
+	request := der.NewClearDERControlRequest(isDefault)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*der.ClearDERControlResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) GetDERControl(clientId string, callback func(*der.GetDERControlResponse, error), requestId int, props ...func(request *der.GetDERControlRequest)) error {
+	request := der.NewGetDERControlResponseRequest(requestId)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*der.GetDERControlResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) SetDERControl(clientId string, callback func(*der.SetDERControlResponse, error), isDefault bool, controlId string, derControl der.DERControl, props ...func(request *der.SetDERControlRequest)) error {
+	request := der.NewSetDERControlResponseRequest(isDefault, controlId, derControl)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*der.SetDERControlResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) AFRRSignal(clientId string, callback func(*v2x.AFRRSignalResponse, error), timestamp types.DateTime, signal int, props ...func(request *v2x.AFRRSignalRequest)) error {
+	request := v2x.NewAFRRSignalRequest(&timestamp, signal)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*v2x.AFRRSignalResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
+func (cs *csms) NotifyAllowedEnergyTransfer(clientId string, callback func(*v2x.NotifyAllowedEnergyTransferResponse, error), transactionId string, allowedModes []types.EnergyTransferMode, props ...func(request *v2x.NotifyAllowedEnergyTransferRequest)) error {
+	request := v2x.NewNotifyAllowedEnergyTransferRequest(transactionId, allowedModes...)
+	for _, fn := range props {
+		fn(request)
+	}
+	genericCallback := func(response ocpp.Response, protoError error) {
+		if response != nil {
+			callback(response.(*v2x.NotifyAllowedEnergyTransferResponse), protoError)
+		} else {
+			callback(nil, protoError)
+		}
+	}
+	return cs.SendRequestAsync(clientId, request, genericCallback)
+}
+
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
 	cs.securityHandler = handler
 }
@@ -735,6 +919,18 @@ func (cs *csms) SetDisplayHandler(handler display.CSMSHandler) {
 
 func (cs *csms) SetDataHandler(handler data.CSMSHandler) {
 	cs.dataHandler = handler
+}
+
+func (cs *csms) SetBatterySwapHandler(handler battery_swap.CSMSHandler) {
+	cs.batterySwapHandler = handler
+}
+
+func (cs *csms) SetDERControlHandler(handler der.CSMSHandler) {
+	cs.derControlHandler = handler
+}
+
+func (cs *csms) SetV2XHandler(handler v2x.CSMSHandler) {
+	cs.v2xHandler = handler
 }
 
 func (cs *csms) SetNewChargingStationValidationHandler(handler ws.CheckClientHandler) {
@@ -802,7 +998,19 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 		remotecontrol.TriggerMessageFeatureName,
 		remotecontrol.UnlockConnectorFeatureName,
 		firmware.UnpublishFirmwareFeatureName,
-		firmware.UpdateFirmwareFeatureName:
+		firmware.UpdateFirmwareFeatureName,
+		der.GetDERControl,
+		der.SetDERControl,
+		der.ClearDERControl,
+		v2x.AFRRSignal,
+		v2x.NotifyAllowedEnergyTransfer,
+		battery_swap.RequestBatterySwap,
+		diagnostics.AdjustPeriodicEventStream,
+		diagnostics.GetPeriodicEventStream,
+		tariffcost.ClearTariffs,
+		tariffcost.GetTariffsFeatureName,
+		tariffcost.SetDefaultTariffFeatureName,
+		tariffcost.ChangeTransactionTariff:
 		break
 	default:
 		return fmt.Errorf("unsupported action %v on CSMS, cannot send request", featureName)
@@ -877,86 +1085,101 @@ func (cs *csms) notSupportedError(chargingStationID string, requestId string, ac
 }
 
 func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection, request ocpp.Request, requestId string, action string) {
-	profile, found := cs.server.GetProfileForFeature(action)
 	// Check whether action is supported and a listener for it exists
+	profile, found := cs.server.GetProfileForFeature(action)
 	if !found {
 		cs.notImplementedError(chargingStation.ID(), requestId, action)
 		return
-	} else {
-		supported := true
-		switch profile.Name {
-		case authorization.ProfileName:
-			if cs.authorizationHandler == nil {
-				supported = false
-			}
-		case availability.ProfileName:
-			if cs.availabilityHandler == nil {
-				supported = false
-			}
-		case data.ProfileName:
-			if cs.dataHandler == nil {
-				supported = false
-			}
-		case diagnostics.ProfileName:
-			if cs.diagnosticsHandler == nil {
-				supported = false
-			}
-		case display.ProfileName:
-			if cs.displayHandler == nil {
-				supported = false
-			}
-		case firmware.ProfileName:
-			if cs.firmwareHandler == nil {
-				supported = false
-			}
-		case iso15118.ProfileName:
-			if cs.iso15118Handler == nil {
-				supported = false
-			}
-		case localauth.ProfileName:
-			if cs.localAuthListHandler == nil {
-				supported = false
-			}
-		case meter.ProfileName:
-			if cs.meterHandler == nil {
-				supported = false
-			}
-		case provisioning.ProfileName:
-			if cs.provisioningHandler == nil {
-				supported = false
-			}
-		case remotecontrol.ProfileName:
-			if cs.remoteControlHandler == nil {
-				supported = false
-			}
-		case reservation.ProfileName:
-			if cs.reservationHandler == nil {
-				supported = false
-			}
-		case security.ProfileName:
-			if cs.securityHandler == nil {
-				supported = false
-			}
-		case smartcharging.ProfileName:
-			if cs.smartChargingHandler == nil {
-				supported = false
-			}
-		case tariffcost.ProfileName:
-			if cs.tariffCostHandler == nil {
-				supported = false
-			}
-		case transactions.ProfileName:
-			if cs.transactionsHandler == nil {
-				supported = false
-			}
+	}
+
+	supported := true
+	switch profile.Name {
+	case authorization.ProfileName:
+		if cs.authorizationHandler == nil {
+			supported = false
 		}
-		if !supported {
-			cs.notSupportedError(chargingStation.ID(), requestId, action)
-			return
+	case availability.ProfileName:
+		if cs.availabilityHandler == nil {
+			supported = false
+		}
+	case data.ProfileName:
+		if cs.dataHandler == nil {
+			supported = false
+		}
+	case diagnostics.ProfileName:
+		if cs.diagnosticsHandler == nil {
+			supported = false
+		}
+	case display.ProfileName:
+		if cs.displayHandler == nil {
+			supported = false
+		}
+	case firmware.ProfileName:
+		if cs.firmwareHandler == nil {
+			supported = false
+		}
+	case iso15118.ProfileName:
+		if cs.iso15118Handler == nil {
+			supported = false
+		}
+	case localauth.ProfileName:
+		if cs.localAuthListHandler == nil {
+			supported = false
+		}
+	case meter.ProfileName:
+		if cs.meterHandler == nil {
+			supported = false
+		}
+	case provisioning.ProfileName:
+		if cs.provisioningHandler == nil {
+			supported = false
+		}
+	case remotecontrol.ProfileName:
+		if cs.remoteControlHandler == nil {
+			supported = false
+		}
+	case reservation.ProfileName:
+		if cs.reservationHandler == nil {
+			supported = false
+		}
+	case security.ProfileName:
+		if cs.securityHandler == nil {
+			supported = false
+		}
+	case smartcharging.ProfileName:
+		if cs.smartChargingHandler == nil {
+			supported = false
+		}
+	case tariffcost.ProfileName:
+		if cs.tariffCostHandler == nil {
+			supported = false
+		}
+	case transactions.ProfileName:
+		if cs.transactionsHandler == nil {
+			supported = false
+		}
+	case v2x.ProfileName:
+		if cs.v2xHandler == nil {
+			supported = false
+		}
+	case battery_swap.ProfileName:
+		if cs.batterySwapHandler == nil {
+			supported = false
+		}
+	case der.ProfileName:
+		if cs.derControlHandler == nil {
+			supported = false
 		}
 	}
+
+	if !supported {
+		cs.notSupportedError(chargingStation.ID(), requestId, action)
+		return
+	}
+
 	var response ocpp.Response
 	var err error
+
 	// Execute in separate goroutine, so the caller goroutine is available
 	go func() {
 		switch action {
@@ -1010,6 +1233,22 @@ func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection,
 			response, err = cs.availabilityHandler.OnStatusNotification(chargingStation.ID(), request.(*availability.StatusNotificationRequest))
 		case transactions.TransactionEventFeatureName:
 			response, err = cs.transactionsHandler.OnTransactionEvent(chargingStation.ID(), request.(*transactions.TransactionEventRequest))
+		case battery_swap.BatterySwap:
+			response, err = cs.batterySwapHandler.OnBatterySwap(chargingStation.ID(), request.(*battery_swap.BatterySwapRequest))
+		case der.NotifyDERAlarm:
+			response, err = cs.derControlHandler.OnNotifyDERAlarm(chargingStation.ID(), request.(*der.NotifyDERAlarmRequest))
+		case der.NotifyDERStartStop:
+			response, err = cs.derControlHandler.OnNotifyDERStartStop(chargingStation.ID(), request.(*der.NotifyDERStartStopRequest))
+		case der.ReportDERControl:
+			response, err = cs.derControlHandler.OnReportDERControl(chargingStation.ID(), request.(*der.ReportDERControlRequest))
+		case diagnostics.OpenPeriodicEventStream:
+			response, err = cs.diagnosticsHandler.OnOpenPeriodicEventStream(chargingStation.ID(), request.(*diagnostics.OpenPeriodicEventStreamRequest))
+		case diagnostics.ClosePeriodicEventStream:
+			response, err = cs.diagnosticsHandler.OnClosePeriodicEventStream(chargingStation.ID(), request.(*diagnostics.ClosePeriodicEventStreamRequest))
+		case diagnostics.NotifyPeriodicEventStreamFeat:
+			// No response needed or expected
+			cs.diagnosticsHandler.OnNotifyPeriodicEventStream(chargingStation.ID(), request.(*diagnostics.NotifyPeriodicEventStream))
+			return
 		default:
 			cs.notSupportedError(chargingStation.ID(), requestId, action)
 			return

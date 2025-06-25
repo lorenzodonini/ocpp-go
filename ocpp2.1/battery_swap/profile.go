@@ -1,4 +1,4 @@
-package battey_swap
+package battery_swap
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -11,7 +11,7 @@ type CSMSHandler interface {
 
 // Needs to be implemented by Charging stations for handling messages part of the Battery Swap.
 type ChargingStationHandler interface {
-	OnRequestBatterySwap(chargingStationID string, request *RequestBatterySwapRequest) (*RequestBatterySwapResponse, error)
+	OnRequestBatterySwap(request *RequestBatterySwapRequest) (*RequestBatterySwapResponse, error)
 }
 
 const ProfileName = "BatterySwap"

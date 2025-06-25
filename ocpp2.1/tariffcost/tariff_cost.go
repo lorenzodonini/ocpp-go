@@ -11,6 +11,14 @@ type CSMSHandler interface {
 type ChargingStationHandler interface {
 	// OnCostUpdated is called on a charging station whenever a CostUpdatedRequest is received from the CSMS.
 	OnCostUpdated(request *CostUpdatedRequest) (confirmation *CostUpdatedResponse, err error)
+	// OnSetDefaultTariff is called on a charging station whenever a SetDefaultTariffRequest is received from the CSMS.
+	OnSetDefaultTariff(request *SetDefaultTariffRequest) (confirmation *SetDefaultTariffResponse, err error)
+	// OnGetTariffs is called on a charging station whenever a GetTariffsRequest is received from the CSMS.
+	OnGetTariffs(request *GetTariffsRequest) (confirmation *GetTariffsResponse, err error)
+	// OnClearTariffs is called on a charging station whenever a ClearTariffsResponse is received from the CSMS.
+	OnClearTariffs(request *ClearTariffsRequest) (confirmation *ClearTariffsResponse, err error)
+	// OnChangeTransactionTariff is called on a charging station whenever a ChangeTransactionTariffRequest is received from the CSMS.
+	OnChangeTransactionTariff(request *ChangeTransactionTariffRequest) (confirmation *ChangeTransactionTariffResponse, err error)
 }
 
 const ProfileName = "TariffCost"
@@ -21,4 +29,5 @@ var Profile = ocpp.NewProfile(
 	SetDefaultTariffFeature{},
 	GetTariffsFeature{},
 	ClearTariffsFeature{},
+	ChangeTransactionTariffFeature{},
 )

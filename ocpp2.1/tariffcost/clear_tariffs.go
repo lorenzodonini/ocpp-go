@@ -67,10 +67,8 @@ func (c ClearTariffsResponse) GetFeatureName() string {
 }
 
 // Creates a new NewClearTariffsRequest, containing all required fields. There are no optional fields for this message.
-func NewClearTariffsRequest(tariffIds []string) *ClearTariffsRequest {
-	return &ClearTariffsRequest{
-		TariffIds: tariffIds,
-	}
+func NewClearTariffsRequest() *ClearTariffsRequest {
+	return &ClearTariffsRequest{}
 }
 
 // Creates a new NewClearTariffsResponse, which doesn't contain any required or optional fields.
