@@ -2,9 +2,11 @@ package ocppj_test
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net"
 	"reflect"
+	"strconv"
 	"testing"
 
 	ut "github.com/go-playground/universal-translator"
@@ -345,6 +347,11 @@ func assertPanic(t *testing.T, f func(), recoveredAssertion func(interface{})) {
 	f()
 }
 
+func newMockMessageType(typ ocppj.MessageType) json.Number {
+	s := strconv.Itoa(int(typ))
+	return json.Number(s)
+}
+
 var Validate = validator.New()
 
 func init() {
@@ -530,8 +537,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidLength() {
 	mockMessage := make([]interface{}, 2)
 	messageId := "12345"
 	// Test invalid message length
-	mockMessage[0] = ocppj.CALL // Message Type ID
-	mockMessage[1] = messageId  // Unique ID
+	mockMessage[0] = newMockMessageType(ocppj.CALL) // Message Type ID
+	mockMessage[1] = messageId                      // Unique ID
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
 	require.Nil(t, message)
 	require.Error(t, err)
@@ -565,8 +572,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidMessageId() {
 	mockMessage := make([]interface{}, 3)
 	invalidMessageId := 12345
 	// Test invalid message length
-	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
-	mockMessage[1] = invalidMessageId    // Unique ID
+	mockMessage[0] = newMockMessageType(ocppj.CALL) // Message Type ID
+	mockMessage[1] = invalidMessageId               // Unique ID
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
 	require.Nil(t, message)
 	require.Error(t, err)
@@ -597,10 +604,10 @@ func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
 	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	messageId := "12345"
-	invalidTypeId := 1
+	invalidTypeId := ocppj.MessageType(1)
 	// Test invalid message length
-	mockMessage[0] = float64(invalidTypeId) // Message Type ID
-	mockMessage[1] = messageId              // Unique ID
+	mockMessage[0] = newMockMessageType(invalidTypeId) // Message Type ID
+	mockMessage[1] = messageId                         // Unique ID
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
 	require.Nil(t, message)
 	require.Error(t, err)
@@ -617,9 +624,9 @@ func (suite *OcppJTestSuite) TestParseMessageUnsupported() {
 	messageId := "12345"
 	invalidAction := "SomeAction"
 	// Test invalid message length
-	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
-	mockMessage[1] = messageId           // Unique ID
-	mockMessage[2] = invalidAction       // Action
+	mockMessage[0] = newMockMessageType(ocppj.CALL) // Message Type ID
+	mockMessage[1] = messageId                      // Unique ID
+	mockMessage[2] = invalidAction                  // Action
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
 	require.Nil(t, message)
 	require.Error(t, err)
@@ -635,8 +642,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
 	mockMessage := make([]interface{}, 3)
 	messageId := "12345"
 	// Test invalid message length
-	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
-	mockMessage[1] = messageId           // Unique ID
+	mockMessage[0] = newMockMessageType(ocppj.CALL) // Message Type ID
+	mockMessage[1] = messageId                      // Unique ID
 	mockMessage[2] = MockFeatureName
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
 	require.Nil(t, message)
@@ -674,8 +681,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallResult() {
 	messageId := "12345"
 	mockConfirmation := newMockConfirmation("testValue")
 	// Test invalid message length
-	mockMessage[0] = float64(ocppj.CALL_RESULT) // Message Type ID
-	mockMessage[1] = messageId                  // Unique ID
+	mockMessage[0] = newMockMessageType(ocppj.CALL_RESULT) // Message Type ID
+	mockMessage[1] = messageId                             // Unique ID
 	mockMessage[2] = mockConfirmation
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
 	// Both message and error should be nil
@@ -689,8 +696,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	messageId := "12345"
 	pendingRequest := newMockRequest("request")
 	// Test invalid message length
-	mockMessage[0] = float64(ocppj.CALL_ERROR) // Message Type ID
-	mockMessage[1] = messageId                 // Unique ID
+	mockMessage[0] = newMockMessageType(ocppj.CALL_ERROR) // Message Type ID
+	mockMessage[1] = messageId                            // Unique ID
 	mockMessage[2] = ocppj.GenericError
 	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
@@ -708,9 +715,9 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRawErrorCode() {
 	mockMessage := make([]interface{}, 5)
 	messageId := "12345"
 	pendingRequest := newMockRequest("request")
-	mockMessage[0] = float64(ocppj.CALL_ERROR) // Message Type ID
-	mockMessage[1] = messageId                 // Unique ID
-	mockMessage[2] = float64(42)               // test invalid typecast
+	mockMessage[0] = newMockMessageType(ocppj.CALL_ERROR) // Message Type ID
+	mockMessage[1] = messageId                            // Unique ID
+	mockMessage[2] = float64(42)                          // test invalid typecast
 	mockMessage[3] = "error description"
 	mockMessage[4] = "error details"
 	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
@@ -730,8 +737,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRequest() {
 	messageId := "12345"
 	// Test invalid request -> required field missing
 	mockRequest := newMockRequest("")
-	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
-	mockMessage[1] = messageId           // Unique ID
+	mockMessage[0] = newMockMessageType(ocppj.CALL) // Message Type ID
+	mockMessage[1] = messageId                      // Unique ID
 	mockMessage[2] = MockFeatureName
 	mockMessage[3] = mockRequest
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
@@ -759,8 +766,8 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	// Test invalid confirmation -> required field missing
 	pendingRequest := newMockRequest("request")
 	mockConfirmation := newMockConfirmation("")
-	mockMessage[0] = float64(ocppj.CALL_RESULT) // Message Type ID
-	mockMessage[1] = messageId                  // Unique ID
+	mockMessage[0] = newMockMessageType(ocppj.CALL_RESULT) // Message Type ID
+	mockMessage[1] = messageId                             // Unique ID
 	mockMessage[2] = mockConfirmation
 	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
@@ -789,8 +796,8 @@ func (suite *OcppJTestSuite) TestParseCall() {
 	mockValue := "somevalue"
 	mockRequest := newMockRequest(mockValue)
 	// Test invalid message length
-	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
-	mockMessage[1] = messageId           // Unique ID
+	mockMessage[0] = newMockMessageType(ocppj.CALL) // Message Type ID
+	mockMessage[1] = messageId                      // Unique ID
 	mockMessage[2] = MockFeatureName
 	mockMessage[3] = mockRequest
 	message, protoErr := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
