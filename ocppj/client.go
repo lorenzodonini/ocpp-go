@@ -3,6 +3,7 @@ package ocppj
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"gopkg.in/go-playground/validator.v9"
 
@@ -208,6 +209,35 @@ func (c *Client) SendRequest(request ocpp.Request) error {
 	return nil
 }
 
+func (c *Client) SendEvent(request ocpp.Request) error {
+	if !c.dispatcher.IsRunning() {
+		return fmt.Errorf("ocppj client is not started, couldn't send request")
+	}
+
+	// Check if the request feature is a Stream feature
+	feature := request.GetFeatureName()
+	if !strings.HasSuffix(feature, "Stream") {
+		return fmt.Errorf("ocppj client can only send events for Stream features, got: %s", feature)
+	}
+
+	call, err := c.CreateCall(request)
+	if err != nil {
+		return err
+	}
+	jsonMessage, err := call.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	// Message will be processed by dispatcher. A dedicated mechanism allows to delegate the message queue handling.
+	if err = c.dispatcher.SendRequest(RequestBundle{Call: call, Data: jsonMessage}); err != nil {
+		log.Errorf("error dispatching request [%s, %s]: %v", call.UniqueId, call.Action, err)
+		return err
+	}
+
+	log.Debugf("enqueued CALL [%s, %s]", call.UniqueId, call.Action)
+	return nil
+}
+
 // Sends an OCPP Response to the server.
 // The requestID parameter is required and identifies the previously received request.
 //
@@ -310,6 +340,12 @@ func (c *Client) ocppMessageHandler(data []byte) error {
 			callError := message.(*CallError)
 			log.Debugf("handling incoming CALL ERROR [%s]", callError.UniqueId)
 			c.dispatcher.CompleteRequest(callError.GetUniqueId()) // Remove current request from queue and send next one
+			if c.errorHandler != nil {
+				c.errorHandler(ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+			}
+		case CALL_RESULT_ERROR:
+			callError := message.(*CallResultError)
+			log.Debugf("handling incoming CALL RESULT ERROR [%s]", callError.UniqueId)
 			if c.errorHandler != nil {
 				c.errorHandler(ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
 			}
