@@ -3,6 +3,7 @@ package ocpp21
 
 import (
 	"crypto/tls"
+	"errors"
 	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.1/authorization"
@@ -121,7 +122,7 @@ type ChargingStation interface {
 	NotifyDERStartStop(request der.NotifyDERStartStopRequest, props ...func(request *der.NotifyDERStartStopRequest)) (*der.NotifyDERStartStopResponse, error)
 	ReportDERControl(request der.ReportDERControlRequest, props ...func(request *der.ReportDERControlRequest)) (*der.ReportDERControlResponse, error)
 	ClosePeriodicEventStream(id int, props ...func(request *diagnostics.ClosePeriodicEventStreamRequest)) (*diagnostics.ClosePeriodicEventStreamResponse, error)
-	OpenPeriodicEventStream(periodicEventStream diagnostics.PeriodicEventStreamParams, props ...func(request *diagnostics.OpenPeriodicEventStreamRequest)) (*diagnostics.OpenPeriodicEventStreamResponse, error)
+	OpenPeriodicEventStream(constantStreamData diagnostics.ConstantStreamData, props ...func(request *diagnostics.OpenPeriodicEventStreamRequest)) (*diagnostics.OpenPeriodicEventStreamResponse, error)
 	NotifyPeriodicEventStream(periodicEventStream diagnostics.NotifyPeriodicEventStream, props ...func(request *diagnostics.NotifyPeriodicEventStream))
 
 	// Registers a handler for incoming security profile messages
@@ -226,7 +227,11 @@ type ChargingStation interface {
 //
 // For more advanced options, or if a custom networking/occpj layer is required,
 // please refer to ocppj.Client and ws.Client.
-func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) ChargingStation {
+func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) (ChargingStation, error) {
+	if id == "" {
+		return nil, errors.New("id must not be empty")
+	}
+
 	if client == nil {
 		client = ws.NewClient()
 	}
@@ -260,7 +265,7 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) Cha
 			der.Profile,
 		)
 	}
-	endpoint.SetDialect(ocpp.V2)
+	endpoint.SetDialect(ocpp.V21)
 
 	cs := chargingStation{
 		client:          endpoint,
@@ -278,8 +283,9 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) Cha
 	cs.client.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
 		cs.errorHandler <- err
 	})
+
 	cs.client.SetRequestHandler(cs.handleIncomingRequest)
-	return &cs
+	return &cs, nil
 }
 
 // -------------------- v2.1 CSMS --------------------
@@ -479,7 +485,7 @@ type CSMS interface {
 // If you need a TLS server, you may use the following:
 //
 //	csms := NewCSMS(nil, ws.NewServer(ws.WithServerTLSConfig("certificatePath", "privateKeyPath", nil)))
-func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
+func NewCSMS(endpoint *ocppj.Server, server ws.Server) (CSMS, error) {
 	if server == nil {
 		server = ws.NewServer()
 	}
@@ -507,7 +513,12 @@ func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
 			der.Profile,
 		)
 	}
-	cs := newCSMS(endpoint)
+
+	cs, err := newCSMS(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
 	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {
 		cs.handleIncomingRequest(client, request, requestId, action)
 	})
@@ -520,5 +531,6 @@ func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
 	cs.server.SetCanceledRequestHandler(func(clientID string, requestID string, request ocpp.Request, err *ocpp.Error) {
 		cs.handleCanceledRequest(clientID, request, err)
 	})
-	return &cs
+
+	return &cs, nil
 }
