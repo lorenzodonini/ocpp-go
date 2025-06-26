@@ -1047,3 +1047,8 @@ func (cs *csms) handleCanceledRequest(chargePointID string, request ocpp.Request
 		cs.error(err)
 	}
 }
+
+// SetMessageHooks sets the hooks for logging incoming and outgoing messages.
+func (cs *csms) SetMessageHooks(message func(direction, clientId, messageType string, payload []byte)) {
+	cs.server.SetMessageHooks(message)
+}

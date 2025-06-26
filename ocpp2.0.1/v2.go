@@ -401,6 +401,9 @@ type CSMS interface {
 	Stop()
 	// Errors returns a channel for error messages. If it doesn't exist it es created.
 	Errors() <-chan error
+
+	// SetMessageHooks sets a function that will be called whenever a message is received or sent.
+	SetMessageHooks(logger func(direction, chargePointID, messageType string, payload []byte))
 }
 
 // Creates a new OCPP 2.0 CSMS.
