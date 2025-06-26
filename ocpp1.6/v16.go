@@ -348,7 +348,7 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) CentralSystem {
 	}
 	server.AddSupportedSubprotocol(types.V16Subprotocol)
 	if endpoint == nil {
-		endpoint = ocppj.NewServer(server, nil, nil, nil,
+		endpoint = ocppj.NewServer(server, nil, nil,
 			core.Profile,
 			localauth.Profile,
 			firmware.Profile,

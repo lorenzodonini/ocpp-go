@@ -43,7 +43,7 @@ type MessageHooks func(direction string, chargePointID string, messageType strin
 //	s := ocppj.NewServer(ws.NewServer(), nil, nil)
 //
 // The dispatcher's associated ClientState will be set during initialization.
-func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler ServerState, msgHooks MessageHooks, profiles ...*ocpp.Profile) *Server {
+func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler ServerState, profiles ...*ocpp.Profile) *Server {
 	if dispatcher == nil {
 		dispatcher = NewDefaultServerDispatcher(NewFIFOQueueMap(0))
 	}
@@ -66,7 +66,7 @@ func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler Ser
 	for _, profile := range profiles {
 		s.AddProfile(profile)
 	}
-	s.MessageHooks = msgHooks
+	//s.MessageHooks = msgHooks
 	return &s
 }
 
