@@ -24,6 +24,7 @@ type Server struct {
 	invalidMessageHook        InvalidMessageHook
 	dispatcher                ServerDispatcher
 	RequestState              ServerState
+	MessageHooks              MessageHooks
 }
 
 type ClientHandler func(client ws.Channel)
@@ -31,6 +32,7 @@ type RequestHandler func(client ws.Channel, request ocpp.Request, requestId stri
 type ResponseHandler func(client ws.Channel, response ocpp.Response, requestId string)
 type ErrorHandler func(client ws.Channel, err *ocpp.Error, details interface{})
 type InvalidMessageHook func(client ws.Channel, err *ocpp.Error, rawJson string, parsedFields []interface{}) *ocpp.Error
+type MessageHooks func(direction string, chargePointID string, messageType string, payload []byte)
 
 // Creates a new Server endpoint.
 // Requires a a websocket server. Optionally a structure for queueing/dispatching requests,
@@ -64,6 +66,7 @@ func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler Ser
 	for _, profile := range profiles {
 		s.AddProfile(profile)
 	}
+	//s.MessageHooks = msgHooks
 	return &s
 }
 
@@ -173,6 +176,9 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 		log.Errorf("error dispatching request [%s, %s] to %s: %v", call.UniqueId, call.Action, clientID, err)
 		return err
 	}
+	if s.MessageHooks != nil {
+		s.MessageHooks("in", clientID, "request", jsonMessage)
+	}
 	log.Debugf("enqueued CALL [%s, %s] for %s", call.UniqueId, call.Action, clientID)
 	return nil
 }
@@ -200,6 +206,10 @@ func (s *Server) SendResponse(clientID string, requestId string, response ocpp.R
 		log.Errorf("error sending response [%s] to %s: %v", callResult.GetUniqueId(), clientID, err)
 		return ocpp.NewError(GenericError, err.Error(), requestId)
 	}
+
+	if s.MessageHooks != nil {
+		s.MessageHooks("out", clientID, "response", jsonMessage)
+	}
 	log.Debugf("sent CALL RESULT [%s] for %s", callResult.GetUniqueId(), clientID)
 	log.Debugf("sent JSON message to %s: %s", clientID, string(jsonMessage))
 	return nil
@@ -226,6 +236,9 @@ func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.Err
 		log.Errorf("error sending response error [%s] to %s: %v", callError.UniqueId, clientID, err)
 		return ocpp.NewError(GenericError, err.Error(), requestId)
 	}
+	if s.MessageHooks != nil {
+		s.MessageHooks("out", clientID, "error", jsonMessage)
+	}
 	log.Debugf("sent CALL ERROR [%s] for %s", callError.UniqueId, clientID)
 	log.Debugf("sent JSON message to %s: %s", clientID, string(jsonMessage))
 	return nil
@@ -236,6 +249,9 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 	if err != nil {
 		log.Error(err)
 		return err
+	}
+	if s.MessageHooks != nil {
+		s.MessageHooks("in", wsChannel.ID(), "request", data)
 	}
 	log.Debugf("received JSON message from %s: %s", wsChannel.ID(), string(data))
 	// Get pending requests for client
@@ -336,4 +352,9 @@ func (s *Server) onClientDisconnected(ws ws.Channel) {
 	if s.disconnectedClientHandler != nil {
 		s.disconnectedClientHandler(ws)
 	}
+}
+
+// SetMessageHooks sets the message hooks for the server.
+func (s *Server) SetMessageHooks(msg MessageHooks) {
+	s.MessageHooks = msg
 }
