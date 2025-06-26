@@ -39,7 +39,7 @@ func (c ClosePeriodicEventStreamResponse) GetFeatureName() string {
 }
 
 // Creates a new ClosePeriodicEventStreamRequest, containing all required fields. There are no optional fields for this message.
-func NewClosePeriodicEventStreamsRequest(id int, params PeriodicEventStreamParams) *ClosePeriodicEventStreamRequest {
+func NewClosePeriodicEventStreamsRequest(id int) *ClosePeriodicEventStreamRequest {
 	return &ClosePeriodicEventStreamRequest{
 		Id: id,
 	}
