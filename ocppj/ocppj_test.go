@@ -224,49 +224,20 @@ func newMockConfirmation(value string) *MockConfirmation {
 	return &MockConfirmation{MockValue: value}
 }
 
+type MockStream struct {
+	MockValue string `json:"mockValue" validate:"required,min=5"`
+}
+
+func (m *MockStream) GetFeatureName() string {
+	return "MockStream"
+}
+
 type MockUnsupportedResponse struct {
 	MockValue string `json:"mockValue" validate:"required,min=5"`
 }
 
 func (m *MockUnsupportedResponse) GetFeatureName() string {
 	return "SomeRandomFeature"
-}
-
-// ---------------------- COMMON UTILITY METHODS ----------------------
-
-func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) ws.Server {
-	wsServer := ws.NewServer()
-	wsServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
-		assert.NotNil(t, ws)
-		assert.NotNil(t, data)
-		if onMessage != nil {
-			response, err := onMessage(data)
-			assert.Nil(t, err)
-			if response != nil {
-				err = wsServer.Write(ws.ID(), data)
-				assert.Nil(t, err)
-			}
-		}
-		return nil
-	})
-	return wsServer
-}
-
-func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) ws.Client {
-	wsClient := ws.NewClient()
-	wsClient.SetMessageHandler(func(data []byte) error {
-		assert.NotNil(t, data)
-		if onMessage != nil {
-			response, err := onMessage(data)
-			assert.Nil(t, err)
-			if response != nil {
-				err = wsClient.Write(data)
-				assert.Nil(t, err)
-			}
-		}
-		return nil
-	})
-	return wsClient
 }
 
 func ParseCall(endpoint *ocppj.Endpoint, state ocppj.ClientState, json string, t *testing.T) *ocppj.Call {
@@ -512,16 +483,16 @@ func (suite *OcppJTestSuite) TestCreateSend() {
 	mockValue := "somevalue"
 	request := newMockRequest(mockValue)
 	call, err := suite.chargePoint.CreateSend(request)
-	assert.Nil(t, err)
-	CheckSend(call, t, MockFeatureName+"Stream", call.UniqueId)
+	suite.NoError(err)
+	CheckSend(call, t, MockFeatureName, call.UniqueId)
 	message, ok := call.Payload.(*MockRequest)
 	assert.True(t, ok)
 	assert.NotNil(t, message)
 	assert.Equal(t, mockValue, message.MockValue)
 	// Check that request was not yet stored as pending request
 	pendingRequest, exists := suite.chargePoint.RequestState.GetPendingRequest(call.UniqueId)
-	assert.False(t, exists)
-	assert.Nil(t, pendingRequest)
+	suite.False(exists)
+	suite.Nil(t, pendingRequest)
 }
 
 func (suite *OcppJTestSuite) TestCreateCallResult() {

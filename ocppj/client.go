@@ -221,9 +221,10 @@ func (c *Client) SendRequest(request ocpp.Request) error {
 	return nil
 }
 
+// SendEvent s an OCPP SEND event to the server.
 func (c *Client) SendEvent(request ocpp.Request) error {
 	if !c.dispatcher.IsRunning() {
-		return fmt.Errorf("ocppj client is not started, couldn't send request")
+		return fmt.Errorf("ocppj client is not started, couldn't send event")
 	}
 
 	// Check if the request feature is a Stream feature
@@ -232,21 +233,23 @@ func (c *Client) SendEvent(request ocpp.Request) error {
 		return fmt.Errorf("ocppj client can only send events for Stream features, got: %s", feature)
 	}
 
-	call, err := c.CreateCall(request)
+	send, err := c.CreateSend(request)
 	if err != nil {
-		return err
-	}
-	jsonMessage, err := call.MarshalJSON()
-	if err != nil {
-		return err
-	}
-	// Message will be processed by dispatcher. A dedicated mechanism allows to delegate the message queue handling.
-	if err = c.dispatcher.SendRequest(RequestBundle{Call: call, Data: jsonMessage}); err != nil {
-		log.Errorf("error dispatching request [%s, %s]: %v", call.UniqueId, call.Action, err)
 		return err
 	}
 
-	log.Debugf("enqueued CALL [%s, %s]", call.UniqueId, call.Action)
+	jsonMessage, err := send.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	// Message will be processed by dispatcher. A dedicated mechanism allows to delegate the message queue handling.
+	if err = c.dispatcher.SendEvent(EventBundle{Send: send, Data: jsonMessage}); err != nil {
+		log.Errorf("error dispatching SEND [%s, %s]: %v", send.UniqueId, send.Action, err)
+		return err
+	}
+
+	log.Debugf("enqueued SEND [%s, %s]", send.UniqueId, send.Action)
 	return nil
 }
 

@@ -154,7 +154,7 @@ func (callError *CallError) MarshalJSON() ([]byte, error) {
 // An OCPP-J CallResultError message, containing an OCPP Result Error.
 type CallResultError struct {
 	Message
-	MessageTypeId    MessageType    `json:"messageTypeId" validate:"required,eq=4"`
+	MessageTypeId    MessageType    `json:"messageTypeId" validate:"required,eq=5"`
 	UniqueId         string         `json:"uniqueId" validate:"required,max=36"`
 	ErrorCode        ocpp.ErrorCode `json:"errorCode" validate:"errorCode"`
 	ErrorDescription string         `json:"errorDescription" validate:"omitempty,max=255"`
@@ -188,7 +188,7 @@ func (callError *CallResultError) MarshalJSON() ([]byte, error) {
 // An OCPP-J SEND message, containing an OCPP Request.
 type Send struct {
 	Message       `validate:"-"`
-	MessageTypeId MessageType  `json:"messageTypeId" validate:"required,eq=2"`
+	MessageTypeId MessageType  `json:"messageTypeId" validate:"required,eq=6"`
 	UniqueId      string       `json:"uniqueId" validate:"required,max=36"`
 	Action        string       `json:"action" validate:"required,max=36"`
 	Payload       ocpp.Request `json:"payload" validate:"required"`
@@ -452,7 +452,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			return nil, errorFromValidation(endpoint, err.(validator.ValidationErrors), uniqueId, request.GetFeatureName())
 		}
 		return &callResult, nil
-	case CALL_ERROR, CALL_RESULT_ERROR:
+	case CALL_ERROR:
 		_, ok := pendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
 			// No logger available in Endpoint.ParseMessage - this is expected to be called from Server/Client which have loggers
@@ -486,15 +486,80 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			return nil, errorFromValidation(endpoint, err.(validator.ValidationErrors), uniqueId, "")
 		}
 		return &callError, nil
+	case CALL_RESULT_ERROR:
+		// Onl
+		if endpoint.Dialect() != ocpp.V21 {
+			return nil, ocpp.NewError(MessageTypeNotSupported, "CALL_RESULT_ERROR message is not supported in this OCPP version", uniqueId)
+		}
 
+		_, ok := pendingRequestState.GetPendingRequest(uniqueId)
+		if !ok {
+			log.Infof("No previous request %v sent. Discarding error message", uniqueId)
+			return nil, nil
+		}
+
+		if len(arr) < 4 {
+			return nil, ocpp.NewError(FormatErrorType(endpoint), "Invalid Call Error message. Expected array length >= 4", uniqueId)
+		}
+
+		var details interface{}
+		if len(arr) > 4 {
+			details = arr[4]
+		}
+
+		rawErrorCode, ok := arr[2].(string)
+		if !ok {
+			return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 2, expected rawErrorCode (string)", arr[2]), rawErrorCode)
+		}
+
+		errorCode := ocpp.ErrorCode(rawErrorCode)
+		errorDescription := ""
+		if v, ok := arr[3].(string); ok {
+			errorDescription = v
+		}
+
+		callResultError := CallResultError{
+			MessageTypeId:    CALL_ERROR,
+			UniqueId:         uniqueId,
+			ErrorCode:        errorCode,
+			ErrorDescription: errorDescription,
+			ErrorDetails:     details,
+		}
+		err := Validate.Struct(callResultError)
+		if err != nil {
+			return nil, errorFromValidation(endpoint, err.(validator.ValidationErrors), uniqueId, "")
+		}
+		return &callResultError, nil
 	case SEND:
 		// SEND can be only sent in OCPP 2.1
 		if endpoint.Dialect() != ocpp.V21 {
 			return nil, ocpp.NewError(MessageTypeNotSupported, "SEND message is not supported in this OCPP version", uniqueId)
 		}
 
-		// Send does not expect a confirmation, so it is not added to the pending requests.
-		return nil, nil
+		if len(arr) != 4 {
+			return nil, ocpp.NewError(FormatErrorType(endpoint), "Invalid Call message. Expected array length 4", uniqueId)
+		}
+		action, ok := arr[2].(string)
+		if !ok {
+			return nil, ocpp.NewError(FormatErrorType(endpoint), fmt.Sprintf("Invalid element %v at 2, expected action (string)", arr[2]), uniqueId)
+		}
+
+		profile, ok := endpoint.GetProfileForFeature(action)
+		if !ok {
+			return nil, ocpp.NewError(NotSupported, fmt.Sprintf("Unsupported feature %v", action), uniqueId)
+		}
+
+		request, err := profile.ParseRequest(action, arr[3], parseRawJsonRequest)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Send{
+			MessageTypeId: SEND,
+			UniqueId:      uniqueId,
+			Action:        action,
+			Payload:       request,
+		}, nil
 	default:
 		return nil, ocpp.NewError(MessageTypeNotSupported, fmt.Sprintf("Invalid message type ID %v", typeId), uniqueId)
 	}
@@ -535,19 +600,19 @@ func (endpoint *Endpoint) CreateSend(request ocpp.Request) (*Send, error) {
 	}
 	// TODO: handle collisions?
 	uniqueId := messageIdGenerator()
-	call := Send{
+	send := Send{
 		MessageTypeId: SEND,
 		UniqueId:      uniqueId,
 		Action:        action,
 		Payload:       request,
 	}
 	if validationEnabled {
-		err := Validate.Struct(call)
+		err := Validate.Struct(send)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &call, nil
+	return &send, nil
 }
 
 // Creates a CallResultError message, given the message's unique ID and the error.
