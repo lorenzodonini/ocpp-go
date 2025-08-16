@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -151,7 +150,7 @@ type TotalUsage struct {
 
 type ChargingPeriod struct {
 	TariffId    *string         `json:"tariffId,omitempty" validate:"omitempty,max=60"` // The ID of the tariff used for this charging period.
-	StartPeriod types.DateTime  `json:"startPeriod" validate:"required"`                // The start of the charging period.
+	StartPeriod DateTime        `json:"startPeriod" validate:"required"`                // The start of the charging period.
 	Dimensions  []CostDimension `json:"dimensions,omitempty" validate:"omitempty,dive"`
 }
 

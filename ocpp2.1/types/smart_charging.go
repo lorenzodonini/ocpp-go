@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -174,7 +173,7 @@ type ChargingProfile struct {
 	MaxOfflineDuration          *int                       `json:"maxOfflineDuration,omitempty" validate:"omitempty"`
 	InvalidAfterOfflineDuration bool                       `json:"invalidAfterOfflineDuration,omitempty" validate:"omitempty"`
 	DynUpdateInterval           *int                       `json:"dynUpdateInterval,omitempty" validate:"omitempty"`
-	DynUpdateTime               *types.DateTime            `json:"dynUpdateTime,omitempty" validate:"omitempty"`
+	DynUpdateTime               *DateTime                  `json:"dynUpdateTime,omitempty" validate:"omitempty"`
 	PriceScheduleSignature      *string                    `json:"priceScheduleSignature,omitempty" validate:"omitempty,max=256"`
 	ChargingSchedule            []ChargingSchedule         `json:"chargingSchedule" validate:"required,min=1,max=3,dive"`
 }

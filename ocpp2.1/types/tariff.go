@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -9,7 +8,7 @@ import (
 type Tariff struct {
 	TariffId         string           `json:"tariffId" validate:"required,max=60"` // Identifier used to identify one tariff.
 	Currency         string           `json:"currency" validate:"required,max=3"`
-	ValidFrom        *types.DateTime  `json:"validFrom,omitempty" validate:"omitempty"`
+	ValidFrom        *DateTime        `json:"validFrom,omitempty" validate:"omitempty"`
 	Description      []MessageContent `json:"description,omitempty" validate:"omitempty,max=10,dive"`
 	Energy           *TariffEnergy    `json:"energy,omitempty" validate:"omitempty,dive"`
 	ChargingTime     *TariffTime      `json:"chargingTime,omitempty" validate:"omitempty,dive"`
