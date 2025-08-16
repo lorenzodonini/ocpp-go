@@ -15,8 +15,7 @@ make test
 For generating mocks, the `mockery` tool is used. For `mockery` installation, follow the instructions on
 the [official docs](https://vektra.github.io/mockery/latest/).
 
-**Note**: Mock generation is also run as part of the CI pipeline, so you can check if the mocks are up-to-date by
-running the tests. However, It is recommended to run the tests locally before pushing your changes.
+**Note**: Mocks are not checked in and are instead generated on-the-fly as part of the CI pipeline. If your local tests fail, it may be due to your mocks being out-of-date. This can be fixed by re-generating the mocks. It is recommended to run the tests locally before pushing your changes.
 
 When adding new interfaces and needing to generate mocks, you should:
 
@@ -26,6 +25,17 @@ When adding new interfaces and needing to generate mocks, you should:
 
 2. Run the following command:
    ```sh
-   mockery 
+   mockery --config .mockery.yaml
+   ```
+   Alternatively, you may generate the mocks via make target:
+   ```sh
+   make mocks
    ```
 
+## Toxiproxy
+
+For testing the resilience of the library against network issues, some tests use Toxiproxy. 
+If you wish to run the network tests locally (without docker compose) you need to:
+- Install [toxiproxy](https://github.com/Shopify/toxiproxy) for your platform
+- Start a local toxiproxy - `toxiproxy-server -port 8474 -host localhost`
+- Run the tests - `go fmt ./... && go vet ./... && go test -v -count=1 -failfast ./...`
