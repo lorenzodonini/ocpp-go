@@ -38,9 +38,9 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with: # Grab a specific tag
           repo: vektra/mockery
-          tag: v2.53.3
+          tag: v3.5.3
       - name: Generate mocks
-        run: mockery
+        run: mockery --config .mockery.yaml
       - name: Cache generated mocks
         uses: actions/cache@v4
         with:

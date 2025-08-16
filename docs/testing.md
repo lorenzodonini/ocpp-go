@@ -25,7 +25,7 @@ When adding new interfaces and needing to generate mocks, you should:
 
 2. Run the following command:
    ```sh
-   mockery 
+   mockery --config .mockery.yaml
    ```
    Alternatively, you may generate the mocks via make target:
    ```sh
