@@ -212,7 +212,7 @@ func (_c *MockServer_GetChannel_Call) RunAndReturn(run func(string) (ws.Channel,
 }
 
 // SetBasicAuthHandler provides a mock function with given fields: handler
-func (_m *MockServer) SetBasicAuthHandler(handler func(string, string) bool) {
+func (_m *MockServer) SetBasicAuthHandler(handler func(string, string, string) bool) {
 	_m.Called(handler)
 }
 
@@ -222,14 +222,14 @@ type MockServer_SetBasicAuthHandler_Call struct {
 }
 
 // SetBasicAuthHandler is a helper method to define mock.On call
-//   - handler func(string , string) bool
+//   - handler func(string , string , string) bool
 func (_e *MockServer_Expecter) SetBasicAuthHandler(handler interface{}) *MockServer_SetBasicAuthHandler_Call {
 	return &MockServer_SetBasicAuthHandler_Call{Call: _e.mock.On("SetBasicAuthHandler", handler)}
 }
 
-func (_c *MockServer_SetBasicAuthHandler_Call) Run(run func(handler func(string, string) bool)) *MockServer_SetBasicAuthHandler_Call {
+func (_c *MockServer_SetBasicAuthHandler_Call) Run(run func(handler func(string, string, string) bool)) *MockServer_SetBasicAuthHandler_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(string, string) bool))
+		run(args[0].(func(string, string, string) bool))
 	})
 	return _c
 }
@@ -239,7 +239,7 @@ func (_c *MockServer_SetBasicAuthHandler_Call) Return() *MockServer_SetBasicAuth
 	return _c
 }
 
-func (_c *MockServer_SetBasicAuthHandler_Call) RunAndReturn(run func(func(string, string) bool)) *MockServer_SetBasicAuthHandler_Call {
+func (_c *MockServer_SetBasicAuthHandler_Call) RunAndReturn(run func(func(string, string, string) bool)) *MockServer_SetBasicAuthHandler_Call {
 	_c.Run(run)
 	return _c
 }

@@ -67,7 +67,7 @@ Example central system:
 
 ```go
 server := ws.NewServer()
-server.SetBasicAuthHandler(func (username string, password string) bool {
+server.SetBasicAuthHandler(func (chargePointID string, username string, password string) bool {
 // todo Handle basic auth
 return true
 })
