@@ -499,7 +499,7 @@ func (s *WebSocketSuite) TestServerStartErrors() {
 	s.NotNil(r)
 }
 
-func (s *WebSocketSuite) TestClientDuplicateConnection() {
+func (s *WebSocketSuite) TestClientDuplicateConnectionWithKeepCurrentConnectionBehavior() {
 	s.server = newWebsocketServer(s.T(), nil)
 	s.server.SetNewClientHandler(func(ws Channel) {
 	})
@@ -531,9 +531,55 @@ func (s *WebSocketSuite) TestClientDuplicateConnection() {
 	})
 	err = wsClient2.Start(u.String())
 	s.NoError(err)
-	// Expect connection to be closed immediately
-	_, ok := <-disconnectC
-	s.True(ok)
+	// Expect new connection to be closed immediately
+	select {
+	case _, ok := <-disconnectC:
+		s.True(ok, "expected new client to have been disconnected")
+	case <-time.After(1 * time.Second):
+		s.Fail("timeout waiting for new client to disconnect")
+	}
+}
+
+func (s *WebSocketSuite) TestClientDuplicateConnectionWithKeepNewConnectionBehavior() {
+	s.server = newWebsocketServer(s.T(), nil)
+	s.server.SetNewClientHandler(func(ws Channel) {
+	})
+	s.server.SetDuplicateConnectionBehavior(DuplicateConnectionBehaviorKeepNew)
+	// Start server
+	go s.server.Start(serverPort, serverPath)
+	time.Sleep(100 * time.Millisecond)
+	// Connect client 1
+	disconnectC := make(chan struct{})
+	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+		return nil, nil
+	})
+	s.client.SetDisconnectedHandler(func(err error) {
+		s.IsType(&websocket.CloseError{}, err)
+		var wsErr *websocket.CloseError
+		ok := errors.As(err, &wsErr)
+		s.True(ok)
+		s.Equal(websocket.ClosePolicyViolation, wsErr.Code)
+		s.Equal("a connection with this ID has reconnected", wsErr.Text)
+		s.client.SetDisconnectedHandler(nil)
+		disconnectC <- struct{}{}
+	})
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	err := s.client.Start(u.String())
+	s.NoError(err)
+	// Connect client 2
+	wsClient2 := newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+		return nil, nil
+	})
+	err = wsClient2.Start(u.String())
+	s.NoError(err)
+	// Expect current connection to be closed immediately
+	select {
+	case _, ok := <-disconnectC:
+		s.True(ok, "expected current client to have been disconnected")
+	case <-time.After(1 * time.Second):
+		s.Fail("timeout waiting for current client to disconnect")
+	}
 }
 
 func (s *WebSocketSuite) TestServerStopConnection() {
