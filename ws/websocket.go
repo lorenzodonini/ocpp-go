@@ -240,9 +240,9 @@ type webSocket struct {
 	onMessage          MessageHandler
 }
 
-func newWebSocket(id string, conn *websocket.Conn, tlsState *tls.ConnectionState, cfg WebSocketConfig, onMessage MessageHandler, onClosed DisconnectedHandler, onError ErrorHandler) *webSocket {
+func newWebSocket(id string, conn *websocket.Conn, tlsState *tls.ConnectionState, cfg WebSocketConfig, onMessage MessageHandler, onClosed DisconnectedHandler, onError ErrorHandler) (*webSocket, error) {
 	if conn == nil {
-		panic("cannot create websocket with nil connection")
+		return nil, fmt.Errorf("cannot create websocket %s with nil connection", id)
 	}
 	w := &webSocket{
 		id:                 id,
@@ -258,7 +258,7 @@ func newWebSocket(id string, conn *websocket.Conn, tlsState *tls.ConnectionState
 		onMessage:          onMessage,
 	}
 	w.updateConfig(cfg)
-	return w
+	return w, nil
 }
 
 // Retrieves the unique Identifier of the websocket (typically, the URL suffix).

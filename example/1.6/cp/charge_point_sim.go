@@ -31,7 +31,8 @@ const (
 var log *logrus.Logger
 
 func setupChargePoint(chargePointID string) ocpp16.ChargePoint {
-	return ocpp16.NewChargePoint(chargePointID, nil, nil)
+	cp, _ := ocpp16.NewChargePoint(chargePointID, nil, nil)
+	return cp
 }
 
 func setupTlsChargePoint(chargePointID string) ocpp16.ChargePoint {
@@ -68,7 +69,9 @@ func setupTlsChargePoint(chargePointID string) ocpp16.ChargePoint {
 		RootCAs:      certPool,
 		Certificates: clientCertificates,
 	}))
-	return ocpp16.NewChargePoint(chargePointID, nil, client)
+
+	cp, _ := ocpp16.NewChargePoint(chargePointID, nil, client)
+	return cp
 }
 
 // exampleRoutine simulates a charge point flow, where

@@ -415,11 +415,13 @@ type CSMS interface {
 // If you need a TLS server, you may use the following:
 //
 //	csms := NewCSMS(nil, ws.NewServer(ws.WithServerTLSConfig("certificatePath", "privateKeyPath", nil)))
-func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
+func NewCSMS(endpoint *ocppj.Server, server ws.Server) (CSMS, error) {
 	if server == nil {
 		server = ws.NewServer()
 	}
+
 	server.AddSupportedSubprotocol(types.V201Subprotocol)
+
 	if endpoint == nil {
 		endpoint = ocppj.NewServer(server, nil, nil,
 			authorization.Profile,
@@ -440,7 +442,11 @@ func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
 			transactions.Profile,
 		)
 	}
-	cs := newCSMS(endpoint)
+	cs, err := newCSMS(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
 	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {
 		cs.handleIncomingRequest(client, request, requestId, action)
 	})
@@ -453,5 +459,6 @@ func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
 	cs.server.SetCanceledRequestHandler(func(clientID string, requestID string, request ocpp.Request, err *ocpp.Error) {
 		cs.handleCanceledRequest(clientID, request, err)
 	})
-	return &cs
+
+	return &cs, nil
 }

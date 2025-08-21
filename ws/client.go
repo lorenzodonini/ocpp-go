@@ -341,7 +341,7 @@ func (c *client) Start(urlStr string) error {
 	id := path.Base(u.Path)
 
 	// Create web socket, state is automatically set to connected
-	c.webSocket = newWebSocket(
+	c.webSocket, err = newWebSocket(
 		id,
 		ws,
 		resp.TLS,
@@ -357,6 +357,10 @@ func (c *client) Start(urlStr string) error {
 			c.error(err)
 		},
 	)
+	if err != nil {
+		return fmt.Errorf("failed to create websocket channel: %w", err)
+	}
+
 	log.Infof("connected to server as %s", id)
 	// Start reader and write routine
 	c.webSocket.run()
