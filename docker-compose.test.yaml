@@ -1,14 +1,14 @@
 version: "3.9"
 services:
   toxiproxy:
-    image: ghcr.io/shopify/toxiproxy:2.11.0
+    image: ghcr.io/shopify/toxiproxy:2.12.0
     hostname: toxiproxy
 
   unit_test:
     # The tests might require permissions to write to coverage out files.
     # If you encounter issues with permissions, you can try running the container as root.
     user: root
-    image: cimg/go:1.22.5
+    image: cimg/go:1.24.3
     working_dir: /etc/ocpp-go
     volumes:
       - .:/etc/ocpp-go:rw
@@ -23,7 +23,7 @@ services:
         sed '1d;$d' ocpp201.out >> coverage.out
 
   integration_test:
-    image: cimg/go:1.22.5
+    image: cimg/go:1.24.3
     # The tests might require permissions to write to coverage out files.
     # If you encounter issues with permissions, you can try running the container as root.
     user: root

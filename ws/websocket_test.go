@@ -38,9 +38,9 @@ const (
 	defaultSubProtocol = "ocpp1.6"
 )
 
-func newWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *server {
+func newWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ServerImpl {
 	wsServer := NewServer()
-	innerS, ok := wsServer.(*server)
+	innerS, ok := wsServer.(*ServerImpl)
 	require.True(t, ok)
 	innerS.SetMessageHandler(func(ws Channel, data []byte) error {
 		assert.NotNil(t, ws)
@@ -58,9 +58,9 @@ func newWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return innerS
 }
 
-func newWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *client {
+func newWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *ClientImpl {
 	wsClient := NewClient()
-	innerC, ok := wsClient.(*client)
+	innerC, ok := wsClient.(*ClientImpl)
 	require.True(t, ok)
 	innerC.SetRequestedSubProtocol(defaultSubProtocol)
 	innerC.SetMessageHandler(func(data []byte) error {
@@ -80,8 +80,8 @@ func newWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error
 
 type WebSocketSuite struct {
 	suite.Suite
-	client *client
-	server *server
+	client *ClientImpl
+	server *ServerImpl
 }
 
 func (s *WebSocketSuite) SetupTest() {
@@ -356,7 +356,7 @@ func (s *WebSocketSuite) TestWebsocketChargePointIdResolverFailure() {
 }
 
 func (s *WebSocketSuite) TestWebsocketBootRetries() {
-	verifyConnection := func(client *client, connected bool) {
+	verifyConnection := func(client *ClientImpl, connected bool) {
 		maxAttempts := 20
 		for i := 0; i <= maxAttempts; i++ {
 			if client.IsConnected() != connected {
@@ -746,7 +746,7 @@ func (s *WebSocketSuite) TestValidBasicAuth() {
 
 	// Create TLS server with self-signed certificate
 	tlsServer := NewServer(WithServerTLSConfig(certFilename, keyFilename, nil))
-	s.server, ok = tlsServer.(*server)
+	s.server, ok = tlsServer.(*ServerImpl)
 	s.True(ok)
 	// Add basic auth handler
 	s.server.SetBasicAuthHandler(func(username string, password string) bool {
@@ -771,7 +771,7 @@ func (s *WebSocketSuite) TestValidBasicAuth() {
 	tlsClient := NewClient(WithClientTLSConfig(&tls.Config{
 		RootCAs: certPool,
 	}))
-	s.client, ok = tlsClient.(*client)
+	s.client, ok = tlsClient.(*ClientImpl)
 	s.True(ok)
 	s.client.SetRequestedSubProtocol(defaultSubProtocol)
 	// Add basic auth
@@ -801,7 +801,7 @@ func (s *WebSocketSuite) TestInvalidBasicAuth() {
 
 	// Create TLS server with self-signed certificate
 	tlsServer := NewServer(WithServerTLSConfig(certFilename, keyFilename, nil))
-	s.server, ok = tlsServer.(*server)
+	s.server, ok = tlsServer.(*ServerImpl)
 	s.True(ok)
 	// Add basic auth handler
 	s.server.SetBasicAuthHandler(func(username string, password string) bool {
@@ -996,7 +996,7 @@ func (s *WebSocketSuite) TestValidClientTLSCertificate() {
 		ClientCAs:  certPool,
 		ClientAuth: tls.RequireAndVerifyClientCert,
 	}))
-	s.server, ok = tlsServer.(*server)
+	s.server, ok = tlsServer.(*ServerImpl)
 	s.True(ok)
 	// Add basic auth handler
 	connected := make(chan struct{})
@@ -1019,7 +1019,7 @@ func (s *WebSocketSuite) TestValidClientTLSCertificate() {
 		RootCAs:      certPool,
 		Certificates: []tls.Certificate{loadedCert},
 	}))
-	s.client, ok = tlsClient.(*client)
+	s.client, ok = tlsClient.(*ClientImpl)
 	s.True(ok)
 	s.client.SetRequestedSubProtocol(defaultSubProtocol)
 	// Test connection
@@ -1062,7 +1062,7 @@ func (s *WebSocketSuite) TestInvalidClientTLSCertificate() {
 		ClientCAs:  certPool,                       // Contains server certificate as allowed client CA
 		ClientAuth: tls.RequireAndVerifyClientCert, // Requires client certificate signed by allowed CA (server)
 	}))
-	s.server, ok = tlsServer.(*server)
+	s.server, ok = tlsServer.(*ServerImpl)
 	s.True(ok)
 	// Add basic auth handler
 	s.server.SetNewClientHandler(func(ws Channel) {
@@ -1085,7 +1085,7 @@ func (s *WebSocketSuite) TestInvalidClientTLSCertificate() {
 		RootCAs:      certPool,                      // Contains server certificate as allowed server CA
 		Certificates: []tls.Certificate{loadedCert}, // Contains self-signed client certificate. Will be rejected by server
 	}))
-	s.client, ok = tlsClient.(*client)
+	s.client, ok = tlsClient.(*ClientImpl)
 	s.True(ok)
 	s.client.SetRequestedSubProtocol(defaultSubProtocol)
 	// Test connection

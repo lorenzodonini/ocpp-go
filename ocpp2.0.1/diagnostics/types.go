@@ -1,8 +1,8 @@
 package diagnostics
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // MonitorType specifies the type of this monitor.

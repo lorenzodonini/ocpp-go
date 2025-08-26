@@ -3,7 +3,7 @@ package securefirmware
 import (
 	"reflect"
 
-	"gopkg.in/go-playground/validator.v9"
+	"github.com/go-playground/validator/v10"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )

@@ -3,8 +3,8 @@ package logging
 import (
 	"reflect"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // -------------------- Log Status Notification (CS -> CSMS) --------------------

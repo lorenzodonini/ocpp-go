@@ -28,8 +28,8 @@ type NetworkTestSuite struct {
 	suite.Suite
 	proxy     *toxiproxy.Proxy
 	proxyPort int
-	server    *server
-	client    *client
+	server    *ServerImpl
+	client    *ClientImpl
 }
 
 func (s *NetworkTestSuite) SetupSuite() {

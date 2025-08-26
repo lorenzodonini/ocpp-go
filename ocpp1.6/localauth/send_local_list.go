@@ -1,9 +1,10 @@
 package localauth
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 // -------------------- Send Local List (CS -> CP) --------------------

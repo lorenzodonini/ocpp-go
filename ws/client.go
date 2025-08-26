@@ -120,10 +120,10 @@ type Client interface {
 	SetHeaderValue(key string, value string)
 }
 
-// client is the default implementation of a Websocket client.
+// ClientImpl is the default implementation of a Websocket ClientImpl.
 //
-// Use the NewClient function to create a new client.
-type client struct {
+// Use the NewClient function to create a new ClientImpl.
+type ClientImpl struct {
 	webSocket      *webSocket
 	url            url.URL
 	messageHandler func(data []byte) error
@@ -137,12 +137,12 @@ type client struct {
 }
 
 // ClientOpt is a function that can be used to set options on a client during creation.
-type ClientOpt func(c *client)
+type ClientOpt func(c *ClientImpl)
 
 // WithClientTLSConfig sets the TLS configuration for the client.
 // If the passed tlsConfig is nil, the client will not use TLS.
 func WithClientTLSConfig(tlsConfig *tls.Config) ClientOpt {
-	return func(c *client) {
+	return func(c *ClientImpl) {
 		if tlsConfig != nil {
 			c.dialOptions = append(c.dialOptions, func(dialer *websocket.Dialer) {
 				dialer.TLSClientConfig = tlsConfig
@@ -178,7 +178,7 @@ func WithClientTLSConfig(tlsConfig *tls.Config) ClientOpt {
 //
 //	InsecureSkipVerify: true
 func NewClient(opts ...ClientOpt) Client {
-	c := &client{
+	c := &ClientImpl{
 		dialOptions:   []func(*websocket.Dialer){},
 		timeoutConfig: NewClientTimeoutConfig(),
 		reconnectC:    make(chan struct{}, 1),
@@ -190,30 +190,30 @@ func NewClient(opts ...ClientOpt) Client {
 	return c
 }
 
-func (c *client) SetMessageHandler(handler func(data []byte) error) {
+func (c *ClientImpl) SetMessageHandler(handler func(data []byte) error) {
 	c.messageHandler = handler
 }
 
-func (c *client) SetTimeoutConfig(config ClientTimeoutConfig) {
+func (c *ClientImpl) SetTimeoutConfig(config ClientTimeoutConfig) {
 	c.timeoutConfig = config
 }
 
-func (c *client) SetDisconnectedHandler(handler func(err error)) {
+func (c *ClientImpl) SetDisconnectedHandler(handler func(err error)) {
 	c.onDisconnected = handler
 }
 
-func (c *client) SetReconnectedHandler(handler func()) {
+func (c *ClientImpl) SetReconnectedHandler(handler func()) {
 	c.onReconnected = handler
 }
 
-func (c *client) AddOption(option interface{}) {
+func (c *ClientImpl) AddOption(option interface{}) {
 	dialOption, ok := option.(func(*websocket.Dialer))
 	if ok {
 		c.dialOptions = append(c.dialOptions, dialOption)
 	}
 }
 
-func (c *client) SetRequestedSubProtocol(subProto string) {
+func (c *ClientImpl) SetRequestedSubProtocol(subProto string) {
 	opt := func(dialer *websocket.Dialer) {
 		alreadyExists := false
 		for _, proto := range dialer.Subprotocols {
@@ -229,22 +229,22 @@ func (c *client) SetRequestedSubProtocol(subProto string) {
 	c.AddOption(opt)
 }
 
-func (c *client) SetBasicAuth(username string, password string) {
+func (c *ClientImpl) SetBasicAuth(username string, password string) {
 	c.header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(username+":"+password)))
 }
 
-func (c *client) SetHeaderValue(key string, value string) {
+func (c *ClientImpl) SetHeaderValue(key string, value string) {
 	c.header.Set(key, value)
 }
 
-func (c *client) getReadTimeout() time.Time {
+func (c *ClientImpl) getReadTimeout() time.Time {
 	if c.timeoutConfig.PongWait == 0 {
 		return time.Time{}
 	}
 	return time.Now().Add(c.timeoutConfig.PongWait)
 }
 
-func (c *client) handleReconnection() {
+func (c *ClientImpl) handleReconnection() {
 	log.Info("started automatic reconnection handler")
 	delay := c.timeoutConfig.RetryBackOffWaitMinimum + time.Duration(rand.Intn(c.timeoutConfig.RetryBackOffRandomRange+1))*time.Second
 	reconnectionAttempts := 1
@@ -278,14 +278,14 @@ func (c *client) handleReconnection() {
 	}
 }
 
-func (c *client) IsConnected() bool {
+func (c *ClientImpl) IsConnected() bool {
 	if c.webSocket == nil {
 		return false
 	}
 	return c.webSocket.IsConnected()
 }
 
-func (c *client) Write(data []byte) error {
+func (c *ClientImpl) Write(data []byte) error {
 	if !c.IsConnected() {
 		return fmt.Errorf("client is currently not connected, cannot send data")
 	}
@@ -293,7 +293,7 @@ func (c *client) Write(data []byte) error {
 	return c.webSocket.Write(data)
 }
 
-func (c *client) StartWithRetries(urlStr string) {
+func (c *ClientImpl) StartWithRetries(urlStr string) {
 	err := c.Start(urlStr)
 	if err != nil {
 		log.Info("Connection error:", err)
@@ -301,7 +301,7 @@ func (c *client) StartWithRetries(urlStr string) {
 	}
 }
 
-func (c *client) Start(urlStr string) error {
+func (c *ClientImpl) Start(urlStr string) error {
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return err
@@ -363,7 +363,7 @@ func (c *client) Start(urlStr string) error {
 	return nil
 }
 
-func (c *client) Stop() {
+func (c *ClientImpl) Stop() {
 	log.Infof("closing connection to server")
 	if c.IsConnected() {
 		// Attempt to gracefully shut down the connection
@@ -395,7 +395,7 @@ func (c *client) Stop() {
 	// Connection will close asynchronously and invoke the onDisconnected handler
 }
 
-func (c *client) Errors() <-chan error {
+func (c *ClientImpl) Errors() <-chan error {
 	if c.errC == nil {
 		c.errC = make(chan error, 1)
 	}
@@ -403,14 +403,14 @@ func (c *client) Errors() <-chan error {
 }
 
 // --------- Internal callbacks webSocket -> client ---------
-func (c *client) handleMessage(_ Channel, data []byte) error {
+func (c *ClientImpl) handleMessage(_ Channel, data []byte) error {
 	if c.messageHandler != nil {
 		return c.messageHandler(data)
 	}
 	return fmt.Errorf("no message handler set")
 }
 
-func (c *client) handleDisconnect(_ Channel, err error) {
+func (c *ClientImpl) handleDisconnect(_ Channel, err error) {
 	if c.onDisconnected != nil {
 		// Notify upper layer of disconnect
 		c.onDisconnected(err)
@@ -421,7 +421,7 @@ func (c *client) handleDisconnect(_ Channel, err error) {
 	}
 }
 
-func (c *client) error(err error) {
+func (c *ClientImpl) error(err error) {
 	log.Error(err)
 	if c.errC != nil {
 		c.errC <- err

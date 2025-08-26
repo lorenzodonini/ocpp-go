@@ -1,6 +1,6 @@
 package types
 
-import "gopkg.in/go-playground/validator.v9"
+import "github.com/go-playground/validator/v10"
 
 // Indicates the type of the signed certificate that is returned.
 // When omitted the certificate is used for both the 15118 connection (if implemented) and the Charging Station to CSMS connection.
