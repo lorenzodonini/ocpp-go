@@ -355,6 +355,31 @@ func (s *WebSocketSuite) TestWebsocketChargePointIdResolverFailure() {
 	s.Equal("websocket: bad handshake", httpErr.Message)
 }
 
+func (s *WebSocketSuite) TestWebsocketEnableCompression() {
+	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+		s.Fail("no message should be received from client!")
+		return nil, nil
+	})
+	s.server.upgrader.EnableCompression = true
+	go s.server.Start(serverPort, serverPath)
+	time.Sleep(500 * time.Millisecond)
+
+	// Test message
+	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+		s.Fail("no message should be received from server!")
+		return nil, nil
+	})
+
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	s.client.AddOption(func(dialer *websocket.Dialer) {
+		dialer.EnableCompression = true
+	})
+	// Attempt to connect, expecting compression to be enabled
+	err := s.client.Start(u.String())
+	s.NoError(err)
+}
+
 func (s *WebSocketSuite) TestWebsocketBootRetries() {
 	verifyConnection := func(client *client, connected bool) {
 		maxAttempts := 20

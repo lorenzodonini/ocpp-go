@@ -50,13 +50,12 @@ Planned milestones and features:
 
 ### Features
 
-The library offers several advanced features, especially at websocket and ocpp-j level.
+The library offers several advanced features, especially at `websocket` and `ocpp-j` level.
 
 #### Automatic message validation
 
 All incoming and outgoing messages are validated by default, using the [validator](gopkg.in/go-playground/validator)
-package.
-Constraints are defined on every request/response struct, as per OCPP specs.
+package. Constraints are defined on every request/response struct, as per OCPP specs.
 
 Validation may be disabled at a package level if needed:
 
@@ -89,12 +88,15 @@ Commonly used logging libraries, such as zap or logrus, adhere to this interface
 If you are using a logger, that isn't conform, you can simply write an adapter between the `Logger` interface and your
 own logging system.
 
-#### Websocket ping-pong
+### Websockets
+
+#### Ping and pong messages
 
 The websocket package supports configuring ping pong for both endpoints.
 
 By default, the client sends a ping every 54 seconds and waits for a pong for 60 seconds, before timing out.
 The values can be configured as follows:
+
 ```go
 cfg := ws.NewClientTimeoutConfig()
 cfg.PingPeriod = 10 * time.Second
@@ -102,8 +104,10 @@ cfg.PongWait = 20 * time.Second
 websocketClient.SetTimeoutConfig(cfg)
 ```
 
-By default, the server does not send out any pings and waits for a ping from the client for 60 seconds, before timing out.
+By default, the server does not send out any pings and waits for a ping from the client for 60 seconds, before timing
+out.
 To configure the server to send out pings, the `PingPeriod` and `PongWait` must be set to a value greater than 0:
+
 ```go
 cfg := ws.NewServerTimeoutConfig()
 cfg.PingPeriod = 10 * time.Second
@@ -112,6 +116,27 @@ websocketServer.SetTimeoutConfig(cfg)
 ```
 
 To disable sending ping messages, set the `PingPeriod` value to `0`.
+
+#### Websocket compression
+
+You can enable websocket compression on both the client and server side.
+To enable compression on the client side, use the following code:
+
+```go
+websocketClient := ws.NewClient(
+    WithClientCompression(true),
+)
+
+```
+
+To enable compression on the server side, use the following code:
+
+```go
+websocketServer := ws.NewServer(
+ws.WithCompression(true),
+)
+
+```
 
 ## Contributing
 

@@ -140,12 +140,14 @@ type server struct {
 	basicAuthHandler      func(username string, password string) bool
 	tlsCertificatePath    string
 	tlsCertificateKey     string
-	timeoutConfig         ServerTimeoutConfig
-	upgrader              websocket.Upgrader
-	errC                  chan error
-	connMutex             sync.RWMutex
-	addr                  *net.TCPAddr
-	httpHandler           *mux.Router
+	// enableCompression is used to enable or disable compression for the websocket connections.
+	enableCompression bool
+	timeoutConfig     ServerTimeoutConfig
+	upgrader          websocket.Upgrader
+	errC              chan error
+	connMutex         sync.RWMutex
+	addr              *net.TCPAddr
+	httpHandler       *mux.Router
 }
 
 // ServerOpt is a function that can be used to set options on a server during creation.
@@ -160,6 +162,14 @@ func WithServerTLSConfig(certificatePath string, certificateKey string, tlsConfi
 		if tlsConfig != nil {
 			s.httpServer.TLSConfig = tlsConfig
 		}
+	}
+}
+
+// WithCompression enables or disables compression for the websocket connections.
+// By default, compression is disabled.
+func WithCompression(enabled bool) ServerOpt {
+	return func(s *server) {
+		s.enableCompression = enabled
 	}
 }
 
@@ -195,6 +205,8 @@ func NewServer(opts ...ServerOpt) Server {
 	for _, o := range opts {
 		o(s)
 	}
+
+	s.upgrader.EnableCompression = s.enableCompression
 	return s
 }
 
