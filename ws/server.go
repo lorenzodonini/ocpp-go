@@ -240,11 +240,16 @@ func (s *server) SetCheckOriginHandler(handler func(r *http.Request) bool) {
 	s.upgrader.CheckOrigin = handler
 }
 
-func (s *server) error(err error) {
+func (s *server) errorWithInfo(clientID, operation string, err error) {
 	log.Error(err)
 	if s.errC != nil {
-		s.errC <- err
+		s.errC <- NewWsError(clientID, operation, err)
 	}
+}
+
+// Maintains compatibility for existing calls
+func (s *server) error(err error) {
+	s.errorWithInfo("", "", err)
 }
 
 func (s *server) Errors() <-chan error {
@@ -324,7 +329,12 @@ func (s *server) StopConnection(id string, closeError websocket.CloseError) erro
 		return fmt.Errorf("couldn't stop websocket connection. No connection with id %s is open", id)
 	}
 	log.Debugf("sending stop signal for websocket %s", w.ID())
-	return w.Close(closeError)
+	err := w.Close(closeError)
+	if err != nil {
+		s.errorWithInfo(id, "close", fmt.Errorf("failed to close connection: %w", err))
+		return err
+	}
+	return nil
 }
 
 func (s *server) GetChannel(websocketId string) (Channel, bool) {
@@ -357,7 +367,7 @@ func (s *server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	responseHeader := http.Header{}
 	id, err := s.chargePointIdResolver(r)
 	if err != nil {
-		s.error(fmt.Errorf("failed to resolve charge point id"))
+		s.errorWithInfo("", "resolve_id", fmt.Errorf("failed to resolve charge point id"))
 		http.Error(w, "NotFound", http.StatusNotFound)
 		return
 	}
@@ -390,7 +400,7 @@ out:
 			ok = s.basicAuthHandler(username, password)
 		}
 		if !ok {
-			s.error(fmt.Errorf("basic auth failed: credentials invalid"))
+			s.errorWithInfo(id, "basic_auth", fmt.Errorf("basic auth failed: credentials invalid"))
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
@@ -400,7 +410,7 @@ out:
 	if s.checkClientHandler != nil {
 		ok := s.checkClientHandler(id, r)
 		if !ok {
-			s.error(fmt.Errorf("client validation: invalid client"))
+			s.errorWithInfo(id, "validate", fmt.Errorf("client validation: invalid client"))
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -409,14 +419,14 @@ out:
 	// Upgrade websocket
 	conn, err := s.upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
-		s.error(fmt.Errorf("upgrade failed: %w", err))
+		s.errorWithInfo(id, "upgrade", fmt.Errorf("upgrade failed: %w", err))
 		return
 	}
 
 	log.Debugf("upgraded websocket connection for %s from %s", id, conn.RemoteAddr().String())
 	// If unsupported sub-protocol, terminate the connection immediately
 	if negotiatedSubProtocol == "" {
-		s.error(fmt.Errorf("unsupported subprotocols %v for new client %v (%v)", clientSubProtocols, id, r.RemoteAddr))
+		s.errorWithInfo(id, "subprotocol", fmt.Errorf("unsupported subprotocols %v for new client %v (%v)", clientSubProtocols, id, r.RemoteAddr))
 		_ = conn.WriteControl(websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.CloseProtocolError, "invalid or unsupported subprotocol"),
 			time.Now().Add(s.timeoutConfig.WriteWait))
@@ -428,7 +438,7 @@ out:
 	// There is already a connection with the same ID. Close the new one immediately with a PolicyViolation.
 	if _, exists := s.connections[id]; exists {
 		s.connMutex.Unlock()
-		s.error(fmt.Errorf("client %s already exists, closing duplicate client", id))
+		s.errorWithInfo(id, "duplicate", fmt.Errorf("client already exists, closing duplicate client"))
 		_ = conn.WriteControl(websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "a connection with this ID already exists"),
 			time.Now().Add(s.timeoutConfig.WriteWait))
@@ -448,7 +458,7 @@ out:
 		s.handleMessage,
 		s.handleDisconnect,
 		func(_ Channel, err error) {
-			s.error(err)
+			s.errorWithInfo(id, "connection", err)
 		},
 	)
 	// Add new client

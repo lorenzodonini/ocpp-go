@@ -267,7 +267,7 @@ func (c *client) handleReconnection() {
 			}
 			return
 		}
-		c.error(fmt.Errorf("reconnection failed: %w", err))
+		c.errorWithInfo("", "reconnect", fmt.Errorf("reconnection failed: %w", err))
 
 		if reconnectionAttempts < c.timeoutConfig.RetryBackOffRepeatTimes {
 			// Re-connection failed, double the delay
@@ -334,6 +334,9 @@ func (c *client) Start(urlStr string) error {
 			}
 			err = httpError
 		}
+		// registered error into client, out of respect for error object.
+		// However, inputs are welcomed if we do not need it here.
+		c.errorWithInfo("", "dial", fmt.Errorf("dial failed: %w", err))
 		return err
 	}
 
@@ -354,7 +357,7 @@ func (c *client) Start(urlStr string) error {
 		c.handleMessage,
 		c.handleDisconnect,
 		func(_ Channel, err error) {
-			c.error(err)
+			c.errorWithInfo(id, "connection", err)
 		},
 	)
 	log.Infof("connected to server as %s", id)
@@ -369,7 +372,7 @@ func (c *client) Stop() {
 		// Attempt to gracefully shut down the connection
 		err := c.webSocket.Close(websocket.CloseError{Code: websocket.CloseNormalClosure, Text: ""})
 		if err != nil {
-			c.error(err)
+			c.errorWithInfo(c.webSocket.ID(), "close", fmt.Errorf("failed to close connection: %w", err))
 		}
 	}
 	// Notify reconnection goroutine to stop (if any)
@@ -421,9 +424,14 @@ func (c *client) handleDisconnect(_ Channel, err error) {
 	}
 }
 
-func (c *client) error(err error) {
+func (c *client) errorWithInfo(clientID, operation string, err error) {
 	log.Error(err)
 	if c.errC != nil {
-		c.errC <- err
+		c.errC <- NewWsError(clientID, operation, err)
 	}
+}
+
+// Maintains compatibility for existing calls
+func (c *client) error(err error) {
+	c.errorWithInfo("", "", err)
 }
