@@ -3,7 +3,12 @@ package ocpp16_test
 import (
 	"fmt"
 
+	"encoding/json"
+	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -98,4 +103,44 @@ func (suite *OcppV16TestSuite) TestGetConfigurationInvalidEndpoint() {
 	getConfigurationRequest := core.NewGetConfigurationRequest(requestKeys)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"key":["%v","%v"]}]`, messageId, core.GetConfigurationFeatureName, key1, key2)
 	testUnsupportedRequestFromChargePoint(suite, getConfigurationRequest, requestJson, messageId)
+}
+
+func parseRawJsonConfirmation(raw interface{}, confirmationType reflect.Type) (ocpp.Response, error) {
+	if raw == nil {
+		raw = &struct{}{}
+	}
+	bytes, err := json.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+	confirmation := reflect.New(confirmationType).Interface()
+	err = json.Unmarshal(bytes, &confirmation)
+	if err != nil {
+		return nil, err
+	}
+	result := confirmation.(ocpp.Response)
+	return result, nil
+}
+
+func (suite *OcppV16TestSuite) TestGetConfigurationLenientParseJSON() {
+	t := suite.T()
+	key1 := "key1"
+	key2 := "key2"
+	someValue := "someValue"
+	someOtherValue := "25"
+	resultKey1 := core.ConfigurationKey{Key: key1, Readonly: true, Value: &someValue}
+	resultKey2 := core.ConfigurationKey{Key: key2, Readonly: true, Value: &someOtherValue}
+	resultKeys := []core.ConfigurationKey{resultKey1, resultKey2}
+	responseJson := fmt.Sprintf(`[3,"%v",{"configurationKey":[{"key":"%v","readonly":%v,"value":"%v"},{"key":"%v","readonly":"%v","value":%v}]}]`, defaultMessageId, resultKey1.Key, resultKey1.Readonly, *resultKey1.Value, resultKey2.Key, resultKey2.Readonly, *resultKey2.Value)
+	parsedData, err := ocppj.ParseJsonMessage(responseJson)
+	require.NoError(t, err)
+	require.NotNil(t, parsedData)
+	profile := ocpp.NewProfile(
+		"test",
+		core.GetConfigurationFeature{},
+	)
+	confirmation, err := profile.ParseResponse(core.GetConfigurationFeatureName, parsedData[2], parseRawJsonConfirmation)
+	require.NoError(t, err)
+	require.NotNil(t, confirmation)
+	assert.Equal(t, core.NewGetConfigurationConfirmation(resultKeys), confirmation)
 }
