@@ -303,3 +303,74 @@ Then run the following:
 ```
 docker-compose -f example/1.6/docker-compose.tls.yml up charge-point
 ```
+
+## Configuration management
+
+The configuration management package allows you to manage the configuration keys defined in the OCPP 1.6 specification.
+It will automatically check for the validity of the keys and values, and it allows you to register custom key
+validators. It will also trigger callbacks when a key is updated, so you can perform custom logic when a key is changed.
+
+Explore more in the [configuration management ](../ocpp1.6/config_manager) package.
+
+```go
+package main
+
+import (
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
+	log "github.com/sirupsen/logrus"
+	configManager "github.com/lorenzodonini/ocpp-go/ocpp1.6/ocpp_v16_config_manager"
+)
+
+func main() {
+	log.SetLevel(log.DebugLevel)
+
+	supportedProfiles := []string{core.ProfileName, smartcharging.ProfileName}
+	defaultConfig, err := configManager.DefaultConfiguration(supportedProfiles...)
+	if err != nil {
+		log.Errorf("Error getting default configuration: %v", err)
+		return
+	}
+
+	manager, err := configManager.NewV16ConfigurationManager(defaultConfig, supportedProfiles...)
+
+	// Get value
+	value, err := manager.GetConfigurationValue(configManager.AuthorizeRemoteTxRequests)
+	if err != nil {
+		log.Errorf("Error getting configuration value: %v", err)
+		return
+	}
+
+	log.Println(*value)
+
+	// Update key
+	val := "false"
+	err = manager.UpdateKey(ocpp_v16.AuthorizeRemoteTxRequests, &val)
+	if err != nil {
+		log.Errorf("Error updating key: %v", err)
+		return
+	}
+
+	// Get value
+	value, err = manager.GetConfigurationValue(configManager.AuthorizeRemoteTxRequests)
+	if err != nil {
+		log.Errorf("Error getting configuration value: %v", err)
+		return
+	}
+
+	log.Println(*value)
+
+	// Register custom key validator, which will prevent the key from being updated
+	manager.RegisterCustomKeyValidator(func(key ocpp_v16.Key, value *string) bool {
+		return key != ocpp_v16.AuthorizeRemoteTxRequests
+	})
+
+	// Update key
+	val = "true"
+	err = manager.UpdateKey(configManager.AuthorizeRemoteTxRequests, &val)
+	if err != nil {
+		log.Errorf("Error updating key: %v", err)
+		return
+	}
+}
+```
