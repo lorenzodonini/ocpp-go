@@ -27,6 +27,8 @@ func (suite *OcppV16TestSuite) TestStopTransactionRequestValidation() {
 		{core.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, Reason: "invalidReason"}, false},
 		{core.StopTransactionRequest{IdTag: ">20..................", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1}, false},
 		{core.StopTransactionRequest{MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, TransactionData: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{}}}}, false},
+		//AvB: better deal with some wallbox manufacturers (i.e. compleo)
+		{core.StopTransactionRequest{MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, TransactionData: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "", Context: types.ReadingContextTransactionEnd, Format: types.ValueFormatSignedData}}}}}, true},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
