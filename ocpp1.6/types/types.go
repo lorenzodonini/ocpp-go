@@ -299,7 +299,7 @@ func isValidUnitOfMeasure(fl validator.FieldLevel) bool {
 }
 
 type SampledValue struct {
-	Value     string         `json:"value" validate:"required"`
+	Value     string         `json:"value" validate:"omitempty"`
 	Context   ReadingContext `json:"context,omitempty" validate:"omitempty,readingContext16"`
 	Format    ValueFormat    `json:"format,omitempty" validate:"omitempty,valueFormat"`
 	Measurand Measurand      `json:"measurand,omitempty" validate:"omitempty,measurand16"`
