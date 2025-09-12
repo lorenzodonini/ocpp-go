@@ -31,7 +31,7 @@ func isValidGetInstalledCertificateStatus(fl validator.FieldLevel) bool {
 
 // The field definition of the GetInstalledCertificateIdsRequest PDU sent by the CSMS to the Charging Station.
 type GetInstalledCertificateIdsRequest struct {
-	CertificateTypes []types.CertificateUse `json:"certificateType" validate:"omitempty,dive,certificateUse"`
+	CertificateTypes []types.CertificateUse `json:"certificateType,omitempty" validate:"omitempty,dive,certificateUse"`
 }
 
 // The field definition of the GetInstalledCertificateIds response payload sent by the Charging Station to the CSMS in response to a GetInstalledCertificateIdsRequest.
