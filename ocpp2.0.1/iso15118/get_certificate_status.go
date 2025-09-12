@@ -18,9 +18,9 @@ type GetCertificateStatusRequest struct {
 // This field definition of the GetCertificateStatus response payload, sent by the CSMS to the Charging Station in response to a GetCertificateStatusRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetCertificateStatusResponse struct {
-	Status     types.GenericStatus `json:"status" validate:"required,genericStatus"`
-	OcspResult string              `json:"ocspResult,omitempty" validate:"omitempty,max=5500"`
-	StatusInfo *types.StatusInfo   `json:"statusInfo,omitempty" validate:"omitempty"`
+	Status     types.Certificate15118EVStatus `json:"status" validate:"required,15118EVCertificate"`
+	OcspResult string                         `json:"ocspResult,omitempty" validate:"omitempty,max=5500"`
+	StatusInfo *types.StatusInfo              `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // For 15118 certificate installation on EVs, the Charging Station requests the CSMS to provide the OCSP certificate
@@ -56,6 +56,6 @@ func NewGetCertificateStatusRequest(ocspRequestData types.OCSPRequestDataType) *
 }
 
 // Creates a new GetCertificateStatusResponse, containing all required fields. Optional fields may be set afterwards.
-func NewGetCertificateStatusResponse(status types.GenericStatus) *GetCertificateStatusResponse {
+func NewGetCertificateStatusResponse(status types.Certificate15118EVStatus) *GetCertificateStatusResponse {
 	return &GetCertificateStatusResponse{Status: status}
 }

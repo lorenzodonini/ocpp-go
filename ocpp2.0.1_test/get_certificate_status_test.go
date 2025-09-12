@@ -25,11 +25,11 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusRequestValidation() {
 func (suite *OcppV2TestSuite) TestGetCertificateStatusConfirmationValidation() {
 	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
-		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted, OcspResult: "deadbeef"}, true},
-		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted}, true},
-		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusRejected}, true},
+		{iso15118.GetCertificateStatusResponse{Status: types.Certificate15188EVStatusAccepted, OcspResult: "deadbeef"}, true},
+		{iso15118.GetCertificateStatusResponse{Status: types.Certificate15188EVStatusAccepted}, true},
+		{iso15118.GetCertificateStatusResponse{Status: types.Certificate15118EVStatusFailed}, true},
 		{iso15118.GetCertificateStatusResponse{Status: "invalidGenericStatus"}, false},
-		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted, OcspResult: newLongString(5501)}, false},
+		{iso15118.GetCertificateStatusResponse{Status: types.Certificate15188EVStatusAccepted, OcspResult: newLongString(5501)}, false},
 		{iso15118.GetCertificateStatusResponse{}, false},
 	}
 	ExecuteGenericTestTable(t, confirmationTable)
@@ -42,7 +42,7 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusE2EMocked() {
 	wsUrl := "someUrl"
 	ocspData := types.OCSPRequestDataType{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}
 	ocspResult := "deadbeef"
-	status := types.GenericStatusAccepted
+	status := types.Certificate15188EVStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"ocspRequestData":{"hashAlgorithm":"%v","issuerNameHash":"%v","issuerKeyHash":"%v","serialNumber":"%v","responderURL":"%v"}}]`,
 		messageId, iso15118.GetCertificateStatusFeatureName, ocspData.HashAlgorithm, ocspData.IssuerNameHash, ocspData.IssuerKeyHash, ocspData.SerialNumber, ocspData.ResponderURL)
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","ocspResult":"%v"}]`, messageId, status, ocspResult)
