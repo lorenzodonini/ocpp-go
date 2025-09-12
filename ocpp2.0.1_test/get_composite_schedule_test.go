@@ -73,6 +73,7 @@ func (suite *OcppV2TestSuite) TestGetCompositeScheduleE2EMocked() {
 	responseJson := fmt.Sprintf(`[3,"%v",{"status":"%v","statusInfo":{"reasonCode":"%v"},"schedule":{"startDateTime":"%v","chargingSchedule":{"id":%v,"startSchedule":"%v","duration":%v,"chargingRateUnit":"%v","minChargingRate":%v,"chargingSchedulePeriod":[{"startPeriod":%v,"limit":%v,"numberPhases":%v}]}}}]`,
 		messageId, status, statusInfo.ReasonCode, compositeSchedule.StartDateTime.FormatTimestamp(), chargingSchedule.ID, chargingSchedule.StartSchedule.FormatTimestamp(), *chargingSchedule.Duration, chargingSchedule.ChargingRateUnit, *chargingSchedule.MinChargingRate, chargingSchedulePeriod.StartPeriod, chargingSchedulePeriod.Limit, *chargingSchedulePeriod.NumberPhases)
 	getCompositeScheduleConfirmation := smartcharging.NewGetCompositeScheduleResponse(status)
+	getCompositeScheduleConfirmation.StatusInfo = statusInfo
 	getCompositeScheduleConfirmation.Schedule = &compositeSchedule
 	channel := NewMockWebSocket(wsId)
 
