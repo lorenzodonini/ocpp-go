@@ -226,6 +226,7 @@ type message struct {
 // Don't use a websocket directly, but refer to Server and Client.
 type webSocket struct {
 	connection         *websocket.Conn
+	remoteAddr         simpleAddr
 	mutex              sync.RWMutex
 	id                 string
 	outQueue           chan message
@@ -240,13 +241,25 @@ type webSocket struct {
 	onMessage          MessageHandler
 }
 
+type simpleAddr struct {
+	network string
+	address string
+}
+
+func (a simpleAddr) Network() string { return a.network }
+func (a simpleAddr) String() string  { return a.address }
+
 func newWebSocket(id string, conn *websocket.Conn, tlsState *tls.ConnectionState, cfg WebSocketConfig, onMessage MessageHandler, onClosed DisconnectedHandler, onError ErrorHandler) *webSocket {
 	if conn == nil {
 		panic("cannot create websocket with nil connection")
 	}
 	w := &webSocket{
-		id:                 id,
-		connection:         conn,
+		id:         id,
+		connection: conn,
+		remoteAddr: simpleAddr{
+			network: conn.RemoteAddr().Network(),
+			address: conn.RemoteAddr().String(),
+		},
 		mutex:              sync.RWMutex{},
 		tlsConnectionState: tlsState,
 		outQueue:           make(chan message, 2),
@@ -268,7 +281,7 @@ func (w *webSocket) ID() string {
 
 // Returns the address of the remote peer.
 func (w *webSocket) RemoteAddr() net.Addr {
-	return w.connection.RemoteAddr()
+	return w.remoteAddr
 }
 
 // Returns the TLS connection state of the connection, if any.
