@@ -66,7 +66,6 @@ func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler Ser
 	for _, profile := range profiles {
 		s.AddProfile(profile)
 	}
-	//s.MessageHooks = msgHooks
 	return &s
 }
 
