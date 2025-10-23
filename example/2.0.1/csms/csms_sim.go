@@ -288,6 +288,10 @@ func main() {
 		log.WithField("client", chargingStation.ID()).Info("charging station disconnected")
 		delete(handler.chargingStations, chargingStation.ID())
 	})
+	// set message hook
+	csms.SetMessageHooks(func(direction, chargePointID, msgType string, payload []byte) {
+		log.Infof("direction：%s \n cpid：%s \n msgType: %s \n payload: %s\n", direction, chargePointID, msgType, string(payload))
+	})
 	ocppj.SetLogger(log)
 	// Run CSMS
 	log.Infof("starting CSMS on port %v", listenPort)
