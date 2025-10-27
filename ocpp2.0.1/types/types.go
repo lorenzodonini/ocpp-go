@@ -500,6 +500,7 @@ type ChargingSchedulePeriod struct {
 	StartPeriod  int     `json:"startPeriod" validate:"gte=0"`
 	Limit        float64 `json:"limit" validate:"gte=0"`
 	NumberPhases *int    `json:"numberPhases,omitempty" validate:"omitempty,gte=0"`
+	PhaseToUse   *int    `json:"phaseToUse,omitempty" validate:"omitempty,gte=1,lte=3"`
 }
 
 func NewChargingSchedulePeriod(startPeriod int, limit float64) ChargingSchedulePeriod {

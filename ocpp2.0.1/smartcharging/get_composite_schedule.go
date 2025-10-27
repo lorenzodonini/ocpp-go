@@ -30,8 +30,11 @@ func isValidGetCompositeScheduleStatus(fl validator.FieldLevel) bool {
 }
 
 type CompositeSchedule struct {
-	StartDateTime    *types.DateTime         `json:"startDateTime,omitempty" validate:"omitempty"`
-	ChargingSchedule *types.ChargingSchedule `json:"chargingSchedule,omitempty" validate:"omitempty"`
+	ChargingSchedulePeriod []types.ChargingSchedulePeriod `json:"chargingSchedulePeriod" validate:"required,min=1"`
+	EvseID                 int                            `json:"evseId" validate:"required,gte=0"`
+	Duration               int                            `json:"duration" validate:"required,gte=0"`
+	ScheduleStart          types.DateTime                 `json:"scheduleStart" validate:"required"`
+	ChargingRateUnit       types.ChargingRateUnitType     `json:"chargingRateUnit" validate:"required,chargingRateUnit201"`
 }
 
 // The field definition of the GetCompositeSchedule request payload sent by the CSMS to the Charging System.

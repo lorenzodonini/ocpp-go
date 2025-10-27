@@ -89,6 +89,8 @@ func (suite *OcppV2TestSuite) TestChargingSchedulePeriodValidation() {
 		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: -1.0}, false},
 		{types.ChargingSchedulePeriod{StartPeriod: -1, Limit: 10.0}, false},
 		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(-1)}, false},
+		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(3), PhaseToUse: newInt(0)}, false},
+		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(3), PhaseToUse: newInt(4)}, false},
 	}
 	ExecuteGenericTestTable(t, testTable)
 }
