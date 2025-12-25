@@ -316,15 +316,21 @@ func (s *server) Stop() {
 }
 
 func (s *server) StopConnection(id string, closeError websocket.CloseError) error {
-	s.connMutex.RLock()
+	s.connMutex.Lock()
+	defer s.connMutex.Unlock()
 	w, ok := s.connections[id]
-	s.connMutex.RUnlock()
-
 	if !ok {
 		return fmt.Errorf("couldn't stop websocket connection. No connection with id %s is open", id)
 	}
+
 	log.Debugf("sending stop signal for websocket %s", w.ID())
-	return w.Close(closeError)
+
+	err := w.Close(closeError)
+	if err == nil {
+		delete(s.connections, id)
+	}
+
+	return err
 }
 
 func (s *server) GetChannel(websocketId string) (Channel, bool) {
@@ -335,11 +341,18 @@ func (s *server) GetChannel(websocketId string) (Channel, bool) {
 }
 
 func (s *server) stopConnections() {
-	s.connMutex.RLock()
-	defer s.connMutex.RUnlock()
+	s.connMutex.Lock()
+	defer s.connMutex.Lock()
+
 	for _, conn := range s.connections {
-		_ = conn.Close(websocket.CloseError{Code: websocket.CloseNormalClosure, Text: ""})
+		err := conn.Close(websocket.CloseError{Code: websocket.CloseNormalClosure, Text: ""})
+		if err != nil {
+			log.Error("Unable to close connection for ", conn.id, ": ", err.Error())
+		}
 	}
+
+	// Reset the connections
+	s.connections = make(map[string]*webSocket)
 }
 
 func (s *server) Write(webSocketId string, data []byte) error {
