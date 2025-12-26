@@ -14,7 +14,7 @@ services:
       - "8887:8887"
     networks:
       - sim
-    tty: true
+    # tty: true
   charge-point:
     depends_on:
       central-system:
@@ -29,7 +29,7 @@ services:
       - CENTRAL_SYSTEM_URL=ws://central-system:8887
     networks:
       - sim
-    tty: true
+   # tty: true
 
 networks:
   sim:

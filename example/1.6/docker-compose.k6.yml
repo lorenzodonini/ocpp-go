@@ -1,11 +1,6 @@
 version: '3.9'
 services:
   central-system:
-    build:
-      context: ../..
-      dockerfile: example/1.6/cs/Dockerfile
-    image: ldonini/ocpp1.6-central-system:latest
-    container_name: central-system
     depends_on:
       - grafana-lgtm-stack
     # Setup the central system with metrics and profiling enabled for observability
@@ -14,12 +9,6 @@ services:
       - METRICS_ADDRESS=${METRICS_ADDRESS:-lgtm-stack:4317}
       - PROFILING_ENABLED=${PROFILING_ENABLED:-true}
       - PYROSCOPE_ADDRESS=${PYROSCOPE_ADDRESS:-http://lgtm-stack:4040}
-      - SERVER_LISTEN_PORT=8887
-    ports:
-      - "8887:8887"
-    networks:
-      - sim
-    tty: true
 
   k6:
     image: grafana/k6:latest

@@ -19,3 +19,5 @@ certs/
 
 central_system_sim
 charge_point_sim
+example/1.6/results/**
+example/2.0.1/results/**

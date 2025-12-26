@@ -3,7 +3,7 @@ services:
   cpms:
     build:
       context: ../..
-      dockerfile: example/2.0.1/cs/Dockerfile
+      dockerfile: example/2.0.1/csms/Dockerfile
     image: ldonini/ocpp2.0.1-cpms:latest
     container_name: cpms
     environment:

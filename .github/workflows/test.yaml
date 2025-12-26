@@ -51,6 +51,48 @@ jobs:
           name: coverage_${{ github.sha }}
           path: ./coverage.out
 
+  performance:
+    name: Performance tests
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Run OCPP 1.6 performance tests
+        run: |
+          # Wait for all to complete before finishing
+          make perf-tests-ocpp16-ci
+          make perf-tests-ocpp201-ci
+
+      - name: Report performance  test results
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./results/**
+          name: performance_test_results_${{ github.sha }}
+          retention-days: 14
+
+      - name: Post summary to PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ inputs.github-token }}
+          script: |
+            const fs = require('fs');
+            const path = "./results/summary_201.json"
+            const pr = context.payload.pull_request;
+            if !(fs.existsSync(path)) {
+              return
+            }
+            let content = fs.readFileSync(path, 'utf8').trim();
+            if (content.length > 6000) content = content.slice(0, 6000) + '\n\n(truncated)';
+             body = `### ${process.env.TITLE}\n\`\`\`\n${content}\n\`\`\``;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body
+            })
+
   publish_coverage:
     runs-on: ubuntu-latest
     # Unit and integration tests must be run before publishing coverage

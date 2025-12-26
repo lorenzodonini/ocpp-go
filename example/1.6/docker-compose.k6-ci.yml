@@ -1,0 +1,19 @@
+version: '3.9'
+services:
+  # Requires the central system to be running
+  k6:
+    image: grafana/k6:latest
+    # Run the performance tests
+    user: ${UID}:${GID}
+    command: run /scripts/rapid-connect-disconnect.ts --vus 10 --duration 30s --out json=ocpp_16.json
+    depends_on:
+      - central-system
+    networks:
+      - sim
+    volumes:
+      - ./k6:/scripts
+      - ./results:/home/k6
+
+networks:
+  sim:
+    driver: bridge

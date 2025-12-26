@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/grafana/pyroscope-go"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/grafana/pyroscope-go"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -46,11 +47,11 @@ const (
 var log *logrus.Logger
 var centralSystem ocpp16.CentralSystem
 
-func setupCentralSystem() ocpp16.CentralSystem {
+func setupCentralSystem() (ocpp16.CentralSystem, error) {
 	return ocpp16.NewCentralSystem(nil, nil)
 }
 
-func setupTlsCentralSystem() ocpp16.CentralSystem {
+func setupTlsCentralSystem() (ocpp16.CentralSystem, error) {
 	var certPool *x509.CertPool
 	// Load CA certificates
 	caCertificate, ok := os.LookupEnv(envVarCaCertificate)
@@ -300,11 +301,17 @@ func main() {
 	// Check if TLS enabled
 	t, _ := os.LookupEnv(envVarTls)
 	tlsEnabled, _ := strconv.ParseBool(t)
+
+	var err error
 	// Prepare OCPP 1.6 central system
 	if tlsEnabled {
-		centralSystem = setupTlsCentralSystem()
+		centralSystem, err = setupTlsCentralSystem()
 	} else {
-		centralSystem = setupCentralSystem()
+		centralSystem, err = setupCentralSystem()
+	}
+
+	if err != nil {
+		log.Fatalf("couldn't create central system: %v", err)
 	}
 
 	// Support callbacks for all OCPP 1.6 profiles
