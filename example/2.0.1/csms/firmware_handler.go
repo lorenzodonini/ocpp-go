@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/firmware"
 )
 
 func (c *CSMSHandler) OnFirmwareStatusNotification(chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (response *firmware.FirmwareStatusNotificationResponse, err error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	info, ok := c.chargingStations[chargingStationID]
 	if !ok {
 		err = fmt.Errorf("unknown charging station %v", chargingStationID)

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
@@ -53,6 +55,7 @@ func (s *ChargingStationState) getConnector(id int) *ConnectorInfo {
 // CSMSHandler contains some simple state that a CSMS may want to keep.
 // In production this will typically be replaced by database/API calls.
 type CSMSHandler struct {
+	mu               sync.RWMutex
 	chargingStations map[string]*ChargingStationState
 }
 

@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"time"
 )
 
 func (c *CSMSHandler) OnHeartbeat(chargingStationID string, request *availability.HeartbeatRequest) (response *availability.HeartbeatResponse, err error) {
@@ -14,10 +15,14 @@ func (c *CSMSHandler) OnHeartbeat(chargingStationID string, request *availabilit
 }
 
 func (c *CSMSHandler) OnStatusNotification(chargingStationID string, request *availability.StatusNotificationRequest) (response *availability.StatusNotificationResponse, err error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	info, ok := c.chargingStations[chargingStationID]
 	if !ok {
 		return nil, fmt.Errorf("unknown charging station %v", chargingStationID)
 	}
+
 	if request.ConnectorID > 0 {
 		connectorInfo := info.getConnector(request.ConnectorID)
 		connectorInfo.status = request.ConnectorStatus

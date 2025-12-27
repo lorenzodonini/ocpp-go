@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
@@ -190,6 +192,12 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 
 // Start function
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+
+	ocppj.SetLogger(log.WithField("logger", "ocppj"))
+	ws.SetLogger(log.WithField("logger", "websocket"))
+
 	// Load config from ENV
 	var listenPort = defaultListenPort
 	port, _ := os.LookupEnv(envVarServerPort)
@@ -223,19 +231,30 @@ func main() {
 
 	// Add handlers for dis/connection of charge points
 	centralSystem.SetNewChargePointHandler(func(chargePoint ocpp16.ChargePointConnection) {
+		// State should be thread-safe
+		handler.mu.Lock()
 		handler.chargePoints[chargePoint.ID()] = &ChargePointState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
+		handler.mu.Unlock()
+
 		log.WithField("client", chargePoint.ID()).Info("new charge point connected")
 		go exampleRoutine(chargePoint.ID(), handler)
 	})
+
 	centralSystem.SetChargePointDisconnectedHandler(func(chargePoint ocpp16.ChargePointConnection) {
 		log.WithField("client", chargePoint.ID()).Info("charge point disconnected")
+
+		handler.mu.Lock()
+		defer handler.mu.Unlock()
 		delete(handler.chargePoints, chargePoint.ID())
 	})
-	ocppj.SetLogger(log.WithField("logger", "ocppj"))
-	ws.SetLogger(log.WithField("logger", "websocket"))
-	// Run central system
+
+	// Run central system in background
 	log.Infof("starting central system on port %v", listenPort)
-	centralSystem.Start(listenPort, "/{ws}")
+	go centralSystem.Start(listenPort, "/{ws}")
+
+	<-ctx.Done()
+	log.Info("stopping central system")
+	centralSystem.Stop()
 	log.Info("stopped central system")
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/logging"
@@ -45,6 +46,7 @@ func (ci *ConnectorInfo) hasTransactionInProgress() bool {
 
 // ChargePointState contains some simple state for a connected charge point
 type ChargePointState struct {
+	mu                sync.RWMutex
 	status            core.ChargePointStatus
 	diagnosticsStatus firmware.DiagnosticsStatus
 	firmwareStatus    firmware.FirmwareStatus
@@ -65,6 +67,7 @@ func (cps *ChargePointState) getConnector(id int) *ConnectorInfo {
 // CentralSystemHandler contains some simple state that a central system may want to keep.
 // In production this will typically be replaced by database/API calls.
 type CentralSystemHandler struct {
+	mu           sync.RWMutex
 	chargePoints map[string]*ChargePointState
 }
 
@@ -99,10 +102,14 @@ func (handler *CentralSystemHandler) OnMeterValues(chargePointId string, request
 }
 
 func (handler *CentralSystemHandler) OnStatusNotification(chargePointId string, request *core.StatusNotificationRequest) (confirmation *core.StatusNotificationConfirmation, err error) {
+	handler.mu.RLock()
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
+		handler.mu.RUnlock()
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
 	}
+	handler.mu.RUnlock()
+
 	info.errorCode = request.ErrorCode
 	if request.ConnectorId > 0 {
 		connectorInfo := info.getConnector(request.ConnectorId)
@@ -116,14 +123,22 @@ func (handler *CentralSystemHandler) OnStatusNotification(chargePointId string, 
 }
 
 func (handler *CentralSystemHandler) OnStartTransaction(chargePointId string, request *core.StartTransactionRequest) (confirmation *core.StartTransactionConfirmation, err error) {
+	handler.mu.RLock()
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
+		handler.mu.RUnlock()
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
 	}
+	handler.mu.RUnlock()
+
+	// Lock the connector state until the transaction is created
+	info.mu.Lock()
 	connector := info.getConnector(request.ConnectorId)
 	if connector.currentTransaction >= 0 {
+		info.mu.Unlock()
 		return nil, fmt.Errorf("connector %v is currently busy with another transaction", request.ConnectorId)
 	}
+
 	transaction := &TransactionInfo{}
 	transaction.idTag = request.IdTag
 	transaction.connectorId = request.ConnectorId
@@ -133,16 +148,23 @@ func (handler *CentralSystemHandler) OnStartTransaction(chargePointId string, re
 	nextTransactionId += 1
 	connector.currentTransaction = transaction.id
 	info.transactions[transaction.id] = transaction
+	info.mu.Unlock()
+
 	// TODO: check billable clients
 	logDefault(chargePointId, request.GetFeatureName()).Infof("started transaction %v for connector %v", transaction.id, transaction.connectorId)
 	return core.NewStartTransactionConfirmation(types.NewIdTagInfo(types.AuthorizationStatusAccepted), transaction.id), nil
 }
 
 func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, request *core.StopTransactionRequest) (confirmation *core.StopTransactionConfirmation, err error) {
+	handler.mu.RLock()
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
+		handler.mu.RUnlock()
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
 	}
+	handler.mu.RUnlock()
+
+	info.mu.Lock()
 	transaction, ok := info.transactions[request.TransactionId]
 	if ok {
 		connector := info.getConnector(transaction.connectorId)
@@ -151,6 +173,8 @@ func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, req
 		transaction.endMeter = request.MeterStop
 		// TODO: bill charging period to client
 	}
+	info.mu.Unlock()
+
 	logDefault(chargePointId, request.GetFeatureName()).Infof("stopped transaction %v - %v", request.TransactionId, request.Reason)
 	for _, mv := range request.TransactionData {
 		logDefault(chargePointId, request.GetFeatureName()).Printf("%v", mv)
@@ -161,20 +185,27 @@ func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, req
 // ------------- Firmware management profile callbacks -------------
 
 func (handler *CentralSystemHandler) OnDiagnosticsStatusNotification(chargePointId string, request *firmware.DiagnosticsStatusNotificationRequest) (confirmation *firmware.DiagnosticsStatusNotificationConfirmation, err error) {
+	handler.mu.RLock()
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
+		handler.mu.RUnlock()
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
 	}
+	handler.mu.RUnlock()
+
 	info.diagnosticsStatus = request.Status
 	logDefault(chargePointId, request.GetFeatureName()).Infof("updated diagnostics status to %v", request.Status)
 	return firmware.NewDiagnosticsStatusNotificationConfirmation(), nil
 }
 
 func (handler *CentralSystemHandler) OnFirmwareStatusNotification(chargePointId string, request *firmware.FirmwareStatusNotificationRequest) (confirmation *firmware.FirmwareStatusNotificationConfirmation, err error) {
+	handler.mu.RLock()
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
+		handler.mu.RUnlock()
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
 	}
+	handler.mu.RUnlock()
 	info.firmwareStatus = request.Status
 	logDefault(chargePointId, request.GetFeatureName()).Infof("updated firmware status to %v", request.Status)
 	return &firmware.FirmwareStatusNotificationConfirmation{}, nil

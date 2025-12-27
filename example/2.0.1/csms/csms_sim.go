@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
@@ -224,10 +226,13 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 		}
 	}
 	var currentTx int
+	handler.mu.RLock()
 	for txID := range handler.chargingStations[chargingStationID].transactions {
 		currentTx = txID
 		break
 	}
+	handler.mu.RUnlock()
+
 	e = csms.SetDisplayMessage(chargingStationID, cb7, display.MessageInfo{
 		ID:            42,
 		Priority:      display.MessagePriorityInFront,
@@ -248,6 +253,12 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 
 // Start function
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+
+	ocppj.SetLogger(log)
+	ws.SetLogger(log)
+
 	// Load config from ENV
 	var listenPort = defaultListenPort
 	port, _ := os.LookupEnv(envVarServerPort)
@@ -265,6 +276,7 @@ func main() {
 	} else {
 		csms = setupCentralSystem()
 	}
+
 	// Support callbacks for all OCPP 2.0.1 profiles
 	handler := &CSMSHandler{chargingStations: map[string]*ChargingStationState{}}
 	csms.SetAuthorizationHandler(handler)
@@ -278,20 +290,31 @@ func main() {
 	csms.SetReservationHandler(handler)
 	csms.SetTariffCostHandler(handler)
 	csms.SetTransactionsHandler(handler)
+
 	// Add handlers for dis/connection of charging stations
 	csms.SetNewChargingStationHandler(func(chargingStation ocpp2.ChargingStationConnection) {
+		handler.mu.Lock()
 		handler.chargingStations[chargingStation.ID()] = &ChargingStationState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
+		handler.mu.Unlock()
+
 		log.WithField("client", chargingStation.ID()).Info("new charging station connected")
 		go exampleRoutine(chargingStation.ID(), handler)
 	})
 	csms.SetChargingStationDisconnectedHandler(func(chargingStation ocpp2.ChargingStationConnection) {
 		log.WithField("client", chargingStation.ID()).Info("charging station disconnected")
+		handler.mu.Lock()
 		delete(handler.chargingStations, chargingStation.ID())
+		handler.mu.Unlock()
 	})
-	ocppj.SetLogger(log)
+
 	// Run CSMS
 	log.Infof("starting CSMS on port %v", listenPort)
-	csms.Start(listenPort, "/{ws}")
+	go csms.Start(listenPort, "/{ws}")
+
+	<-ctx.Done()
+	// Shutdown CSMS
+	log.Info("stopping CSMS")
+	csms.Stop()
 	log.Info("stopped CSMS")
 }
 
