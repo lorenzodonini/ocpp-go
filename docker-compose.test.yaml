@@ -16,6 +16,8 @@ services:
       - /bin/bash
       - -c
       - |
+        set -e
+        set -o pipefail
         go test -v -covermode=count -coverprofile=coverage.out ./ocppj
         go test -v -covermode=count -coverprofile=ocpp16.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp1.6/... github.com/lorenzodonini/ocpp-go/ocpp1.6_test
         go test -v -covermode=count -coverprofile=ocpp201.out -coverpkg=github.com/lorenzodonini/ocpp-go/ocpp2.0.1/... github.com/lorenzodonini/ocpp-go/ocpp2.0.1_test
@@ -38,6 +40,9 @@ services:
     command:
       - /bin/bash
       - -c
-      - go test ./ws -v -covermode=count -coverprofile=integration_coverage.out
+      - |
+        set -e
+        set -o pipefail
+        go test ./ws -v -covermode=count -coverprofile=integration_coverage.out
     volumes:
       - .:/etc/ocpp-go:rw

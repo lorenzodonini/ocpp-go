@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4.2.2
       - name: Run tests
         run: |
-          docker compose -f docker-compose.test.yaml up unit_test --abort-on-container-exit
+          make unit-tests
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
@@ -41,7 +41,7 @@ jobs:
           name: unit_coverage_${{ github.sha }}
       - name: Run integration tests
         run: |
-          docker compose -f docker-compose.test.yaml up integration_test --abort-on-container-exit
+          make integration-tests
       - name: Merge coverage
         run: |
           sed '1d;$d' integration_coverage.out >> coverage.out
