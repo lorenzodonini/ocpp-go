@@ -62,12 +62,12 @@ func (err Error) Error() string {
 // This can easily be achieved by only registering certain profiles, while remaining compliant with the specifications.
 type Profile struct {
 	Name     string
-	Features map[string]Feature
+	features map[string]Feature
 }
 
 // Creates a new profile, identified by a name and a set of features.
 func NewProfile(name string, features ...Feature) *Profile {
-	profile := Profile{Name: name, Features: make(map[string]Feature)}
+	profile := Profile{Name: name, features: make(map[string]Feature)}
 	for _, feature := range features {
 		profile.AddFeature(feature)
 	}
@@ -76,25 +76,25 @@ func NewProfile(name string, features ...Feature) *Profile {
 
 // Adds a feature to the profile.
 func (p *Profile) AddFeature(feature Feature) {
-	p.Features[feature.GetFeatureName()] = feature
+	p.features[feature.GetFeatureName()] = feature
 }
 
 // SupportsFeature returns true if a feature matching the the passed name is registered with this profile, false otherwise.
 func (p *Profile) SupportsFeature(name string) bool {
-	_, ok := p.Features[name]
+	_, ok := p.features[name]
 	return ok
 }
 
 // Retrieves a feature, identified by a unique name.
 // Returns nil in case the feature is not registered with this profile.
 func (p *Profile) GetFeature(name string) Feature {
-	return p.Features[name]
+	return p.features[name]
 }
 
 // ParseRequest checks whether a feature is supported and passes the rawRequest message to the requestParser function.
 // The type of the request message is passed to the requestParser function, which has to perform type assertion.
 func (p *Profile) ParseRequest(featureName string, rawRequest interface{}, requestParser func(raw interface{}, requestType reflect.Type) (Request, error)) (Request, error) {
-	feature, ok := p.Features[featureName]
+	feature, ok := p.features[featureName]
 	if !ok {
 		return nil, fmt.Errorf("Feature %s not found", featureName)
 	}
@@ -105,7 +105,7 @@ func (p *Profile) ParseRequest(featureName string, rawRequest interface{}, reque
 // ParseRequest checks whether a feature is supported and passes the rawResponse message to the responseParser function.
 // The type of the response message is passed to the responseParser function, which has to perform type assertion.
 func (p *Profile) ParseResponse(featureName string, rawResponse interface{}, responseParser func(raw interface{}, responseType reflect.Type) (Response, error)) (Response, error) {
-	feature, ok := p.Features[featureName]
+	feature, ok := p.features[featureName]
 	if !ok {
 		return nil, fmt.Errorf("Feature %s not found", featureName)
 	}
