@@ -1,0 +1,40 @@
+version: "2"
+linters:
+  default: all
+  enable:
+    - bodyclose
+    - copyloopvar
+    - decorder
+    - errcheck
+    - forbidigo
+    - goconst
+    - gocritic
+    - govet
+    - ineffassign
+    - intrange
+    - misspell
+    - nestif
+    - nlreturn
+    - perfsprint
+    - predeclared
+    - staticcheck
+    - testifylint
+    - unparam
+    - unused
+    - wastedassign
+    - whitespace
+    - wrapcheck
+  exclusions:
+    generated: lax
+    paths:
+      - ./ws/mocks
+      - ./ocppj/mocks
+      - ./ocpp1.6_test/mocks
+formatters:
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/lorenzodonini/ocpp-go
+  enable:
+    - gofmt
+    - goimports
