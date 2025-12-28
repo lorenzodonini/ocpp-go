@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -14,7 +12,6 @@ import (
 
 // Tests
 func (suite *OcppV2TestSuite) TestNotifyReportRequestValidation() {
-	t := suite.T()
 	reportData := provisioning.ReportData{
 		Component:               types.Component{Name: "component1"},
 		Variable:                types.Variable{Name: "variable1"},
@@ -40,11 +37,10 @@ func (suite *OcppV2TestSuite) TestNotifyReportRequestValidation() {
 		{provisioning.NotifyReportRequest{RequestID: 42, GeneratedAt: types.NewDateTime(time.Now()), Tbc: true, SeqNo: 0, ReportData: []provisioning.ReportData{{Component: types.Component{Name: "comp1"}, Variable: types.Variable{Name: "var1"}, VariableAttribute: []provisioning.VariableAttribute{provisioning.NewVariableAttribute()}, VariableCharacteristics: provisioning.NewVariableCharacteristics("unknownType", true)}}}, false},
 		{provisioning.NotifyReportRequest{RequestID: 42, GeneratedAt: types.NewDateTime(time.Now()), Tbc: true, SeqNo: 0, ReportData: []provisioning.ReportData{{Component: types.Component{Name: "comp1"}, Variable: types.Variable{Name: "var1"}, VariableAttribute: []provisioning.VariableAttribute{{Mutability: "invalidMutability"}}, VariableCharacteristics: provisioning.NewVariableCharacteristics(provisioning.TypeString, true)}}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestVariableCharacteristicsValidation() {
-	t := suite.T()
 	var table = []GenericTestEntry{
 		{provisioning.NewVariableCharacteristics(provisioning.TypeString, false), true},
 		{provisioning.VariableCharacteristics{Unit: "KWh", DataType: provisioning.TypeDecimal, MinLimit: newFloat(1.0), MaxLimit: newFloat(22.0), ValuesList: "7.0", SupportsMonitoring: true}, true},
@@ -66,11 +62,10 @@ func (suite *OcppV2TestSuite) TestVariableCharacteristicsValidation() {
 		{provisioning.VariableCharacteristics{Unit: "KWh", DataType: "invalidDataType", MinLimit: newFloat(1.0), MaxLimit: newFloat(22.0), ValuesList: "7.0", SupportsMonitoring: true}, false},
 		{provisioning.VariableCharacteristics{Unit: "KWh", DataType: provisioning.TypeDecimal, MinLimit: newFloat(1.0), MaxLimit: newFloat(22.0), ValuesList: ">1000....................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", SupportsMonitoring: true}, false},
 	}
-	ExecuteGenericTestTable(t, table)
+	ExecuteGenericTestTable(suite, table)
 }
 
 func (suite *OcppV2TestSuite) TestVariableAttributeValidation() {
-	t := suite.T()
 	var table = []GenericTestEntry{
 		{provisioning.NewVariableAttribute(), true},
 		{provisioning.VariableAttribute{Type: types.AttributeActual, Value: "someValue", Mutability: provisioning.MutabilityReadWrite, Persistent: false, Constant: false}, true},
@@ -91,20 +86,18 @@ func (suite *OcppV2TestSuite) TestVariableAttributeValidation() {
 		{provisioning.VariableAttribute{Type: types.AttributeActual, Value: "someValue", Mutability: "invalidMutability"}, false},
 		{provisioning.VariableAttribute{Type: types.AttributeActual, Value: ">2500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", Mutability: provisioning.MutabilityReadWrite}, false},
 	}
-	ExecuteGenericTestTable(t, table)
+	ExecuteGenericTestTable(suite, table)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyReportResponseValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{provisioning.NewNotifyReportResponse(), true},
 		{provisioning.NotifyReportResponse{}, true},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyReportE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := "1234"
 	wsUrl := "someUrl"
@@ -129,37 +122,37 @@ func (suite *OcppV2TestSuite) TestNotifyReportE2EMocked() {
 	handler := &MockCSMSProvisioningHandler{}
 	handler.On("OnNotifyReport", mock.AnythingOfType("string"), mock.Anything).Return(notifyReportResponse, nil).Run(func(args mock.Arguments) {
 		request := args.Get(1).(*provisioning.NotifyReportRequest)
-		assert.Equal(t, requestID, request.RequestID)
-		assertDateTimeEquality(t, generatedAt, request.GeneratedAt)
-		assert.Equal(t, seqNo, request.SeqNo)
-		assert.Equal(t, tbc, request.Tbc)
-		require.Len(t, request.ReportData, 1)
-		assert.Equal(t, reportData.Component.Name, request.ReportData[0].Component.Name)
-		assert.Equal(t, reportData.Variable.Name, request.ReportData[0].Variable.Name)
-		require.Len(t, request.ReportData[0].VariableAttribute, len(reportData.VariableAttribute))
-		assert.Equal(t, variableAttribute.Mutability, request.ReportData[0].VariableAttribute[0].Mutability)
-		assert.Equal(t, variableAttribute.Value, request.ReportData[0].VariableAttribute[0].Value)
-		assert.Equal(t, variableAttribute.Type, request.ReportData[0].VariableAttribute[0].Type)
-		assert.Equal(t, variableAttribute.Constant, request.ReportData[0].VariableAttribute[0].Constant)
-		assert.Equal(t, variableAttribute.Persistent, request.ReportData[0].VariableAttribute[0].Persistent)
-		require.NotNil(t, request.ReportData[0].VariableCharacteristics)
-		assert.Equal(t, variableCharacteristics.Unit, request.ReportData[0].VariableCharacteristics.Unit)
-		assert.Equal(t, variableCharacteristics.DataType, request.ReportData[0].VariableCharacteristics.DataType)
-		assert.Equal(t, *variableCharacteristics.MaxLimit, *request.ReportData[0].VariableCharacteristics.MaxLimit)
-		assert.Equal(t, variableCharacteristics.SupportsMonitoring, request.ReportData[0].VariableCharacteristics.SupportsMonitoring)
+		suite.Equal(requestID, request.RequestID)
+		assertDateTimeEquality(suite, generatedAt, request.GeneratedAt)
+		suite.Equal(seqNo, request.SeqNo)
+		suite.Equal(tbc, request.Tbc)
+		suite.Require().Len(request.ReportData, 1)
+		suite.Equal(reportData.Component.Name, request.ReportData[0].Component.Name)
+		suite.Equal(reportData.Variable.Name, request.ReportData[0].Variable.Name)
+		suite.Require().Len(request.ReportData[0].VariableAttribute, len(reportData.VariableAttribute))
+		suite.Equal(variableAttribute.Mutability, request.ReportData[0].VariableAttribute[0].Mutability)
+		suite.Equal(variableAttribute.Value, request.ReportData[0].VariableAttribute[0].Value)
+		suite.Equal(variableAttribute.Type, request.ReportData[0].VariableAttribute[0].Type)
+		suite.Equal(variableAttribute.Constant, request.ReportData[0].VariableAttribute[0].Constant)
+		suite.Equal(variableAttribute.Persistent, request.ReportData[0].VariableAttribute[0].Persistent)
+		suite.Require().NotNil(request.ReportData[0].VariableCharacteristics)
+		suite.Equal(variableCharacteristics.Unit, request.ReportData[0].VariableCharacteristics.Unit)
+		suite.Equal(variableCharacteristics.DataType, request.ReportData[0].VariableCharacteristics.DataType)
+		suite.Equal(*variableCharacteristics.MaxLimit, *request.ReportData[0].VariableCharacteristics.MaxLimit)
+		suite.Equal(variableCharacteristics.SupportsMonitoring, request.ReportData[0].VariableCharacteristics.SupportsMonitoring)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	response, err := suite.chargingStation.NotifyReport(requestID, generatedAt, seqNo, func(request *provisioning.NotifyReportRequest) {
 		request.ReportData = []provisioning.ReportData{reportData}
 		request.Tbc = tbc
 	})
-	require.Nil(t, err)
-	require.NotNil(t, response)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(response)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyReportInvalidEndpoint() {

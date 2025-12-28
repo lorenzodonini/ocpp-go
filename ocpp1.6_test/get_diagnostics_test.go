@@ -6,14 +6,11 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestGetDiagnosticsRequestValidation() {
-	t := suite.T()
 	requestTable := []GenericTestEntry{
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10), StartTime: types.NewDateTime(time.Now()), StopTime: types.NewDateTime(time.Now())}, true},
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10), StartTime: types.NewDateTime(time.Now())}, true},
@@ -25,22 +22,20 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsRequestValidation() {
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", Retries: newInt(-1)}, false},
 		{firmware.GetDiagnosticsRequest{Location: "ftp:some/path", RetryInterval: newInt(-1)}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestGetDiagnosticsConfirmationValidation() {
-	t := suite.T()
 	confirmationTable := []GenericTestEntry{
 		{firmware.GetDiagnosticsConfirmation{FileName: "someFileName"}, true},
 		{firmware.GetDiagnosticsConfirmation{FileName: ""}, true},
 		{firmware.GetDiagnosticsConfirmation{}, true},
 		{firmware.GetDiagnosticsConfirmation{FileName: ">255............................................................................................................................................................................................................................................................"}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -60,15 +55,15 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 	firmwareListener := &MockChargePointFirmwareManagementListener{}
 	firmwareListener.On("OnGetDiagnostics", mock.Anything).Return(getDiagnosticsConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*firmware.GetDiagnosticsRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, location, request.Location)
-		require.NotNil(t, request.Retries)
-		assert.Equal(t, *retries, *request.Retries)
-		require.NotNil(t, request.RetryInterval)
-		assert.Equal(t, *retryInterval, *request.RetryInterval)
-		assertDateTimeEquality(t, *startTime, *request.StartTime)
-		assertDateTimeEquality(t, *stopTime, *request.StopTime)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(location, request.Location)
+		suite.Require().NotNil(request.Retries)
+		suite.Equal(*retries, *request.Retries)
+		suite.Require().NotNil(request.RetryInterval)
+		suite.Equal(*retryInterval, *request.RetryInterval)
+		assertDateTimeEquality(suite, *startTime, *request.StartTime)
+		assertDateTimeEquality(suite, *stopTime, *request.StopTime)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	suite.chargePoint.SetFirmwareManagementHandler(firmwareListener)
@@ -76,12 +71,12 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.GetDiagnostics(wsId, func(confirmation *firmware.GetDiagnosticsConfirmation, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, fileName, confirmation.FileName)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(fileName, confirmation.FileName)
 		resultChannel <- true
 	}, location, func(request *firmware.GetDiagnosticsRequest) {
 		request.RetryInterval = retryInterval
@@ -89,9 +84,9 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 		request.StartTime = startTime
 		request.StopTime = stopTime
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestGetDiagnosticsInvalidEndpoint() {

@@ -4,13 +4,10 @@ import (
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{core.ChangeAvailabilityRequest{ConnectorId: 0, Type: core.AvailabilityTypeOperative}, true},
 		{core.ChangeAvailabilityRequest{ConnectorId: 0, Type: core.AvailabilityTypeInoperative}, true},
@@ -19,11 +16,10 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityRequestValidation() {
 		{core.ChangeAvailabilityRequest{Type: "invalidAvailabilityType"}, false},
 		{core.ChangeAvailabilityRequest{ConnectorId: -1, Type: core.AvailabilityTypeOperative}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusAccepted}, true},
 		{core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusRejected}, true},
@@ -31,12 +27,11 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityConfirmationValidation() {
 		{core.ChangeAvailabilityConfirmation{Status: "invalidAvailabilityStatus"}, false},
 		{core.ChangeAvailabilityConfirmation{}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 // Test
 func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -51,27 +46,27 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnChangeAvailability", mock.Anything).Return(changeAvailabilityConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.ChangeAvailabilityRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, connectorId, request.ConnectorId)
-		assert.Equal(t, availabilityType, request.Type)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(connectorId, request.ConnectorId)
+		suite.Equal(availabilityType, request.Type)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.ChangeAvailability(wsId, func(confirmation *core.ChangeAvailabilityConfirmation, err error) {
-		require.NotNil(t, confirmation)
-		require.Nil(t, err)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().NotNil(confirmation)
+		suite.Require().Nil(err)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, connectorId, availabilityType)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestChangeAvailabilityInvalidEndpoint() {

@@ -4,33 +4,28 @@ import (
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestClearCacheRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{core.ClearCacheRequest{}, true},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestClearCacheConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.ClearCacheConfirmation{Status: core.ClearCacheStatusAccepted}, true},
 		{core.ClearCacheConfirmation{Status: core.ClearCacheStatusRejected}, true},
 		{core.ClearCacheConfirmation{Status: "invalidClearCacheStatus"}, false},
 		{core.ClearCacheConfirmation{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestClearCacheE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -47,17 +42,17 @@ func (suite *OcppV16TestSuite) TestClearCacheE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.ClearCache(wsId, func(confirmation *core.ClearCacheConfirmation, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestClearCacheInvalidEndpoint() {

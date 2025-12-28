@@ -4,32 +4,27 @@ import (
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestDiagnosticsStatusNotificationRequestValidation() {
-	t := suite.T()
 	requestTable := []GenericTestEntry{
 		{firmware.DiagnosticsStatusNotificationRequest{Status: firmware.DiagnosticsStatusUploaded}, true},
 		{firmware.DiagnosticsStatusNotificationRequest{}, false},
 		{firmware.DiagnosticsStatusNotificationRequest{Status: "invalidDiagnosticsStatus"}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestDiagnosticsStatusNotificationConfirmationValidation() {
-	t := suite.T()
 	confirmationTable := []GenericTestEntry{
 		{firmware.DiagnosticsStatusNotificationConfirmation{}, true},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestDiagnosticsStatusNotificationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -42,9 +37,9 @@ func (suite *OcppV16TestSuite) TestDiagnosticsStatusNotificationE2EMocked() {
 	firmwareListener := &MockCentralSystemFirmwareManagementListener{}
 	firmwareListener.On("OnDiagnosticsStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(diagnosticsStatusNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*firmware.DiagnosticsStatusNotificationRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, status, request.Status)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(status, request.Status)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	suite.centralSystem.SetFirmwareManagementHandler(firmwareListener)
@@ -52,10 +47,10 @@ func (suite *OcppV16TestSuite) TestDiagnosticsStatusNotificationE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargePoint.DiagnosticsStatusNotification(status)
-	require.Nil(t, err)
-	require.NotNil(t, confirmation)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(confirmation)
 }
 
 func (suite *OcppV16TestSuite) TestDiagnosticsStatusNotificationInvalidEndpoint() {

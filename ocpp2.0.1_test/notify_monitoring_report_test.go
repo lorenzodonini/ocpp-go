@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -14,7 +12,6 @@ import (
 
 // Test
 func (suite *OcppV2TestSuite) TestNotifyMonitoringReportRequestValidation() {
-	t := suite.T()
 	validMonitoring := diagnostics.NewVariableMonitoring(1, false, 42.42, diagnostics.MonitorPeriodic, 0)
 	invalidMonitoring := diagnostics.NewVariableMonitoring(1, false, 42.42, "invalidMonitorType", 0)
 	monitoringData := diagnostics.MonitoringData{
@@ -36,11 +33,10 @@ func (suite *OcppV2TestSuite) TestNotifyMonitoringReportRequestValidation() {
 		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, Tbc: true, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now()), Monitor: []diagnostics.MonitoringData{{Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, VariableMonitoring: []diagnostics.VariableMonitoring{}}}}, false},
 		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, Tbc: true, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now()), Monitor: []diagnostics.MonitoringData{{Component: types.Component{Name: "component1"}, Variable: types.Variable{}, VariableMonitoring: []diagnostics.VariableMonitoring{validMonitoring}}}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestVariableMonitoringValidation() {
-	t := suite.T()
 	var table = []GenericTestEntry{
 		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodic, Severity: 0}, true},
 		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodic, Severity: 9}, true},
@@ -59,19 +55,17 @@ func (suite *OcppV2TestSuite) TestVariableMonitoringValidation() {
 		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodic, Severity: 10}, false},
 		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: "invalidMonitorType", Severity: 0}, false},
 	}
-	ExecuteGenericTestTable(t, table)
+	ExecuteGenericTestTable(suite, table)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyMonitoringReportResponseValidation() {
-	t := suite.T()
 	var responseTable = []GenericTestEntry{
 		{diagnostics.NotifyMonitoringReportResponse{}, true},
 	}
-	ExecuteGenericTestTable(t, responseTable)
+	ExecuteGenericTestTable(suite, responseTable)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyMonitoringReportE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -94,32 +88,32 @@ func (suite *OcppV2TestSuite) TestNotifyMonitoringReportE2EMocked() {
 	handler := &MockCSMSDiagnosticsHandler{}
 	handler.On("OnNotifyMonitoringReport", mock.AnythingOfType("string"), mock.Anything).Return(response, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*diagnostics.NotifyMonitoringReportRequest)
-		require.True(t, ok)
-		assert.Equal(t, requestID, request.RequestID)
-		assert.Equal(t, tbc, request.Tbc)
-		assert.Equal(t, seqNo, request.SeqNo)
-		assertDateTimeEquality(t, generatedAt, request.GeneratedAt)
-		require.Len(t, request.Monitor, 1)
-		assert.Equal(t, monitoringData.Component.Name, request.Monitor[0].Component.Name)
-		assert.Equal(t, monitoringData.Variable.Name, request.Monitor[0].Variable.Name)
-		require.Len(t, request.Monitor[0].VariableMonitoring, len(monitoringData.VariableMonitoring))
-		assert.Equal(t, monitoringData.VariableMonitoring[0].ID, request.Monitor[0].VariableMonitoring[0].ID)
-		assert.Equal(t, monitoringData.VariableMonitoring[0].Transaction, request.Monitor[0].VariableMonitoring[0].Transaction)
-		assert.Equal(t, monitoringData.VariableMonitoring[0].Type, request.Monitor[0].VariableMonitoring[0].Type)
-		assert.Equal(t, monitoringData.VariableMonitoring[0].Value, request.Monitor[0].VariableMonitoring[0].Value)
-		assert.Equal(t, monitoringData.VariableMonitoring[0].Severity, request.Monitor[0].VariableMonitoring[0].Severity)
+		suite.Require().True(ok)
+		suite.Equal(requestID, request.RequestID)
+		suite.Equal(tbc, request.Tbc)
+		suite.Equal(seqNo, request.SeqNo)
+		assertDateTimeEquality(suite, generatedAt, request.GeneratedAt)
+		suite.Require().Len(request.Monitor, 1)
+		suite.Equal(monitoringData.Component.Name, request.Monitor[0].Component.Name)
+		suite.Equal(monitoringData.Variable.Name, request.Monitor[0].Variable.Name)
+		suite.Require().Len(request.Monitor[0].VariableMonitoring, len(monitoringData.VariableMonitoring))
+		suite.Equal(monitoringData.VariableMonitoring[0].ID, request.Monitor[0].VariableMonitoring[0].ID)
+		suite.Equal(monitoringData.VariableMonitoring[0].Transaction, request.Monitor[0].VariableMonitoring[0].Transaction)
+		suite.Equal(monitoringData.VariableMonitoring[0].Type, request.Monitor[0].VariableMonitoring[0].Type)
+		suite.Equal(monitoringData.VariableMonitoring[0].Value, request.Monitor[0].VariableMonitoring[0].Value)
+		suite.Equal(monitoringData.VariableMonitoring[0].Severity, request.Monitor[0].VariableMonitoring[0].Severity)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	r, err := suite.chargingStation.NotifyMonitoringReport(requestID, seqNo, generatedAt, []diagnostics.MonitoringData{monitoringData}, func(request *diagnostics.NotifyMonitoringReportRequest) {
 		request.Tbc = tbc
 	})
-	assert.Nil(t, err)
-	assert.NotNil(t, r)
+	suite.Nil(err)
+	suite.NotNil(r)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyMonitoringReportInvalidEndpoint() {

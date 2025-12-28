@@ -3,16 +3,13 @@ package ocpp2_test
 import (
 	"fmt"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestLogStatusNotificationRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusUploading, RequestID: 42}, true},
 		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusUploadFailure, RequestID: 42}, true},
@@ -27,19 +24,17 @@ func (suite *OcppV2TestSuite) TestLogStatusNotificationRequestValidation() {
 		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusIdle, RequestID: -1}, false},
 		{diagnostics.LogStatusNotificationRequest{Status: "invalidUploadLogStatus", RequestID: 42}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestLogStatusNotificationConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{diagnostics.LogStatusNotificationResponse{}, true},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestLogStatusNotificationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -53,19 +48,19 @@ func (suite *OcppV2TestSuite) TestLogStatusNotificationE2EMocked() {
 	handler := &MockCSMSDiagnosticsHandler{}
 	handler.On("OnLogStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(logStatusNotificationResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*diagnostics.LogStatusNotificationRequest)
-		require.True(t, ok)
-		assert.Equal(t, status, request.Status)
-		assert.Equal(t, requestID, request.RequestID)
+		suite.Require().True(ok)
+		suite.Equal(status, request.Status)
+		suite.Equal(requestID, request.RequestID)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargingStation.LogStatusNotification(status, requestID)
-	assert.Nil(t, err)
-	assert.NotNil(t, confirmation)
+	suite.Nil(err)
+	suite.NotNil(confirmation)
 }
 
 func (suite *OcppV2TestSuite) TestLogStatusNotificationInvalidEndpoint() {

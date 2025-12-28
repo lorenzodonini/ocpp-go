@@ -3,9 +3,7 @@ package ocpp2_test
 import (
 	"fmt"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -13,7 +11,6 @@ import (
 
 // Test
 func (suite *OcppV2TestSuite) TestPublishFirmwareRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{firmware.NewPublishFirmwareRequest("https://someurl", "deadbeef", 42), true},
 		{firmware.PublishFirmwareRequest{Location: "http://someurl", Retries: newInt(5), Checksum: "deadbeef", RequestID: 42, RetryInterval: newInt(300)}, true},
@@ -29,11 +26,10 @@ func (suite *OcppV2TestSuite) TestPublishFirmwareRequestValidation() {
 		{firmware.PublishFirmwareRequest{Location: "http://someurl", Retries: newInt(-1), Checksum: "deadbeef", RequestID: 42, RetryInterval: newInt(300)}, false},
 		{firmware.PublishFirmwareRequest{Location: ">512.............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", Retries: newInt(5), Checksum: "deadbeef", RequestID: 42, RetryInterval: newInt(300)}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestPublishFirmwareResponseValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{firmware.PublishFirmwareResponse{Status: types.GenericStatusAccepted, StatusInfo: &types.StatusInfo{ReasonCode: "ok", AdditionalInfo: "someInfo"}}, true},
 		{firmware.PublishFirmwareResponse{Status: types.GenericStatusAccepted}, true},
@@ -41,11 +37,10 @@ func (suite *OcppV2TestSuite) TestPublishFirmwareResponseValidation() {
 		{firmware.PublishFirmwareResponse{Status: "invalidStatus"}, false},
 		{firmware.PublishFirmwareResponse{Status: types.GenericStatusAccepted, StatusInfo: &types.StatusInfo{}}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestPublishFirmwareE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -67,35 +62,35 @@ func (suite *OcppV2TestSuite) TestPublishFirmwareE2EMocked() {
 	handler := &MockChargingStationFirmwareHandler{}
 	handler.On("OnPublishFirmware", mock.Anything).Return(publishFirmwareResponse, nil).Run(func(args mock.Arguments) {
 		request := args.Get(0).(*firmware.PublishFirmwareRequest)
-		assert.Equal(t, location, request.Location)
-		assert.Equal(t, *retries, *request.Retries)
-		assert.Equal(t, checksum, request.Checksum)
-		assert.Equal(t, requestID, request.RequestID)
-		assert.Equal(t, *retryInterval, *request.RetryInterval)
+		suite.Equal(location, request.Location)
+		suite.Equal(*retries, *request.Retries)
+		suite.Equal(checksum, request.Checksum)
+		suite.Equal(requestID, request.RequestID)
+		suite.Equal(*retryInterval, *request.RetryInterval)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.PublishFirmware(wsId, func(resp *firmware.PublishFirmwareResponse, err error) {
-		assert.Nil(t, err)
-		require.NotNil(t, resp)
-		assert.Equal(t, publishFirmwareResponse.Status, resp.Status)
-		require.NotNil(t, resp.StatusInfo)
-		assert.Equal(t, publishFirmwareResponse.StatusInfo.ReasonCode, resp.StatusInfo.ReasonCode)
-		assert.Equal(t, publishFirmwareResponse.StatusInfo.AdditionalInfo, resp.StatusInfo.AdditionalInfo)
+		suite.Nil(err)
+		suite.Require().NotNil(resp)
+		suite.Equal(publishFirmwareResponse.Status, resp.Status)
+		suite.Require().NotNil(resp.StatusInfo)
+		suite.Equal(publishFirmwareResponse.StatusInfo.ReasonCode, resp.StatusInfo.ReasonCode)
+		suite.Equal(publishFirmwareResponse.StatusInfo.AdditionalInfo, resp.StatusInfo.AdditionalInfo)
 		resultChannel <- true
 	}, location, checksum, requestID, func(request *firmware.PublishFirmwareRequest) {
 		request.Retries = retries
 		request.RetryInterval = retryInterval
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	if err == nil {
 		result := <-resultChannel
-		assert.True(t, result)
+		suite.True(result)
 	}
 }
 

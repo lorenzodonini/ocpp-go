@@ -6,13 +6,10 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6_test/mocks"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func (suite *OcppV16TestSuite) TestInstallCertificateRequestValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{certificates.InstallCertificateRequest{CertificateType: types.ManufacturerRootCertificate, Certificate: "0xdeadbeef"}, true},
 		{certificates.InstallCertificateRequest{CertificateType: types.ManufacturerRootCertificate}, false},
@@ -23,11 +20,10 @@ func (suite *OcppV16TestSuite) TestInstallCertificateRequestValidation() {
 		{certificates.InstallCertificateRequest{CertificateType: "invalidCertificateUse", Certificate: "0xdeadbeef"}, false},
 		{certificates.InstallCertificateRequest{CertificateType: types.ManufacturerRootCertificate, Certificate: newLongString(5501)}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV16TestSuite) TestInstallCertificateConfirmationValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{certificates.InstallCertificateResponse{Status: certificates.CertificateStatusAccepted}, true},
 		{certificates.InstallCertificateResponse{Status: certificates.CertificateStatusRejected}, true},
@@ -35,7 +31,7 @@ func (suite *OcppV16TestSuite) TestInstallCertificateConfirmationValidation() {
 		{certificates.InstallCertificateResponse{}, false},
 		{certificates.InstallCertificateResponse{Status: "invalidInstallCertificateStatus"}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 // Test
@@ -55,8 +51,8 @@ func (suite *OcppV16TestSuite) TestInstallCertificateE2EMocked() {
 	// Setting handlers
 	handler := mocks.NewMockCertificatesChargePointHandler(t)
 	handler.EXPECT().OnInstallCertificate(mock.Anything).RunAndReturn(func(request *certificates.InstallCertificateRequest) (*certificates.InstallCertificateResponse, error) {
-		assert.Equal(t, certificateType, request.CertificateType)
-		assert.Equal(t, certificate, request.Certificate)
+		suite.Equal(certificateType, request.CertificateType)
+		suite.Equal(certificate, request.Certificate)
 		return installCertificateResponse, nil
 	})
 
@@ -68,17 +64,17 @@ func (suite *OcppV16TestSuite) TestInstallCertificateE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	suite.chargePoint.SetCertificateHandler(handler)
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.InstallCertificate(wsId, func(response *certificates.InstallCertificateResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, response)
-		assert.Equal(t, status, response.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(response)
+		suite.Equal(status, response.Status)
 		resultChannel <- true
 	}, certificateType, certificate)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestInstallCertificateInvalidEndpoint() {

@@ -5,14 +5,11 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestRemoteStartTransactionRequestValidation() {
-	t := suite.T()
 	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
 	chargingProfile := types.NewChargingProfile(1, 1, types.ChargingProfilePurposeChargePointMaxProfile, types.ChargingProfileKindAbsolute, chargingSchedule)
 	var requestTable = []GenericTestEntry{
@@ -23,22 +20,20 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionRequestValidation() {
 		{core.RemoteStartTransactionRequest{}, false},
 		{core.RemoteStartTransactionRequest{IdTag: ">20..................", ConnectorId: newInt(1)}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStartTransactionConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}, true},
 		{core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}, true},
 		{core.RemoteStartTransactionConfirmation{Status: "invalidRemoteStartTransactionStatus"}, false},
 		{core.RemoteStartTransactionConfirmation{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStartTransactionE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -73,44 +68,44 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionE2EMocked() {
 	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnRemoteStartTransaction", mock.Anything).Return(RemoteStartTransactionConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.RemoteStartTransactionRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, *connectorId, *request.ConnectorId)
-		assert.Equal(t, idTag, request.IdTag)
-		require.NotNil(t, request.ChargingProfile)
-		assert.Equal(t, chargingProfileId, request.ChargingProfile.ChargingProfileId)
-		assert.Equal(t, stackLevel, request.ChargingProfile.StackLevel)
-		assert.Equal(t, chargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
-		assert.Equal(t, chargingProfileKind, request.ChargingProfile.ChargingProfileKind)
-		assert.Equal(t, types.RecurrencyKindType(""), request.ChargingProfile.RecurrencyKind)
-		assert.Nil(t, request.ChargingProfile.ValidFrom)
-		assert.Nil(t, request.ChargingProfile.ValidTo)
-		require.NotNil(t, request.ChargingProfile.ChargingSchedule)
-		assert.Equal(t, chargingRateUnit, request.ChargingProfile.ChargingSchedule.ChargingRateUnit)
-		require.Len(t, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod, 1)
-		assert.Equal(t, startPeriod, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
-		assert.Equal(t, limit, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
-		assert.Nil(t, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(*connectorId, *request.ConnectorId)
+		suite.Equal(idTag, request.IdTag)
+		suite.Require().NotNil(request.ChargingProfile)
+		suite.Equal(chargingProfileId, request.ChargingProfile.ChargingProfileId)
+		suite.Equal(stackLevel, request.ChargingProfile.StackLevel)
+		suite.Equal(chargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
+		suite.Equal(chargingProfileKind, request.ChargingProfile.ChargingProfileKind)
+		suite.Equal(types.RecurrencyKindType(""), request.ChargingProfile.RecurrencyKind)
+		suite.Nil(request.ChargingProfile.ValidFrom)
+		suite.Nil(request.ChargingProfile.ValidTo)
+		suite.Require().NotNil(request.ChargingProfile.ChargingSchedule)
+		suite.Equal(chargingRateUnit, request.ChargingProfile.ChargingSchedule.ChargingRateUnit)
+		suite.Require().Len(request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod, 1)
+		suite.Equal(startPeriod, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
+		suite.Equal(limit, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
+		suite.Nil(request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.RemoteStartTransaction(wsId, func(confirmation *core.RemoteStartTransactionConfirmation, err error) {
-		assert.Nil(t, err)
-		assert.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Nil(err)
+		suite.NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, idTag, func(request *core.RemoteStartTransactionRequest) {
 		request.ConnectorId = connectorId
 		request.ChargingProfile = chargingProfile
 	})
-	assert.Nil(t, err)
+	suite.Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStartTransactionInvalidEndpoint() {

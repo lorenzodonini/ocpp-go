@@ -3,8 +3,6 @@ package ocppj_test
 import (
 	"sync"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lorenzodonini/ocpp-go/ocppj"
@@ -20,33 +18,30 @@ func (suite *ClientStateTestSuite) SetupTest() {
 }
 
 func (suite *ClientStateTestSuite) TestAddPendingRequest() {
-	t := suite.T()
 	requestID := "1234"
 	req := newMockRequest("somevalue")
-	require.False(t, suite.state.HasPendingRequest())
+	suite.Require().False(suite.state.HasPendingRequest())
 	suite.state.AddPendingRequest(requestID, req)
-	require.True(t, suite.state.HasPendingRequest())
+	suite.Require().True(suite.state.HasPendingRequest())
 	r, exists := suite.state.GetPendingRequest(requestID)
-	assert.True(t, exists)
-	assert.Equal(t, req, r)
+	suite.Assert().True(exists)
+	suite.Assert().Equal(req, r)
 }
 
 func (suite *ClientStateTestSuite) TestGetInvalidPendingRequest() {
-	t := suite.T()
 	requestID := "1234"
 	suite.state.AddPendingRequest(requestID, newMockRequest("somevalue"))
-	require.True(t, suite.state.HasPendingRequest())
+	suite.Require().True(suite.state.HasPendingRequest())
 	invalidRequestIDs := []string{"4321", "5678", "1230", "deadc0de"}
 	// Nothing returned when querying for an unknown request ID
 	for _, id := range invalidRequestIDs {
 		r, exists := suite.state.GetPendingRequest(id)
-		assert.False(t, exists)
-		assert.Nil(t, r)
+		suite.Assert().False(exists)
+		suite.Assert().Nil(r)
 	}
 }
 
 func (suite *ClientStateTestSuite) TestAddMultiplePendingRequests() {
-	t := suite.T()
 	requestId1 := "1234"
 	requestId2 := "5678"
 	req1 := newMockRequest("somevalue1")
@@ -54,53 +49,50 @@ func (suite *ClientStateTestSuite) TestAddMultiplePendingRequests() {
 	suite.state.AddPendingRequest(requestId1, req1)
 	suite.state.AddPendingRequest(requestId2, req2)
 	r, exists := suite.state.GetPendingRequest(requestId1)
-	assert.True(t, exists)
-	assert.NotNil(t, r)
+	suite.Assert().True(exists)
+	suite.Assert().NotNil(r)
 	r, exists = suite.state.GetPendingRequest(requestId2)
-	assert.False(t, exists)
-	assert.Nil(t, r)
+	suite.Assert().False(exists)
+	suite.Assert().Nil(r)
 }
 
 func (suite *ClientStateTestSuite) TestDeletePendingRequest() {
-	t := suite.T()
 	requestID := "1234"
 	req := newMockRequest("somevalue")
 	suite.state.AddPendingRequest(requestID, req)
-	require.True(t, suite.state.HasPendingRequest())
+	suite.Require().True(suite.state.HasPendingRequest())
 	suite.state.DeletePendingRequest(requestID)
 	// Previously added request is gone
-	assert.False(t, suite.state.HasPendingRequest())
+	suite.Assert().False(suite.state.HasPendingRequest())
 	r, exists := suite.state.GetPendingRequest(requestID)
-	assert.False(t, exists)
-	assert.Nil(t, r)
+	suite.Assert().False(exists)
+	suite.Assert().Nil(r)
 	// Deleting again has no effect
 	suite.state.DeletePendingRequest(requestID)
-	assert.False(t, suite.state.HasPendingRequest())
+	suite.Assert().False(suite.state.HasPendingRequest())
 }
 
 func (suite *ClientStateTestSuite) TestDeleteInvalidPendingRequest() {
-	t := suite.T()
 	requestID := "1234"
 	req := newMockRequest("somevalue")
 	suite.state.AddPendingRequest(requestID, req)
-	require.True(t, suite.state.HasPendingRequest())
+	suite.Require().True(suite.state.HasPendingRequest())
 	suite.state.DeletePendingRequest("5678")
 	// Previously added request is still there
-	assert.True(t, suite.state.HasPendingRequest())
+	suite.Assert().True(suite.state.HasPendingRequest())
 	r, exists := suite.state.GetPendingRequest(requestID)
-	assert.True(t, exists)
-	assert.NotNil(t, r)
+	suite.Assert().True(exists)
+	suite.Assert().NotNil(r)
 }
 
 func (suite *ClientStateTestSuite) TestClearPendingRequests() {
-	t := suite.T()
 	requestID := "1234"
 	req := newMockRequest("somevalue")
 	suite.state.AddPendingRequest(requestID, req)
-	require.True(t, suite.state.HasPendingRequest())
+	suite.Require().True(suite.state.HasPendingRequest())
 	suite.state.ClearPendingRequests()
 	// No more requests available in the struct
-	assert.False(t, suite.state.HasPendingRequest())
+	suite.Assert().False(suite.state.HasPendingRequest())
 }
 
 type ServerStateTestSuite struct {
@@ -114,7 +106,6 @@ func (suite *ServerStateTestSuite) SetupTest() {
 }
 
 func (suite *ServerStateTestSuite) TestAddPendingRequests() {
-	t := suite.T()
 	type testClientRequest struct {
 		clientID  string
 		requestID string
@@ -128,91 +119,86 @@ func (suite *ServerStateTestSuite) TestAddPendingRequests() {
 	for _, r := range requests {
 		suite.state.AddPendingRequest(r.clientID, r.requestID, r.request)
 	}
-	require.True(t, suite.state.HasPendingRequests())
+	suite.Require().True(suite.state.HasPendingRequests())
 	for _, r := range requests {
-		assert.True(t, suite.state.HasPendingRequest(r.clientID))
+		suite.Assert().True(suite.state.HasPendingRequest(r.clientID))
 		req, exists := suite.state.GetClientState(r.clientID).GetPendingRequest(r.requestID)
-		assert.True(t, exists)
-		assert.Equal(t, r.request, req)
+		suite.Assert().True(exists)
+		suite.Assert().Equal(r.request, req)
 	}
 }
 
 func (suite *ServerStateTestSuite) TestGetInvalidPendingRequest() {
-	t := suite.T()
 	requestID := "1234"
 	clientID := "client1"
 	suite.state.AddPendingRequest(clientID, requestID, newMockRequest("somevalue"))
-	require.True(t, suite.state.HasPendingRequest(clientID))
+	suite.Require().True(suite.state.HasPendingRequest(clientID))
 	invalidRequestIDs := []string{"4321", "5678", "1230", "deadc0de"}
 	// Nothing returned when querying for an unknown request ID
 	for _, id := range invalidRequestIDs {
 		r, exists := suite.state.GetClientState(clientID).GetPendingRequest(id)
-		assert.False(t, exists)
-		assert.Nil(t, r)
+		suite.Assert().False(exists)
+		suite.Assert().Nil(r)
 	}
 }
 
 func (suite *ServerStateTestSuite) TestClearClientPendingRequests() {
-	t := suite.T()
 	client1 := "client1"
 	client2 := "client2"
 	suite.state.AddPendingRequest(client1, "1234", newMockRequest("somevalue1"))
 	suite.state.AddPendingRequest(client2, "5678", newMockRequest("somevalue2"))
-	require.True(t, suite.state.HasPendingRequest(client1))
+	suite.Require().True(suite.state.HasPendingRequest(client1))
 	suite.state.ClearClientPendingRequest(client1)
 	// Request for client1 is deleted
-	assert.False(t, suite.state.HasPendingRequest(client1))
+	suite.Assert().False(suite.state.HasPendingRequest(client1))
 	r, exists := suite.state.GetClientState(client1).GetPendingRequest("1234")
-	assert.False(t, exists)
-	assert.Nil(t, r)
+	suite.Assert().False(exists)
+	suite.Assert().Nil(r)
 	// Request for client2 is safe and sound
-	assert.True(t, suite.state.HasPendingRequest(client2))
+	suite.Assert().True(suite.state.HasPendingRequest(client2))
 }
 
 func (suite *ServerStateTestSuite) TestClearAllPendingRequests() {
-	t := suite.T()
 	client1 := "client1"
 	client2 := "client2"
 	suite.state.AddPendingRequest(client1, "1234", newMockRequest("somevalue1"))
 	suite.state.AddPendingRequest(client2, "5678", newMockRequest("somevalue2"))
-	require.True(t, suite.state.HasPendingRequests())
+	suite.Require().True(suite.state.HasPendingRequests())
 	suite.state.ClearAllPendingRequests()
-	assert.False(t, suite.state.HasPendingRequests())
+	suite.Assert().False(suite.state.HasPendingRequests())
 	// No more requests available in the struct
-	assert.False(t, suite.state.HasPendingRequest(client1))
-	assert.False(t, suite.state.HasPendingRequest(client2))
+	suite.Assert().False(suite.state.HasPendingRequest(client1))
+	suite.Assert().False(suite.state.HasPendingRequest(client2))
 }
 
 func (suite *ServerStateTestSuite) TestDeletePendingRequest() {
-	t := suite.T()
 	client1 := "client1"
 	client2 := "client2"
 	suite.state.AddPendingRequest(client1, "1234", newMockRequest("somevalue1"))
 	suite.state.AddPendingRequest(client2, "5678", newMockRequest("somevalue2"))
-	require.True(t, suite.state.HasPendingRequest(client1))
-	require.True(t, suite.state.HasPendingRequest(client2))
+	suite.Require().True(suite.state.HasPendingRequest(client1))
+	suite.Require().True(suite.state.HasPendingRequest(client2))
 	suite.state.DeletePendingRequest(client1, "1234")
 	// Previously added request for client1 is gone
-	assert.False(t, suite.state.HasPendingRequest(client1))
+	suite.Assert().False(suite.state.HasPendingRequest(client1))
 	r, exists := suite.state.GetClientState(client1).GetPendingRequest("1234")
-	assert.False(t, exists)
-	assert.Nil(t, r)
+	suite.Assert().False(exists)
+	suite.Assert().Nil(r)
 	// Deleting again has no effect
 	suite.state.DeletePendingRequest(client1, "1234")
-	assert.False(t, suite.state.HasPendingRequest(client1))
+	suite.Assert().False(suite.state.HasPendingRequest(client1))
 	// Previously added request for client2 is unaffected
-	assert.True(t, suite.state.HasPendingRequest(client2))
+	suite.Assert().True(suite.state.HasPendingRequest(client2))
 }
 
 func (suite *ServerStateTestSuite) TestDeleteInvalidPendingRequest() {
-	t := suite.T()
 	client1 := "client1"
 	suite.state.AddPendingRequest(client1, "1234", newMockRequest("somevalue1"))
-	require.True(t, suite.state.HasPendingRequest(client1))
+	suite.Require().True(suite.state.HasPendingRequest(client1))
 	suite.state.DeletePendingRequest(client1, "5678")
 	// Previously added request is still there
-	assert.True(t, suite.state.HasPendingRequest(client1))
+	suite.Assert().True(suite.state.HasPendingRequest(client1))
 	r, exists := suite.state.GetClientState(client1).GetPendingRequest("1234")
-	assert.True(t, exists)
-	assert.NotNil(t, r)
+	suite.Assert().True(exists)
+	suite.Assert().NotNil(r)
 }

@@ -392,91 +392,84 @@ func (suite *OcppJTestSuite) TearDownTest() {
 }
 
 func (suite *OcppJTestSuite) TestGetProfile() {
-	t := suite.T()
 	profile, ok := suite.chargePoint.GetProfile("mock")
-	assert.True(t, ok)
-	assert.NotNil(t, profile)
+	suite.Assert().True(ok)
+	suite.Assert().NotNil(profile)
 	feature := profile.GetFeature(MockFeatureName)
-	assert.NotNil(t, feature)
-	assert.Equal(t, reflect.TypeOf(MockRequest{}), feature.GetRequestType())
-	assert.Equal(t, reflect.TypeOf(MockConfirmation{}), feature.GetResponseType())
+	suite.Assert().NotNil(feature)
+	suite.Assert().Equal(reflect.TypeOf(MockRequest{}), feature.GetRequestType())
+	suite.Assert().Equal(reflect.TypeOf(MockConfirmation{}), feature.GetResponseType())
 }
 
 func (suite *OcppJTestSuite) TestGetProfileForFeature() {
-	t := suite.T()
 	profile, ok := suite.chargePoint.GetProfileForFeature(MockFeatureName)
-	assert.True(t, ok)
-	assert.NotNil(t, profile)
-	assert.Equal(t, "mock", profile.Name)
+	suite.Assert().True(ok)
+	suite.Assert().NotNil(profile)
+	suite.Assert().Equal("mock", profile.Name)
 }
 
 func (suite *OcppJTestSuite) TestGetProfileForInvalidFeature() {
-	t := suite.T()
 	profile, ok := suite.chargePoint.GetProfileForFeature("test")
-	assert.False(t, ok)
-	assert.Nil(t, profile)
+	suite.Assert().False(ok)
+	suite.Assert().Nil(profile)
 }
 
 func (suite *OcppJTestSuite) TestCallMaxValidation() {
-	t := suite.T()
 	mockLongValue := "somelongvalue"
 	request := newMockRequest(mockLongValue)
 	// Test invalid call
 	call, err := suite.chargePoint.CreateCall(request)
-	assert.Nil(t, call)
-	assert.NotNil(t, err)
-	assert.IsType(t, validator.ValidationErrors{}, err)
+	suite.Assert().Nil(call)
+	suite.Assert().NotNil(err)
+	suite.Assert().IsType(validator.ValidationErrors{}, err)
 	errors := err.(validator.ValidationErrors)
-	assert.Equal(t, 1, len(errors))
+	suite.Assert().Equal(1, len(errors))
 	validationError := errors[0]
-	assert.Equal(t, "max", validationError.Tag())
+	suite.Assert().Equal("max", validationError.Tag())
 }
 
 func (suite *OcppJTestSuite) TestCallRequiredValidation() {
-	t := suite.T()
 	mockLongValue := ""
 	request := newMockRequest(mockLongValue)
 	// Test invalid call
 	call, err := suite.chargePoint.CreateCall(request)
-	assert.Nil(t, call)
-	assert.NotNil(t, err)
-	assert.IsType(t, validator.ValidationErrors{}, err)
+	suite.Assert().Nil(call)
+	suite.Assert().NotNil(err)
+	suite.Assert().IsType(validator.ValidationErrors{}, err)
 	errors := err.(validator.ValidationErrors)
-	assert.Equal(t, 1, len(errors))
+	suite.Assert().Equal(1, len(errors))
 	validationError := errors[0]
-	assert.Equal(t, "required", validationError.Tag())
+	suite.Assert().Equal("required", validationError.Tag())
 }
 
 func (suite *OcppJTestSuite) TestCallResultMinValidation() {
-	t := suite.T()
 	mockShortValue := "val"
 	mockUniqueId := "123456"
 	confirmation := newMockConfirmation(mockShortValue)
 	// Test invalid call
 	callResult, err := suite.chargePoint.CreateCallResult(confirmation, mockUniqueId)
-	assert.Nil(t, callResult)
-	assert.NotNil(t, err)
-	assert.IsType(t, validator.ValidationErrors{}, err)
+	suite.Assert().Nil(callResult)
+	suite.Assert().NotNil(err)
+	suite.Assert().IsType(validator.ValidationErrors{}, err)
 	errors := err.(validator.ValidationErrors)
-	assert.Equal(t, 1, len(errors))
+	suite.Assert().Equal(1, len(errors))
 	validationError := errors[0]
-	assert.Equal(t, "min", validationError.Tag())
+	suite.Assert().Equal("min", validationError.Tag())
 }
 
 func (suite *OcppJTestSuite) TestCallResultRequiredValidation() {
-	t := suite.T()
 	mockShortValue := ""
 	mockUniqueId := "123456"
 	confirmation := newMockConfirmation(mockShortValue)
 	// Test invalid call
 	callResult, err := suite.chargePoint.CreateCallResult(confirmation, mockUniqueId)
-	assert.Nil(t, callResult)
-	assert.NotNil(t, err)
-	assert.IsType(t, validator.ValidationErrors{}, err)
+	suite.Assert().Nil(callResult)
+	suite.Assert().NotNil(err)
+	suite.Assert().IsType(validator.ValidationErrors{}, err)
 	errors := err.(validator.ValidationErrors)
-	assert.Equal(t, 1, len(errors))
+	suite.Assert().Equal(1, len(errors))
 	validationError := errors[0]
-	assert.Equal(t, "required", validationError.Tag())
+	suite.Assert().Equal("required", validationError.Tag())
 }
 
 func (suite *OcppJTestSuite) TestCreateCall() {
@@ -484,16 +477,16 @@ func (suite *OcppJTestSuite) TestCreateCall() {
 	mockValue := "somevalue"
 	request := newMockRequest(mockValue)
 	call, err := suite.chargePoint.CreateCall(request)
-	assert.Nil(t, err)
+	suite.Assert().Nil(err)
 	CheckCall(call, t, MockFeatureName, call.UniqueId)
 	message, ok := call.Payload.(*MockRequest)
-	assert.True(t, ok)
-	assert.NotNil(t, message)
-	assert.Equal(t, mockValue, message.MockValue)
+	suite.Assert().True(ok)
+	suite.Assert().NotNil(message)
+	suite.Assert().Equal(mockValue, message.MockValue)
 	// Check that request was not yet stored as pending request
 	pendingRequest, exists := suite.chargePoint.RequestState.GetPendingRequest(call.UniqueId)
-	assert.False(t, exists)
-	assert.Nil(t, pendingRequest)
+	suite.Assert().False(exists)
+	suite.Assert().Nil(pendingRequest)
 }
 
 func (suite *OcppJTestSuite) TestCreateCallResult() {
@@ -502,12 +495,12 @@ func (suite *OcppJTestSuite) TestCreateCallResult() {
 	mockUniqueId := "123456"
 	confirmation := newMockConfirmation(mockValue)
 	callResult, err := suite.chargePoint.CreateCallResult(confirmation, mockUniqueId)
-	assert.Nil(t, err)
+	suite.Assert().Nil(err)
 	CheckCallResult(callResult, t, mockUniqueId)
 	message, ok := callResult.Payload.(*MockConfirmation)
-	assert.True(t, ok)
-	assert.NotNil(t, message)
-	assert.Equal(t, mockValue, message.MockValue)
+	suite.Assert().True(ok)
+	suite.Assert().NotNil(message)
+	suite.Assert().Equal(mockValue, message.MockValue)
 }
 
 func (suite *OcppJTestSuite) TestCreateCallError() {
@@ -520,30 +513,28 @@ func (suite *OcppJTestSuite) TestCreateCallError() {
 	}
 	mockDetails := MockDetails{DetailString: mockDetailString}
 	callError, err := suite.chargePoint.CreateCallError(mockUniqueId, ocppj.GenericError, mockDescription, mockDetails)
-	assert.Nil(t, err)
-	assert.NotNil(t, callError)
+	suite.Assert().Nil(err)
+	suite.Assert().NotNil(callError)
 	CheckCallError(t, callError, mockUniqueId, ocppj.GenericError, mockDescription, mockDetails)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidLength() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 2)
 	messageId := "12345"
 	// Test invalid message length
 	mockMessage[0] = ocppj.CALL // Message Type ID
 	mockMessage[1] = messageId  // Unique ID
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
-	assert.Equal(t, "Invalid message. Expected array length >= 3", protoErr.Description)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal("", protoErr.MessageId)
+	suite.Assert().Equal(ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
+	suite.Assert().Equal("Invalid message. Expected array length >= 3", protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidTypeId() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	invalidTypeId := "2"
 	messageId := "12345"
@@ -551,50 +542,47 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidTypeId() {
 	mockMessage[0] = invalidTypeId // Message Type ID
 	mockMessage[1] = messageId     // Unique ID
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
-	assert.Equal(t, fmt.Sprintf("Invalid element %v at 0, expected message type (int)", invalidTypeId), protoErr.Description)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal("", protoErr.MessageId)
+	suite.Assert().Equal(ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
+	suite.Assert().Equal(fmt.Sprintf("Invalid element %v at 0, expected message type (int)", invalidTypeId), protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidMessageId() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	invalidMessageId := 12345
 	// Test invalid message length
 	mockMessage[0] = float64(ocppj.CALL) // Message Type ID
 	mockMessage[1] = invalidMessageId    // Unique ID
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, "", protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
-	assert.Equal(t, fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", invalidMessageId), protoErr.Description)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal("", protoErr.MessageId)
+	suite.Assert().Equal(ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
+	suite.Assert().Equal(fmt.Sprintf("Invalid element %v at 1, expected unique ID (string)", invalidMessageId), protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageEmptyMessageID() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	// Test invalid message length
 	mockMessage[0] = float64(ocppj.CALL_RESULT) // Message Type ID
 	mockMessage[1] = ""                         // Empty ID
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
+	suite.Require().NotNil(protoErr)
 	suite.Equal("", protoErr.MessageId)
 	suite.Equal(ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
 	suite.Errorf(protoErr, "Invalid unique ID, cannot be empty")
 }
 
 func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	messageId := "12345"
 	invalidTypeId := 1
@@ -602,17 +590,16 @@ func (suite *OcppJTestSuite) TestParseMessageUnknownTypeId() {
 	mockMessage[0] = float64(invalidTypeId) // Message Type ID
 	mockMessage[1] = messageId              // Unique ID
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.MessageTypeNotSupported, protoErr.Code)
-	assert.Equal(t, fmt.Sprintf("Invalid message type ID %v", invalidTypeId), protoErr.Description)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(messageId, protoErr.MessageId)
+	suite.Assert().Equal(ocppj.MessageTypeNotSupported, protoErr.Code)
+	suite.Assert().Equal(fmt.Sprintf("Invalid message type ID %v", invalidTypeId), protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageUnsupported() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 4)
 	messageId := "12345"
 	invalidAction := "SomeAction"
@@ -621,17 +608,16 @@ func (suite *OcppJTestSuite) TestParseMessageUnsupported() {
 	mockMessage[1] = messageId           // Unique ID
 	mockMessage[2] = invalidAction       // Action
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.NotSupported, protoErr.Code)
-	assert.Equal(t, fmt.Sprintf("Unsupported feature %v", invalidAction), protoErr.Description)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(messageId, protoErr.MessageId)
+	suite.Assert().Equal(ocppj.NotSupported, protoErr.Code)
+	suite.Assert().Equal(fmt.Sprintf("Unsupported feature %v", invalidAction), protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	messageId := "12345"
 	// Test invalid message length
@@ -639,17 +625,16 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCall() {
 	mockMessage[1] = messageId           // Unique ID
 	mockMessage[2] = MockFeatureName
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
-	assert.Equal(t, "Invalid Call message. Expected array length 4", protoErr.Description)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(messageId, protoErr.MessageId)
+	suite.Assert().Equal(ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
+	suite.Assert().Equal("Invalid Call message. Expected array length 4", protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidActionCall() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 4)
 	messageId := "12345"
 	mockRequest := newMockRequest("")
@@ -659,17 +644,16 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidActionCall() {
 	mockMessage[2] = float64(42)         // Wrong type on action parameter
 	mockMessage[3] = mockRequest
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, protoErr.MessageId, messageId) // unique id is returned even after invalid type cast error
-	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
-	assert.Equal(t, "Invalid element 42 at 2, expected action (string)", protoErr.Description)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(protoErr.MessageId, messageId) // unique id is returned even after invalid type cast error
+	suite.Assert().Equal(ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
+	suite.Assert().Equal("Invalid element 42 at 2, expected action (string)", protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidCallResult() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	messageId := "12345"
 	mockConfirmation := newMockConfirmation("testValue")
@@ -679,12 +663,11 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallResult() {
 	mockMessage[2] = mockConfirmation
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
 	// Both message and error should be nil
-	require.Nil(t, message)
-	require.NoError(t, err)
+	suite.Require().Nil(message)
+	suite.Require().NoError(err)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	messageId := "12345"
 	pendingRequest := newMockRequest("request")
@@ -694,17 +677,16 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	mockMessage[2] = ocppj.GenericError
 	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
-	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Description)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(messageId, protoErr.MessageId)
+	suite.Assert().Equal(ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
+	suite.Assert().Equal("Invalid Call Error message. Expected array length >= 4", protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidRawErrorCode() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 5)
 	messageId := "12345"
 	pendingRequest := newMockRequest("request")
@@ -715,17 +697,16 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRawErrorCode() {
 	mockMessage[4] = "error details"
 	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, protoErr.MessageId, "") // unique id is never set after invalid type cast return
-	assert.Equal(t, ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
-	assert.Equal(t, "Invalid element 42 at 2, expected rawErrorCode (string)", protoErr.Description)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(protoErr.MessageId, "") // unique id is never set after invalid type cast return
+	suite.Assert().Equal(ocppj.FormatErrorType(suite.chargePoint), protoErr.Code)
+	suite.Assert().Equal("Invalid element 42 at 2, expected rawErrorCode (string)", protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidRequest() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 4)
 	messageId := "12345"
 	// Test invalid request -> required field missing
@@ -735,25 +716,24 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidRequest() {
 	mockMessage[2] = MockFeatureName
 	mockMessage[3] = mockRequest
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.OccurrenceConstraintErrorType(suite.chargePoint), protoErr.Code)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(messageId, protoErr.MessageId)
+	suite.Assert().Equal(ocppj.OccurrenceConstraintErrorType(suite.chargePoint), protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockRequest.MockValue = "somelongvalue"
 	message, err = suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr = err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.PropertyConstraintViolation, protoErr.Code)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(messageId, protoErr.MessageId)
+	suite.Assert().Equal(ocppj.PropertyConstraintViolation, protoErr.Code)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 3)
 	messageId := "12345"
 	// Test invalid confirmation -> required field missing
@@ -764,26 +744,25 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidConfirmation() {
 	mockMessage[2] = mockConfirmation
 	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that response is not rejected
 	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr := err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.OccurrenceConstraintErrorType(suite.chargePoint), protoErr.Code)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(messageId, protoErr.MessageId)
+	suite.Assert().Equal(ocppj.OccurrenceConstraintErrorType(suite.chargePoint), protoErr.Code)
 	// Test invalid request -> max constraint wrong
 	mockConfirmation.MockValue = "min"
 	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest) // Manually add a pending request, so that responses are not rejected
 	message, err = suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	require.Nil(t, message)
-	require.Error(t, err)
+	suite.Require().Nil(message)
+	suite.Require().Error(err)
 	protoErr = err.(*ocpp.Error)
-	require.NotNil(t, protoErr)
-	assert.Equal(t, messageId, protoErr.MessageId)
-	assert.Equal(t, ocppj.PropertyConstraintViolation, protoErr.Code)
+	suite.Require().NotNil(protoErr)
+	suite.Assert().Equal(messageId, protoErr.MessageId)
+	suite.Assert().Equal(ocppj.PropertyConstraintViolation, protoErr.Code)
 }
 
 func (suite *OcppJTestSuite) TestParseCall() {
-	t := suite.T()
 	mockMessage := make([]interface{}, 4)
 	messageId := "12345"
 	mockValue := "somevalue"
@@ -794,16 +773,16 @@ func (suite *OcppJTestSuite) TestParseCall() {
 	mockMessage[2] = MockFeatureName
 	mockMessage[3] = mockRequest
 	message, protoErr := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
-	assert.Nil(t, protoErr)
-	assert.NotNil(t, message)
-	assert.Equal(t, ocppj.CALL, message.GetMessageTypeId())
-	assert.Equal(t, messageId, message.GetUniqueId())
-	assert.IsType(t, new(ocppj.Call), message)
+	suite.Assert().Nil(protoErr)
+	suite.Assert().NotNil(message)
+	suite.Assert().Equal(ocppj.CALL, message.GetMessageTypeId())
+	suite.Assert().Equal(messageId, message.GetUniqueId())
+	suite.Assert().IsType(new(ocppj.Call), message)
 	call := message.(*ocppj.Call)
-	assert.Equal(t, MockFeatureName, call.Action)
-	assert.IsType(t, new(MockRequest), call.Payload)
+	suite.Assert().Equal(MockFeatureName, call.Action)
+	suite.Assert().IsType(new(MockRequest), call.Payload)
 	mockRequest = call.Payload.(*MockRequest)
-	assert.Equal(t, mockValue, mockRequest.MockValue)
+	suite.Assert().Equal(mockValue, mockRequest.MockValue)
 }
 
 // TODO: implement further ocpp-j protocol tests
@@ -843,15 +822,15 @@ func (suite *OcppJTestSuite) TestLogger() {
 	defer ocppj.SetLogger(&logging.VoidLogger{})
 	// Expect an error
 	arr, err := ocppj.ParseRawJsonMessage([]byte("[3,\"1234\",{}]"))
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 	_, _ = suite.chargePoint.ParseMessage(arr, suite.chargePoint.RequestState)
 	s := <-logger.c
-	assert.Equal(t, "infof", s)
+	suite.Assert().Equal("infof", s)
 	// Nil logger must cause a panic
 	assertPanic(t, func() {
 		ocppj.SetLogger(nil)
 	}, func(r interface{}) {
-		assert.Equal(t, "cannot set a nil logger", r.(string))
+		suite.Assert().Equal("cannot set a nil logger", r.(string))
 	})
 }
 

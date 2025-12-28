@@ -3,9 +3,7 @@ package ocpp2_test
 import (
 	"fmt"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -13,7 +11,6 @@ import (
 
 // Test
 func (suite *OcppV2TestSuite) TestResetRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{provisioning.ResetRequest{Type: provisioning.ResetTypeImmediate, EvseID: newInt(42)}, true},
 		{provisioning.ResetRequest{Type: provisioning.ResetTypeOnIdle, EvseID: newInt(42)}, true},
@@ -22,11 +19,10 @@ func (suite *OcppV2TestSuite) TestResetRequestValidation() {
 		{provisioning.ResetRequest{Type: provisioning.ResetTypeImmediate, EvseID: newInt(-1)}, false},
 		{provisioning.ResetRequest{Type: "invalidResetType", EvseID: newInt(42)}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestResetResponseValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{provisioning.ResetResponse{Status: provisioning.ResetStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
 		{provisioning.ResetResponse{Status: provisioning.ResetStatusRejected, StatusInfo: types.NewStatusInfo("200", "")}, true},
@@ -36,11 +32,10 @@ func (suite *OcppV2TestSuite) TestResetResponseValidation() {
 		{provisioning.ResetResponse{Status: provisioning.ResetStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
 		{provisioning.ResetResponse{Status: "invalidResetStatus", StatusInfo: types.NewStatusInfo("200", "")}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestResetE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -58,30 +53,30 @@ func (suite *OcppV2TestSuite) TestResetE2EMocked() {
 	handler := &MockChargingStationProvisioningHandler{}
 	handler.On("OnReset", mock.Anything).Return(resetResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*provisioning.ResetRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, resetType, request.Type)
-		assert.Equal(t, *evseID, *request.EvseID)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(resetType, request.Type)
+		suite.Equal(*evseID, *request.EvseID)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.Reset(wsId, func(resp *provisioning.ResetResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, resp)
-		assert.Equal(t, status, resp.Status)
-		assert.Equal(t, statusInfo.ReasonCode, resp.StatusInfo.ReasonCode)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(resp)
+		suite.Equal(status, resp.Status)
+		suite.Equal(statusInfo.ReasonCode, resp.StatusInfo.ReasonCode)
 		resultChannel <- true
 	}, resetType, func(request *provisioning.ResetRequest) {
 		request.EvseID = evseID
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestResetInvalidEndpoint() {

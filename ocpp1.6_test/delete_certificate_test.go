@@ -6,24 +6,20 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6_test/mocks"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestDeleteCertificateRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{certificates.DeleteCertificateRequest{CertificateHashData: types.CertificateHashData{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, true},
 		{certificates.DeleteCertificateRequest{}, false},
 		{certificates.DeleteCertificateRequest{CertificateHashData: types.CertificateHashData{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestDeleteCertificateConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{certificates.DeleteCertificateResponse{Status: certificates.DeleteCertificateStatusAccepted}, true},
 		{certificates.DeleteCertificateResponse{Status: certificates.DeleteCertificateStatusFailed}, true},
@@ -31,7 +27,7 @@ func (suite *OcppV16TestSuite) TestDeleteCertificateConfirmationValidation() {
 		{certificates.DeleteCertificateResponse{Status: "invalidDeleteCertificateStatus"}, false},
 		{certificates.DeleteCertificateResponse{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestDeleteCertificateE2EMocked() {
@@ -49,10 +45,10 @@ func (suite *OcppV16TestSuite) TestDeleteCertificateE2EMocked() {
 
 	handler := mocks.NewMockCertificatesChargePointHandler(t)
 	handler.EXPECT().OnDeleteCertificate(mock.Anything).RunAndReturn(func(request *certificates.DeleteCertificateRequest) (*certificates.DeleteCertificateResponse, error) {
-		assert.Equal(t, certificateHashData.HashAlgorithm, request.CertificateHashData.HashAlgorithm)
-		assert.Equal(t, certificateHashData.IssuerNameHash, request.CertificateHashData.IssuerNameHash)
-		assert.Equal(t, certificateHashData.IssuerKeyHash, request.CertificateHashData.IssuerKeyHash)
-		assert.Equal(t, certificateHashData.SerialNumber, request.CertificateHashData.SerialNumber)
+		suite.Equal(certificateHashData.HashAlgorithm, request.CertificateHashData.HashAlgorithm)
+		suite.Equal(certificateHashData.IssuerNameHash, request.CertificateHashData.IssuerNameHash)
+		suite.Equal(certificateHashData.IssuerKeyHash, request.CertificateHashData.IssuerKeyHash)
+		suite.Equal(certificateHashData.SerialNumber, request.CertificateHashData.SerialNumber)
 		return deleteCertificateConfirmation, nil
 	})
 
@@ -63,19 +59,19 @@ func (suite *OcppV16TestSuite) TestDeleteCertificateE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.DeleteCertificate(wsId, func(confirmation *certificates.DeleteCertificateResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, certificateHashData)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestDeleteCertificateInvalidEndpoint() {

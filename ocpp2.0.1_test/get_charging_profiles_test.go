@@ -3,9 +3,7 @@ package ocpp2_test
 import (
 	"fmt"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -13,7 +11,6 @@ import (
 
 // Test
 func (suite *OcppV2TestSuite) TestGetChargingProfilesRequestValidation() {
-	t := suite.T()
 	validChargingProfileCriterion := smartcharging.ChargingProfileCriterion{
 		ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile,
 		StackLevel:             newInt(2),
@@ -33,22 +30,20 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesRequestValidation() {
 		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS, types.ChargingLimitSourceCSO, types.ChargingLimitSourceSO, types.ChargingLimitSourceOther, types.ChargingLimitSourceEMS}}}, false},
 		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{"invalidChargingLimitSource"}}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestGetChargingProfilesConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{smartcharging.GetChargingProfilesResponse{Status: smartcharging.GetChargingProfileStatusAccepted}, true},
 		{smartcharging.GetChargingProfilesResponse{Status: smartcharging.GetChargingProfileStatusNoProfiles}, true},
 		{smartcharging.GetChargingProfilesResponse{Status: "invalidGetChargingProfilesStatus"}, false},
 		{smartcharging.GetChargingProfilesResponse{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -71,30 +66,30 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 	handler.On("OnGetChargingProfiles", mock.Anything).Return(getChargingProfilesConfirmation, nil).Run(func(args mock.Arguments) {
 		// Assert request message contents
 		request, ok := args.Get(0).(*smartcharging.GetChargingProfilesRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, requestID, request.RequestID)
-		assert.Equal(t, evseID, *request.EvseID)
-		assert.Equal(t, chargingProfileCriterion.ChargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
-		assert.Equal(t, *chargingProfileCriterion.StackLevel, *request.ChargingProfile.StackLevel)
-		require.Len(t, request.ChargingProfile.ChargingProfileID, len(chargingProfileCriterion.ChargingProfileID))
-		assert.Equal(t, chargingProfileCriterion.ChargingProfileID[0], request.ChargingProfile.ChargingProfileID[0])
-		assert.Equal(t, chargingProfileCriterion.ChargingProfileID[1], request.ChargingProfile.ChargingProfileID[1])
-		require.Len(t, request.ChargingProfile.ChargingLimitSource, len(chargingProfileCriterion.ChargingLimitSource))
-		assert.Equal(t, chargingProfileCriterion.ChargingLimitSource[0], request.ChargingProfile.ChargingLimitSource[0])
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(requestID, request.RequestID)
+		suite.Equal(evseID, *request.EvseID)
+		suite.Equal(chargingProfileCriterion.ChargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
+		suite.Equal(*chargingProfileCriterion.StackLevel, *request.ChargingProfile.StackLevel)
+		suite.Require().Len(request.ChargingProfile.ChargingProfileID, len(chargingProfileCriterion.ChargingProfileID))
+		suite.Equal(chargingProfileCriterion.ChargingProfileID[0], request.ChargingProfile.ChargingProfileID[0])
+		suite.Equal(chargingProfileCriterion.ChargingProfileID[1], request.ChargingProfile.ChargingProfileID[1])
+		suite.Require().Len(request.ChargingProfile.ChargingLimitSource, len(chargingProfileCriterion.ChargingLimitSource))
+		suite.Equal(chargingProfileCriterion.ChargingLimitSource[0], request.ChargingProfile.ChargingLimitSource[0])
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.GetChargingProfiles(wsId, func(confirmation *smartcharging.GetChargingProfilesResponse, err error) {
 		// Assert confirmation message contents
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	},
 		chargingProfileCriterion,
@@ -102,9 +97,9 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 			request.EvseID = &evseID
 			request.RequestID = requestID
 		})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestGetChargingProfilesInvalidEndpoint() {

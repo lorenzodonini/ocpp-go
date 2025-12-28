@@ -4,16 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 )
 
 func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleRequestValidation() {
-	t := suite.T()
 	chargingSchedule := types.ChargingSchedule{
 		StartSchedule:          types.NewDateTime(time.Now()),
 		Duration:               newInt(600),
@@ -31,11 +28,10 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleRequestValidation() {
 		{smartcharging.NotifyEVChargingScheduleRequest{TimeBase: types.NewDateTime(time.Now()), EvseID: -1, ChargingSchedule: chargingSchedule}, false},
 		{smartcharging.NotifyEVChargingScheduleRequest{TimeBase: types.NewDateTime(time.Now()), EvseID: -1, ChargingSchedule: types.ChargingSchedule{ChargingRateUnit: "invalidStruct"}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleResponseValidation() {
-	t := suite.T()
 	var responseTable = []GenericTestEntry{
 		{smartcharging.NotifyEVChargingScheduleResponse{Status: types.GenericStatusAccepted, StatusInfo: types.NewStatusInfo("ok", "someInfo")}, true},
 		{smartcharging.NotifyEVChargingScheduleResponse{Status: types.GenericStatusRejected, StatusInfo: types.NewStatusInfo("ok", "someInfo")}, true},
@@ -44,11 +40,10 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleResponseValidation() {
 		{smartcharging.NotifyEVChargingScheduleResponse{Status: "invalidStatus"}, false},
 		{smartcharging.NotifyEVChargingScheduleResponse{Status: types.GenericStatusAccepted, StatusInfo: types.NewStatusInfo("", "invalidStatusInfo")}, false},
 	}
-	ExecuteGenericTestTable(t, responseTable)
+	ExecuteGenericTestTable(suite, responseTable)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := "1234"
 	wsUrl := "someUrl"
@@ -75,33 +70,33 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleE2EMocked() {
 	handler := &MockCSMSSmartChargingHandler{}
 	handler.On("OnNotifyEVChargingSchedule", mock.AnythingOfType("string"), mock.Anything).Return(notifyEVChargingScheduleResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*smartcharging.NotifyEVChargingScheduleRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, timeBase.FormatTimestamp(), request.TimeBase.FormatTimestamp())
-		assert.Equal(t, evseID, request.EvseID)
-		assert.Equal(t, chargingSchedule.ID, request.ChargingSchedule.ID)
-		assert.Equal(t, chargingSchedule.StartSchedule.FormatTimestamp(), request.ChargingSchedule.StartSchedule.FormatTimestamp())
-		assert.Equal(t, *chargingSchedule.Duration, *request.ChargingSchedule.Duration)
-		assert.Equal(t, *chargingSchedule.MinChargingRate, *request.ChargingSchedule.MinChargingRate)
-		assert.Equal(t, *chargingSchedule.MinChargingRate, *request.ChargingSchedule.MinChargingRate)
-		assert.Equal(t, chargingSchedule.ChargingRateUnit, request.ChargingSchedule.ChargingRateUnit)
-		require.Len(t, request.ChargingSchedule.ChargingSchedulePeriod, len(request.ChargingSchedule.ChargingSchedulePeriod))
-		assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, request.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
-		assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].Limit, request.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
-		assert.Nil(t, request.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(timeBase.FormatTimestamp(), request.TimeBase.FormatTimestamp())
+		suite.Equal(evseID, request.EvseID)
+		suite.Equal(chargingSchedule.ID, request.ChargingSchedule.ID)
+		suite.Equal(chargingSchedule.StartSchedule.FormatTimestamp(), request.ChargingSchedule.StartSchedule.FormatTimestamp())
+		suite.Equal(*chargingSchedule.Duration, *request.ChargingSchedule.Duration)
+		suite.Equal(*chargingSchedule.MinChargingRate, *request.ChargingSchedule.MinChargingRate)
+		suite.Equal(*chargingSchedule.MinChargingRate, *request.ChargingSchedule.MinChargingRate)
+		suite.Equal(chargingSchedule.ChargingRateUnit, request.ChargingSchedule.ChargingRateUnit)
+		suite.Require().Len(request.ChargingSchedule.ChargingSchedulePeriod, len(request.ChargingSchedule.ChargingSchedulePeriod))
+		suite.Equal(chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, request.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
+		suite.Equal(chargingSchedule.ChargingSchedulePeriod[0].Limit, request.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
+		suite.Nil(request.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	response, err := suite.chargingStation.NotifyEVChargingSchedule(timeBase, evseID, chargingSchedule)
-	require.Nil(t, err)
-	require.NotNil(t, response)
-	assert.Equal(t, status, response.Status)
-	assert.Equal(t, statusInfo.ReasonCode, response.StatusInfo.ReasonCode)
-	assert.Equal(t, statusInfo.AdditionalInfo, response.StatusInfo.AdditionalInfo)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(response)
+	suite.Equal(status, response.Status)
+	suite.Equal(statusInfo.ReasonCode, response.StatusInfo.ReasonCode)
+	suite.Equal(statusInfo.AdditionalInfo, response.StatusInfo.AdditionalInfo)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleInvalidEndpoint() {

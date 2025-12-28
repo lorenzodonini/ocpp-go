@@ -3,9 +3,7 @@ package ocpp2_test
 import (
 	"fmt"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -30,7 +28,7 @@ func (suite *OcppV2TestSuite) TestVPNTypeValidation() {
 		{provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: "deadc0de", Key: ">255............................................................................................................................................................................................................................................................", Type: provisioning.VPNTypeIPSec}, false},
 		{provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: "deadc0de", Key: "deadbeef", Type: "invalidType"}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestAPNTypeValidation() {
@@ -49,11 +47,10 @@ func (suite *OcppV2TestSuite) TestAPNTypeValidation() {
 		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(-1), PreferredNetwork: ">6.....", UseOnlyPreferredNetwork: true, APNAuthentication: provisioning.APNAuthenticationAuto}, false},
 		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: true, APNAuthentication: "invalidApnAuthentication"}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestSetNetworkProfileRequestValidation() {
-	t := suite.T()
 	vpn := &provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}
 	apn := &provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: true, APNAuthentication: provisioning.APNAuthenticationAuto}
 	var requestTable = []GenericTestEntry{
@@ -77,11 +74,10 @@ func (suite *OcppV2TestSuite) TestSetNetworkProfileRequestValidation() {
 		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: &provisioning.VPN{}, APN: apn}}, false},
 		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: vpn, APN: &provisioning.APN{}}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestSetNetworkProfileResponseValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{provisioning.SetNetworkProfileResponse{Status: provisioning.SetNetworkProfileStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
 		{provisioning.SetNetworkProfileResponse{Status: provisioning.SetNetworkProfileStatusRejected, StatusInfo: types.NewStatusInfo("200", "")}, true},
@@ -91,11 +87,10 @@ func (suite *OcppV2TestSuite) TestSetNetworkProfileResponseValidation() {
 		{provisioning.SetNetworkProfileResponse{Status: provisioning.SetNetworkProfileStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
 		{provisioning.SetNetworkProfileResponse{Status: "invalidSetNetworkProfileStatus", StatusInfo: types.NewStatusInfo("200", "")}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestSetNetworkProfileE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -115,48 +110,48 @@ func (suite *OcppV2TestSuite) TestSetNetworkProfileE2EMocked() {
 	handler := &MockChargingStationProvisioningHandler{}
 	handler.On("OnSetNetworkProfile", mock.Anything).Return(resetResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*provisioning.SetNetworkProfileRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, configurationSlot, request.ConfigurationSlot)
-		assert.Equal(t, data.OCPPVersion, request.ConnectionData.OCPPVersion)
-		assert.Equal(t, data.OCPPTransport, request.ConnectionData.OCPPTransport)
-		assert.Equal(t, data.CSMSUrl, request.ConnectionData.CSMSUrl)
-		assert.Equal(t, data.MessageTimeout, request.ConnectionData.MessageTimeout)
-		assert.Equal(t, data.SecurityProfile, request.ConnectionData.SecurityProfile)
-		assert.Equal(t, data.OCPPInterface, request.ConnectionData.OCPPInterface)
-		require.NotNil(t, request.ConnectionData.VPN)
-		assert.Equal(t, vpn.Server, request.ConnectionData.VPN.Server)
-		assert.Equal(t, vpn.User, request.ConnectionData.VPN.User)
-		assert.Equal(t, vpn.Group, request.ConnectionData.VPN.Group)
-		assert.Equal(t, vpn.Password, request.ConnectionData.VPN.Password)
-		assert.Equal(t, vpn.Key, request.ConnectionData.VPN.Key)
-		assert.Equal(t, vpn.Type, request.ConnectionData.VPN.Type)
-		require.NotNil(t, request.ConnectionData.APN)
-		assert.Equal(t, apn.APN, request.ConnectionData.APN.APN)
-		assert.Equal(t, apn.APNUsername, request.ConnectionData.APN.APNUsername)
-		assert.Equal(t, apn.APNPassword, request.ConnectionData.APN.APNPassword)
-		assert.Equal(t, *apn.SimPin, *request.ConnectionData.APN.SimPin)
-		assert.Equal(t, apn.PreferredNetwork, request.ConnectionData.APN.PreferredNetwork)
-		assert.Equal(t, apn.UseOnlyPreferredNetwork, request.ConnectionData.APN.UseOnlyPreferredNetwork)
-		assert.Equal(t, apn.APNAuthentication, request.ConnectionData.APN.APNAuthentication)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(configurationSlot, request.ConfigurationSlot)
+		suite.Equal(data.OCPPVersion, request.ConnectionData.OCPPVersion)
+		suite.Equal(data.OCPPTransport, request.ConnectionData.OCPPTransport)
+		suite.Equal(data.CSMSUrl, request.ConnectionData.CSMSUrl)
+		suite.Equal(data.MessageTimeout, request.ConnectionData.MessageTimeout)
+		suite.Equal(data.SecurityProfile, request.ConnectionData.SecurityProfile)
+		suite.Equal(data.OCPPInterface, request.ConnectionData.OCPPInterface)
+		suite.Require().NotNil(request.ConnectionData.VPN)
+		suite.Equal(vpn.Server, request.ConnectionData.VPN.Server)
+		suite.Equal(vpn.User, request.ConnectionData.VPN.User)
+		suite.Equal(vpn.Group, request.ConnectionData.VPN.Group)
+		suite.Equal(vpn.Password, request.ConnectionData.VPN.Password)
+		suite.Equal(vpn.Key, request.ConnectionData.VPN.Key)
+		suite.Equal(vpn.Type, request.ConnectionData.VPN.Type)
+		suite.Require().NotNil(request.ConnectionData.APN)
+		suite.Equal(apn.APN, request.ConnectionData.APN.APN)
+		suite.Equal(apn.APNUsername, request.ConnectionData.APN.APNUsername)
+		suite.Equal(apn.APNPassword, request.ConnectionData.APN.APNPassword)
+		suite.Equal(*apn.SimPin, *request.ConnectionData.APN.SimPin)
+		suite.Equal(apn.PreferredNetwork, request.ConnectionData.APN.PreferredNetwork)
+		suite.Equal(apn.UseOnlyPreferredNetwork, request.ConnectionData.APN.UseOnlyPreferredNetwork)
+		suite.Equal(apn.APNAuthentication, request.ConnectionData.APN.APNAuthentication)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.SetNetworkProfile(wsId, func(resp *provisioning.SetNetworkProfileResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, resp)
-		assert.Equal(t, status, resp.Status)
-		assert.Equal(t, statusInfo.ReasonCode, resp.StatusInfo.ReasonCode)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(resp)
+		suite.Equal(status, resp.Status)
+		suite.Equal(statusInfo.ReasonCode, resp.StatusInfo.ReasonCode)
 		resultChannel <- true
 	}, configurationSlot, data)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestSetNetworkProfileInvalidEndpoint() {

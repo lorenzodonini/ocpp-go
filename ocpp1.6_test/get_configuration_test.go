@@ -4,14 +4,11 @@ import (
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestGetConfigurationRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{core.GetConfigurationRequest{Key: []string{"key1", "key2"}}, true},
 		{core.GetConfigurationRequest{Key: []string{"key1", "key2", "key3", "key4", "key5", "key6"}}, true},
@@ -20,11 +17,10 @@ func (suite *OcppV16TestSuite) TestGetConfigurationRequestValidation() {
 		{core.GetConfigurationRequest{Key: []string{}}, true},
 		{core.GetConfigurationRequest{Key: []string{">50................................................"}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestGetConfigurationConfirmationValidation() {
-	t := suite.T()
 	value1 := "value1"
 	value2 := "value2"
 	longValue := ">500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."
@@ -40,11 +36,10 @@ func (suite *OcppV16TestSuite) TestGetConfigurationConfirmationValidation() {
 		//{ocpp16.GetConfigurationConfirmation{ConfigurationKey: []ocpp16.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}, {Key: "key1", Readonly: false, Value: "value2"}}}, false},
 	}
 	//TODO: additional test cases TBD. See get_configuration.go
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestGetConfigurationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -66,28 +61,28 @@ func (suite *OcppV16TestSuite) TestGetConfigurationE2EMocked() {
 	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnGetConfiguration", mock.Anything).Return(getConfigurationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.GetConfigurationRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		require.Len(t, request.Key, len(requestKeys))
-		assert.Equal(t, requestKeys, request.Key)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Require().Len(request.Key, len(requestKeys))
+		suite.Equal(requestKeys, request.Key)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.GetConfiguration(wsId, func(confirmation *core.GetConfigurationConfirmation, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, unknownKeys, confirmation.UnknownKey)
-		assert.Equal(t, resultKeys, confirmation.ConfigurationKey)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(unknownKeys, confirmation.UnknownKey)
+		suite.Equal(resultKeys, confirmation.ConfigurationKey)
 		resultChannel <- true
 	}, requestKeys)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestGetConfigurationInvalidEndpoint() {

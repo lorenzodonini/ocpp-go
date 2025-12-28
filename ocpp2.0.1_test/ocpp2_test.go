@@ -9,9 +9,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -835,7 +833,6 @@ type expectedChargingStationOptions struct {
 }
 
 func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOptions, handlers ...interface{}) {
-	t := suite.T()
 	for _, h := range handlers {
 		switch h := h.(type) {
 		case *MockCSMSAuthorizationHandler:
@@ -873,7 +870,7 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOption
 		}
 	}
 	suite.csms.SetNewChargingStationHandler(func(chargingStation ocpp2.ChargingStationConnection) {
-		assert.Equal(t, options.clientId, chargingStation.ID())
+		suite.Equal(options.clientId, chargingStation.ID())
 	})
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
 	suite.mockWsServer.On("Stop").Return()
@@ -881,21 +878,20 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOption
 		clientId := args.String(0)
 		data := args.Get(1)
 		bytes := data.([]byte)
-		assert.Equal(t, options.clientId, clientId)
+		suite.Equal(options.clientId, clientId)
 		if options.rawWrittenMessage != nil {
-			assert.NotNil(t, bytes)
-			assert.Equal(t, string(options.rawWrittenMessage), string(bytes))
+			suite.NotNil(bytes)
+			suite.Equal(string(options.rawWrittenMessage), string(bytes))
 		}
 		if options.forwardWrittenMessage {
 			// Notify client of incoming response
 			err := suite.mockWsClient.MessageHandler(bytes)
-			assert.Nil(t, err)
+			suite.Nil(err)
 		}
 	})
 }
 
 func setupDefaultChargingStationHandlers(suite *OcppV2TestSuite, options expectedChargingStationOptions, handlers ...interface{}) {
-	t := suite.T()
 	for _, h := range handlers {
 		switch h := h.(type) {
 		case *MockChargingStationAuthorizationHandler:
@@ -934,7 +930,7 @@ func setupDefaultChargingStationHandlers(suite *OcppV2TestSuite, options expecte
 	}
 	suite.mockWsClient.On("Start", mock.AnythingOfType("string")).Return(options.startReturnArgument).Run(func(args mock.Arguments) {
 		u := args.String(0)
-		assert.Equal(t, fmt.Sprintf("%s/%s", options.serverUrl, options.clientId), u)
+		suite.Equal(fmt.Sprintf("%s/%s", options.serverUrl, options.clientId), u)
 		// Notify server of incoming connection
 		if options.createChannelOnStart {
 			suite.mockWsServer.NewClientHandler(options.channel)
@@ -944,19 +940,19 @@ func setupDefaultChargingStationHandlers(suite *OcppV2TestSuite, options expecte
 		data := args.Get(0)
 		bytes := data.([]byte)
 		if options.rawWrittenMessage != nil {
-			assert.NotNil(t, bytes)
-			assert.Equal(t, string(options.rawWrittenMessage), string(bytes))
+			suite.NotNil(bytes)
+			suite.Equal(string(options.rawWrittenMessage), string(bytes))
 		}
 		// Notify server of incoming request
 		if options.forwardWrittenMessage {
 			err := suite.mockWsServer.MessageHandler(options.channel, bytes)
-			assert.Nil(t, err)
+			suite.Nil(err)
 		}
 	})
 }
 
-func assertDateTimeEquality(t *testing.T, expected *types.DateTime, actual *types.DateTime) {
-	assert.Equal(t, expected.FormatTimestamp(), actual.FormatTimestamp())
+func assertDateTimeEquality(suite *OcppV2TestSuite, expected *types.DateTime, actual *types.DateTime) {
+	suite.Equal(expected.FormatTimestamp(), actual.FormatTimestamp())
 }
 
 func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request ocpp.Request, requestJson string, messageId string, handlers ...interface{}) {
@@ -972,29 +968,29 @@ func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request o
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true}, handlers...)
 	resultChannel := make(chan bool, 1)
 	suite.ocppjClient.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
-		assert.Equal(t, messageId, err.MessageId)
-		assert.Equal(t, ocppj.NotSupported, err.Code)
-		assert.Equal(t, errorDescription, err.Description)
-		assert.Equal(t, map[string]interface{}{}, details)
+		suite.Equal(messageId, err.MessageId)
+		suite.Equal(ocppj.NotSupported, err.Code)
+		suite.Equal(errorDescription, err.Description)
+		suite.Equal(map[string]interface{}{}, details)
 		resultChannel <- true
 	})
 	// Start
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	// 1. Test sending an unsupported request, expecting an error
 	err = suite.chargingStation.SendRequestAsync(request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
-	require.Error(t, err)
-	assert.Equal(t, expectedError, err.Error())
+	suite.Require().Error(err)
+	suite.Equal(expectedError, err.Error())
 	// 2. Test receiving an unsupported request on the other endpoint and receiving an error
 	// Mark mocked request as pending, otherwise response will be ignored
 	suite.ocppjClient.RequestState.AddPendingRequest(messageId, request)
 	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 	// Stop the CSMS
 	suite.csms.Stop()
 }
@@ -1012,31 +1008,31 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true}, handlers...)
 	resultChannel := make(chan struct{}, 1)
 	suite.ocppjServer.SetErrorHandler(func(channel ws.Channel, err *ocpp.Error, details interface{}) {
-		assert.Equal(t, messageId, err.MessageId)
-		assert.Equal(t, wsId, channel.ID())
-		assert.Equal(t, ocppj.NotSupported, err.Code)
-		assert.Equal(t, errorDescription, err.Description)
-		assert.Equal(t, map[string]interface{}{}, details)
+		suite.Equal(messageId, err.MessageId)
+		suite.Equal(wsId, channel.ID())
+		suite.Equal(ocppj.NotSupported, err.Code)
+		suite.Equal(errorDescription, err.Description)
+		suite.Equal(map[string]interface{}{}, details)
 		resultChannel <- struct{}{}
 	})
 	// Start
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	// 1. Test sending an unsupported request, expecting an error
 	err = suite.csms.SendRequestAsync(wsId, request, func(response ocpp.Response, err error) {
 		t.Fail()
 	})
-	require.Error(t, err)
-	assert.Equal(t, expectedError, err.Error())
+	suite.Require().Error(err)
+	suite.Equal(expectedError, err.Error())
 	// 2. Test receiving an unsupported request on the other endpoint and receiving an error
 	// Mark mocked request as pending, otherwise response will be ignored
 	suite.ocppjServer.RequestState.AddPendingRequest(wsId, messageId, request)
 	// Run response test
 	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
-	assert.Nil(t, err)
+	suite.Nil(err)
 	_, ok := <-resultChannel
-	assert.True(t, ok)
+	suite.True(ok)
 	// Stop the CSMS
 	suite.csms.Stop()
 }
@@ -1047,13 +1043,13 @@ type GenericTestEntry struct {
 }
 
 // TODO: pass expected error value for improved validation and error message
-func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
+func ExecuteGenericTestTable(suite *OcppV2TestSuite, testTable []GenericTestEntry) {
 	for _, testCase := range testTable {
 		err := types.Validate.Struct(testCase.Element)
 		if err != nil {
-			assert.Equal(t, testCase.ExpectedValid, false, err.Error())
+			suite.Equal(false, testCase.ExpectedValid, err.Error())
 		} else {
-			assert.Equal(t, testCase.ExpectedValid, true, "%v is valid", testCase.Element)
+			suite.Equal(true, testCase.ExpectedValid, "%v is valid", testCase.Element)
 		}
 	}
 }
@@ -1118,13 +1114,12 @@ func (suite *OcppV2TestSuite) SetupTest() {
 }
 
 func (suite *OcppV2TestSuite) TestIsConnected() {
-	t := suite.T()
 	// Simulate ws connected
 	mockCall := suite.mockWsClient.On("IsConnected").Return(true)
-	assert.True(t, suite.chargingStation.IsConnected())
+	suite.True(suite.chargingStation.IsConnected())
 	// Simulate ws disconnected
 	mockCall.Return(false)
-	assert.False(t, suite.chargingStation.IsConnected())
+	suite.False(suite.chargingStation.IsConnected())
 }
 
 //TODO: implement generic protocol tests

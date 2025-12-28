@@ -6,9 +6,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6_test/mocks"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
@@ -19,18 +17,17 @@ func (suite *OcppV16TestSuite) TestSignCertificateRequestValidation() {
 		{security.SignCertificateRequest{}, false},
 		{security.SignCertificateRequest{CSR: "deadc0de", CertificateType: "invalidType"}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestSignCertificateConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{security.SignCertificateResponse{Status: types.GenericStatusAccepted}, true},
 		{security.SignCertificateResponse{Status: types.GenericStatusAccepted}, true},
 		{security.SignCertificateResponse{}, false},
 		{security.SignCertificateResponse{Status: "invalidStatus"}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestSignCertificateE2EMocked() {
@@ -49,8 +46,8 @@ func (suite *OcppV16TestSuite) TestSignCertificateE2EMocked() {
 
 	handler := mocks.NewMockSecurityCentralSystemHandler(t)
 	handler.EXPECT().OnSignCertificate(wsId, mock.Anything).RunAndReturn(func(s string, request *security.SignCertificateRequest) (*security.SignCertificateResponse, error) {
-		assert.Equal(t, csr, request.CSR)
-		assert.Equal(t, certificateType, request.CertificateType)
+		suite.Equal(csr, request.CSR)
+		suite.Equal(certificateType, request.CertificateType)
 		return signCertificateResponse, nil
 	})
 
@@ -61,13 +58,13 @@ func (suite *OcppV16TestSuite) TestSignCertificateE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	response, err := suite.chargePoint.SignCertificate(csr, func(request *security.SignCertificateRequest) {
 		request.CertificateType = certificateType
 	})
-	require.Nil(t, err)
-	require.NotNil(t, response)
-	assert.Equal(t, status, response.Status)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(response)
+	suite.Equal(status, response.Status)
 }
 
 func (suite *OcppV16TestSuite) TestSignCertificateInvalidEndpoint() {

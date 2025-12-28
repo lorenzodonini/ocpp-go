@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -14,7 +12,6 @@ import (
 
 // Tests
 func (suite *OcppV2TestSuite) TestBootNotificationRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{SerialNumber: "number", Model: "test", VendorName: "test", FirmwareVersion: "version", Modem: &provisioning.ModemType{Iccid: "test", Imsi: "test"}}}, true},
 		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{SerialNumber: "number", Model: "test", VendorName: "test", FirmwareVersion: "version", Modem: &provisioning.ModemType{Iccid: "test"}}}, true},
@@ -34,11 +31,10 @@ func (suite *OcppV2TestSuite) TestBootNotificationRequestValidation() {
 		{provisioning.BootNotificationRequest{Reason: provisioning.BootReasonPowerUp, ChargingStation: provisioning.ChargingStationType{Model: "test", VendorName: "test", Modem: &provisioning.ModemType{Imsi: ">20.................."}}}, false},
 		{provisioning.BootNotificationRequest{Reason: "invalidReason", ChargingStation: provisioning.ChargingStationType{Model: "test", VendorName: "test"}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestBootNotificationConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{provisioning.BootNotificationResponse{CurrentTime: types.NewDateTime(time.Now()), Interval: 60, Status: provisioning.RegistrationStatusAccepted}, true},
 		{provisioning.BootNotificationResponse{CurrentTime: types.NewDateTime(time.Now()), Status: provisioning.RegistrationStatusAccepted}, true},
@@ -47,11 +43,10 @@ func (suite *OcppV2TestSuite) TestBootNotificationConfirmationValidation() {
 		{provisioning.BootNotificationResponse{CurrentTime: types.NewDateTime(time.Now()), Interval: 60}, false},
 		{provisioning.BootNotificationResponse{Interval: 60, Status: provisioning.RegistrationStatusAccepted}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestBootNotificationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := "1234"
 	wsUrl := "someUrl"
@@ -69,22 +64,22 @@ func (suite *OcppV2TestSuite) TestBootNotificationE2EMocked() {
 	handler := &MockCSMSProvisioningHandler{}
 	handler.On("OnBootNotification", mock.AnythingOfType("string"), mock.Anything).Return(bootNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request := args.Get(1).(*provisioning.BootNotificationRequest)
-		assert.Equal(t, reason, request.Reason)
-		assert.Equal(t, chargePointVendor, request.ChargingStation.VendorName)
-		assert.Equal(t, chargePointModel, request.ChargingStation.Model)
+		suite.Equal(reason, request.Reason)
+		suite.Equal(chargePointVendor, request.ChargingStation.VendorName)
+		suite.Equal(chargePointModel, request.ChargingStation.Model)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargingStation.BootNotification(reason, chargePointModel, chargePointVendor)
-	require.Nil(t, err)
-	require.NotNil(t, confirmation)
-	assert.Equal(t, registrationStatus, confirmation.Status)
-	assert.Equal(t, interval, confirmation.Interval)
-	assertDateTimeEquality(t, currentTime, confirmation.CurrentTime)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(confirmation)
+	suite.Equal(registrationStatus, confirmation.Status)
+	suite.Equal(interval, confirmation.Interval)
+	assertDateTimeEquality(suite, currentTime, confirmation.CurrentTime)
 }
 
 func (suite *OcppV2TestSuite) TestBootNotificationInvalidEndpoint() {

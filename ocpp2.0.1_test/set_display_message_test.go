@@ -7,24 +7,20 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/display"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestSetDisplayMessageRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{display.SetDisplayMessageRequest{Message: display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}}, true},
 		{display.SetDisplayMessageRequest{}, false},
 		{display.SetDisplayMessageRequest{Message: display.MessageInfo{ID: 42, Priority: "invalidPriority", State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestSetDisplayMessageConfirmationValidation() {
-	t := suite.T()
 	var responseTable = []GenericTestEntry{
 		{display.SetDisplayMessageResponse{Status: display.DisplayMessageStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
 		{display.SetDisplayMessageResponse{Status: display.DisplayMessageStatusAccepted}, true},
@@ -36,11 +32,10 @@ func (suite *OcppV2TestSuite) TestSetDisplayMessageConfirmationValidation() {
 		{display.SetDisplayMessageResponse{Status: "invalidDisplayMessageStatus"}, false},
 		{display.SetDisplayMessageResponse{}, false},
 	}
-	ExecuteGenericTestTable(t, responseTable)
+	ExecuteGenericTestTable(suite, responseTable)
 }
 
 func (suite *OcppV2TestSuite) TestSetDisplayMessageE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -67,33 +62,33 @@ func (suite *OcppV2TestSuite) TestSetDisplayMessageE2EMocked() {
 	handler := &MockChargingStationDisplayHandler{}
 	handler.On("OnSetDisplayMessage", mock.Anything).Return(setDisplayResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*display.SetDisplayMessageRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, message.ID, request.Message.ID)
-		assert.Equal(t, message.Priority, request.Message.Priority)
-		assert.Equal(t, message.State, request.Message.State)
-		assertDateTimeEquality(t, message.StartDateTime, request.Message.StartDateTime)
-		assert.Equal(t, message.Message.Format, request.Message.Message.Format)
-		assert.Equal(t, message.Message.Content, request.Message.Message.Content)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(message.ID, request.Message.ID)
+		suite.Equal(message.Priority, request.Message.Priority)
+		suite.Equal(message.State, request.Message.State)
+		assertDateTimeEquality(suite, message.StartDateTime, request.Message.StartDateTime)
+		suite.Equal(message.Message.Format, request.Message.Message.Format)
+		suite.Equal(message.Message.Content, request.Message.Message.Content)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.SetDisplayMessage(wsId, func(response *display.SetDisplayMessageResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, response)
-		assert.Equal(t, status, response.Status)
-		assert.Equal(t, statusInfo.ReasonCode, response.StatusInfo.ReasonCode)
-		assert.Equal(t, statusInfo.AdditionalInfo, response.StatusInfo.AdditionalInfo)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(response)
+		suite.Equal(status, response.Status)
+		suite.Equal(statusInfo.ReasonCode, response.StatusInfo.ReasonCode)
+		suite.Equal(statusInfo.AdditionalInfo, response.StatusInfo.AdditionalInfo)
 		resultChannel <- true
 	}, message)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestSetDisplayMessageInvalidEndpoint() {

@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
@@ -14,7 +12,6 @@ import (
 
 // Test
 func (suite *OcppV16TestSuite) TestStatusNotificationRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{core.StatusNotificationRequest{ConnectorId: 0, ErrorCode: core.NoError, Info: "mockInfo", Status: core.ChargePointStatusAvailable, Timestamp: types.NewDateTime(time.Now()), VendorId: "mockId", VendorErrorCode: "mockErrorCode"}, true},
 		{core.StatusNotificationRequest{ConnectorId: 0, ErrorCode: core.NoError, Status: core.ChargePointStatusAvailable}, true},
@@ -29,19 +26,17 @@ func (suite *OcppV16TestSuite) TestStatusNotificationRequestValidation() {
 		{core.StatusNotificationRequest{ConnectorId: 0, ErrorCode: core.NoError, VendorId: ">255............................................................................................................................................................................................................................................................", Status: core.ChargePointStatusAvailable}, false},
 		//{ocpp16.StatusNotificationRequest{ConnectorId: 0, ErrorCode: ocpp16.NoError, Info: "mockInfo", Status: ocpp16.ChargePointStatusAvailable, Timestamp: ocpp16.DateTime{Time: time.Now().Add(1 * time.Hour)}, VendorId: "mockId", VendorErrorCode: "mockErrorCode"}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestStatusNotificationConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.StatusNotificationConfirmation{}, true},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -60,30 +55,30 @@ func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
 	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(statusNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.StatusNotificationRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, connectorId, request.ConnectorId)
-		assert.Equal(t, cpErrorCode, request.ErrorCode)
-		assert.Equal(t, status, request.Status)
-		assert.Equal(t, info, request.Info)
-		assert.Equal(t, vendorId, request.VendorId)
-		assert.Equal(t, vendorErrorCode, request.VendorErrorCode)
-		assertDateTimeEquality(t, *timestamp, *request.Timestamp)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(connectorId, request.ConnectorId)
+		suite.Equal(cpErrorCode, request.ErrorCode)
+		suite.Equal(status, request.Status)
+		suite.Equal(info, request.Info)
+		suite.Equal(vendorId, request.VendorId)
+		suite.Equal(vendorErrorCode, request.VendorErrorCode)
+		assertDateTimeEquality(suite, *timestamp, *request.Timestamp)
 	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargePoint.StatusNotification(connectorId, cpErrorCode, status, func(request *core.StatusNotificationRequest) {
 		request.Timestamp = timestamp
 		request.Info = info
 		request.VendorId = vendorId
 		request.VendorErrorCode = vendorErrorCode
 	})
-	require.Nil(t, err)
-	require.NotNil(t, confirmation)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(confirmation)
 }
 
 func (suite *OcppV16TestSuite) TestStatusNotificationInvalidEndpoint() {

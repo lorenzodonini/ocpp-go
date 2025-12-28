@@ -6,14 +6,11 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/remotecontrol"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestRequestStartTransactionRequestValidation() {
-	t := suite.T()
 	chargingProfile := types.ChargingProfile{
 		ID:                     1,
 		StackLevel:             0,
@@ -44,11 +41,10 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionRequestValidation() {
 		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &types.ChargingProfile{}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
 		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: "invalidGroupIdToken"}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestRequestStartTransactionConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, TransactionID: "12345", StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, true},
 		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, TransactionID: "12345"}, true},
@@ -59,11 +55,10 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionConfirmationValidation(
 		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, TransactionID: ">36..................................", StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, false},
 		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, TransactionID: "12345", StatusInfo: &types.StatusInfo{}}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -105,47 +100,47 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 	handler := &MockChargingStationRemoteControlHandler{}
 	handler.On("OnRequestStartTransaction", mock.Anything).Return(requestStartTransactionResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*remotecontrol.RequestStartTransactionRequest)
-		require.True(t, ok)
-		assert.Equal(t, *evseId, *request.EvseID)
-		assert.Equal(t, remoteStartID, request.RemoteStartID)
-		assert.Equal(t, idToken.IdToken, request.IDToken.IdToken)
-		assert.Equal(t, idToken.Type, request.IDToken.Type)
-		assert.Equal(t, chargingProfile.ID, request.ChargingProfile.ID)
-		assert.Equal(t, chargingProfile.ChargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
-		assert.Equal(t, chargingProfile.ChargingProfileKind, request.ChargingProfile.ChargingProfileKind)
-		require.Len(t, request.ChargingProfile.ChargingSchedule, len(chargingProfile.ChargingSchedule))
+		suite.Require().True(ok)
+		suite.Equal(*evseId, *request.EvseID)
+		suite.Equal(remoteStartID, request.RemoteStartID)
+		suite.Equal(idToken.IdToken, request.IDToken.IdToken)
+		suite.Equal(idToken.Type, request.IDToken.Type)
+		suite.Equal(chargingProfile.ID, request.ChargingProfile.ID)
+		suite.Equal(chargingProfile.ChargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
+		suite.Equal(chargingProfile.ChargingProfileKind, request.ChargingProfile.ChargingProfileKind)
+		suite.Require().Len(request.ChargingProfile.ChargingSchedule, len(chargingProfile.ChargingSchedule))
 		s := request.ChargingProfile.ChargingSchedule[0]
-		assert.Equal(t, chargingProfile.ChargingSchedule[0].ID, s.ID)
-		assert.Equal(t, chargingProfile.ChargingSchedule[0].ChargingRateUnit, s.ChargingRateUnit)
-		require.Len(t, s.ChargingSchedulePeriod, len(chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod))
-		assert.Equal(t, chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod[0].Limit, s.ChargingSchedulePeriod[0].Limit)
-		assert.Equal(t, chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod[0].StartPeriod, s.ChargingSchedulePeriod[0].StartPeriod)
-		require.NotNil(t, request.GroupIdToken)
-		assert.Equal(t, groupIdToken.IdToken, request.GroupIdToken.IdToken)
-		assert.Equal(t, groupIdToken.Type, request.GroupIdToken.Type)
+		suite.Equal(chargingProfile.ChargingSchedule[0].ID, s.ID)
+		suite.Equal(chargingProfile.ChargingSchedule[0].ChargingRateUnit, s.ChargingRateUnit)
+		suite.Require().Len(s.ChargingSchedulePeriod, len(chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod))
+		suite.Equal(chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod[0].Limit, s.ChargingSchedulePeriod[0].Limit)
+		suite.Equal(chargingProfile.ChargingSchedule[0].ChargingSchedulePeriod[0].StartPeriod, s.ChargingSchedulePeriod[0].StartPeriod)
+		suite.Require().NotNil(request.GroupIdToken)
+		suite.Equal(groupIdToken.IdToken, request.GroupIdToken.IdToken)
+		suite.Equal(groupIdToken.Type, request.GroupIdToken.Type)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.RequestStartTransaction(wsId, func(response *remotecontrol.RequestStartTransactionResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, response)
-		assert.Equal(t, status, response.Status)
-		assert.Equal(t, transactionId, response.TransactionID)
-		assert.Equal(t, statusInfo.ReasonCode, response.StatusInfo.ReasonCode)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(response)
+		suite.Equal(status, response.Status)
+		suite.Equal(transactionId, response.TransactionID)
+		suite.Equal(statusInfo.ReasonCode, response.StatusInfo.ReasonCode)
 		resultChannel <- true
 	}, remoteStartID, idToken, func(request *remotecontrol.RequestStartTransactionRequest) {
 		request.EvseID = evseId
 		request.ChargingProfile = &chargingProfile
 		request.GroupIdToken = &groupIdToken
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestRequestStartTransactionInvalidEndpoint() {

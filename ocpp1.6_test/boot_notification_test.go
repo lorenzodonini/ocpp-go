@@ -6,14 +6,11 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Tests
 func (suite *OcppV16TestSuite) TestBootNotificationRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test"}, true},
 		{core.BootNotificationRequest{ChargeBoxSerialNumber: "test", ChargePointModel: "test", ChargePointSerialNumber: "number", ChargePointVendor: "test", FirmwareVersion: "version", Iccid: "test", Imsi: "test"}, true},
@@ -29,11 +26,10 @@ func (suite *OcppV16TestSuite) TestBootNotificationRequestValidation() {
 		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterSerialNumber: ">25......................."}, false},
 		{core.BootNotificationRequest{ChargePointModel: "test", ChargePointVendor: "test", MeterType: ">25......................."}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestBootNotificationConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.BootNotificationConfirmation{CurrentTime: types.NewDateTime(time.Now()), Interval: 60, Status: core.RegistrationStatusAccepted}, true},
 		{core.BootNotificationConfirmation{CurrentTime: types.NewDateTime(time.Now()), Interval: 60, Status: core.RegistrationStatusPending}, true},
@@ -44,11 +40,10 @@ func (suite *OcppV16TestSuite) TestBootNotificationConfirmationValidation() {
 		{core.BootNotificationConfirmation{CurrentTime: types.NewDateTime(time.Now()), Interval: 60}, false},
 		{core.BootNotificationConfirmation{Interval: 60, Status: core.RegistrationStatusAccepted}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := "1234"
 	wsUrl := "someUrl"
@@ -65,23 +60,23 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnBootNotification", mock.AnythingOfType("string"), mock.Anything).Return(bootNotificationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.BootNotificationRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, chargePointModel, request.ChargePointModel)
-		assert.Equal(t, chargePointVendor, request.ChargePointVendor)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(chargePointModel, request.ChargePointModel)
+		suite.Equal(chargePointVendor, request.ChargePointVendor)
 	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargePoint.BootNotification(chargePointModel, chargePointVendor)
-	require.Nil(t, err)
-	require.NotNil(t, confirmation)
-	assert.Equal(t, registrationStatus, confirmation.Status)
-	assert.Equal(t, interval, confirmation.Interval)
-	assertDateTimeEquality(t, *currentTime, *confirmation.CurrentTime)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(confirmation)
+	suite.Equal(registrationStatus, confirmation.Status)
+	suite.Equal(interval, confirmation.Interval)
+	assertDateTimeEquality(suite, *currentTime, *confirmation.CurrentTime)
 }
 
 func (suite *OcppV16TestSuite) TestBootNotificationInvalidEndpoint() {

@@ -7,14 +7,11 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestReserveNowRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, true},
 		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
@@ -30,11 +27,10 @@ func (suite *OcppV2TestSuite) TestReserveNowRequestValidation() {
 		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: "invalidIdToken"}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
 		{reservation.ReserveNowRequest{ID: 42, ExpiryDateTime: types.NewDateTime(time.Now()), ConnectorType: reservation.ConnectorTypeCCS1, EvseID: newInt(1), IdToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: "invalidIdToken"}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestReserveNowConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{reservation.ReserveNowResponse{Status: reservation.ReserveNowStatusAccepted, StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, true},
 		{reservation.ReserveNowResponse{Status: reservation.ReserveNowStatusAccepted}, true},
@@ -42,11 +38,10 @@ func (suite *OcppV2TestSuite) TestReserveNowConfirmationValidation() {
 		{reservation.ReserveNowResponse{Status: "invalidReserveNowStatus"}, false},
 		{reservation.ReserveNowResponse{Status: reservation.ReserveNowStatusAccepted, StatusInfo: &types.StatusInfo{}}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestReserveNowE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -69,38 +64,38 @@ func (suite *OcppV2TestSuite) TestReserveNowE2EMocked() {
 	handler := &MockChargingStationReservationHandler{}
 	handler.On("OnReserveNow", mock.Anything).Return(reserveNowResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*reservation.ReserveNowRequest)
-		require.True(t, ok)
-		assert.Equal(t, id, request.ID)
-		assert.Equal(t, expiryDateTime.FormatTimestamp(), request.ExpiryDateTime.FormatTimestamp())
-		assert.Equal(t, connectorType, request.ConnectorType)
-		assert.Equal(t, *evseID, *request.EvseID)
-		assert.Equal(t, idToken.IdToken, request.IdToken.IdToken)
-		assert.Equal(t, idToken.Type, request.IdToken.Type)
-		require.NotNil(t, request.GroupIdToken)
-		assert.Equal(t, groupIdToken.IdToken, request.GroupIdToken.IdToken)
-		assert.Equal(t, groupIdToken.Type, request.GroupIdToken.Type)
+		suite.Require().True(ok)
+		suite.Equal(id, request.ID)
+		suite.Equal(expiryDateTime.FormatTimestamp(), request.ExpiryDateTime.FormatTimestamp())
+		suite.Equal(connectorType, request.ConnectorType)
+		suite.Equal(*evseID, *request.EvseID)
+		suite.Equal(idToken.IdToken, request.IdToken.IdToken)
+		suite.Equal(idToken.Type, request.IdToken.Type)
+		suite.Require().NotNil(request.GroupIdToken)
+		suite.Equal(groupIdToken.IdToken, request.GroupIdToken.IdToken)
+		suite.Equal(groupIdToken.Type, request.GroupIdToken.Type)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.ReserveNow(wsId, func(resp *reservation.ReserveNowResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, resp)
-		assert.Equal(t, status, resp.Status)
-		assert.Equal(t, statusInfo.ReasonCode, resp.StatusInfo.ReasonCode)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(resp)
+		suite.Equal(status, resp.Status)
+		suite.Equal(statusInfo.ReasonCode, resp.StatusInfo.ReasonCode)
 		resultChannel <- true
 	}, id, expiryDateTime, idToken, func(request *reservation.ReserveNowRequest) {
 		request.ConnectorType = connectorType
 		request.EvseID = evseID
 		request.GroupIdToken = &groupIdToken
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestReserveNowInvalidEndpoint() {

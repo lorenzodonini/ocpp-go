@@ -6,24 +6,20 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestCancelReservationRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{reservation.CancelReservationRequest{ReservationID: 42}, true},
 		{reservation.CancelReservationRequest{}, true},
 		{reservation.CancelReservationRequest{ReservationID: -1}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestCancelReservationConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{reservation.CancelReservationResponse{Status: reservation.CancelReservationStatusAccepted, StatusInfo: types.NewStatusInfo("200", "ok")}, true},
 		{reservation.CancelReservationResponse{Status: reservation.CancelReservationStatusAccepted}, true},
@@ -31,11 +27,10 @@ func (suite *OcppV2TestSuite) TestCancelReservationConfirmationValidation() {
 		{reservation.CancelReservationResponse{}, false},
 		{reservation.CancelReservationResponse{Status: reservation.CancelReservationStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestCancelReservationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -49,25 +44,25 @@ func (suite *OcppV2TestSuite) TestCancelReservationE2EMocked() {
 	handler := &MockChargingStationReservationHandler{}
 	handler.On("OnCancelReservation", mock.Anything).Return(cancelReservationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*reservation.CancelReservationRequest)
-		require.True(t, ok)
-		assert.Equal(t, reservationId, request.ReservationID)
+		suite.Require().True(ok)
+		suite.Equal(reservationId, request.ReservationID)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.CancelReservation(wsId, func(confirmation *reservation.CancelReservationResponse, err error) {
-		require.Nil(t, err)
-		assert.NotNil(t, confirmation)
-		require.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.NotNil(confirmation)
+		suite.Require().Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, reservationId)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestCancelReservationInvalidEndpoint() {

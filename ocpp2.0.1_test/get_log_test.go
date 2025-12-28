@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -14,7 +12,6 @@ import (
 
 // Test
 func (suite *OcppV2TestSuite) TestGetLogRequestValidation() {
-	t := suite.T()
 	logParameters := diagnostics.LogParameters{
 		RemoteLocation:  "ftp://someurl/diagnostics/1",
 		OldestTimestamp: types.NewDateTime(time.Now().Add(-2 * time.Hour)),
@@ -34,11 +31,10 @@ func (suite *OcppV2TestSuite) TestGetLogRequestValidation() {
 		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, RequestID: 1, Retries: newInt(5), RetryInterval: newInt(-1), Log: logParameters}, false},
 		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, RequestID: 1, Retries: newInt(5), RetryInterval: newInt(120), Log: diagnostics.LogParameters{RemoteLocation: ".invalidUrl.", OldestTimestamp: nil, LatestTimestamp: nil}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestGetLogConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAccepted, Filename: "testFileName.log"}, true},
 		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAccepted}, true},
@@ -48,11 +44,10 @@ func (suite *OcppV2TestSuite) TestGetLogConfirmationValidation() {
 		{diagnostics.GetLogResponse{Status: "invalidLogStatus"}, false},
 		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAccepted, Filename: ">256............................................................................................................................................................................................................................................................."}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestGetLogE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -77,36 +72,36 @@ func (suite *OcppV2TestSuite) TestGetLogE2EMocked() {
 	handler := &MockChargingStationDiagnosticsHandler{}
 	handler.On("OnGetLog", mock.Anything).Return(getLogConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*diagnostics.GetLogRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, logType, request.LogType)
-		assert.Equal(t, requestID, request.RequestID)
-		assert.Equal(t, *retries, *request.Retries)
-		assert.Equal(t, *retryInterval, *request.RetryInterval)
-		assert.Equal(t, logParameters.RemoteLocation, request.Log.RemoteLocation)
-		assert.Equal(t, logParameters.LatestTimestamp.FormatTimestamp(), request.Log.LatestTimestamp.FormatTimestamp())
-		assert.Equal(t, logParameters.OldestTimestamp.FormatTimestamp(), request.Log.OldestTimestamp.FormatTimestamp())
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(logType, request.LogType)
+		suite.Equal(requestID, request.RequestID)
+		suite.Equal(*retries, *request.Retries)
+		suite.Equal(*retryInterval, *request.RetryInterval)
+		suite.Equal(logParameters.RemoteLocation, request.Log.RemoteLocation)
+		suite.Equal(logParameters.LatestTimestamp.FormatTimestamp(), request.Log.LatestTimestamp.FormatTimestamp())
+		suite.Equal(logParameters.OldestTimestamp.FormatTimestamp(), request.Log.OldestTimestamp.FormatTimestamp())
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.GetLog(wsId, func(confirmation *diagnostics.GetLogResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
-		assert.Equal(t, filename, confirmation.Filename)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
+		suite.Equal(filename, confirmation.Filename)
 		resultChannel <- true
 	}, logType, requestID, logParameters, func(request *diagnostics.GetLogRequest) {
 		request.Retries = retries
 		request.RetryInterval = retryInterval
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestGetLogInvalidEndpoint() {

@@ -6,14 +6,11 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestStartTransactionRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{core.StartTransactionRequest{ConnectorId: 1, IdTag: "12345", MeterStart: 100, ReservationId: newInt(42), Timestamp: types.NewDateTime(time.Now())}, true},
 		{core.StartTransactionRequest{ConnectorId: 1, IdTag: "12345", MeterStart: 100, Timestamp: types.NewDateTime(time.Now())}, true},
@@ -25,22 +22,20 @@ func (suite *OcppV16TestSuite) TestStartTransactionRequestValidation() {
 		{core.StartTransactionRequest{ConnectorId: 1, MeterStart: 100, Timestamp: types.NewDateTime(time.Now())}, false},
 		{core.StartTransactionRequest{ConnectorId: 1, IdTag: "12345", MeterStart: 100}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestStartTransactionConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.StartTransactionConfirmation{IdTagInfo: &types.IdTagInfo{ExpiryDate: types.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: types.AuthorizationStatusAccepted}, TransactionId: 10}, true},
 		{core.StartTransactionConfirmation{IdTagInfo: &types.IdTagInfo{ExpiryDate: types.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: types.AuthorizationStatusAccepted}}, true},
 		{core.StartTransactionConfirmation{IdTagInfo: &types.IdTagInfo{Status: "invalidAuthorizationStatus"}, TransactionId: 10}, false},
 		{core.StartTransactionConfirmation{TransactionId: 10}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestStartTransactionE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -64,28 +59,28 @@ func (suite *OcppV16TestSuite) TestStartTransactionE2EMocked() {
 	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnStartTransaction", mock.AnythingOfType("string"), mock.Anything).Return(startTransactionConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.StartTransactionRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, connectorId, request.ConnectorId)
-		assert.Equal(t, idTag, request.IdTag)
-		assert.Equal(t, meterStart, request.MeterStart)
-		assert.Equal(t, *reservationId, *request.ReservationId)
-		assertDateTimeEquality(t, *timestamp, *request.Timestamp)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(connectorId, request.ConnectorId)
+		suite.Equal(idTag, request.IdTag)
+		suite.Equal(meterStart, request.MeterStart)
+		suite.Equal(*reservationId, *request.ReservationId)
+		assertDateTimeEquality(suite, *timestamp, *request.Timestamp)
 	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: requestRaw, forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargePoint.StartTransaction(connectorId, idTag, meterStart, timestamp, func(request *core.StartTransactionRequest) {
 		request.ReservationId = reservationId
 	})
-	require.Nil(t, err)
-	require.NotNil(t, confirmation)
-	assert.Equal(t, status, confirmation.IdTagInfo.Status)
-	assert.Equal(t, parentIdTag, confirmation.IdTagInfo.ParentIdTag)
-	assertDateTimeEquality(t, *expiryDate, *confirmation.IdTagInfo.ExpiryDate)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(confirmation)
+	suite.Equal(status, confirmation.IdTagInfo.Status)
+	suite.Equal(parentIdTag, confirmation.IdTagInfo.ParentIdTag)
+	assertDateTimeEquality(suite, *expiryDate, *confirmation.IdTagInfo.ExpiryDate)
 }
 
 func (suite *OcppV16TestSuite) TestStartTransactionInvalidEndpoint() {

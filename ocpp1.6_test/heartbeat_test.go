@@ -7,29 +7,25 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestHeartbeatRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{core.HeartbeatRequest{}, true},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestHeartbeatConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.HeartbeatConfirmation{CurrentTime: types.NewDateTime(time.Now())}, true},
 		{core.HeartbeatConfirmation{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestHeartbeatE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -42,19 +38,19 @@ func (suite *OcppV16TestSuite) TestHeartbeatE2EMocked() {
 	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnHeartbeat", mock.AnythingOfType("string"), mock.Anything).Return(heartbeatConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.HeartbeatRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
 	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargePoint.Heartbeat()
-	require.Nil(t, err)
-	require.NotNil(t, confirmation)
-	assertDateTimeEquality(t, *currentTime, *confirmation.CurrentTime)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(confirmation)
+	assertDateTimeEquality(suite, *currentTime, *confirmation.CurrentTime)
 }
 
 func (suite *OcppV16TestSuite) TestHeartbeatInvalidEndpoint() {

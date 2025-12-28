@@ -23,10 +23,9 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.opentelemetry.io/otel/metric/noop"
 )
 
 // ---------------------- MOCK WEBSOCKET ----------------------
@@ -468,9 +467,8 @@ type expectedChargePointOptions struct {
 }
 
 func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener core.CentralSystemHandler, options expectedCentralSystemOptions) {
-	t := suite.T()
 	suite.centralSystem.SetNewChargePointHandler(func(chargePoint ocpp16.ChargePointConnection) {
-		assert.Equal(t, options.clientId, chargePoint.ID())
+		suite.Equal(options.clientId, chargePoint.ID())
 	})
 	suite.centralSystem.SetCoreHandler(coreListener)
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
@@ -479,25 +477,24 @@ func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener cor
 		clientId := args.String(0)
 		data := args.Get(1)
 		bytes := data.([]byte)
-		assert.Equal(t, options.clientId, clientId)
+		suite.Equal(options.clientId, clientId)
 		if options.rawWrittenMessage != nil {
-			assert.NotNil(t, bytes)
-			assert.Equal(t, options.rawWrittenMessage, bytes)
+			suite.NotNil(bytes)
+			suite.Equal(options.rawWrittenMessage, bytes)
 		}
 		if options.forwardWrittenMessage {
 			// Notify client of incoming response
 			err := suite.mockWsClient.MessageHandler(bytes)
-			assert.Nil(t, err)
+			suite.Nil(err)
 		}
 	})
 }
 
 func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener core.ChargePointHandler, options expectedChargePointOptions) {
-	t := suite.T()
 	suite.chargePoint.SetCoreHandler(coreListener)
 	suite.mockWsClient.On("Start", mock.AnythingOfType("string")).Return(options.startReturnArgument).Run(func(args mock.Arguments) {
 		u := args.String(0)
-		assert.Equal(t, fmt.Sprintf("%s/%s", options.serverUrl, options.clientId), u)
+		suite.Equal(fmt.Sprintf("%s/%s", options.serverUrl, options.clientId), u)
 		// Notify server of incoming connection
 		if options.createChannelOnStart {
 			suite.mockWsServer.NewClientHandler(options.channel)
@@ -507,19 +504,19 @@ func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener core.
 		data := args.Get(0)
 		bytes := data.([]byte)
 		if options.rawWrittenMessage != nil {
-			assert.NotNil(t, bytes)
-			assert.Equal(t, options.rawWrittenMessage, bytes)
+			suite.NotNil(bytes)
+			suite.Equal(options.rawWrittenMessage, bytes)
 		}
 		// Notify server of incoming request
 		if options.forwardWrittenMessage {
 			err := suite.mockWsServer.MessageHandler(options.channel, bytes)
-			assert.Nil(t, err)
+			suite.Nil(err)
 		}
 	})
 }
 
-func assertDateTimeEquality(t *testing.T, expected types.DateTime, actual types.DateTime) {
-	assert.Equal(t, expected.FormatTimestamp(), actual.FormatTimestamp())
+func assertDateTimeEquality(suite *OcppV16TestSuite, expected types.DateTime, actual types.DateTime) {
+	suite.Equal(expected.FormatTimestamp(), actual.FormatTimestamp())
 }
 
 func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp.Request, requestJson string, messageId string) {
@@ -536,29 +533,29 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	resultChannel := make(chan struct{}, 1)
 	suite.ocppjChargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
-		assert.Equal(t, messageId, err.MessageId)
-		assert.Equal(t, ocppj.NotSupported, err.Code)
-		assert.Equal(t, errorDescription, err.Description)
-		assert.Equal(t, map[string]interface{}{}, details)
+		suite.Equal(messageId, err.MessageId)
+		suite.Equal(ocppj.NotSupported, err.Code)
+		suite.Equal(errorDescription, err.Description)
+		suite.Equal(map[string]interface{}{}, details)
 		resultChannel <- struct{}{}
 	})
 	// Start
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	// 1. Test sending an unsupported request, expecting an error
 	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
-	require.Error(t, err)
-	assert.Equal(t, expectedError, err.Error())
+	suite.Require().Error(err)
+	suite.Equal(expectedError, err.Error())
 	// 2. Test receiving an unsupported request on the other endpoint and receiving an error
 	// Mark mocked request as pending, otherwise response will be ignored
 	suite.ocppjChargePoint.RequestState.AddPendingRequest(messageId, request)
 	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
-	assert.Nil(t, err)
+	suite.Nil(err)
 	_, ok := <-resultChannel
-	assert.True(t, ok)
+	suite.True(ok)
 	// Stop the central system
 	suite.centralSystem.Stop()
 }
@@ -577,30 +574,30 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	resultChannel := make(chan struct{}, 1)
 	suite.ocppjCentralSystem.SetErrorHandler(func(chargePoint ws.Channel, err *ocpp.Error, details interface{}) {
-		assert.Equal(t, messageId, err.MessageId)
-		assert.Equal(t, wsId, chargePoint.ID())
-		assert.Equal(t, ocppj.NotSupported, err.Code)
-		assert.Equal(t, errorDescription, err.Description)
-		assert.Equal(t, map[string]interface{}{}, details)
+		suite.Equal(messageId, err.MessageId)
+		suite.Equal(wsId, chargePoint.ID())
+		suite.Equal(ocppj.NotSupported, err.Code)
+		suite.Equal(errorDescription, err.Description)
+		suite.Equal(map[string]interface{}{}, details)
 		resultChannel <- struct{}{}
 	})
 	// Start
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	// 1. Test sending an unsupported request, expecting an error
 	err = suite.centralSystem.SendRequestAsync(wsId, request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
-	require.Error(t, err)
-	assert.Equal(t, expectedError, err.Error())
+	suite.Require().Error(err)
+	suite.Equal(expectedError, err.Error())
 	// 2. Test receiving an unsupported request on the other endpoint and receiving an error
 	// Mark mocked request as pending, otherwise response will be ignored
 	suite.ocppjCentralSystem.RequestState.AddPendingRequest(wsId, messageId, request)
 	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
-	assert.Nil(t, err)
+	suite.Nil(err)
 	_, ok := <-resultChannel
-	assert.True(t, ok)
+	suite.True(ok)
 	// Stop the central system
 	suite.centralSystem.Stop()
 }
@@ -621,13 +618,13 @@ type ConfirmationTestEntry struct {
 }
 
 // TODO: pass expected error value for improved validation and error message
-func ExecuteGenericTestTable(t *testing.T, testTable []GenericTestEntry) {
+func ExecuteGenericTestTable(suite *OcppV16TestSuite, testTable []GenericTestEntry) {
 	for _, testCase := range testTable {
 		err := types.Validate.Struct(testCase.Element)
 		if err != nil {
-			assert.Equal(t, testCase.ExpectedValid, false, err.Error())
+			suite.Equal(false, testCase.ExpectedValid, err.Error())
 		} else {
-			assert.Equal(t, testCase.ExpectedValid, true, "%v is valid", testCase.Element)
+			suite.Equal(true, testCase.ExpectedValid, "%v is valid", testCase.Element)
 		}
 	}
 }
@@ -672,7 +669,7 @@ func (suite *OcppV16TestSuite) SetupTest() {
 	suite.mockWsClient = &mockClient
 	suite.mockWsServer = &mockServer
 	suite.clientDispatcher = ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(queueCapacity))
-	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(queueCapacity))
+	suite.serverDispatcher = ocppj.NewDefaultServerDispatcher(ocppj.NewFIFOQueueMap(queueCapacity), noop.NewMeterProvider())
 	suite.ocppjChargePoint = ocppj.NewClient(
 		"test_id",
 		suite.mockWsClient,
@@ -714,13 +711,12 @@ func (suite *OcppV16TestSuite) SetupTest() {
 }
 
 func (suite *OcppV16TestSuite) TestIsConnected() {
-	t := suite.T()
 	// Simulate ws connected
 	mockCall := suite.mockWsClient.On("IsConnected").Return(true)
-	assert.True(t, suite.chargePoint.IsConnected())
+	suite.True(suite.chargePoint.IsConnected())
 	// Simulate ws disconnected
 	mockCall.Return(false)
-	assert.False(t, suite.chargePoint.IsConnected())
+	suite.False(suite.chargePoint.IsConnected())
 }
 
 // TODO: implement generic protocol tests

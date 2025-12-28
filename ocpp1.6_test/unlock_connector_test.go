@@ -4,34 +4,29 @@ import (
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func (suite *OcppV16TestSuite) TestUnlockConnectorRequestValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{core.UnlockConnectorRequest{ConnectorId: 1}, true},
 		{core.UnlockConnectorRequest{ConnectorId: -1}, false},
 		{core.UnlockConnectorRequest{}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV16TestSuite) TestUnlockConnectorConfirmationValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{core.UnlockConnectorConfirmation{Status: core.UnlockStatusUnlocked}, true},
 		{core.UnlockConnectorConfirmation{Status: "invalidUnlockStatus"}, false},
 		{core.UnlockConnectorConfirmation{}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 // Test
 func (suite *OcppV16TestSuite) TestUnlockConnectorE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -45,26 +40,26 @@ func (suite *OcppV16TestSuite) TestUnlockConnectorE2EMocked() {
 	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnUnlockConnector", mock.Anything).Return(unlockConnectorConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.UnlockConnectorRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, connectorId, request.ConnectorId)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(connectorId, request.ConnectorId)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.UnlockConnector(wsId, func(confirmation *core.UnlockConnectorConfirmation, err error) {
-		require.NotNil(t, confirmation)
-		require.Nil(t, err)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().NotNil(confirmation)
+		suite.Require().Nil(err)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, connectorId)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestUnlockConnectorInvalidEndpoint() {

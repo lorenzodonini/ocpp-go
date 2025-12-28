@@ -5,9 +5,7 @@ import (
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 type CustomData struct {
@@ -24,7 +22,6 @@ func parseCustomData(req *core.DataTransferRequest) (CustomData, error) {
 
 // Test
 func (suite *OcppV16TestSuite) TestDataTransferRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{core.DataTransferRequest{VendorId: "12345"}, true},
 		{core.DataTransferRequest{VendorId: "12345", MessageId: "6789"}, true},
@@ -33,11 +30,10 @@ func (suite *OcppV16TestSuite) TestDataTransferRequestValidation() {
 		{core.DataTransferRequest{VendorId: ">255............................................................................................................................................................................................................................................................"}, false},
 		{core.DataTransferRequest{VendorId: "12345", MessageId: ">50................................................"}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestDataTransferConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.DataTransferConfirmation{Status: core.DataTransferStatusAccepted}, true},
 		{core.DataTransferConfirmation{Status: core.DataTransferStatusRejected}, true},
@@ -46,11 +42,10 @@ func (suite *OcppV16TestSuite) TestDataTransferConfirmationValidation() {
 		{core.DataTransferConfirmation{Status: "invalidDataTransferStatus"}, false},
 		{core.DataTransferConfirmation{Status: core.DataTransferStatusAccepted, Data: "mockData"}, true},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestDataTransferFromChargePointE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -65,32 +60,31 @@ func (suite *OcppV16TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnDataTransfer", mock.AnythingOfType("string"), mock.Anything).Return(dataTransferConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.DataTransferRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, vendorId, request.VendorId)
-		require.NotNil(t, request.Data)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(vendorId, request.VendorId)
+		suite.Require().NotNil(request.Data)
 		customData, err := parseCustomData(request)
-		require.Nil(t, err)
-		require.NotNil(t, customData)
-		assert.Equal(t, data.Field1, customData.Field1)
-		assert.Equal(t, data.Field2, customData.Field2)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(customData)
+		suite.Equal(data.Field1, customData.Field1)
+		suite.Equal(data.Field2, customData.Field2)
 	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargePoint.DataTransfer(vendorId, func(request *core.DataTransferRequest) {
 		request.Data = data
 	})
-	require.Nil(t, err)
-	require.NotNil(t, confirmation)
-	assert.Equal(t, status, confirmation.Status)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(confirmation)
+	suite.Equal(status, confirmation.Status)
 }
 
 func (suite *OcppV16TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -105,32 +99,32 @@ func (suite *OcppV16TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnDataTransfer", mock.Anything).Return(dataTransferConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.DataTransferRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, vendorId, request.VendorId)
-		require.NotNil(t, request.Data)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(vendorId, request.VendorId)
+		suite.Require().NotNil(request.Data)
 		customData, err := parseCustomData(request)
-		require.Nil(t, err)
-		require.NotNil(t, customData)
-		assert.Equal(t, data.Field1, customData.Field1)
-		assert.Equal(t, data.Field2, customData.Field2)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(customData)
+		suite.Equal(data.Field1, customData.Field1)
+		suite.Equal(data.Field2, customData.Field2)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *core.DataTransferConfirmation, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, vendorId, func(request *core.DataTransferRequest) {
 		request.Data = data
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }

@@ -6,14 +6,11 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestSendLocalListRequestValidation() {
-	t := suite.T()
 	authData := localauth.AuthorizationData{
 		IdToken: types.IdToken{
 			IdToken:        "token1",
@@ -32,11 +29,10 @@ func (suite *OcppV2TestSuite) TestSendLocalListRequestValidation() {
 		{localauth.SendLocalListRequest{VersionNumber: -1, UpdateType: localauth.UpdateTypeDifferential, LocalAuthorizationList: []localauth.AuthorizationData{authData}}, false},
 		{localauth.SendLocalListRequest{VersionNumber: 42, UpdateType: "invalidUpdateType", LocalAuthorizationList: []localauth.AuthorizationData{{IdToken: types.IdToken{IdToken: "tokenWithoutType"}}}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestSendLocalListResponseValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{localauth.SendLocalListResponse{Status: localauth.SendLocalListStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
 		{localauth.SendLocalListResponse{Status: localauth.SendLocalListStatusAccepted}, true},
@@ -44,11 +40,10 @@ func (suite *OcppV2TestSuite) TestSendLocalListResponseValidation() {
 		{localauth.SendLocalListResponse{Status: "invalidStatus", StatusInfo: types.NewStatusInfo("200", "")}, false},
 		{localauth.SendLocalListResponse{Status: localauth.SendLocalListStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestSendLocalListE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -75,39 +70,39 @@ func (suite *OcppV2TestSuite) TestSendLocalListE2EMocked() {
 	handler := &MockChargingStationLocalAuthHandler{}
 	handler.On("OnSendLocalList", mock.Anything).Return(sendLocalListResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*localauth.SendLocalListRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, versionNumber, request.VersionNumber)
-		assert.Equal(t, updateType, request.UpdateType)
-		require.NotNil(t, request.LocalAuthorizationList)
-		require.Len(t, request.LocalAuthorizationList, 1)
-		assert.Equal(t, authData.IdToken.IdToken, request.LocalAuthorizationList[0].IdToken.IdToken)
-		assert.Equal(t, authData.IdToken.Type, request.LocalAuthorizationList[0].IdToken.Type)
-		require.NotNil(t, request.LocalAuthorizationList[0].IdTokenInfo)
-		assert.Equal(t, authData.IdTokenInfo.Status, request.LocalAuthorizationList[0].IdTokenInfo.Status)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(versionNumber, request.VersionNumber)
+		suite.Equal(updateType, request.UpdateType)
+		suite.Require().NotNil(request.LocalAuthorizationList)
+		suite.Require().Len(request.LocalAuthorizationList, 1)
+		suite.Equal(authData.IdToken.IdToken, request.LocalAuthorizationList[0].IdToken.IdToken)
+		suite.Equal(authData.IdToken.Type, request.LocalAuthorizationList[0].IdToken.Type)
+		suite.Require().NotNil(request.LocalAuthorizationList[0].IdTokenInfo)
+		suite.Equal(authData.IdTokenInfo.Status, request.LocalAuthorizationList[0].IdTokenInfo.Status)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.SendLocalList(wsId, func(response *localauth.SendLocalListResponse, err error) {
-		assert.Nil(t, err)
-		require.NotNil(t, response)
-		assert.Equal(t, status, response.Status)
-		require.NotNil(t, response.StatusInfo)
-		assert.Equal(t, statusInfo.ReasonCode, response.StatusInfo.ReasonCode)
-		assert.Equal(t, statusInfo.AdditionalInfo, response.StatusInfo.AdditionalInfo)
+		suite.Nil(err)
+		suite.Require().NotNil(response)
+		suite.Equal(status, response.Status)
+		suite.Require().NotNil(response.StatusInfo)
+		suite.Equal(statusInfo.ReasonCode, response.StatusInfo.ReasonCode)
+		suite.Equal(statusInfo.AdditionalInfo, response.StatusInfo.AdditionalInfo)
 		resultChannel <- true
 	}, versionNumber, updateType, func(request *localauth.SendLocalListRequest) {
 		request.LocalAuthorizationList = []localauth.AuthorizationData{authData}
 	})
-	assert.Nil(t, err)
+	suite.Nil(err)
 	if err == nil {
 		result := <-resultChannel
-		assert.True(t, result)
+		suite.True(result)
 	}
 }
 

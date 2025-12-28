@@ -5,35 +5,30 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestRemoteStopTransactionRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{core.RemoteStopTransactionRequest{TransactionId: 1}, true},
 		{core.RemoteStopTransactionRequest{}, true},
 		{core.RemoteStopTransactionRequest{TransactionId: -1}, true},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStopTransactionConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}, true},
 		{core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}, true},
 		{core.RemoteStopTransactionConfirmation{Status: "invalidRemoteStopTransactionStatus"}, false},
 		{core.RemoteStopTransactionConfirmation{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStopTransactionE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -47,26 +42,26 @@ func (suite *OcppV16TestSuite) TestRemoteStopTransactionE2EMocked() {
 	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnRemoteStopTransaction", mock.Anything).Return(RemoteStopTransactionConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.RemoteStopTransactionRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, transactionId, request.TransactionId)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(transactionId, request.TransactionId)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.RemoteStopTransaction(wsId, func(confirmation *core.RemoteStopTransactionConfirmation, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, transactionId)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestRemoteStopTransactionInvalidEndpoint() {

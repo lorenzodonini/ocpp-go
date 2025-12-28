@@ -6,9 +6,7 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
@@ -22,18 +20,17 @@ func (suite *OcppV16TestSuite) TestMeterValuesRequestValidation() {
 		{core.MeterValuesRequest{ConnectorId: 1}, false},
 		{core.MeterValuesRequest{ConnectorId: 1, MeterValue: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{}}}}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestMeterValuesConfirmationValidation() {
 	var confirmationTable = []GenericTestEntry{
 		{core.MeterValuesConfirmation{}, true},
 	}
-	ExecuteGenericTestTable(suite.T(), confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestMeterValuesE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -50,26 +47,26 @@ func (suite *OcppV16TestSuite) TestMeterValuesE2EMocked() {
 	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnMeterValues", mock.AnythingOfType("string"), mock.Anything).Return(meterValuesConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.MeterValuesRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, connectorId, request.ConnectorId)
-		require.Equal(t, 1, len(request.MeterValue))
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(connectorId, request.ConnectorId)
+		suite.Require().Equal(1, len(request.MeterValue))
 		mv := request.MeterValue[0]
-		assertDateTimeEquality(t, timestamp, *mv.Timestamp)
-		require.Equal(t, 1, len(mv.SampledValue))
+		assertDateTimeEquality(suite, timestamp, *mv.Timestamp)
+		suite.Require().Equal(1, len(mv.SampledValue))
 		sv := mv.SampledValue[0]
-		assert.Equal(t, mockValue, sv.Value)
-		assert.Equal(t, mockUnit, sv.Unit)
+		suite.Equal(mockValue, sv.Value)
+		suite.Equal(mockUnit, sv.Unit)
 	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargePoint.MeterValues(connectorId, meterValues)
-	require.Nil(t, err)
-	require.NotNil(t, confirmation)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(confirmation)
 }
 
 func (suite *OcppV16TestSuite) TestMeterValuesInvalidEndpoint() {

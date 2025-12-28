@@ -6,22 +6,18 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/authorization"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestClearCacheRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{authorization.ClearCacheRequest{}, true},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestClearCacheConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{authorization.ClearCacheResponse{Status: authorization.ClearCacheStatusAccepted, StatusInfo: types.NewStatusInfo("200", "ok")}, true},
 		{authorization.ClearCacheResponse{Status: authorization.ClearCacheStatusAccepted}, true},
@@ -29,11 +25,10 @@ func (suite *OcppV2TestSuite) TestClearCacheConfirmationValidation() {
 		{authorization.ClearCacheResponse{Status: "invalidClearCacheStatus"}, false},
 		{authorization.ClearCacheResponse{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestClearCacheE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -52,17 +47,17 @@ func (suite *OcppV2TestSuite) TestClearCacheE2EMocked() {
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.ClearCache(wsId, func(confirmation *authorization.ClearCacheResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestClearCacheInvalidEndpoint() {

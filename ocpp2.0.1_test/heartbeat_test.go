@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -14,24 +12,21 @@ import (
 
 // Test
 func (suite *OcppV2TestSuite) TestHeartbeatRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{availability.HeartbeatRequest{}, true},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestHeartbeatResponseValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{availability.HeartbeatResponse{CurrentTime: *types.NewDateTime(time.Now())}, true},
 		{availability.HeartbeatResponse{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestHeartbeatE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -44,19 +39,19 @@ func (suite *OcppV2TestSuite) TestHeartbeatE2EMocked() {
 	handler := &MockCSMSAvailabilityHandler{}
 	handler.On("OnHeartbeat", mock.AnythingOfType("string"), mock.Anything).Return(heartbeatResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*availability.HeartbeatRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	response, err := suite.chargingStation.Heartbeat()
-	assert.Nil(t, err)
-	assert.NotNil(t, response)
-	assertDateTimeEquality(t, currentTime, &response.CurrentTime)
+	suite.Nil(err)
+	suite.NotNil(response)
+	assertDateTimeEquality(suite, currentTime, &response.CurrentTime)
 }
 
 func (suite *OcppV2TestSuite) TestHeartbeatInvalidEndpoint() {

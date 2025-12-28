@@ -6,14 +6,11 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestStopTransactionRequestValidation() {
-	t := suite.T()
 	transactionData := []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: "value"}}}}
 	var requestTable = []GenericTestEntry{
 		{core.StopTransactionRequest{IdTag: "12345", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, Reason: core.ReasonEVDisconnected, TransactionData: transactionData}, true},
@@ -28,21 +25,19 @@ func (suite *OcppV16TestSuite) TestStopTransactionRequestValidation() {
 		{core.StopTransactionRequest{IdTag: ">20..................", MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1}, false},
 		{core.StopTransactionRequest{MeterStop: 100, Timestamp: types.NewDateTime(time.Now()), TransactionId: 1, TransactionData: []types.MeterValue{{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{}}}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestStopTransactionConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.StopTransactionConfirmation{IdTagInfo: &types.IdTagInfo{ExpiryDate: types.NewDateTime(time.Now().Add(time.Hour * 8)), ParentIdTag: "00000", Status: types.AuthorizationStatusAccepted}}, true},
 		{core.StopTransactionConfirmation{}, true},
 		{core.StopTransactionConfirmation{IdTagInfo: &types.IdTagInfo{Status: "invalidAuthorizationStatus"}}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -67,34 +62,34 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 	coreListener := &MockCentralSystemCoreListener{}
 	coreListener.On("OnStopTransaction", mock.AnythingOfType("string"), mock.Anything).Return(stopTransactionConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*core.StopTransactionRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, meterStop, request.MeterStop)
-		assert.Equal(t, transactionId, request.TransactionId)
-		assert.Equal(t, idTag, request.IdTag)
-		assertDateTimeEquality(t, *timestamp, *request.Timestamp)
-		require.Len(t, request.TransactionData, 1)
-		assertDateTimeEquality(t, *timestamp, *request.TransactionData[0].Timestamp)
-		require.Len(t, request.TransactionData[0].SampledValue, 1)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(meterStop, request.MeterStop)
+		suite.Equal(transactionId, request.TransactionId)
+		suite.Equal(idTag, request.IdTag)
+		assertDateTimeEquality(suite, *timestamp, *request.Timestamp)
+		suite.Require().Len(request.TransactionData, 1)
+		assertDateTimeEquality(suite, *timestamp, *request.TransactionData[0].Timestamp)
+		suite.Require().Len(request.TransactionData[0].SampledValue, 1)
 		sv := request.TransactionData[0].SampledValue[0]
-		assert.Equal(t, mockValue, sv.Value)
-		assert.Equal(t, mockUnit, sv.Unit)
+		suite.Equal(mockValue, sv.Value)
+		suite.Equal(mockUnit, sv.Unit)
 	})
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: responseRaw, forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: requestRaw, forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	confirmation, err := suite.chargePoint.StopTransaction(meterStop, timestamp, transactionId, func(request *core.StopTransactionRequest) {
 		request.IdTag = idTag
 		request.TransactionData = meterValues
 	})
-	require.Nil(t, err)
-	require.NotNil(t, confirmation)
-	assert.Equal(t, status, confirmation.IdTagInfo.Status)
-	assert.Equal(t, parentIdTag, confirmation.IdTagInfo.ParentIdTag)
-	assertDateTimeEquality(t, *expiryDate, *confirmation.IdTagInfo.ExpiryDate)
+	suite.Require().Nil(err)
+	suite.Require().NotNil(confirmation)
+	suite.Equal(status, confirmation.IdTagInfo.Status)
+	suite.Equal(parentIdTag, confirmation.IdTagInfo.ParentIdTag)
+	assertDateTimeEquality(suite, *expiryDate, *confirmation.IdTagInfo.ExpiryDate)
 }
 
 func (suite *OcppV16TestSuite) TestStopTransactionInvalidEndpoint() {

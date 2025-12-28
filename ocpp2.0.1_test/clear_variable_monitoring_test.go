@@ -3,16 +3,13 @@ package ocpp2_test
 import (
 	"fmt"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestClearVariableMonitoringRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{diagnostics.ClearVariableMonitoringRequest{ID: []int{0, 2, 15}}, true},
 		{diagnostics.ClearVariableMonitoringRequest{ID: []int{0}}, true},
@@ -20,11 +17,10 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringRequestValidation() {
 		{diagnostics.ClearVariableMonitoringRequest{}, false},
 		{diagnostics.ClearVariableMonitoringRequest{ID: []int{-1}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestClearVariableMonitoringConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2, Status: diagnostics.ClearMonitoringStatusAccepted}}}, true},
 		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2}}}, false},
@@ -33,11 +29,10 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringConfirmationValidation(
 		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: -1, Status: diagnostics.ClearMonitoringStatusAccepted}}}, false},
 		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2, Status: "invalidClearMonitoringStatus"}}}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestClearVariableMonitoringE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -52,32 +47,32 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringE2EMocked() {
 	handler := &MockChargingStationDiagnosticsHandler{}
 	handler.On("OnClearVariableMonitoring", mock.Anything).Return(clearVariableMonitoringConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*diagnostics.ClearVariableMonitoringRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		require.Len(t, request.ID, 2)
-		assert.Equal(t, ids[0], request.ID[0])
-		assert.Equal(t, ids[1], request.ID[1])
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Require().Len(request.ID, 2)
+		suite.Equal(ids[0], request.ID[0])
+		suite.Equal(ids[1], request.ID[1])
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.ClearVariableMonitoring(wsId, func(confirmation *diagnostics.ClearVariableMonitoringResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		require.Len(t, confirmation.ClearMonitoringResult, 2)
-		assert.Equal(t, result1.ID, confirmation.ClearMonitoringResult[0].ID)
-		assert.Equal(t, result1.Status, confirmation.ClearMonitoringResult[0].Status)
-		assert.Equal(t, result2.ID, confirmation.ClearMonitoringResult[1].ID)
-		assert.Equal(t, result2.Status, confirmation.ClearMonitoringResult[1].Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Require().Len(confirmation.ClearMonitoringResult, 2)
+		suite.Equal(result1.ID, confirmation.ClearMonitoringResult[0].ID)
+		suite.Equal(result1.Status, confirmation.ClearMonitoringResult[0].Status)
+		suite.Equal(result2.ID, confirmation.ClearMonitoringResult[1].ID)
+		suite.Equal(result2.Status, confirmation.ClearMonitoringResult[1].Status)
 		resultChannel <- true
 	}, ids)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestClearVariableMonitoringInvalidEndpoint() {

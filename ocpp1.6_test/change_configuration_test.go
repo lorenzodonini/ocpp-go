@@ -4,14 +4,11 @@ import (
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestChangeConfigurationRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{core.ChangeConfigurationRequest{Key: "someKey", Value: "someValue"}, true},
 		{core.ChangeConfigurationRequest{Key: "someKey"}, false},
@@ -20,11 +17,10 @@ func (suite *OcppV16TestSuite) TestChangeConfigurationRequestValidation() {
 		{core.ChangeConfigurationRequest{Key: ">50................................................", Value: "someValue"}, false},
 		{core.ChangeConfigurationRequest{Key: "someKey", Value: ">500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestChangeConfigurationConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{core.ChangeConfigurationConfirmation{Status: core.ConfigurationStatusAccepted}, true},
 		{core.ChangeConfigurationConfirmation{Status: core.ConfigurationStatusRejected}, true},
@@ -32,11 +28,10 @@ func (suite *OcppV16TestSuite) TestChangeConfigurationConfirmationValidation() {
 		{core.ChangeConfigurationConfirmation{Status: core.ConfigurationStatusNotSupported}, true},
 		{core.ChangeConfigurationConfirmation{Status: "invalidConfigurationStatus"}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestChangeConfigurationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -51,27 +46,27 @@ func (suite *OcppV16TestSuite) TestChangeConfigurationE2EMocked() {
 	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnChangeConfiguration", mock.Anything).Return(changeConfigurationConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.ChangeConfigurationRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, key, request.Key)
-		assert.Equal(t, value, request.Value)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(key, request.Key)
+		suite.Equal(value, request.Value)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.ChangeConfiguration(wsId, func(confirmation *core.ChangeConfigurationConfirmation, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, key, value)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestChangeConfigurationInvalidEndpoint() {

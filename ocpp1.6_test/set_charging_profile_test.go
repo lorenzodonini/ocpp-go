@@ -5,14 +5,11 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestSetChargingProfileRequestValidation() {
-	t := suite.T()
 	chargingSchedule := types.NewChargingSchedule(types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
 	chargingProfile := types.NewChargingProfile(1, 1, types.ChargingProfilePurposeChargePointMaxProfile, types.ChargingProfileKindAbsolute, chargingSchedule)
 	requestTable := []GenericTestEntry{
@@ -22,21 +19,19 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileRequestValidation() {
 		{smartcharging.SetChargingProfileRequest{ConnectorId: 1}, false},
 		{smartcharging.SetChargingProfileRequest{ConnectorId: -1, ChargingProfile: chargingProfile}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestSetChargingProfileConfirmationValidation() {
-	t := suite.T()
 	confirmationTable := []GenericTestEntry{
 		{smartcharging.SetChargingProfileConfirmation{Status: smartcharging.ChargingProfileStatusAccepted}, true},
 		{smartcharging.SetChargingProfileConfirmation{Status: "invalidChargingProfileStatus"}, false},
 		{smartcharging.SetChargingProfileConfirmation{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -69,25 +64,25 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 	smartChargingListener := &MockChargePointSmartChargingListener{}
 	smartChargingListener.On("OnSetChargingProfile", mock.Anything).Return(SetChargingProfileConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*smartcharging.SetChargingProfileRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, connectorId, request.ConnectorId)
-		assert.Equal(t, chargingProfileId, request.ChargingProfile.ChargingProfileId)
-		assert.Equal(t, chargingProfileKind, request.ChargingProfile.ChargingProfileKind)
-		assert.Equal(t, chargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
-		assert.Equal(t, types.RecurrencyKindType(""), request.ChargingProfile.RecurrencyKind)
-		assert.Equal(t, stackLevel, request.ChargingProfile.StackLevel)
-		assert.Equal(t, 0, request.ChargingProfile.TransactionId)
-		assert.Nil(t, request.ChargingProfile.ValidFrom)
-		assert.Nil(t, request.ChargingProfile.ValidTo)
-		assert.Equal(t, chargingRateUnit, request.ChargingProfile.ChargingSchedule.ChargingRateUnit)
-		assert.Nil(t, request.ChargingProfile.ChargingSchedule.MinChargingRate)
-		assert.Nil(t, request.ChargingProfile.ChargingSchedule.Duration)
-		assert.Nil(t, request.ChargingProfile.ChargingSchedule.StartSchedule)
-		require.Len(t, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod, 1)
-		assert.Equal(t, limit, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
-		assert.Equal(t, startPeriod, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
-		assert.Nil(t, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(connectorId, request.ConnectorId)
+		suite.Equal(chargingProfileId, request.ChargingProfile.ChargingProfileId)
+		suite.Equal(chargingProfileKind, request.ChargingProfile.ChargingProfileKind)
+		suite.Equal(chargingProfilePurpose, request.ChargingProfile.ChargingProfilePurpose)
+		suite.Equal(types.RecurrencyKindType(""), request.ChargingProfile.RecurrencyKind)
+		suite.Equal(stackLevel, request.ChargingProfile.StackLevel)
+		suite.Equal(0, request.ChargingProfile.TransactionId)
+		suite.Nil(request.ChargingProfile.ValidFrom)
+		suite.Nil(request.ChargingProfile.ValidTo)
+		suite.Equal(chargingRateUnit, request.ChargingProfile.ChargingSchedule.ChargingRateUnit)
+		suite.Nil(request.ChargingProfile.ChargingSchedule.MinChargingRate)
+		suite.Nil(request.ChargingProfile.ChargingSchedule.Duration)
+		suite.Nil(request.ChargingProfile.ChargingSchedule.StartSchedule)
+		suite.Require().Len(request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod, 1)
+		suite.Equal(limit, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
+		suite.Equal(startPeriod, request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
+		suite.Nil(request.ChargingProfile.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
@@ -95,17 +90,17 @@ func (suite *OcppV16TestSuite) TestSetChargingProfileE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.SetChargingProfile(wsId, func(confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, connectorId, chargingProfile)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestSetChargingProfileInvalidEndpoint() {

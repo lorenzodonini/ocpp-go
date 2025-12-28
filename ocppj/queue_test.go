@@ -2,8 +2,6 @@ package ocppj_test
 
 import (
 	"github.com/lorenzodonini/ocpp-go/ocppj"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,104 +17,96 @@ func (suite *ClientQueueTestSuite) SetupTest() {
 }
 
 func (suite *ClientQueueTestSuite) TestQueueEmpty() {
-	t := suite.T()
 	empty := suite.queue.IsEmpty()
-	assert.True(t, empty)
+	suite.Assert().True(empty)
 }
 
 func (suite *ClientQueueTestSuite) TestPushElement() {
-	t := suite.T()
 	req := newMockRequest("somevalue")
 	err := suite.queue.Push(req)
-	require.Nil(t, err)
-	assert.False(t, suite.queue.IsEmpty())
-	assert.False(t, suite.queue.IsFull())
-	assert.Equal(t, 1, suite.queue.Size())
+	suite.Require().Nil(err)
+	suite.Assert().False(suite.queue.IsEmpty())
+	suite.Assert().False(suite.queue.IsFull())
+	suite.Assert().Equal(1, suite.queue.Size())
 }
 
 func (suite *ClientQueueTestSuite) TestQueueSize() {
-	t := suite.T()
 	for i := 0; i < queueCapacity; i++ {
 		req := newMockRequest("somevalue")
 		err := suite.queue.Push(req)
-		require.Nil(t, err)
-		assert.False(t, suite.queue.IsEmpty())
-		assert.Equal(t, i+1, suite.queue.Size())
+		suite.Require().Nil(err)
+		suite.Assert().False(suite.queue.IsEmpty())
+		suite.Assert().Equal(i+1, suite.queue.Size())
 	}
 }
 
 func (suite *ClientQueueTestSuite) TestQueueFull() {
-	t := suite.T()
 	for i := 0; i < queueCapacity+2; i++ {
 		req := newMockRequest("somevalue")
 		err := suite.queue.Push(req)
 		if i < queueCapacity {
-			require.Nil(t, err)
+			suite.Require().Nil(err)
 			if i < queueCapacity-1 {
-				assert.False(t, suite.queue.IsFull())
+				suite.Assert().False(suite.queue.IsFull())
 			} else {
-				assert.True(t, suite.queue.IsFull())
+				suite.Assert().True(suite.queue.IsFull())
 			}
 		} else {
-			require.NotNil(t, err)
-			assert.True(t, suite.queue.IsFull())
+			suite.Require().NotNil(err)
+			suite.Assert().True(suite.queue.IsFull())
 		}
 	}
 }
 
 func (suite *ClientQueueTestSuite) TestPeekElement() {
-	t := suite.T()
 	req := newMockRequest("somevalue")
 	err := suite.queue.Push(req)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	el := suite.queue.Peek()
-	require.NotNil(t, el)
+	suite.Require().NotNil(el)
 	peeked, ok := el.(*MockRequest)
-	require.True(t, ok)
-	require.NotNil(t, peeked)
-	assert.Equal(t, req.MockValue, peeked.MockValue)
-	assert.False(t, suite.queue.IsEmpty())
-	assert.False(t, suite.queue.IsFull())
-	assert.Equal(t, 1, suite.queue.Size())
+	suite.Require().True(ok)
+	suite.Require().NotNil(peeked)
+	suite.Assert().Equal(req.MockValue, peeked.MockValue)
+	suite.Assert().False(suite.queue.IsEmpty())
+	suite.Assert().False(suite.queue.IsFull())
+	suite.Assert().Equal(1, suite.queue.Size())
 }
 
 func (suite *ClientQueueTestSuite) TestPopElement() {
-	t := suite.T()
 	req := newMockRequest("somevalue")
 	err := suite.queue.Push(req)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	el := suite.queue.Pop()
-	require.NotNil(t, el)
+	suite.Require().NotNil(el)
 	popped, ok := el.(*MockRequest)
-	require.True(t, ok)
-	require.NotNil(t, popped)
-	assert.Equal(t, req.MockValue, popped.MockValue)
-	assert.True(t, suite.queue.IsEmpty())
-	assert.False(t, suite.queue.IsFull())
+	suite.Require().True(ok)
+	suite.Require().NotNil(popped)
+	suite.Assert().Equal(req.MockValue, popped.MockValue)
+	suite.Assert().True(suite.queue.IsEmpty())
+	suite.Assert().False(suite.queue.IsFull())
 }
 
 func (suite *ClientQueueTestSuite) TestQueueNoCapacity() {
-	t := suite.T()
 	suite.queue = ocppj.NewFIFOClientQueue(0)
 	for i := 0; i < 50; i++ {
 		req := newMockRequest("somevalue")
 		err := suite.queue.Push(req)
-		require.Nil(t, err)
+		suite.Require().Nil(err)
 	}
-	assert.False(t, suite.queue.IsFull())
+	suite.Assert().False(suite.queue.IsFull())
 }
 
 func (suite *ClientQueueTestSuite) TestQueueClear() {
-	t := suite.T()
 	for i := 0; i < queueCapacity; i++ {
 		req := newMockRequest("somevalue")
 		err := suite.queue.Push(req)
-		require.Nil(t, err)
+		suite.Require().Nil(err)
 	}
-	assert.True(t, suite.queue.IsFull())
+	suite.Assert().True(suite.queue.IsFull())
 	suite.queue.Init()
-	assert.True(t, suite.queue.IsEmpty())
-	assert.Equal(t, 0, suite.queue.Size())
+	suite.Assert().True(suite.queue.IsEmpty())
+	suite.Assert().Equal(0, suite.queue.Size())
 }
 
 type ServerQueueMapTestSuite struct {
@@ -129,7 +119,6 @@ func (suite *ServerQueueMapTestSuite) SetupTest() {
 }
 
 func (suite *ServerQueueMapTestSuite) TestAddElement() {
-	t := suite.T()
 	q := ocppj.NewFIFOClientQueue(0)
 	el := "element1"
 	_ = q.Push(el)
@@ -137,37 +126,35 @@ func (suite *ServerQueueMapTestSuite) TestAddElement() {
 	suite.queueMap.Add(id, q)
 
 	retrieved, ok := suite.queueMap.Get(id)
-	require.True(t, ok)
-	require.NotNil(t, retrieved)
-	assert.False(t, retrieved.IsEmpty())
-	assert.Equal(t, 1, retrieved.Size())
-	assert.Equal(t, el, retrieved.Peek())
+	suite.Require().True(ok)
+	suite.Require().NotNil(retrieved)
+	suite.Assert().False(retrieved.IsEmpty())
+	suite.Assert().Equal(1, retrieved.Size())
+	suite.Assert().Equal(el, retrieved.Peek())
 }
 
 func (suite *ServerQueueMapTestSuite) TestGetOrCreate() {
-	t := suite.T()
 	el := "element1"
 	id := "test"
 	q, ok := suite.queueMap.Get(id)
-	require.False(t, ok)
-	require.Nil(t, q)
+	suite.Require().False(ok)
+	suite.Require().Nil(q)
 	q = suite.queueMap.GetOrCreate(id)
-	require.NotNil(t, q)
+	suite.Require().NotNil(q)
 	_ = q.Push(el)
 	// Verify consistency
 	q, ok = suite.queueMap.Get(id)
-	require.True(t, ok)
-	assert.Equal(t, 1, q.Size())
-	assert.Equal(t, el, q.Peek())
+	suite.Require().True(ok)
+	suite.Assert().Equal(1, q.Size())
+	suite.Assert().Equal(el, q.Peek())
 }
 
 func (suite *ServerQueueMapTestSuite) TestRemove() {
-	t := suite.T()
 	id := "test"
 	q := suite.queueMap.GetOrCreate(id)
-	require.NotNil(t, q)
+	suite.Require().NotNil(q)
 	suite.queueMap.Remove(id)
 	q, ok := suite.queueMap.Get(id)
-	assert.False(t, ok)
-	assert.Nil(t, q)
+	suite.Assert().False(ok)
+	suite.Assert().Nil(q)
 }

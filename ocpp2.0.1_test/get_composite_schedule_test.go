@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -14,7 +12,6 @@ import (
 
 // Test
 func (suite *OcppV2TestSuite) TestGetCompositeScheduleRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{smartcharging.GetCompositeScheduleRequest{Duration: 600, EvseID: 1, ChargingRateUnit: types.ChargingRateUnitWatts}, true},
 		{smartcharging.GetCompositeScheduleRequest{Duration: 600, EvseID: 1}, true},
@@ -24,11 +21,10 @@ func (suite *OcppV2TestSuite) TestGetCompositeScheduleRequestValidation() {
 		{smartcharging.GetCompositeScheduleRequest{Duration: -1, EvseID: 1, ChargingRateUnit: types.ChargingRateUnitWatts}, false},
 		{smartcharging.GetCompositeScheduleRequest{Duration: 600, EvseID: 1, ChargingRateUnit: "invalidChargingRateUnit"}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestGetCompositeScheduleConfirmationValidation() {
-	t := suite.T()
 	chargingSchedule := types.NewChargingSchedule(1, types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
 	chargingSchedule.Duration = newInt(600)
 	chargingSchedule.MinChargingRate = newFloat(6.0)
@@ -47,11 +43,10 @@ func (suite *OcppV2TestSuite) TestGetCompositeScheduleConfirmationValidation() {
 		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, StatusInfo: types.NewStatusInfo("invalidreasoncodeasitslongerthan20", "")}, false},
 		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, StatusInfo: types.NewStatusInfo("", ""), Schedule: &smartcharging.CompositeSchedule{StartDateTime: types.NewDateTime(time.Now()), ChargingSchedule: types.NewChargingSchedule(1, "invalidChargingRateUnit")}}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestGetCompositeScheduleE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -79,48 +74,48 @@ func (suite *OcppV2TestSuite) TestGetCompositeScheduleE2EMocked() {
 	handler := &MockChargingStationSmartChargingHandler{}
 	handler.On("OnGetCompositeSchedule", mock.Anything).Return(getCompositeScheduleConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*smartcharging.GetCompositeScheduleRequest)
-		assert.True(t, ok)
-		assert.NotNil(t, request)
-		assert.Equal(t, duration, request.Duration)
-		assert.Equal(t, chargingRateUnit, request.ChargingRateUnit)
-		assert.Equal(t, evseID, request.EvseID)
+		suite.True(ok)
+		suite.NotNil(request)
+		suite.Equal(duration, request.Duration)
+		suite.Equal(chargingRateUnit, request.ChargingRateUnit)
+		suite.Equal(evseID, request.EvseID)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.GetCompositeSchedule(wsId, func(confirmation *smartcharging.GetCompositeScheduleResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
-		assert.Equal(t, statusInfo.ReasonCode, confirmation.StatusInfo.ReasonCode)
-		require.NotNil(t, confirmation.Schedule)
-		require.NotNil(t, confirmation.Schedule.StartDateTime)
-		assert.Equal(t, compositeSchedule.StartDateTime.FormatTimestamp(), confirmation.Schedule.StartDateTime.FormatTimestamp())
-		require.NotNil(t, confirmation.Schedule.ChargingSchedule)
-		assert.Equal(t, chargingSchedule.ID, confirmation.Schedule.ChargingSchedule.ID)
-		assert.Equal(t, chargingSchedule.ChargingRateUnit, confirmation.Schedule.ChargingSchedule.ChargingRateUnit)
-		require.NotNil(t, confirmation.Schedule.ChargingSchedule.Duration)
-		assert.Equal(t, *chargingSchedule.Duration, *confirmation.Schedule.ChargingSchedule.Duration)
-		require.NotNil(t, confirmation.Schedule.ChargingSchedule.MinChargingRate)
-		assert.Equal(t, *chargingSchedule.MinChargingRate, *confirmation.Schedule.ChargingSchedule.MinChargingRate)
-		require.NotNil(t, confirmation.Schedule.ChargingSchedule.StartSchedule)
-		assert.Equal(t, chargingSchedule.StartSchedule.FormatTimestamp(), confirmation.Schedule.ChargingSchedule.StartSchedule.FormatTimestamp())
-		require.Len(t, confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod, len(chargingSchedule.ChargingSchedulePeriod))
-		assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].Limit, confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
-		assert.Equal(t, chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
-		require.NotNil(t, confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
-		assert.Equal(t, *chargingSchedule.ChargingSchedulePeriod[0].NumberPhases, *confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
+		suite.Equal(statusInfo.ReasonCode, confirmation.StatusInfo.ReasonCode)
+		suite.Require().NotNil(confirmation.Schedule)
+		suite.Require().NotNil(confirmation.Schedule.StartDateTime)
+		suite.Equal(compositeSchedule.StartDateTime.FormatTimestamp(), confirmation.Schedule.StartDateTime.FormatTimestamp())
+		suite.Require().NotNil(confirmation.Schedule.ChargingSchedule)
+		suite.Equal(chargingSchedule.ID, confirmation.Schedule.ChargingSchedule.ID)
+		suite.Equal(chargingSchedule.ChargingRateUnit, confirmation.Schedule.ChargingSchedule.ChargingRateUnit)
+		suite.Require().NotNil(confirmation.Schedule.ChargingSchedule.Duration)
+		suite.Equal(*chargingSchedule.Duration, *confirmation.Schedule.ChargingSchedule.Duration)
+		suite.Require().NotNil(confirmation.Schedule.ChargingSchedule.MinChargingRate)
+		suite.Equal(*chargingSchedule.MinChargingRate, *confirmation.Schedule.ChargingSchedule.MinChargingRate)
+		suite.Require().NotNil(confirmation.Schedule.ChargingSchedule.StartSchedule)
+		suite.Equal(chargingSchedule.StartSchedule.FormatTimestamp(), confirmation.Schedule.ChargingSchedule.StartSchedule.FormatTimestamp())
+		suite.Require().Len(confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod, len(chargingSchedule.ChargingSchedulePeriod))
+		suite.Equal(chargingSchedule.ChargingSchedulePeriod[0].Limit, confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod[0].Limit)
+		suite.Equal(chargingSchedule.ChargingSchedulePeriod[0].StartPeriod, confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod[0].StartPeriod)
+		suite.Require().NotNil(confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
+		suite.Equal(*chargingSchedule.ChargingSchedulePeriod[0].NumberPhases, *confirmation.Schedule.ChargingSchedule.ChargingSchedulePeriod[0].NumberPhases)
 		resultChannel <- true
 	}, duration, evseID, func(request *smartcharging.GetCompositeScheduleRequest) {
 		request.ChargingRateUnit = chargingRateUnit
 	})
-	assert.Nil(t, err)
+	suite.Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestGetCompositeScheduleInvalidEndpoint() {

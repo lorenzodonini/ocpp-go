@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -14,7 +12,6 @@ import (
 
 // Test
 func (suite *OcppV2TestSuite) TestNotifyCustomerInformationRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", Tbc: false, SeqNo: 0, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: 42}, true},
 		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", Tbc: true, SeqNo: 0, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: 42}, true},
@@ -27,19 +24,17 @@ func (suite *OcppV2TestSuite) TestNotifyCustomerInformationRequestValidation() {
 		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", Tbc: false, SeqNo: -1, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: 42}, false},
 		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", Tbc: false, SeqNo: 0, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: -1}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyCustomerInformationConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{diagnostics.NotifyCustomerInformationResponse{}, true},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyCustomerInformationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -57,22 +52,22 @@ func (suite *OcppV2TestSuite) TestNotifyCustomerInformationE2EMocked() {
 	handler := &MockCSMSDiagnosticsHandler{}
 	handler.On("OnNotifyCustomerInformation", mock.AnythingOfType("string"), mock.Anything).Return(response, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*diagnostics.NotifyCustomerInformationRequest)
-		require.True(t, ok)
-		assert.Equal(t, data, request.Data)
-		assert.Equal(t, tbc, request.Tbc)
-		assert.Equal(t, seqNo, request.SeqNo)
-		assertDateTimeEquality(t, &generatedAt, &request.GeneratedAt)
-		assert.Equal(t, requestID, request.RequestID)
+		suite.Require().True(ok)
+		suite.Equal(data, request.Data)
+		suite.Equal(tbc, request.Tbc)
+		suite.Equal(seqNo, request.SeqNo)
+		assertDateTimeEquality(suite, &generatedAt, &request.GeneratedAt)
+		suite.Equal(requestID, request.RequestID)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	r, err := suite.chargingStation.NotifyCustomerInformation(data, seqNo, generatedAt, requestID)
-	assert.Nil(t, err)
-	assert.NotNil(t, r)
+	suite.Nil(err)
+	suite.NotNil(r)
 }
 
 func (suite *OcppV2TestSuite) TestNotifyCustomerInformationInvalidEndpoint() {

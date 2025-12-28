@@ -62,11 +62,10 @@ func (suite *OcppV2TestSuite) TestIdTokenInfoValidation() {
 		{types.IdTokenInfo{Status: types.AuthorizationStatusAccepted, CacheExpiryDateTime: types.NewDateTime(time.Now()), ChargingPriority: 10}, false},
 		{types.IdTokenInfo{Status: "invalidAuthStatus"}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestStatusInfo() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{types.StatusInfo{ReasonCode: "okCode", AdditionalInfo: "someAdditionalInfo"}, true},
 		{types.StatusInfo{ReasonCode: "okCode", AdditionalInfo: ""}, true},
@@ -76,11 +75,10 @@ func (suite *OcppV2TestSuite) TestStatusInfo() {
 		{types.StatusInfo{ReasonCode: ">20.................."}, false},
 		{types.StatusInfo{ReasonCode: "okCode", AdditionalInfo: ">512............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestChargingSchedulePeriodValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(3)}, true},
 		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0}, true},
@@ -90,11 +88,10 @@ func (suite *OcppV2TestSuite) TestChargingSchedulePeriodValidation() {
 		{types.ChargingSchedulePeriod{StartPeriod: -1, Limit: 10.0}, false},
 		{types.ChargingSchedulePeriod{StartPeriod: 0, Limit: 10.0, NumberPhases: newInt(-1)}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestChargingScheduleValidation() {
-	t := suite.T()
 	chargingSchedulePeriods := make([]types.ChargingSchedulePeriod, 2)
 	chargingSchedulePeriods[0] = types.NewChargingSchedulePeriod(0, 10.0)
 	chargingSchedulePeriods[1] = types.NewChargingSchedulePeriod(100, 8.0)
@@ -109,11 +106,10 @@ func (suite *OcppV2TestSuite) TestChargingScheduleValidation() {
 		{types.ChargingSchedule{Duration: newInt(0), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: types.ChargingRateUnitWatts, ChargingSchedulePeriod: make([]types.ChargingSchedulePeriod, 0), MinChargingRate: newFloat(1.0)}, false},
 		{types.ChargingSchedule{Duration: newInt(-1), StartSchedule: types.NewDateTime(time.Now()), ChargingRateUnit: "invalidChargeRateUnit", ChargingSchedulePeriod: chargingSchedulePeriods, MinChargingRate: newFloat(1.0)}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestComponentVariableValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, true},
 		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, true},
@@ -132,7 +128,7 @@ func (suite *OcppV2TestSuite) TestComponentVariableValidation() {
 		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(-2)}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, false},
 		{types.ComponentVariable{Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: -2, ConnectorID: newInt(2)}}, Variable: types.Variable{Name: "variable1", Instance: "instance1"}}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestConsumptionCostValidation() {
@@ -149,7 +145,7 @@ func (suite *OcppV2TestSuite) TestConsumptionCostValidation() {
 		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: "invalidCostKind", Amount: 7, AmountMultiplier: newInt(3)}}), false},
 		{types.NewConsumptionCost(1.0, []types.CostType{{CostKind: types.CostKindRelativePricePercentage, Amount: 7}, {CostKind: types.CostKindRelativePricePercentage, Amount: 7}, {CostKind: types.CostKindRelativePricePercentage, Amount: 7}, {CostKind: types.CostKindRelativePricePercentage, Amount: 7}}), false},
 	}
-	ExecuteGenericTestTable(suite.T(), testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestSalesTariffEntryValidation() {
@@ -165,7 +161,7 @@ func (suite *OcppV2TestSuite) TestSalesTariffEntryValidation() {
 		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(1200)}, ConsumptionCost: []types.ConsumptionCost{dummyCostType, dummyCostType, dummyCostType, dummyCostType}}, false},
 		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(1200)}, ConsumptionCost: []types.ConsumptionCost{types.NewConsumptionCost(1.0, []types.CostType{{}})}}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestSalesTariffValidation() {
@@ -180,11 +176,10 @@ func (suite *OcppV2TestSuite) TestSalesTariffValidation() {
 		{types.SalesTariff{ID: 1, SalesTariffDescription: ">32..............................", NumEPriceLevels: newInt(1), SalesTariffEntry: []types.SalesTariffEntry{dummySalesTariffEntry}}, false},
 		{types.SalesTariff{ID: 1, SalesTariffDescription: "someDesc", NumEPriceLevels: newInt(1), SalesTariffEntry: []types.SalesTariffEntry{{EPriceLevel: newInt(-1)}}}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
-	t := suite.T()
 	chargingSchedule := types.NewChargingSchedule(1, types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0), types.NewChargingSchedulePeriod(100, 8.0))
 	var testTable = []GenericTestEntry{
 		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, RecurrencyKind: types.RecurrencyKindDaily, ValidFrom: types.NewDateTime(time.Now()), ValidTo: types.NewDateTime(time.Now().Add(8 * time.Hour)), TransactionID: "d34d", ChargingSchedule: []types.ChargingSchedule{*chargingSchedule}}, true},
@@ -203,11 +198,10 @@ func (suite *OcppV2TestSuite) TestChargingProfileValidation() {
 		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: []types.ChargingSchedule{*types.NewChargingSchedule(1, types.ChargingRateUnitWatts)}}, false},
 		{types.ChargingProfile{ID: 1, StackLevel: 1, ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile, ChargingProfileKind: types.ChargingProfileKindAbsolute, ChargingSchedule: []types.ChargingSchedule{*chargingSchedule, *chargingSchedule, *chargingSchedule, *chargingSchedule}}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestSignedMeterValue() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message", PublicKey: "0xd34dc0de"}, true},
 		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message"}, false},
@@ -219,11 +213,10 @@ func (suite *OcppV2TestSuite) TestSignedMeterValue() {
 		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: ">50................................................", PublicKey: "0xd34dc0de"}, false},
 		{types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message", PublicKey: ">2500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................"}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestSampledValueValidation() {
-	t := suite.T()
 	signedMeterValue := types.SignedMeterValue{
 		SignedMeterData: "0xdeadbeef",
 		SigningMethod:   "ECDSAP256SHA256",
@@ -248,7 +241,7 @@ func (suite *OcppV2TestSuite) TestSampledValueValidation() {
 		{types.SampledValue{Value: 3.14, SignedMeterValue: &types.SignedMeterValue{}}, false},
 		{types.SampledValue{Value: 3.14, UnitOfMeasure: &types.UnitOfMeasure{Unit: "invalidUnit>20......."}}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestMeterValueValidation() {
@@ -259,7 +252,7 @@ func (suite *OcppV2TestSuite) TestMeterValueValidation() {
 		{types.MeterValue{}, false},
 		{types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{{Value: 3.14, Context: "invalidContext", Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestMessageInfoValidation() {
@@ -279,7 +272,7 @@ func (suite *OcppV2TestSuite) TestMessageInfoValidation() {
 		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, TransactionID: ">36..................................", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}, false},
 		{display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), EndDateTime: types.NewDateTime(time.Now().Add(1 * time.Hour)), TransactionID: "123456", Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}, Display: &types.Component{}}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestUnmarshalDateTime() {

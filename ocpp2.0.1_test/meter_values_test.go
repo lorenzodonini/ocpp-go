@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/meter"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -22,18 +20,17 @@ func (suite *OcppV2TestSuite) TestMeterValuesRequestValidation() {
 		{meter.MeterValuesRequest{EvseID: 1, MeterValue: []types.MeterValue{{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{{Value: 3.14, Context: "invalidContext", Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}}}, false},
 		{meter.MeterValuesRequest{EvseID: -1, MeterValue: []types.MeterValue{{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}}}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestMeterValuesConfirmationValidation() {
 	var responseTable = []GenericTestEntry{
 		{meter.MeterValuesResponse{}, true},
 	}
-	ExecuteGenericTestTable(suite.T(), responseTable)
+	ExecuteGenericTestTable(suite, responseTable)
 }
 
 func (suite *OcppV2TestSuite) TestMeterValuesE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -54,33 +51,33 @@ func (suite *OcppV2TestSuite) TestMeterValuesE2EMocked() {
 	handler := &MockCSMSMeterHandler{}
 	handler.On("OnMeterValues", mock.AnythingOfType("string"), mock.Anything).Return(response, nil).Run(func(args mock.Arguments) {
 		request := args.Get(1).(*meter.MeterValuesRequest)
-		assert.Equal(t, evseId, request.EvseID)
-		require.Len(t, request.MeterValue, len(meterValues))
-		assertDateTimeEquality(t, &meterValue.Timestamp, &request.MeterValue[0].Timestamp)
-		require.Len(t, request.MeterValue[0].SampledValue, len(sampledValues))
-		assert.Equal(t, sampledValue.Value, request.MeterValue[0].SampledValue[0].Value)
-		assert.Equal(t, sampledValue.Context, request.MeterValue[0].SampledValue[0].Context)
-		assert.Equal(t, sampledValue.Measurand, request.MeterValue[0].SampledValue[0].Measurand)
-		assert.Equal(t, sampledValue.Phase, request.MeterValue[0].SampledValue[0].Phase)
-		assert.Equal(t, sampledValue.Location, request.MeterValue[0].SampledValue[0].Location)
-		require.NotNil(t, request.MeterValue[0].SampledValue[0].SignedMeterValue)
-		assert.Equal(t, signedMeterValue.SignedMeterData, request.MeterValue[0].SampledValue[0].SignedMeterValue.SignedMeterData)
-		assert.Equal(t, signedMeterValue.SigningMethod, request.MeterValue[0].SampledValue[0].SignedMeterValue.SigningMethod)
-		assert.Equal(t, signedMeterValue.EncodingMethod, request.MeterValue[0].SampledValue[0].SignedMeterValue.EncodingMethod)
-		assert.Equal(t, signedMeterValue.PublicKey, request.MeterValue[0].SampledValue[0].SignedMeterValue.PublicKey)
-		require.NotNil(t, request.MeterValue[0].SampledValue[0].UnitOfMeasure)
-		assert.Equal(t, unitOfMeasure.Unit, request.MeterValue[0].SampledValue[0].UnitOfMeasure.Unit)
-		assert.Equal(t, *unitOfMeasure.Multiplier, *request.MeterValue[0].SampledValue[0].UnitOfMeasure.Multiplier)
+		suite.Equal(evseId, request.EvseID)
+		suite.Require().Len(request.MeterValue, len(meterValues))
+		assertDateTimeEquality(suite, &meterValue.Timestamp, &request.MeterValue[0].Timestamp)
+		suite.Require().Len(request.MeterValue[0].SampledValue, len(sampledValues))
+		suite.Equal(sampledValue.Value, request.MeterValue[0].SampledValue[0].Value)
+		suite.Equal(sampledValue.Context, request.MeterValue[0].SampledValue[0].Context)
+		suite.Equal(sampledValue.Measurand, request.MeterValue[0].SampledValue[0].Measurand)
+		suite.Equal(sampledValue.Phase, request.MeterValue[0].SampledValue[0].Phase)
+		suite.Equal(sampledValue.Location, request.MeterValue[0].SampledValue[0].Location)
+		suite.Require().NotNil(request.MeterValue[0].SampledValue[0].SignedMeterValue)
+		suite.Equal(signedMeterValue.SignedMeterData, request.MeterValue[0].SampledValue[0].SignedMeterValue.SignedMeterData)
+		suite.Equal(signedMeterValue.SigningMethod, request.MeterValue[0].SampledValue[0].SignedMeterValue.SigningMethod)
+		suite.Equal(signedMeterValue.EncodingMethod, request.MeterValue[0].SampledValue[0].SignedMeterValue.EncodingMethod)
+		suite.Equal(signedMeterValue.PublicKey, request.MeterValue[0].SampledValue[0].SignedMeterValue.PublicKey)
+		suite.Require().NotNil(request.MeterValue[0].SampledValue[0].UnitOfMeasure)
+		suite.Equal(unitOfMeasure.Unit, request.MeterValue[0].SampledValue[0].UnitOfMeasure.Unit)
+		suite.Equal(*unitOfMeasure.Multiplier, *request.MeterValue[0].SampledValue[0].UnitOfMeasure.Multiplier)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	r, err := suite.chargingStation.MeterValues(evseId, meterValues)
-	assert.Nil(t, err)
-	assert.NotNil(t, r)
+	suite.Nil(err)
+	suite.NotNil(r)
 }
 
 func (suite *OcppV2TestSuite) TestMeterValuesInvalidEndpoint() {

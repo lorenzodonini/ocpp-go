@@ -3,16 +3,13 @@ package ocpp2_test
 import (
 	"fmt"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/iso15118"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 )
 
 func (suite *OcppV2TestSuite) TestInstallCertificateRequestValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{iso15118.InstallCertificateRequest{CertificateType: types.V2GRootCertificate, Certificate: "0xdeadbeef"}, true},
 		{iso15118.InstallCertificateRequest{CertificateType: types.MORootCertificate, Certificate: "0xdeadbeef"}, true},
@@ -26,11 +23,10 @@ func (suite *OcppV2TestSuite) TestInstallCertificateRequestValidation() {
 		{iso15118.InstallCertificateRequest{CertificateType: "invalidCertificateUse", Certificate: "0xdeadbeef"}, false},
 		{iso15118.InstallCertificateRequest{CertificateType: types.V2GRootCertificate, Certificate: newLongString(5501)}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV2TestSuite) TestInstallCertificateConfirmationValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{iso15118.InstallCertificateResponse{Status: iso15118.CertificateStatusAccepted}, true},
 		{iso15118.InstallCertificateResponse{Status: iso15118.CertificateStatusRejected}, true},
@@ -38,12 +34,11 @@ func (suite *OcppV2TestSuite) TestInstallCertificateConfirmationValidation() {
 		{iso15118.InstallCertificateResponse{}, false},
 		{iso15118.InstallCertificateResponse{Status: "invalidInstallCertificateStatus"}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 // Test
 func (suite *OcppV2TestSuite) TestInstallCertificateE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -58,27 +53,27 @@ func (suite *OcppV2TestSuite) TestInstallCertificateE2EMocked() {
 	handler := &MockChargingStationIso15118Handler{}
 	handler.On("OnInstallCertificate", mock.Anything).Return(installCertificateResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*iso15118.InstallCertificateRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, certificateType, request.CertificateType)
-		assert.Equal(t, certificate, request.Certificate)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(certificateType, request.CertificateType)
+		suite.Equal(certificate, request.Certificate)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.InstallCertificate(wsId, func(response *iso15118.InstallCertificateResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, response)
-		assert.Equal(t, status, response.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(response)
+		suite.Equal(status, response.Status)
 		resultChannel <- true
 	}, certificateType, certificate)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestInstallCertificateInvalidEndpoint() {

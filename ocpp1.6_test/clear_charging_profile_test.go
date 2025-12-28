@@ -5,14 +5,11 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestClearChargingProfileRequestValidation() {
-	t := suite.T()
 	requestTable := []GenericTestEntry{
 		{smartcharging.ClearChargingProfileRequest{Id: newInt(1), ConnectorId: newInt(1), ChargingProfilePurpose: types.ChargingProfilePurposeChargePointMaxProfile, StackLevel: newInt(1)}, true},
 		{smartcharging.ClearChargingProfileRequest{Id: newInt(1), ConnectorId: newInt(1), ChargingProfilePurpose: types.ChargingProfilePurposeChargePointMaxProfile}, true},
@@ -24,21 +21,19 @@ func (suite *OcppV16TestSuite) TestClearChargingProfileRequestValidation() {
 		{smartcharging.ClearChargingProfileRequest{ChargingProfilePurpose: "invalidChargingProfilePurposeType"}, false},
 		{smartcharging.ClearChargingProfileRequest{StackLevel: newInt(-1)}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestClearChargingProfileConfirmationValidation() {
-	t := suite.T()
 	confirmationTable := []GenericTestEntry{
 		{smartcharging.ClearChargingProfileConfirmation{Status: smartcharging.ClearChargingProfileStatusAccepted}, true},
 		{smartcharging.ClearChargingProfileConfirmation{Status: "invalidClearChargingProfileStatus"}, false},
 		{smartcharging.ClearChargingProfileConfirmation{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestClearChargingProfileE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -56,12 +51,12 @@ func (suite *OcppV16TestSuite) TestClearChargingProfileE2EMocked() {
 	smartChargingListener := &MockChargePointSmartChargingListener{}
 	smartChargingListener.On("OnClearChargingProfile", mock.Anything).Return(ClearChargingProfileConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*smartcharging.ClearChargingProfileRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, *chargingProfileId, *request.Id)
-		assert.Equal(t, *connectorId, *request.ConnectorId)
-		assert.Equal(t, chargingProfilePurpose, request.ChargingProfilePurpose)
-		assert.Equal(t, *stackLevel, *request.StackLevel)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(*chargingProfileId, *request.Id)
+		suite.Equal(*connectorId, *request.ConnectorId)
+		suite.Equal(chargingProfilePurpose, request.ChargingProfilePurpose)
+		suite.Equal(*stackLevel, *request.StackLevel)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, nil, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
@@ -69,12 +64,12 @@ func (suite *OcppV16TestSuite) TestClearChargingProfileE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.ClearChargingProfile(wsId, func(confirmation *smartcharging.ClearChargingProfileConfirmation, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, func(request *smartcharging.ClearChargingProfileRequest) {
 		request.Id = chargingProfileId
@@ -82,9 +77,9 @@ func (suite *OcppV16TestSuite) TestClearChargingProfileE2EMocked() {
 		request.ChargingProfilePurpose = chargingProfilePurpose
 		request.StackLevel = stackLevel
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestClearChargingProfileInvalidEndpoint() {

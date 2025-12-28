@@ -4,36 +4,31 @@ import (
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func (suite *OcppV16TestSuite) TestResetRequestValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{core.ResetRequest{Type: core.ResetTypeHard}, true},
 		{core.ResetRequest{Type: core.ResetTypeSoft}, true},
 		{core.ResetRequest{Type: "invalidResetType"}, false},
 		{core.ResetRequest{}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 func (suite *OcppV16TestSuite) TestResetConfirmationValidation() {
-	t := suite.T()
 	var testTable = []GenericTestEntry{
 		{core.ResetConfirmation{Status: core.ResetStatusAccepted}, true},
 		{core.ResetConfirmation{Status: core.ResetStatusRejected}, true},
 		{core.ResetConfirmation{Status: "invalidResetStatus"}, false},
 		{core.ResetConfirmation{}, false},
 	}
-	ExecuteGenericTestTable(t, testTable)
+	ExecuteGenericTestTable(suite, testTable)
 }
 
 // Test
 func (suite *OcppV16TestSuite) TestResetE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -47,26 +42,26 @@ func (suite *OcppV16TestSuite) TestResetE2EMocked() {
 	coreListener := &MockChargePointCoreListener{}
 	coreListener.On("OnReset", mock.Anything).Return(resetConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*core.ResetRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, resetType, request.Type)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(resetType, request.Type)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargePointHandlers(suite, coreListener, expectedChargePointOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.Reset(wsId, func(confirmation *core.ResetConfirmation, err error) {
-		require.NotNil(t, confirmation)
-		require.Nil(t, err)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().NotNil(confirmation)
+		suite.Require().Nil(err)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, resetType)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestResetInvalidEndpoint() {

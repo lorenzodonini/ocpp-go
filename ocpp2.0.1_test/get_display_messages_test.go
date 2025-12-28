@@ -3,16 +3,13 @@ package ocpp2_test
 import (
 	"fmt"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/display"
 )
 
 // Test
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging, ID: []int{2, 3}}, true},
 		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging, ID: []int{}}, true},
@@ -26,22 +23,20 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesRequestValidation() {
 		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: "invalidMessageState", ID: []int{2, 3}}, false},
 		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging, ID: []int{-2, 3}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesConfirmationValidation() {
-	t := suite.T()
 	var confirmationTable = []GenericTestEntry{
 		{display.GetDisplayMessagesResponse{Status: display.MessageStatusAccepted}, true},
 		{display.GetDisplayMessagesResponse{Status: display.MessageStatusUnknown}, true},
 		{display.GetDisplayMessagesResponse{Status: "invalidMessageStatus"}, false},
 		{display.GetDisplayMessagesResponse{}, false},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -59,35 +54,35 @@ func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
 	handler := &MockChargingStationDisplayHandler{}
 	handler.On("OnGetDisplayMessages", mock.Anything).Return(getDisplayMessagesConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*display.GetDisplayMessagesRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, requestId, request.RequestID)
-		assert.Equal(t, priority, request.Priority)
-		assert.Equal(t, state, request.State)
-		require.Len(t, request.ID, len(messageIds))
-		assert.Equal(t, messageIds[0], request.ID[0])
-		assert.Equal(t, messageIds[1], request.ID[1])
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(requestId, request.RequestID)
+		suite.Equal(priority, request.Priority)
+		suite.Equal(state, request.State)
+		suite.Require().Len(request.ID, len(messageIds))
+		suite.Equal(messageIds[0], request.ID[0])
+		suite.Equal(messageIds[1], request.ID[1])
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.csms.GetDisplayMessages(wsId, func(confirmation *display.GetDisplayMessagesResponse, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
-		assert.Equal(t, status, confirmation.Status)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
+		suite.Equal(status, confirmation.Status)
 		resultChannel <- true
 	}, requestId, func(request *display.GetDisplayMessagesRequest) {
 		request.Priority = priority
 		request.State = state
 		request.ID = messageIds
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesInvalidEndpoint() {

@@ -6,14 +6,11 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Test
 func (suite *OcppV16TestSuite) TestUpdateFirmwareRequestValidation() {
-	t := suite.T()
 	requestTable := []GenericTestEntry{
 		{firmware.UpdateFirmwareRequest{Location: "ftp:some/path", Retries: newInt(10), RetryInterval: newInt(10), RetrieveDate: types.NewDateTime(time.Now())}, true},
 		{firmware.UpdateFirmwareRequest{Location: "ftp:some/path", Retries: newInt(10), RetrieveDate: types.NewDateTime(time.Now())}, true},
@@ -24,19 +21,17 @@ func (suite *OcppV16TestSuite) TestUpdateFirmwareRequestValidation() {
 		{firmware.UpdateFirmwareRequest{Location: "ftp:some/path", Retries: newInt(-1), RetrieveDate: types.NewDateTime(time.Now())}, false},
 		{firmware.UpdateFirmwareRequest{Location: "ftp:some/path", RetryInterval: newInt(-1), RetrieveDate: types.NewDateTime(time.Now())}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV16TestSuite) TestUpdateFirmwareConfirmationValidation() {
-	t := suite.T()
 	confirmationTable := []GenericTestEntry{
 		{firmware.UpdateFirmwareConfirmation{}, true},
 	}
-	ExecuteGenericTestTable(t, confirmationTable)
+	ExecuteGenericTestTable(suite, confirmationTable)
 }
 
 func (suite *OcppV16TestSuite) TestUpdateFirmwareE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -53,14 +48,14 @@ func (suite *OcppV16TestSuite) TestUpdateFirmwareE2EMocked() {
 	firmwareListener := &MockChargePointFirmwareManagementListener{}
 	firmwareListener.On("OnUpdateFirmware", mock.Anything).Return(updateFirmwareConfirmation, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(0).(*firmware.UpdateFirmwareRequest)
-		require.NotNil(t, request)
-		require.True(t, ok)
-		assert.Equal(t, location, request.Location)
-		assert.NotNil(t, request.Retries)
-		assert.Equal(t, *retries, *request.Retries)
-		assert.NotNil(t, request.RetryInterval)
-		assert.Equal(t, *retryInterval, *request.RetryInterval)
-		assertDateTimeEquality(t, *retrieveDate, *request.RetrieveDate)
+		suite.Require().NotNil(request)
+		suite.Require().True(ok)
+		suite.Equal(location, request.Location)
+		suite.NotNil(request.Retries)
+		suite.Equal(*retries, *request.Retries)
+		suite.NotNil(request.RetryInterval)
+		suite.Equal(*retryInterval, *request.RetryInterval)
+		assertDateTimeEquality(suite, *retrieveDate, *request.RetrieveDate)
 	})
 	setupDefaultCentralSystemHandlers(suite, nil, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	suite.chargePoint.SetFirmwareManagementHandler(firmwareListener)
@@ -68,19 +63,19 @@ func (suite *OcppV16TestSuite) TestUpdateFirmwareE2EMocked() {
 	// Run Test
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	resultChannel := make(chan bool, 1)
 	err = suite.centralSystem.UpdateFirmware(wsId, func(confirmation *firmware.UpdateFirmwareConfirmation, err error) {
-		require.Nil(t, err)
-		require.NotNil(t, confirmation)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(confirmation)
 		resultChannel <- true
 	}, location, retrieveDate, func(request *firmware.UpdateFirmwareRequest) {
 		request.RetryInterval = retryInterval
 		request.Retries = retries
 	})
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	result := <-resultChannel
-	assert.True(t, result)
+	suite.True(result)
 }
 
 func (suite *OcppV16TestSuite) TestUpdateFirmwareInvalidEndpoint() {

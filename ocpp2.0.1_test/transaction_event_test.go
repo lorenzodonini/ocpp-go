@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -25,11 +23,10 @@ func (suite *OcppV2TestSuite) TestTransactionInfoValidation() {
 		{transactions.Transaction{TransactionID: "42", ChargingState: "invalidChargingState", TimeSpentCharging: newInt(100), StoppedReason: transactions.ReasonLocal, RemoteStartID: newInt(7)}, false},
 		{transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: newInt(100), StoppedReason: "invalidReason", RemoteStartID: newInt(7)}, false},
 	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestTransactionEventRequestValidation() {
-	t := suite.T()
 	transactionInfo := transactions.Transaction{TransactionID: "42"}
 	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
 	meterValue := types.MeterValue{Timestamp: *types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: 64.0}}}
@@ -60,11 +57,10 @@ func (suite *OcppV2TestSuite) TestTransactionEventRequestValidation() {
 		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: -1}, MeterValue: []types.MeterValue{meterValue}}, false},
 		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{{}}}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestTransactionEventResponseValidation() {
-	t := suite.T()
 	messageContent := types.MessageContent{Format: types.MessageFormatUTF8, Content: "dummyContent"}
 	var responseTable = []GenericTestEntry{
 		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(2), IDTokenInfo: types.NewIdTokenInfo(types.AuthorizationStatusAccepted), UpdatedPersonalMessage: &messageContent}, true},
@@ -78,11 +74,10 @@ func (suite *OcppV2TestSuite) TestTransactionEventResponseValidation() {
 		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(2), IDTokenInfo: types.NewIdTokenInfo("invalidAuthorizationStatus"), UpdatedPersonalMessage: &messageContent}, false},
 		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(2), IDTokenInfo: types.NewIdTokenInfo(types.AuthorizationStatusAccepted), UpdatedPersonalMessage: &types.MessageContent{}}, false},
 	}
-	ExecuteGenericTestTable(t, responseTable)
+	ExecuteGenericTestTable(suite, responseTable)
 }
 
 func (suite *OcppV2TestSuite) TestTransactionEventE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -116,38 +111,38 @@ func (suite *OcppV2TestSuite) TestTransactionEventE2EMocked() {
 	handler := &MockCSMSTransactionsHandler{}
 	handler.On("OnTransactionEvent", mock.AnythingOfType("string"), mock.Anything).Return(transactionResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*transactions.TransactionEventRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assert.Equal(t, eventType, request.EventType)
-		assertDateTimeEquality(t, timestamp, request.Timestamp)
-		assert.Equal(t, triggerReason, request.TriggerReason)
-		assert.Equal(t, seqNo, request.SequenceNo)
-		assert.Equal(t, offline, request.Offline)
-		assert.Equal(t, *phases, *request.NumberOfPhasesUsed)
-		assert.Equal(t, *cableMaxCurrent, *request.CableMaxCurrent)
-		assert.Equal(t, *reservationID, *request.ReservationID)
-		assert.Equal(t, eventType, request.EventType)
-		assert.Equal(t, info.TransactionID, request.TransactionInfo.TransactionID)
-		assert.Equal(t, info.StoppedReason, request.TransactionInfo.StoppedReason)
-		assert.Equal(t, info.ChargingState, request.TransactionInfo.ChargingState)
-		assert.Equal(t, *info.TimeSpentCharging, *request.TransactionInfo.TimeSpentCharging)
-		assert.Equal(t, *info.RemoteStartID, *request.TransactionInfo.RemoteStartID)
-		require.NotNil(t, request.IDToken)
-		assert.Equal(t, idToken.IdToken, request.IDToken.IdToken)
-		assert.Equal(t, idToken.Type, request.IDToken.Type)
-		require.NotNil(t, request.Evse)
-		assert.Equal(t, evse.ID, request.Evse.ID)
-		require.Len(t, request.MeterValue, 1)
-		assertDateTimeEquality(t, &meterValue.Timestamp, &request.MeterValue[0].Timestamp)
-		require.Len(t, request.MeterValue[0].SampledValue, 1)
-		assert.Equal(t, meterValue.SampledValue[0].Value, request.MeterValue[0].SampledValue[0].Value)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		suite.Equal(eventType, request.EventType)
+		assertDateTimeEquality(suite, timestamp, request.Timestamp)
+		suite.Equal(triggerReason, request.TriggerReason)
+		suite.Equal(seqNo, request.SequenceNo)
+		suite.Equal(offline, request.Offline)
+		suite.Equal(*phases, *request.NumberOfPhasesUsed)
+		suite.Equal(*cableMaxCurrent, *request.CableMaxCurrent)
+		suite.Equal(*reservationID, *request.ReservationID)
+		suite.Equal(eventType, request.EventType)
+		suite.Equal(info.TransactionID, request.TransactionInfo.TransactionID)
+		suite.Equal(info.StoppedReason, request.TransactionInfo.StoppedReason)
+		suite.Equal(info.ChargingState, request.TransactionInfo.ChargingState)
+		suite.Equal(*info.TimeSpentCharging, *request.TransactionInfo.TimeSpentCharging)
+		suite.Equal(*info.RemoteStartID, *request.TransactionInfo.RemoteStartID)
+		suite.Require().NotNil(request.IDToken)
+		suite.Equal(idToken.IdToken, request.IDToken.IdToken)
+		suite.Equal(idToken.Type, request.IDToken.Type)
+		suite.Require().NotNil(request.Evse)
+		suite.Equal(evse.ID, request.Evse.ID)
+		suite.Require().Len(request.MeterValue, 1)
+		assertDateTimeEquality(suite, &meterValue.Timestamp, &request.MeterValue[0].Timestamp)
+		suite.Require().Len(request.MeterValue[0].SampledValue, 1)
+		suite.Equal(meterValue.SampledValue[0].Value, request.MeterValue[0].SampledValue[0].Value)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 	response, err := suite.chargingStation.TransactionEvent(eventType, timestamp, triggerReason, seqNo, info, func(request *transactions.TransactionEventRequest) {
 		request.MeterValue = []types.MeterValue{meterValue}
 		request.Evse = &evse
@@ -157,15 +152,15 @@ func (suite *OcppV2TestSuite) TestTransactionEventE2EMocked() {
 		request.ReservationID = reservationID
 		request.Offline = offline
 	})
-	require.NoError(t, err)
-	require.NotNil(t, response)
-	assert.Equal(t, *totalCost, *response.TotalCost)
-	assert.Equal(t, *chargingPriority, *response.ChargingPriority)
-	require.NotNil(t, response.IDTokenInfo)
-	assert.Equal(t, idTokenInfo.Status, response.IDTokenInfo.Status)
-	require.NotNil(t, response.UpdatedPersonalMessage)
-	assert.Equal(t, messageContent.Format, response.UpdatedPersonalMessage.Format)
-	assert.Equal(t, messageContent.Content, response.UpdatedPersonalMessage.Content)
+	suite.Require().NoError(err)
+	suite.Require().NotNil(response)
+	suite.Equal(*totalCost, *response.TotalCost)
+	suite.Equal(*chargingPriority, *response.ChargingPriority)
+	suite.Require().NotNil(response.IDTokenInfo)
+	suite.Equal(idTokenInfo.Status, response.IDTokenInfo.Status)
+	suite.Require().NotNil(response.UpdatedPersonalMessage)
+	suite.Equal(messageContent.Format, response.UpdatedPersonalMessage.Format)
+	suite.Equal(messageContent.Content, response.UpdatedPersonalMessage.Content)
 }
 
 func (suite *OcppV2TestSuite) TestTransactionEventInvalidEndpoint() {

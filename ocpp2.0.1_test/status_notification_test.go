@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
@@ -14,7 +12,6 @@ import (
 
 // Test
 func (suite *OcppV2TestSuite) TestStatusNotificationRequestValidation() {
-	t := suite.T()
 	var requestTable = []GenericTestEntry{
 		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: availability.ConnectorStatusAvailable, EvseID: 1, ConnectorID: 1}, true},
 		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: availability.ConnectorStatusAvailable, EvseID: 1}, true},
@@ -26,19 +23,17 @@ func (suite *OcppV2TestSuite) TestStatusNotificationRequestValidation() {
 		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: availability.ConnectorStatusAvailable, EvseID: -1, ConnectorID: 1}, false},
 		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: availability.ConnectorStatusAvailable, EvseID: 1, ConnectorID: -1}, false},
 	}
-	ExecuteGenericTestTable(t, requestTable)
+	ExecuteGenericTestTable(suite, requestTable)
 }
 
 func (suite *OcppV2TestSuite) TestStatusNotificationResponseValidation() {
-	t := suite.T()
 	var responseTable = []GenericTestEntry{
 		{availability.StatusNotificationResponse{}, true},
 	}
-	ExecuteGenericTestTable(t, responseTable)
+	ExecuteGenericTestTable(suite, responseTable)
 }
 
 func (suite *OcppV2TestSuite) TestStatusNotificationE2EMocked() {
-	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
@@ -56,22 +51,22 @@ func (suite *OcppV2TestSuite) TestStatusNotificationE2EMocked() {
 	handler := &MockCSMSAvailabilityHandler{}
 	handler.On("OnStatusNotification", mock.AnythingOfType("string"), mock.Anything).Return(statusNotificationResponse, nil).Run(func(args mock.Arguments) {
 		request, ok := args.Get(1).(*availability.StatusNotificationRequest)
-		require.True(t, ok)
-		require.NotNil(t, request)
-		assertDateTimeEquality(t, timestamp, request.Timestamp)
-		assert.Equal(t, status, request.ConnectorStatus)
-		assert.Equal(t, evseID, request.EvseID)
-		assert.Equal(t, connectorID, request.ConnectorID)
+		suite.Require().True(ok)
+		suite.Require().NotNil(request)
+		assertDateTimeEquality(suite, timestamp, request.Timestamp)
+		suite.Equal(status, request.ConnectorStatus)
+		suite.Equal(evseID, request.EvseID)
+		suite.Equal(connectorID, request.ConnectorID)
 	})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(responseJson), forwardWrittenMessage: true}, handler)
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(requestJson), forwardWrittenMessage: true})
 	// Run Test
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
-	assert.Nil(t, err)
+	suite.Nil(err)
 	response, err := suite.chargingStation.StatusNotification(timestamp, status, evseID, connectorID)
-	assert.Nil(t, err)
-	assert.NotNil(t, response)
+	suite.Nil(err)
+	suite.NotNil(response)
 }
 
 func (suite *OcppV2TestSuite) TestStatusNotificationInvalidEndpoint() {
