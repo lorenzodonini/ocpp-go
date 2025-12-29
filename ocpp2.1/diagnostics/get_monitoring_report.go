@@ -32,7 +32,7 @@ func isValidMonitoringCriteriaType(fl validator.FieldLevel) bool {
 
 // The field definition of the GetMonitoringReport request payload sent by the CSMS to the Charging Station.
 type GetMonitoringReportRequest struct {
-	RequestID          *int                      `json:"requestId,omitempty" validate:"omitempty,gte=0"`                                    // The Id of the request.
+	RequestID          int                       `json:"requestId" validate:"gte=0"`                                                        // The Id of the request.
 	MonitoringCriteria []MonitoringCriteriaType  `json:"monitoringCriteria,omitempty" validate:"omitempty,max=3,dive,monitoringCriteria21"` // This field contains criteria for components for which a monitoring report is requested.
 	ComponentVariable  []types.ComponentVariable `json:"componentVariable,omitempty" validate:"omitempty,dive"`                             // This field specifies the components and variables for which a monitoring report is requested.
 }
@@ -40,7 +40,8 @@ type GetMonitoringReportRequest struct {
 // This field definition of the GetMonitoringReport response payload, sent by the Charging Station to the CSMS in response to a GetMonitoringReportRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetMonitoringReportResponse struct {
-	Status types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus21"` // This field indicates whether the Charging Station was able to accept the request.
+	Status     types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus21"` // This field indicates whether the Charging Station was able to accept the request.
+	StatusInfo *types.StatusInfo              `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // A CSMS can request the Charging Station to send a report about configured monitoring settings per component and variable.

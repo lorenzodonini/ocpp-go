@@ -1,8 +1,9 @@
 package tariffcost
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
 )
 
 // -------------------- Get Tariffs (CSMS -> CS) --------------------
@@ -17,9 +18,9 @@ type GetTariffsRequest struct {
 // This field definition of the GetTariffs response payload, sent by the Charging Station to the CSMS in response to a CostUpdatedRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetTariffsResponse struct {
-	Status            TariffGetStatus   `json:"status" validate:"required,tariffGetStatus21"`
-	TariffAssignments TariffAssignment  `json:"tariffAssignments,omitempty" validate:"omitempty,dive"`
-	StatusInfo        *types.StatusInfo `json:"statusInfo,omitempty" validate:"omitempty,dive"`
+	Status            TariffGetStatus    `json:"status" validate:"required,tariffGetStatus21"`
+	TariffAssignments []TariffAssignment `json:"tariffAssignments,omitempty" validate:"omitempty,dive"`
+	StatusInfo        *types.StatusInfo  `json:"statusInfo,omitempty" validate:"omitempty,dive"`
 }
 
 type TariffAssignment struct {

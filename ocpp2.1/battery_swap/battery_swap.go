@@ -1,8 +1,9 @@
 package battery_swap
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
 )
 
 // -------------------- BatterySwap (CS -> CSMS) --------------------
@@ -14,7 +15,7 @@ type BatterySwapRequest struct {
 	EventType   BatterSwapEvent   `json:"eventType" validate:"required,batterySwapEvent"`
 	RequestId   int               `json:"requestId" validate:"required"`        // Unique identifier for the request
 	IdToken     types.IdTokenType `json:"idToken" validate:"required,dive"`     // Optional field for the ID token of the user
-	BatteryData BatteryData       `json:"batteryData" validate:"required,dive"` // Contains information about the battery to be swapped
+	BatteryData []BatteryData     `json:"batteryData" validate:"required,dive"` // Contains information about the battery to be swapped
 }
 
 type BatteryData struct {
@@ -52,7 +53,7 @@ func (c BatterySwapResponse) GetFeatureName() string {
 	return BatterySwap
 }
 
-func NewBatterySwapRequest(eventType BatterSwapEvent, requestId int, idToken types.IdTokenType, batteryData BatteryData) BatterySwapRequest {
+func NewBatterySwapRequest(eventType BatterSwapEvent, requestId int, idToken types.IdTokenType, batteryData ...BatteryData) BatterySwapRequest {
 	return BatterySwapRequest{
 		EventType:   eventType,
 		RequestId:   requestId,

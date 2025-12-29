@@ -154,7 +154,7 @@ func (cs *csms) ClearChargingProfile(clientId string, callback func(*smartchargi
 	return cs.SendRequestAsync(clientId, request, genericCallback)
 }
 
-func (cs *csms) ClearDisplay(clientId string, callback func(*display.ClearDisplayResponse, error), id int, props ...func(*display.ClearDisplayRequest)) error {
+func (cs *csms) ClearDisplay(clientId string, callback func(*display.ClearDisplayResponse, error), id int, props ...func(*display.ClearDisplayMessageRequest)) error {
 	request := display.NewClearDisplayRequest(id)
 	for _, fn := range props {
 		fn(request)

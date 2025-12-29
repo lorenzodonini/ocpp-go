@@ -870,7 +870,7 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 	case smartcharging.ClearChargingProfileFeatureName:
 		response, err = cs.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
 	case display.ClearDisplayMessageFeatureName:
-		response, err = cs.displayHandler.OnClearDisplay(request.(*display.ClearDisplayRequest))
+		response, err = cs.displayHandler.OnClearDisplay(request.(*display.ClearDisplayMessageRequest))
 	case diagnostics.ClearVariableMonitoringFeatureName:
 		response, err = cs.diagnosticsHandler.OnClearVariableMonitoring(request.(*diagnostics.ClearVariableMonitoringRequest))
 	case tariffcost.CostUpdatedFeatureName:

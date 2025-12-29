@@ -33,7 +33,7 @@ func isValidComponentCriterion(fl validator.FieldLevel) bool {
 
 // The field definition of the GetReport request payload sent by the CSMS to the Charging Station.
 type GetReportRequest struct {
-	RequestID         *int                      `json:"requestId,omitempty" validate:"omitempty,gte=0"`
+	RequestID         int                       `json:"requestId" validate:"gte=0"`
 	ComponentCriteria []ComponentCriterion      `json:"componentCriteria,omitempty" validate:"omitempty,max=4,dive,componentCriterion21"`
 	ComponentVariable []types.ComponentVariable `json:"componentVariable,omitempty" validate:"omitempty,dive"`
 }
@@ -41,7 +41,8 @@ type GetReportRequest struct {
 // This field definition of the GetReport response payload, sent by the Charging Station to the CSMS in response to a GetReportRequest.
 // In case the request was invalid, or couldn't be processed, an error will be sent instead.
 type GetReportResponse struct {
-	Status types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus21"`
+	Status     types.GenericDeviceModelStatus `json:"status" validate:"required,genericDeviceModelStatus21"`
+	StatusInfo *types.StatusInfo              `json:"statusInfo,omitempty" validate:"omitempty"`
 }
 
 // The CSO may trigger the CSMS to request a report from a Charging Station.

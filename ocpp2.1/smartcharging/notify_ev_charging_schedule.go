@@ -12,11 +12,11 @@ const NotifyEVChargingScheduleFeatureName = "NotifyEVChargingSchedule"
 
 // The field definition of the NotifyEVChargingSchedule request payload sent by the Charging Station to the CSMS.
 type NotifyEVChargingScheduleRequest struct {
-	TimeBase                 *types.DateTime        `json:"timeBase" validate:"required"`
-	EvseID                   int                    `json:"evseId" validate:"gt=0"`
-	SelectedChargingSchedule *int                   `json:"selectedChargingSchedule,omitempty" validate:"omitempty,gte=1"`
-	PowerToleranceAcceptance *bool                  `json:"powerToleranceAcceptance,omitempty" validate:"omitempty"`
-	ChargingSchedule         types.ChargingSchedule `json:"chargingSchedule" validate:"required,dive"`
+	TimeBase                   *types.DateTime        `json:"timeBase" validate:"required"`
+	EvseID                     int                    `json:"evseId" validate:"gt=0"`
+	SelectedChargingScheduleId *int                   `json:"selectedChargingScheduleId,omitempty" validate:"omitempty,gte=1"`
+	PowerToleranceAcceptance   *bool                  `json:"powerToleranceAcceptance,omitempty" validate:"omitempty"`
+	ChargingSchedule           types.ChargingSchedule `json:"chargingSchedule" validate:"required,dive"`
 }
 
 // This field definition of the NotifyEVChargingSchedule response payload, sent by the CSMS to the Charging Station in response to a NotifyEVChargingScheduleRequest.

@@ -327,7 +327,7 @@ type CSMS interface {
 	// Instructs a charging station to clear some or all charging profiles, previously sent to the charging station.
 	ClearChargingProfile(clientId string, callback func(*smartcharging.ClearChargingProfileResponse, error), props ...func(request *smartcharging.ClearChargingProfileRequest)) error
 	// Removes a specific display message, currently configured in a charging station.
-	ClearDisplay(clientId string, callback func(*display.ClearDisplayResponse, error), id int, props ...func(*display.ClearDisplayRequest)) error
+	ClearDisplay(clientId string, callback func(*display.ClearDisplayResponse, error), id int, props ...func(*display.ClearDisplayMessageRequest)) error
 	// Removes one or more monitoring settings from a charging station for the given variable IDs.
 	ClearVariableMonitoring(clientId string, callback func(*diagnostics.ClearVariableMonitoringResponse, error), id []int, props ...func(*diagnostics.ClearVariableMonitoringRequest)) error
 	// Instructs a charging station to display the updated current total cost of an ongoing transaction.
