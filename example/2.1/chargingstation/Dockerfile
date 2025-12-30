@@ -1,7 +1,7 @@
 ############################
 # STEP 1 build executable binary
 ############################
-FROM golang:alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 ENV GO111MODULE on
 WORKDIR $GOPATH/src/github.com/xBlaz3kx/ocpp-go
@@ -9,7 +9,7 @@ COPY . .
 # Fetch dependencies.
 RUN go mod download
 # Build the binary.
-RUN go build -ldflags="-w -s" -o /go/bin/charging_station example/2.0.1/chargingstation/*.go
+RUN go build -ldflags="-w -s" -o /go/bin/charging_station example/2.1/chargingstation/*.go
 
 ############################
 # STEP 2 build a small image

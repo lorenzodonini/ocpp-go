@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/availability"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/reservation"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/reservation"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
 )
 
 func (handler *ChargingStationHandler) OnCancelReservation(request *reservation.CancelReservationRequest) (resp *reservation.CancelReservationResponse, err error) {

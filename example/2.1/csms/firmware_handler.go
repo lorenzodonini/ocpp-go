@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/firmware"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/firmware"
 )
 
 func (c *CSMSHandler) OnFirmwareStatusNotification(chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (response *firmware.FirmwareStatusNotificationResponse, err error) {

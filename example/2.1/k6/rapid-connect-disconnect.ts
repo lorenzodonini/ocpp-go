@@ -2,11 +2,12 @@ import {randomIntBetween, randomString} from 'https://jslib.k6.io/k6-utils/1.2.0
 import ws from 'k6/ws';
 import {check, sleep} from 'k6';
 
-// OCPP 2.0.1 Core profile message structure constants
+// OCPP 2.1 Core profile message structure constants
 const MESSAGE_TYPE = {
     CALL: 2,
     CALL_RESULT: 3,
     CALL_ERROR: 4
+
 };
 
 const ACTIONS = {
@@ -18,7 +19,7 @@ const ACTIONS = {
     METER_VALUES: 'MeterValues'
 };
 
-// OCPP 2.0.1 Core profile specific constants
+// OCPP 2.1 Core profile specific constants
 const BOOT_REASONS = [
     'ApplicationReset',
     'FirmwareUpdate',
@@ -57,7 +58,7 @@ function generateChargingStationId() {
     return `CS_${__VU}_${randomString(8)}`;
 }
 
-// Generate OCPP 2.0.1 Core profile BootNotification message
+// Generate OCPP 2.1 Core profile BootNotification message
 function createBootNotification(chargingStationId: string) {
     const messageId = randomString(8);
     const payload = {
@@ -77,13 +78,13 @@ function createBootNotification(chargingStationId: string) {
     return JSON.stringify([MESSAGE_TYPE.CALL, messageId, ACTIONS.BOOT_NOTIFICATION, payload]);
 }
 
-// Generate OCPP 2.0.1 Core profile Heartbeat message
+// Generate OCPP 2.1 Core profile Heartbeat message
 function createHeartbeat() {
     const messageId = randomString(8);
     return JSON.stringify([MESSAGE_TYPE.CALL, messageId, ACTIONS.HEARTBEAT, {}]);
 }
 
-// Generate OCPP 2.0.1 Core profile StatusNotification message
+// Generate OCPP 2.1 Core profile StatusNotification message
 function createStatusNotification(chargingStationId: string, evseId: number, connectorId: number, status: string) {
     const messageId = randomString(8);
     const payload = {
@@ -98,7 +99,7 @@ function createStatusNotification(chargingStationId: string, evseId: number, con
     return JSON.stringify([MESSAGE_TYPE.CALL, messageId, ACTIONS.STATUS_NOTIFICATION, payload]);
 }
 
-// Generate OCPP 2.0.1 Core profile Authorize message
+// Generate OCPP 2.1 Core profile Authorize message
 function createAuthorize(idToken: string) {
     const messageId = randomString(8);
     const payload = {
@@ -111,7 +112,7 @@ function createAuthorize(idToken: string) {
     return JSON.stringify([MESSAGE_TYPE.CALL, messageId, ACTIONS.AUTHORIZE, payload]);
 }
 
-// Generate OCPP 2.0.1 Core profile TransactionEvent message
+// Generate OCPP 2.1 Core profile TransactionEvent message
 function createTransactionEvent(chargingStationId: string, evseId: number, transactionId: string, eventType: string) {
     const messageId = randomString(8);
     const payload = {
@@ -132,7 +133,7 @@ function createTransactionEvent(chargingStationId: string, evseId: number, trans
     return JSON.stringify([MESSAGE_TYPE.CALL, messageId, ACTIONS.TRANSACTION_EVENT, payload]);
 }
 
-// Generate OCPP 2.0.1 Core profile MeterValues message
+// Generate OCPP 2.1 Core profile MeterValues message
 function createMeterValues(evseId: number, transactionId?: string) {
     const messageId = randomString(8);
     const payload = {
@@ -155,12 +156,12 @@ function createMeterValues(evseId: number, transactionId?: string) {
     return JSON.stringify([MESSAGE_TYPE.CALL, messageId, ACTIONS.METER_VALUES, payload]);
 }
 
-// Generate OCPP 2.0.1 Core profile CallResult response
+// Generate OCPP 2.1 Core profile CallResult response
 function createCallResult(messageId: string, payload: any) {
     return JSON.stringify([MESSAGE_TYPE.CALL_RESULT, messageId, payload]);
 }
 
-// Generate OCPP 2.0.1 Core profile CallError response
+// Generate OCPP 2.1 Core profile CallError response
 function createCallError(messageId: string, errorCode: string, errorDescription: string) {
     return JSON.stringify([MESSAGE_TYPE.CALL_ERROR, messageId, errorCode, errorDescription, {}]);
 }
@@ -300,9 +301,9 @@ export default function () {
     console.log(`VU ${__VU}: Connecting to ${url}`);
 
     const params = {
-        // OCPP 2.0.1 requires specific WebSocket subprotocol
+        // OCPP 2.1 requires specific WebSocket subprotocol
         headers: {
-            'Sec-WebSocket-Protocol': 'ocpp2.0.1'
+            'Sec-WebSocket-Protocol': 'ocpp2.1'
         }
     };
 

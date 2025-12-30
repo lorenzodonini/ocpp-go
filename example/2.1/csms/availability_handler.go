@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/availability"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
 	"time"
+
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
 )
 
 func (c *CSMSHandler) OnHeartbeat(chargingStationID string, request *availability.HeartbeatRequest) (response *availability.HeartbeatResponse, err error) {

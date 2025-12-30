@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-
 	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
 	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/firmware"
 	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.1"
+	ocpp21 "github.com/xBlaz3kx/ocpp-go/ocpp2.1"
 	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
 	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/localauth"
 	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/provisioning"
@@ -17,7 +17,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/xBlaz3kx/ocpp-go/ocppj"
 	"github.com/xBlaz3kx/ocpp-go/ws"
 )
 
@@ -32,11 +31,11 @@ const (
 
 var log *logrus.Logger
 
-func setupChargingStation(chargingStationID string) ocpp2.ChargingStation {
-	return ocpp2.NewChargingStation(chargingStationID, nil, nil)
+func setupChargingStation(chargingStationID string) (ocpp21.ChargingStation, error) {
+	return ocpp21.NewChargingStation(chargingStationID, nil, nil, nil)
 }
 
-func setupTlsChargingStation(chargingStationID string) ocpp2.ChargingStation {
+func setupTlsChargingStation(chargingStationID string) (ocpp21.ChargingStation, error) {
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Fatal(err)
@@ -70,12 +69,12 @@ func setupTlsChargingStation(chargingStationID string) ocpp2.ChargingStation {
 		RootCAs:      certPool,
 		Certificates: clientCertificates,
 	}))
-	return ocpp2.NewChargingStation(chargingStationID, nil, client)
+	return ocpp21.NewChargingStation(chargingStationID, nil, client, nil)
 }
 
 // exampleRoutine simulates a charging station flow, where a dummy transaction is started.
 // The simulation runs for about 5 minutes.
-func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *ChargingStationHandler) {
+func exampleRoutine(chargingStation ocpp21.ChargingStation, stateHandler *ChargingStationHandler) {
 	dummyClientIdToken := types.IdToken{
 		IdToken: "12345",
 		Type:    types.IdTokenTypeKeyCode,
@@ -198,12 +197,17 @@ func main() {
 	// Check if TLS enabled
 	t, _ := os.LookupEnv(envVarTls)
 	tlsEnabled, _ := strconv.ParseBool(t)
-	// Prepare OCPP 2.0.1 charging station (chargingStation variable is defined in handler.go)
+	var err error
+	// Prepare OCPP 2.1 charging station (chargingStation variable is defined in handler.go)
 	if tlsEnabled {
-		chargingStation = setupTlsChargingStation(id)
+		chargingStation, err = setupTlsChargingStation(id)
 	} else {
-		chargingStation = setupChargingStation(id)
+		chargingStation, err = setupChargingStation(id)
 	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Setup some basic state management
 	evse := EVSEInfo{
 		availability:       availability.OperationalStatusOperative,
@@ -228,7 +232,7 @@ func main() {
 		monitoringLevel:      0,
 		meterValue:           0,
 	}
-	// Support callbacks for all OCPP 2.0.1 profiles
+	// Support callbacks for all OCPP 2.1 profiles
 	chargingStation.SetAvailabilityHandler(handler)
 	chargingStation.SetAuthorizationHandler(handler)
 	chargingStation.SetDataHandler(handler)
@@ -243,9 +247,9 @@ func main() {
 	chargingStation.SetSmartChargingHandler(handler)
 	chargingStation.SetTariffCostHandler(handler)
 	chargingStation.SetTransactionsHandler(handler)
-	ocppj.SetLogger(log)
+
 	// Connects to central system
-	err := chargingStation.Start(csmsUrl)
+	err = chargingStation.Start(csmsUrl)
 	if err != nil {
 		log.Error(err)
 	} else {

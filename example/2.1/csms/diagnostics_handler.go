@@ -1,6 +1,9 @@
 package main
 
-import "github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/diagnostics"
+import (
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/diagnostics"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
+)
 
 func (c *CSMSHandler) OnLogStatusNotification(chargingStationID string, request *diagnostics.LogStatusNotificationRequest) (response *diagnostics.LogStatusNotificationResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Infof("log upload status: %v", request.Status)
@@ -30,4 +33,23 @@ func (c *CSMSHandler) OnNotifyMonitoringReport(chargingStationID string, request
 	}
 	response = diagnostics.NewNotifyMonitoringReportResponse()
 	return
+}
+
+func (c *CSMSHandler) OnOpenPeriodicEventStream(chargingStationID string, request *diagnostics.OpenPeriodicEventStreamRequest) (response *diagnostics.OpenPeriodicEventStreamResponse, err error) {
+	logDefault(chargingStationID, request.GetFeatureName()).Infof("open periodic event stream: id=%d, variableMonitoringId=%d",
+		request.ConstantStreamData.Id, request.ConstantStreamData.VariableMonitoringId)
+	return diagnostics.NewOpenPeriodicEventStreamResponse(types.GenericStatusAccepted), nil
+}
+
+func (c *CSMSHandler) OnClosePeriodicEventStream(chargingStationID string, request *diagnostics.ClosePeriodicEventStreamRequest) (response *diagnostics.ClosePeriodicEventStreamResponse, err error) {
+	logDefault(chargingStationID, request.GetFeatureName()).Infof("close periodic event stream: id=%d", request.Id)
+	return diagnostics.NewClosePeriodicEventStreamResponse(), nil
+}
+
+func (c *CSMSHandler) OnNotifyPeriodicEventStream(chargingStationID string, request *diagnostics.NotifyPeriodicEventStream) {
+	logDefault(chargingStationID, request.GetFeatureName()).Infof("periodic event stream notification: id=%d, pending=%d, baseTime=%v, dataCount=%d",
+		request.ID, request.Pending, request.BaseTime, len(request.Data))
+	for i, data := range request.Data {
+		logDefault(chargingStationID, request.GetFeatureName()).Infof("  data[%d]: t=%v, v=%s", i, data.T, data.V)
+	}
 }

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/diagnostics"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/diagnostics"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
 )
 
 func (handler *ChargingStationHandler) OnClearVariableMonitoring(request *diagnostics.ClearVariableMonitoringRequest) (response *diagnostics.ClearVariableMonitoringResponse, err error) {
@@ -63,4 +63,18 @@ func (handler *ChargingStationHandler) OnSetVariableMonitoring(request *diagnost
 		setMonitoringResult[i] = res
 	}
 	return diagnostics.NewSetVariableMonitoringResponse(setMonitoringResult), nil
+}
+
+func (handler *ChargingStationHandler) OnGetPeriodicEventStream(request *diagnostics.GetPeriodicEventStreamRequest) (response *diagnostics.GetPeriodicEventStreamResponse, err error) {
+	logDefault(request.GetFeatureName()).Infof("request to get periodic event streams")
+	// TODO: retrieve configured periodic event streams
+	// For now, return empty response (no streams configured)
+	return diagnostics.NewGetPeriodicEventStreamResponse(), nil
+}
+
+func (handler *ChargingStationHandler) OnAdjustPeriodicEventStream(request *diagnostics.AdjustPeriodicEventStreamRequest) (response *diagnostics.AdjustPeriodicEventStreamResponse, err error) {
+	logDefault(request.GetFeatureName()).Infof("request to adjust periodic event stream %d (interval: %v, values: %v)",
+		request.Id, request.Params.Interval, request.Params.Values)
+	// TODO: adjust periodic event stream configuration
+	return diagnostics.NewAdjustPeriodicEventStreamResponse(types.GenericStatusAccepted), nil
 }

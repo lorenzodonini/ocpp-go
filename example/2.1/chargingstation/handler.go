@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/availability"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/localauth"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/reservation"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/localauth"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/reservation"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
 )
 
 // ConnectorInfo contains some simple state about a single connector.
@@ -41,7 +41,7 @@ type ChargingStationHandler struct {
 	monitoringLevel      int
 }
 
-var chargingStation ocpp2.ChargingStation
+var chargingStation ocpp21.ChargingStation
 
 func (evse *EVSEInfo) hasConnector(ID int) bool {
 	return ID > 0 && len(evse.connectors) > ID

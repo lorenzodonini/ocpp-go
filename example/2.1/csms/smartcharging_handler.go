@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/xBlaz3kx/ocpp-go/ocpp"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/smartcharging"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/smartcharging"
 	"github.com/xBlaz3kx/ocpp-go/ocppj"
 )
 

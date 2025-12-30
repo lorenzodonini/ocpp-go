@@ -10,7 +10,17 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/grafana/pyroscope-go"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	metricsdk "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	ocpp21 "github.com/xBlaz3kx/ocpp-go/ocpp2.1"
 	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
@@ -32,6 +42,10 @@ const (
 	envVarCaCertificate        = "CA_CERTIFICATE_PATH"
 	envVarServerCertificate    = "SERVER_CERTIFICATE_PATH"
 	envVarServerCertificateKey = "SERVER_CERTIFICATE_KEY_PATH"
+	envVarMetricsEnabled       = "METRICS_ENABLED"
+	envVarMetricsAddress       = "METRICS_ADDRESS"
+	envProfilingEnabled        = "PROFILING_ENABLED"
+	envPyroscopeAddress        = "PYROSCOPE_ADDRESS"
 )
 
 var log *logrus.Logger
@@ -76,6 +90,52 @@ func setupTlsCentralSystem() (ocpp21.CSMS, error) {
 		ClientCAs:  certPool,
 	}))
 	return ocpp21.NewCSMS(nil, server, nil)
+}
+
+// sets up OTLP metrics exporter
+func setupMetrics(ctx context.Context, address string) error {
+	grpcOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	client, err := grpc.NewClient(address, grpcOpts...)
+	if err != nil {
+		return errors.Wrap(err, "failed to create gRPC connection to collector")
+	}
+
+	exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(client))
+	if err != nil {
+		return errors.Wrap(err, "failed to create otlp metric exporter")
+	}
+
+	resource, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String("csms-demo"),
+			semconv.ServiceVersionKey.String("example"),
+			attribute.String("ocpp_version", "2.1"),
+		),
+		resource.WithFromEnv(),
+		resource.WithContainer(),
+		resource.WithOS(),
+		resource.WithOSType(),
+		resource.WithHost(),
+	)
+	if err != nil {
+		return errors.Wrap(err, "failed to create resource")
+	}
+
+	meterProvider := metricsdk.NewMeterProvider(
+		metricsdk.WithReader(
+			metricsdk.NewPeriodicReader(
+				exporter,
+				metricsdk.WithInterval(100*time.Millisecond),
+			),
+		),
+		metricsdk.WithResource(resource),
+	)
+
+	otel.SetMeterProvider(meterProvider)
+	return nil
 }
 
 // Run for every connected Charging Station, to simulate some functionality
@@ -264,8 +324,46 @@ func main() {
 	t, _ := os.LookupEnv(envVarTls)
 	tlsEnabled, _ := strconv.ParseBool(t)
 
+	// Setup metrics if enabled
+	if t, _ := os.LookupEnv(envVarMetricsEnabled); t == "true" {
+		address, _ := os.LookupEnv(envVarMetricsAddress)
+		if err := setupMetrics(ctx, address); err != nil {
+			log.Error(err)
+			return
+		}
+	}
+
+	if t, _ := os.LookupEnv(envProfilingEnabled); t == "true" {
+		address, _ := os.LookupEnv(envPyroscopeAddress)
+		profiler, err := pyroscope.Start(pyroscope.Config{
+			ApplicationName: "ocpp201.central_system_sim",
+			ServerAddress:   address,
+			ProfileTypes: []pyroscope.ProfileType{
+				pyroscope.ProfileCPU,
+				pyroscope.ProfileInuseObjects,
+				pyroscope.ProfileAllocObjects,
+				pyroscope.ProfileInuseSpace,
+				pyroscope.ProfileAllocSpace,
+				pyroscope.ProfileGoroutines,
+				pyroscope.ProfileMutexCount,
+				pyroscope.ProfileMutexDuration,
+				pyroscope.ProfileBlockCount,
+				pyroscope.ProfileBlockDuration,
+			},
+		})
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		defer func() {
+			profiler.Flush(true)
+			_ = profiler.Stop()
+		}()
+	}
+
 	var err error
-	// Prepare OCPP 1.6 central system
+	// Prepare OCPP 2.1 central system
 	if tlsEnabled {
 		csms, err = setupTlsCentralSystem()
 	} else {
@@ -275,7 +373,7 @@ func main() {
 		log.Fatalf("couldn't create CSMS: %v", err)
 	}
 
-	// Support callbacks for all OCPP 2.0.1 profiles
+	// Support callbacks for all OCPP 2.1 profiles
 	handler := &CSMSHandler{chargingStations: map[string]*ChargingStationState{}}
 	csms.SetAuthorizationHandler(handler)
 	csms.SetAvailabilityHandler(handler)
@@ -288,6 +386,7 @@ func main() {
 	csms.SetReservationHandler(handler)
 	csms.SetTariffCostHandler(handler)
 	csms.SetTransactionsHandler(handler)
+
 	// Add handlers for dis/connection of charging stations
 	csms.SetNewChargingStationHandler(func(chargingStation ocpp21.ChargingStationConnection) {
 		handler.chargingStations[chargingStation.ID()] = &ChargingStationState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}

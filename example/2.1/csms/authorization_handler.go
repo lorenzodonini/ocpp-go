@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/authorization"
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/authorization"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
 )
 
 func (c *CSMSHandler) OnAuthorize(chargingStationID string, request *authorization.AuthorizeRequest) (response *authorization.AuthorizeResponse, err error) {

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/display"
+import "github.com/xBlaz3kx/ocpp-go/ocpp2.1/display"
 
 func (handler *ChargingStationHandler) OnClearDisplay(request *display.ClearDisplayRequest) (response *display.ClearDisplayResponse, err error) {
 	logDefault(request.GetFeatureName()).Infof("cleared display message %v", request.ID)

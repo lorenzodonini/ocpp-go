@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/availability"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
 )
 
 func (handler *ChargingStationHandler) OnChangeAvailability(request *availability.ChangeAvailabilityRequest) (response *availability.ChangeAvailabilityResponse, err error) {
