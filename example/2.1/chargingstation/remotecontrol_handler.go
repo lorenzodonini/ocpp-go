@@ -4,11 +4,11 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/remotecontrol"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/availability"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/diagnostics"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/provisioning"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/remotecontrol"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
 )
 
 func (handler *ChargingStationHandler) OnRequestStartTransaction(request *remotecontrol.RequestStartTransactionRequest) (response *remotecontrol.RequestStartTransactionResponse, err error) {

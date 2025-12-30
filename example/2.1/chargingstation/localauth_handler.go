@@ -1,6 +1,6 @@
 package main
 
-import "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
+import "github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/localauth"
 
 func (handler *ChargingStationHandler) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (response *localauth.GetLocalListVersionResponse, err error) {
 	logDefault(request.GetFeatureName()).Infof("returning current local list version: %v", handler.localAuthListVersion)

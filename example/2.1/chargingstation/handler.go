@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/availability"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/localauth"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/reservation"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
 )
 
 // ConnectorInfo contains some simple state about a single connector.

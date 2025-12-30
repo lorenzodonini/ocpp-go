@@ -1,7 +1,7 @@
 // The Meter values functional block contains OCPP 2.1 features for sending meter values to the CSMS.
 package meter
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import "github.com/xBlaz3kx/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.1 Meter values profile.
 type CSMSHandler interface {

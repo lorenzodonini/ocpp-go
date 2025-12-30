@@ -1,26 +1,27 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/display"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/remotecontrol"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"github.com/lorenzodonini/ocpp-go/ocppj"
-	"github.com/lorenzodonini/ocpp-go/ws"
+	ocpp21 "github.com/xBlaz3kx/ocpp-go/ocpp2.1"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/diagnostics"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/display"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/localauth"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/provisioning"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/remotecontrol"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/reservation"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ws"
 )
 
 const (
@@ -34,13 +35,13 @@ const (
 )
 
 var log *logrus.Logger
-var csms ocpp2.CSMS
+var csms ocpp21.CSMS
 
-func setupCentralSystem() ocpp2.CSMS {
-	return ocpp2.NewCSMS(nil, nil)
+func setupCentralSystem() (ocpp21.CSMS, error) {
+	return ocpp21.NewCSMS(nil, nil, nil)
 }
 
-func setupTlsCentralSystem() ocpp2.CSMS {
+func setupTlsCentralSystem() (ocpp21.CSMS, error) {
 	var certPool *x509.CertPool
 	// Load CA certificates
 	caCertificate, ok := os.LookupEnv(envVarCaCertificate)
@@ -74,7 +75,7 @@ func setupTlsCentralSystem() ocpp2.CSMS {
 		ClientAuth: tls.RequireAndVerifyClientCert,
 		ClientCAs:  certPool,
 	}))
-	return ocpp2.NewCSMS(nil, server)
+	return ocpp21.NewCSMS(nil, server, nil)
 }
 
 // Run for every connected Charging Station, to simulate some functionality
@@ -248,6 +249,9 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 
 // Start function
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+
 	// Load config from ENV
 	var listenPort = defaultListenPort
 	port, _ := os.LookupEnv(envVarServerPort)
@@ -259,12 +263,18 @@ func main() {
 	// Check if TLS enabled
 	t, _ := os.LookupEnv(envVarTls)
 	tlsEnabled, _ := strconv.ParseBool(t)
+
+	var err error
 	// Prepare OCPP 1.6 central system
 	if tlsEnabled {
-		csms = setupTlsCentralSystem()
+		csms, err = setupTlsCentralSystem()
 	} else {
-		csms = setupCentralSystem()
+		csms, err = setupCentralSystem()
 	}
+	if err != nil {
+		log.Fatalf("couldn't create CSMS: %v", err)
+	}
+
 	// Support callbacks for all OCPP 2.0.1 profiles
 	handler := &CSMSHandler{chargingStations: map[string]*ChargingStationState{}}
 	csms.SetAuthorizationHandler(handler)
@@ -279,19 +289,22 @@ func main() {
 	csms.SetTariffCostHandler(handler)
 	csms.SetTransactionsHandler(handler)
 	// Add handlers for dis/connection of charging stations
-	csms.SetNewChargingStationHandler(func(chargingStation ocpp2.ChargingStationConnection) {
+	csms.SetNewChargingStationHandler(func(chargingStation ocpp21.ChargingStationConnection) {
 		handler.chargingStations[chargingStation.ID()] = &ChargingStationState{connectors: map[int]*ConnectorInfo{}, transactions: map[int]*TransactionInfo{}}
 		log.WithField("client", chargingStation.ID()).Info("new charging station connected")
 		go exampleRoutine(chargingStation.ID(), handler)
 	})
-	csms.SetChargingStationDisconnectedHandler(func(chargingStation ocpp2.ChargingStationConnection) {
+	csms.SetChargingStationDisconnectedHandler(func(chargingStation ocpp21.ChargingStationConnection) {
 		log.WithField("client", chargingStation.ID()).Info("charging station disconnected")
 		delete(handler.chargingStations, chargingStation.ID())
 	})
-	ocppj.SetLogger(log)
+
 	// Run CSMS
 	log.Infof("starting CSMS on port %v", listenPort)
-	csms.Start(listenPort, "/{ws}")
+	go csms.Start(listenPort, "/{ws}")
+	<-ctx.Done()
+	csms.Stop()
+
 	log.Info("stopped CSMS")
 }
 

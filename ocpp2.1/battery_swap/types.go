@@ -1,7 +1,7 @@
 package battery_swap
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/xBlaz3kx/ocpp-go/ocppj"
 	"gopkg.in/go-playground/validator.v9"
 )
 

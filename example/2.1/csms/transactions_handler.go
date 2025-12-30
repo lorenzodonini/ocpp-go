@@ -1,6 +1,6 @@
 package main
 
-import "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions"
+import "github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/transactions"
 
 func (c *CSMSHandler) OnTransactionEvent(chargingStationID string, request *transactions.TransactionEventRequest) (response *transactions.TransactionEventResponse, err error) {
 	switch request.EventType {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/tariffcost"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/tariffcost"
 )
 
 func (handler *ChargingStationHandler) OnCostUpdated(request *tariffcost.CostUpdatedRequest) (response *tariffcost.CostUpdatedResponse, err error) {

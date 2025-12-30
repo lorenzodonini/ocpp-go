@@ -4,31 +4,33 @@ package ocpp21
 import (
 	"crypto/tls"
 	"errors"
-	"github.com/lorenzodonini/ocpp-go/internal/callbackqueue"
-	"github.com/lorenzodonini/ocpp-go/ocpp"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/authorization"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/availability"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/battery_swap"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/data"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/der"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/diagnostics"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/display"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/firmware"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/iso15118"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/localauth"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/meter"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/provisioning"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/remotecontrol"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/reservation"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/security"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/smartcharging"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/tariffcost"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/transactions"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/v2x"
-	"github.com/lorenzodonini/ocpp-go/ocppj"
-	"github.com/lorenzodonini/ocpp-go/ws"
 	"net"
+
+	"github.com/xBlaz3kx/ocpp-go/internal/callbackqueue"
+	"github.com/xBlaz3kx/ocpp-go/logging"
+	"github.com/xBlaz3kx/ocpp-go/ocpp"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/authorization"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/battery_swap"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/data"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/der"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/diagnostics"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/display"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/firmware"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/iso15118"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/localauth"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/meter"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/provisioning"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/remotecontrol"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/reservation"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/security"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/smartcharging"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/tariffcost"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/transactions"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/v2x"
+	"github.com/xBlaz3kx/ocpp-go/ocppj"
+	"github.com/xBlaz3kx/ocpp-go/ws"
 )
 
 type ChargingStationConnection interface {
@@ -227,9 +229,13 @@ type ChargingStation interface {
 //
 // For more advanced options, or if a custom networking/occpj layer is required,
 // please refer to ocppj.Client and ws.Client.
-func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) (ChargingStation, error) {
+func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client, logger logging.Logger) (ChargingStation, error) {
 	if id == "" {
 		return nil, errors.New("id must not be empty")
+	}
+
+	if logger == nil {
+		logger = &logging.VoidLogger{}
 	}
 
 	if client == nil {
@@ -238,12 +244,13 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) (Ch
 	client.SetRequestedSubProtocol(types.V2Subprotocol)
 
 	if endpoint == nil {
-		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0))
+		dispatcher := ocppj.NewDefaultClientDispatcher(ocppj.NewFIFOClientQueue(0), logger)
 		endpoint = ocppj.NewClient(
 			id,
 			client,
 			dispatcher,
 			nil,
+			logger,
 			authorization.Profile,
 			availability.Profile,
 			data.Profile,
@@ -485,13 +492,17 @@ type CSMS interface {
 // If you need a TLS server, you may use the following:
 //
 //	csms := NewCSMS(nil, ws.NewServer(ws.WithServerTLSConfig("certificatePath", "privateKeyPath", nil)))
-func NewCSMS(endpoint *ocppj.Server, server ws.Server) (CSMS, error) {
+func NewCSMS(endpoint *ocppj.Server, server ws.Server, logger logging.Logger) (CSMS, error) {
 	if server == nil {
 		server = ws.NewServer()
 	}
+	if logger == nil {
+		logger = &logging.VoidLogger{}
+	}
+
 	server.AddSupportedSubprotocol(types.V2Subprotocol)
 	if endpoint == nil {
-		endpoint = ocppj.NewServer(server, nil, nil,
+		endpoint = ocppj.NewServer(server, nil, nil, logger,
 			authorization.Profile,
 			availability.Profile,
 			data.Profile,

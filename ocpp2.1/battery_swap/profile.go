@@ -1,7 +1,7 @@
 package battery_swap
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/xBlaz3kx/ocpp-go/ocpp"
 )
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.1 Battery Swap.

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/diagnostics"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
 )
 
 func (handler *ChargingStationHandler) OnClearVariableMonitoring(request *diagnostics.ClearVariableMonitoringRequest) (response *diagnostics.ClearVariableMonitoringResponse, err error) {

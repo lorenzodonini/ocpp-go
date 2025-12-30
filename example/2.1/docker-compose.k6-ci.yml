@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  csms:
+    hostname: csms_21
+    ports:
+      - "8889:8887"
+
+  k6:
+    image: grafana/k6:latest
+    # Run the performance tests
+    user: ${UID}:${GID}
+    depends_on:
+      - csms
+    networks:
+      - sim
+    command: run /scripts/rapid-connect-disconnect.ts --vus 10 --duration 30s --out json=ocpp_21.json --summary-export=summary_21.json
+    volumes:
+      - ./k6:/scripts
+      - ./results:/home/k6
+    environment:
+      # To prevent clashing in CI
+      - WS_PORT=8889
+      - WS_HOST=csms_21
+
+networks:
+  sim:
+    driver: bridge

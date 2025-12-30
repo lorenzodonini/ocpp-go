@@ -2,7 +2,7 @@
 // Additionally, it contains features for retrieving information about the configuration of Charging Stations, make changes to the configuration, resetting it etc.
 package provisioning
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import "github.com/xBlaz3kx/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Provisioning profile.
 type CSMSHandler interface {

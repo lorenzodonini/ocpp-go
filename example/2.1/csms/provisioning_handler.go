@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/provisioning"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
 	"time"
 )
 

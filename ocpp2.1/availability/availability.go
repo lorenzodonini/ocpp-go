@@ -2,7 +2,7 @@
 // A CSMS can also instruct a charging station to change its availability.
 package availability
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import "github.com/xBlaz3kx/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Availability profile.
 type CSMSHandler interface {

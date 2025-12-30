@@ -1,8 +1,8 @@
 package tariffcost
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
-	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocppj"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 )

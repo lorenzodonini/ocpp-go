@@ -1,0 +1,42 @@
+version: '3.9'
+services:
+  cpms:
+    build:
+      context: ../..
+      dockerfile: example/2.1/csms/Dockerfile
+    image: ldonini/ocpp2.1-cpms:latest
+    container_name: cpms
+    environment:
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - METRICS_ADDRESS=${METRICS_ADDRESS:-lgtm-stack:4317}
+      - PROFILING_ENABLED=${PROFILING_ENABLED:-true}
+      - PYROSCOPE_ADDRESS=${PYROSCOPE_ADDRESS:-http://lgtm-stack:4040}
+      - SERVER_LISTEN_PORT=8887
+    ports:
+      - "8887:8887"
+    networks:
+      - sim
+    tty: true
+
+  k6:
+    image: grafana/k6:latest
+    container_name: k6
+    # Run the performance tests
+    command: run -o experimental-prometheus-rw /scripts/rapid-connect-disconnect.ts --vus 10 --duration 1m
+    depends_on:
+      - cpms
+      - grafana-lgtm-stack
+    networks:
+      - sim
+    environment:
+      # Performance metrics will be pushed to Prometheus via the LGTM stack
+      - K6_OUTPUTS=prometheus-remote
+      - K6_PROMETHEUS_RW_SERVER_URL=http://lgtm-stack:9090/api/v1/write
+      - K6_PROMETHEUS_RW_PUSH_INTERVAL=10s
+      - K6_PROMETHEUS_RW_TREND_STATS=p(90),p(95),max
+    volumes:
+      - ./k6:/scripts
+
+networks:
+  sim:
+    driver: bridge

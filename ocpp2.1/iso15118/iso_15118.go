@@ -5,7 +5,7 @@
 // - support for certificate-based authentication and authorization at the charging station, i.e. plug and charge
 package iso15118
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import "github.com/xBlaz3kx/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.1 ISO 15118 profile.
 type CSMSHandler interface {

@@ -1,7 +1,7 @@
 // The authorization functional block contains OCPP 2.1 authorization-related features. It contains different ways of authorizing a user, online and/or offline.
 package authorization
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import "github.com/xBlaz3kx/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.1 Authorization profile.
 type CSMSHandler interface {

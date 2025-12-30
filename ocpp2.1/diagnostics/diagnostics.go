@@ -1,7 +1,7 @@
 // The diagnostics functional block contains OCPP 2.1 features than enable remote diagnostics of problems with a charging station.
 package diagnostics
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import "github.com/xBlaz3kx/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.1 Diagnostics profile.
 type CSMSHandler interface {

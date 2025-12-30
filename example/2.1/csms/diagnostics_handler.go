@@ -1,6 +1,6 @@
 package main
 
-import "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
+import "github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/diagnostics"
 
 func (c *CSMSHandler) OnLogStatusNotification(chargingStationID string, request *diagnostics.LogStatusNotificationRequest) (response *diagnostics.LogStatusNotificationResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Infof("log upload status: %v", request.Status)

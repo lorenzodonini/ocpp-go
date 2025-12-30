@@ -1,7 +1,7 @@
 // The authorization functional block contains OCPP 2.1 features that show tariff and costs to an EV driver, when supported by the charging station.
 package tariffcost
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import "github.com/xBlaz3kx/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.1 Tariff and cost profile.
 type CSMSHandler interface {

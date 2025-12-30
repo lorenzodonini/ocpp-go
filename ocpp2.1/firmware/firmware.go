@@ -1,7 +1,7 @@
 // The firmware functional block contains OCPP 2.1 features that enable firmware updates on a charging station.
 package firmware
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import "github.com/xBlaz3kx/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.1 Firmware profile.
 type CSMSHandler interface {

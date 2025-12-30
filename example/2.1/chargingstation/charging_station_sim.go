@@ -7,18 +7,18 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/availability"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/localauth"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/provisioning"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/reservation"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/transactions"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/lorenzodonini/ocpp-go/ocppj"
-	"github.com/lorenzodonini/ocpp-go/ws"
+	"github.com/xBlaz3kx/ocpp-go/ocppj"
+	"github.com/xBlaz3kx/ocpp-go/ws"
 )
 
 const (

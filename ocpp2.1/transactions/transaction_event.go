@@ -3,7 +3,7 @@ package transactions
 import (
 	"reflect"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
 )
 
 // -------------------- Transaction Event (CS -> CSMS) --------------------

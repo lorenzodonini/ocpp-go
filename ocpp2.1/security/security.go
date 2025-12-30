@@ -1,7 +1,7 @@
 // The security functional block contains OCPP 2.0 features aimed at providing E2E security between a CSMS and a Charging station.
 package security
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import "github.com/xBlaz3kx/ocpp-go/ocpp"
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Security profile.
 type CSMSHandler interface {

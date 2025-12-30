@@ -3,7 +3,7 @@ package smartcharging
 import (
 	"reflect"
 
-	"github.com/lorenzodonini/ocpp-go/ocpp2.1/types"
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
 	"gopkg.in/go-playground/validator.v9"
 )
 
