@@ -1,8 +1,9 @@
 package diagnostics
 
 import (
-	"github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/types"
 	"reflect"
+
+	"github.com/xBlaz3kx/ocpp-go/ocpp2.1/types"
 )
 
 // --------------------  Open Periodic EventStream (CSMS -> CS) --------------------
