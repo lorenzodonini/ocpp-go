@@ -72,6 +72,12 @@ jobs:
           make perf-tests-ocpp201-ci
           echo "SUMMARY_201=$(jq -r '${{ github.workspace }}/results' summary_201.json)" >> "$GITHUB_OUTPUT"
 
+      - name: Run OCPP 2.1 performance tests
+        id: ocpp21-perf-test
+        run: |
+          make perf-tests-ocpp21-ci
+          echo "SUMMARY_21=$(jq -r '${{ github.workspace }}/results' summary_21.json)" >> "$GITHUB_OUTPUT"
+
       - name: Report performance test results
         uses: actions/upload-artifact@v4
         with:
@@ -95,6 +101,11 @@ jobs:
             ### OCPP 2.0.1
             ```json
             ${{steps.ocpp201-perf-test.outputs.SUMMARY_201}}
+            ```
+
+             ### OCPP 2.0.1
+            ```json
+            ${{steps.ocpp21-perf-test.outputs.SUMMARY_21}}
             ```
 
           pr-number: ${{ github.event.pull_request.number }}

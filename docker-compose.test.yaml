@@ -21,10 +21,9 @@ services:
         go test -v -covermode=count -coverprofile=coverage.out ./ocppj
         go test -v -covermode=count -coverprofile=internal.out github.com/xBlaz3kx/ocpp-go/internal/...
         go test -v -covermode=count -coverprofile=ocpp-coverage.out ./ocpp
-        go test -v -covermode=count -coverprofile=ocpp-coverage.out ./ocpp
         go test -v -covermode=count -coverprofile=ocpp16.out -coverpkg=github.com/xBlaz3kx/ocpp-go/ocpp1.6/... github.com/xBlaz3kx/ocpp-go/ocpp1.6/config_manager
         go test -v -covermode=count -coverprofile=ocpp201.out -coverpkg=github.com/xBlaz3kx/ocpp-go/ocpp2.0.1/... github.com/xBlaz3kx/ocpp-go/ocpp2.0.1_test
-        go test -v -covermode=count -coverprofile=ocpp201.out -coverpkg=github.com/xBlaz3kx/ocpp-go/ocpp2.1/... github.com/xBlaz3kx/ocpp-go/ocpp2.1_test
+        go test -v -covermode=count -coverprofile=ocpp21.out -coverpkg=github.com/xBlaz3kx/ocpp-go/ocpp2.1/... github.com/xBlaz3kx/ocpp-go/ocpp2.1_test
         sed '1d;$d' ocpp-coverage.out >> coverage.out
         sed '1d;$d' internal.out >> coverage.out
         sed '1d;$d' ocpp16.out >> coverage.out
