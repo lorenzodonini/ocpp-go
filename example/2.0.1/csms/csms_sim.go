@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -8,7 +9,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	metricsdk "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
@@ -31,6 +40,8 @@ const (
 	envVarCaCertificate        = "CA_CERTIFICATE_PATH"
 	envVarServerCertificate    = "SERVER_CERTIFICATE_PATH"
 	envVarServerCertificateKey = "SERVER_CERTIFICATE_KEY_PATH"
+	envVarMetricsEnabled       = "METRICS_ENABLED"
+	envVarMetricsAddress       = "METRICS_ADDRESS"
 )
 
 var log *logrus.Logger
@@ -246,6 +257,54 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 	// Finish simulation
 }
 
+// sets up OTLP metrics exporter
+func setupMetrics(address string) error {
+	grpcOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	client, err := grpc.NewClient(address, grpcOpts...)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to create gRPC connection to collector")
+	}
+
+	ctx := context.Background()
+
+	exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(client))
+	if err != nil {
+		return errors.Wrap(err, "failed to create otlp metric exporter")
+	}
+
+	resource, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String("csms-demo"),
+			semconv.ServiceVersionKey.String("example"),
+		),
+		resource.WithFromEnv(),
+		resource.WithContainer(),
+		resource.WithOS(),
+		resource.WithOSType(),
+		resource.WithHost(),
+	)
+	if err != nil {
+		return errors.Wrap(err, "failed to create resource")
+	}
+
+	meterProvider := metricsdk.NewMeterProvider(
+		metricsdk.WithReader(
+			metricsdk.NewPeriodicReader(
+				exporter,
+				metricsdk.WithInterval(10*time.Second),
+			),
+		),
+		metricsdk.WithResource(resource),
+	)
+
+	otel.SetMeterProvider(meterProvider)
+	return nil
+}
+
 // Start function
 func main() {
 	// Load config from ENV
@@ -256,6 +315,16 @@ func main() {
 	} else {
 		log.Printf("no valid %v environment variable found, using default port", envVarServerPort)
 	}
+
+	// Setup metrics if enabled
+	if t, _ := os.LookupEnv(envVarMetricsEnabled); t == "true" {
+		address, _ := os.LookupEnv(envVarMetricsAddress)
+		if err := setupMetrics(address); err != nil {
+			log.Error(err)
+			return
+		}
+	}
+
 	// Check if TLS enabled
 	t, _ := os.LookupEnv(envVarTls)
 	tlsEnabled, _ := strconv.ParseBool(t)
@@ -265,6 +334,7 @@ func main() {
 	} else {
 		csms = setupCentralSystem()
 	}
+
 	// Support callbacks for all OCPP 2.0.1 profiles
 	handler := &CSMSHandler{chargingStations: map[string]*ChargingStationState{}}
 	csms.SetAuthorizationHandler(handler)

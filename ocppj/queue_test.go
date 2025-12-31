@@ -171,3 +171,34 @@ func (suite *ServerQueueMapTestSuite) TestRemove() {
 	assert.False(t, ok)
 	assert.Nil(t, q)
 }
+
+func (suite *ServerQueueMapTestSuite) TestSize() {
+	suite.Equal(0, suite.queueMap.Size())
+	id := "test"
+	q := suite.queueMap.GetOrCreate(id)
+	suite.NotNil(q)
+	err := q.Push("something")
+	suite.NoError(err)
+	suite.Equal(1, suite.queueMap.Size())
+	suite.queueMap.Remove(id)
+	suite.Equal(0, suite.queueMap.Size())
+}
+
+func (suite *ServerQueueMapTestSuite) TestSizePerClient() {
+	for i := 0; i < queueCapacity; i++ {
+		id := "client" + string(rune(i%3+'A')) // Three different clients: A, B, C
+		q := suite.queueMap.GetOrCreate(id)
+		suite.NotNil(q)
+		req := newMockRequest("somevalue")
+		err := q.Push(req)
+		suite.Nil(err)
+	}
+
+	expectedMap := map[string]int{
+		"clientA": 4,
+		"clientB": 3,
+		"clientC": 3,
+	}
+
+	suite.Equal(expectedMap, suite.queueMap.SizePerClient())
+}

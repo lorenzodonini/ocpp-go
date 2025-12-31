@@ -14,7 +14,7 @@ There are currently no plans of supporting OCPP-S.
 
 ## Installation
 
-Go version 1.13+ is required.
+Go version 1.22+ is required.
 
 ```sh
 go get github.com/lorenzodonini/ocpp-go
@@ -95,6 +95,7 @@ The websocket package supports configuring ping pong for both endpoints.
 
 By default, the client sends a ping every 54 seconds and waits for a pong for 60 seconds, before timing out.
 The values can be configured as follows:
+
 ```go
 cfg := ws.NewClientTimeoutConfig()
 cfg.PingPeriod = 10 * time.Second
@@ -104,6 +105,7 @@ websocketClient.SetTimeoutConfig(cfg)
 
 By default, the server does not send out any pings and waits for a ping from the client for 60 seconds, before timing out.
 To configure the server to send out pings, the `PingPeriod` and `PongWait` must be set to a value greater than 0:
+
 ```go
 cfg := ws.NewServerTimeoutConfig()
 cfg.PingPeriod = 10 * time.Second

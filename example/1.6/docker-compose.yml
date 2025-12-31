@@ -1,12 +1,14 @@
-version: '3'
+version: '3.9'
 services:
   central-system:
     build:
       context: ../..
-      dockerfile: cs/Dockerfile
+      dockerfile: example/1.6/cs/Dockerfile
     image: ldonini/ocpp1.6-central-system:latest
     container_name: central-system
     environment:
+      - METRICS_ENABLED=${METRICS_ENABLED:-false}
+      - METRICS_ADDRESS=${METRICS_ADDRESS:-lgtm-stack:4317}
       - SERVER_LISTEN_PORT=8887
     ports:
       - "8887:8887"
@@ -19,7 +21,7 @@ services:
         condition: service_started
     build:
       context: ../..
-      dockerfile: cp/Dockerfile
+      dockerfile: example/1.6/cp/Dockerfile
     image: ldonini/ocpp1.6-charge-point:latest
     container_name: charge-point
     environment:

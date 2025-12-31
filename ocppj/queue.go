@@ -125,6 +125,12 @@ type ServerQueueMap interface {
 	// Add inserts a new RequestQueue into the map structure.
 	// If such element already exists, it will be replaced with the new queue.
 	Add(clientID string, queue RequestQueue)
+
+	// Size returns the total current number of requests.
+	Size() int
+
+	// SizePerClient returns the current number of messages per client.
+	SizePerClient() map[string]int
 }
 
 // FIFOQueueMap is a default implementation of ServerQueueMap.
@@ -172,6 +178,30 @@ func (f *FIFOQueueMap) Add(clientID string, queue RequestQueue) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 	f.data[clientID] = queue
+}
+
+func (f *FIFOQueueMap) Size() int {
+	f.mutex.RLock()
+	defer f.mutex.RUnlock()
+
+	total := 0
+	for _, q := range f.data {
+		total += q.Size()
+	}
+	return total
+}
+
+func (f *FIFOQueueMap) SizePerClient() map[string]int {
+	f.mutex.RLock()
+	defer f.mutex.RUnlock()
+
+	sizes := map[string]int{}
+	for clientID, q := range f.data {
+		sizes[clientID] = q.Size()
+	}
+
+	return sizes
+
 }
 
 // NewFIFOQueueMap creates a new FIFOQueueMap, which will automatically create queues with the specified capacity.
