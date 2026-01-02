@@ -29,6 +29,26 @@ services:
         sed '1d;$d' ocpp16.out >> coverage.out
         sed '1d;$d' ocpp201.out >> coverage.out
 
+
+  benchmarks:
+    # The tests might require permissions to write to coverage out files.
+    # If you encounter issues with permissions, you can try running the container as root.
+    user: root
+    image: cimg/go:1.25
+    working_dir: /etc/ocpp-go
+    volumes:
+      - .:/etc/ocpp-go:rw
+      - ./benchmarks.txt:/etc/ocpp-go/benchmarks.txt:rw
+    command:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        set -o pipefail
+        go test -bench=. -benchmem ./ocppj | tee -a benchmarks.txt
+        go test -bench=. -benchmem ./ws | tee -a benchmarks.txt
+        go test -bench=. -benchmem github.com/xBlaz3kx/ocpp-go/internal/... | tee -a benchmarks.txt
+
   integration_test:
     image: cimg/go:1.25
     # The tests might require permissions to write to coverage out files.

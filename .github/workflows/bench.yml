@@ -1,0 +1,58 @@
+name: Benchmarks
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    paths:
+      # Only run the benchmark on internals
+      - 'internal/**'
+      - 'ocppj/**'
+      - 'ws/**'
+      - 'go.mod'
+
+jobs:
+  benchmark:
+    name: Performance regression check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Needed for posting comments on PRs
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+
+      - name: Run benchmarks
+        run: make benchmarks
+
+      # Download previous benchmark result from cache (if exists)
+      - name: Download previous benchmark data
+        uses: actions/cache@v4
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
+      # Run `github-action-benchmark` action
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'go'
+          # Where the output from the benchmark tool is stored
+          output-file-path: benchmarks.txt
+          # Where the previous data file is stored
+          external-data-json-path: ./cache/benchmark-data.json
+          # Workflow will fail when an alert happens
+          fail-on-alert: false
+          # GitHub API token to make a commit comment
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Always post a comment on the PR with benchmark results
+          comment-always: 'true'
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Enable Job Summary for PRs
+          summary-always: true
