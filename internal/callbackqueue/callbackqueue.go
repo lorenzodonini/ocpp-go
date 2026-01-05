@@ -9,21 +9,21 @@ import (
 type RequestType string
 type CallbackQueue struct {
 	callbacksMutex sync.RWMutex
-	callbacks      map[string]map[string][]func(confirmation ocpp.Response, err error)
+	callbacks      map[string]map[RequestType][]func(confirmation ocpp.Response, err error)
 }
 
 func New() CallbackQueue {
 	return CallbackQueue{
-		callbacks: make(map[string]map[string][]func(confirmation ocpp.Response, err error)),
+		callbacks: make(map[string]map[RequestType][]func(confirmation ocpp.Response, err error)),
 	}
 }
 
-func (cq *CallbackQueue) TryQueue(id, requestType string, try func() error, callback func(confirmation ocpp.Response, err error)) error {
+func (cq *CallbackQueue) TryQueue(id string, requestType RequestType, try func() error, callback func(confirmation ocpp.Response, err error)) error {
 	cq.callbacksMutex.Lock()
 	defer cq.callbacksMutex.Unlock()
 
 	if _, ok := cq.callbacks[id]; !ok {
-		cq.callbacks[id] = make(map[string][]func(confirmation ocpp.Response, err error))
+		cq.callbacks[id] = make(map[RequestType][]func(confirmation ocpp.Response, err error))
 	}
 	cq.callbacks[id][requestType] = append(cq.callbacks[id][requestType], callback)
 
@@ -41,7 +41,7 @@ func (cq *CallbackQueue) TryQueue(id, requestType string, try func() error, call
 	return nil
 }
 
-func (cq *CallbackQueue) Dequeue(id, requestType string) (func(confirmation ocpp.Response, err error), bool) {
+func (cq *CallbackQueue) Dequeue(id string, requestType RequestType) (func(confirmation ocpp.Response, err error), bool) {
 	cq.callbacksMutex.Lock()
 	defer cq.callbacksMutex.Unlock()
 
