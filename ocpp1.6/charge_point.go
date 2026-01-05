@@ -299,7 +299,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) 
 	send := func() error {
 		return cp.client.SendRequest(request)
 	}
-	err := cp.callbacks.TryQueue("main", request.GetFeatureName(), send, func(confirmation ocpp.Response, err error) {
+	err := cp.callbacks.TryQueue("main", callbackqueue.RequestType(request.GetFeatureName()), send, func(confirmation ocpp.Response, err error) {
 		asyncResponseC <- asyncResponse{r: confirmation, e: err}
 	})
 	if err != nil {
@@ -335,7 +335,7 @@ func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(conf
 	send := func() error {
 		return cp.client.SendRequest(request)
 	}
-	err := cp.callbacks.TryQueue("main", request.GetFeatureName(), send, callback)
+	err := cp.callbacks.TryQueue("main", callbackqueue.RequestType(request.GetFeatureName()), send, callback)
 	return err
 }
 
@@ -344,7 +344,7 @@ func (cp *chargePoint) asyncCallbackHandler() {
 		select {
 		case confirmation := <-cp.confirmationHandler:
 			// Get and invoke callback
-			if callback, ok := cp.callbacks.Dequeue("main", confirmation.GetFeatureName()); ok {
+			if callback, ok := cp.callbacks.Dequeue("main", callbackqueue.RequestType(confirmation.GetFeatureName())); ok {
 				callback(confirmation, nil)
 			} else {
 				err := fmt.Errorf("no handler available for incoming response %v", confirmation.GetFeatureName())

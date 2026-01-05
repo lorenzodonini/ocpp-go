@@ -533,7 +533,7 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 	send := func() error {
 		return cs.server.SendRequest(clientId, request)
 	}
-	return cs.callbackQueue.TryQueue(clientId, featureName, send, callback)
+	return cs.callbackQueue.TryQueue(clientId, callbackqueue.RequestType(featureName), send, callback)
 }
 
 func (cs *centralSystem) Start(listenPort int, listenPath string) {
@@ -695,7 +695,7 @@ func (cs *centralSystem) handleIncomingRequest(chargePoint ChargePointConnection
 }
 
 func (cs *centralSystem) handleIncomingConfirmation(chargePoint ChargePointConnection, confirmation ocpp.Response, requestId string) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID(), confirmation.GetFeatureName()); ok {
+	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID(), callbackqueue.RequestType(confirmation.GetFeatureName())); ok {
 		// Execute in separate goroutine, so the caller goroutine is available
 		go callback(confirmation, nil)
 	} else {
@@ -715,7 +715,7 @@ func (cs *centralSystem) handleIncomingError(chargePoint ChargePointConnection, 
 }
 
 func (cs *centralSystem) handleCanceledRequest(chargePointID string, request ocpp.Request, err *ocpp.Error) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargePointID, request.GetFeatureName()); ok {
+	if callback, ok := cs.callbackQueue.Dequeue(chargePointID, callbackqueue.RequestType(request.GetFeatureName())); ok {
 		// Execute in separate goroutine, so the caller goroutine is available
 		go callback(nil, err)
 	} else {

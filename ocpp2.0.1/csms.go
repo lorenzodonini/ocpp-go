@@ -811,7 +811,7 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 	send := func() error {
 		return cs.server.SendRequest(clientId, request)
 	}
-	return cs.callbackQueue.TryQueue(clientId, request.GetFeatureName(), send, callback)
+	return cs.callbackQueue.TryQueue(clientId, callbackqueue.RequestType(request.GetFeatureName()), send, callback)
 }
 
 func (cs *csms) Start(listenPort int, listenPath string) {
@@ -1019,7 +1019,7 @@ func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection,
 }
 
 func (cs *csms) handleIncomingResponse(chargingStation ChargingStationConnection, response ocpp.Response, requestId string) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargingStation.ID(), response.GetFeatureName()); ok {
+	if callback, ok := cs.callbackQueue.Dequeue(chargingStation.ID(), callbackqueue.RequestType(response.GetFeatureName())); ok {
 		// Execute in separate goroutine, so the caller goroutine is available
 		go callback(response, nil)
 	} else {
@@ -1038,7 +1038,7 @@ func (cs *csms) handleIncomingError(chargingStation ChargingStationConnection, e
 }
 
 func (cs *csms) handleCanceledRequest(chargePointID string, request ocpp.Request, err *ocpp.Error) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargePointID, request.GetFeatureName()); ok {
+	if callback, ok := cs.callbackQueue.Dequeue(chargePointID, callbackqueue.RequestType(request.GetFeatureName())); ok {
 		// Execute in separate goroutine, so the caller goroutine is available
 		go callback(nil, err)
 	} else {
