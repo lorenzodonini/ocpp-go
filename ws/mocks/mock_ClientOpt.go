@@ -18,7 +18,7 @@ func (_m *MockClientOpt) EXPECT() *MockClientOpt_Expecter {
 }
 
 // Execute provides a mock function with given fields: c
-func (_m *MockClientOpt) Execute(c *ws.client) {
+func (_m *MockClientOpt) Execute(c *ws. .client) {
 	_m.Called(c)
 }
 

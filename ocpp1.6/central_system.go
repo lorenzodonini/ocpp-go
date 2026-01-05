@@ -500,7 +500,7 @@ func (cs *centralSystem) SetNewChargePointHandler(handler ChargePointConnectionH
 
 func (cs *centralSystem) SetChargePointDisconnectedHandler(handler ChargePointConnectionHandler) {
 	cs.server.SetDisconnectedClientHandler(func(chargePoint ws.Channel) {
-		for cb, ok := cs.callbackQueue.Dequeue(chargePoint.ID()); ok; cb, ok = cs.callbackQueue.Dequeue(chargePoint.ID()) {
+		for cb, ok := cs.callbackQueue.Dequeue(chargePoint.ID(), ""); ok; cb, ok = cs.callbackQueue.Dequeue(chargePoint.ID(), "") {
 			err := ocpp.NewError(ocppj.GenericError, "client disconnected, no response received from client", "")
 			cb(nil, err)
 		}
@@ -533,7 +533,7 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 	send := func() error {
 		return cs.server.SendRequest(clientId, request)
 	}
-	return cs.callbackQueue.TryQueue(clientId, send, callback)
+	return cs.callbackQueue.TryQueue(clientId, callbackqueue.RequestType(featureName), send, callback)
 }
 
 func (cs *centralSystem) Start(listenPort int, listenPath string) {
@@ -695,7 +695,7 @@ func (cs *centralSystem) handleIncomingRequest(chargePoint ChargePointConnection
 }
 
 func (cs *centralSystem) handleIncomingConfirmation(chargePoint ChargePointConnection, confirmation ocpp.Response, requestId string) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID()); ok {
+	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID(), callbackqueue.RequestType(confirmation.GetFeatureName())); ok {
 		// Execute in separate goroutine, so the caller goroutine is available
 		go callback(confirmation, nil)
 	} else {
@@ -705,7 +705,7 @@ func (cs *centralSystem) handleIncomingConfirmation(chargePoint ChargePointConne
 }
 
 func (cs *centralSystem) handleIncomingError(chargePoint ChargePointConnection, err *ocpp.Error, details interface{}) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID()); ok {
+	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID(), ""); ok {
 		// Execute in separate goroutine, so the caller goroutine is available
 		go callback(nil, err)
 	} else {
@@ -715,7 +715,7 @@ func (cs *centralSystem) handleIncomingError(chargePoint ChargePointConnection, 
 }
 
 func (cs *centralSystem) handleCanceledRequest(chargePointID string, request ocpp.Request, err *ocpp.Error) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargePointID); ok {
+	if callback, ok := cs.callbackQueue.Dequeue(chargePointID, callbackqueue.RequestType(request.GetFeatureName())); ok {
 		// Execute in separate goroutine, so the caller goroutine is available
 		go callback(nil, err)
 	} else {

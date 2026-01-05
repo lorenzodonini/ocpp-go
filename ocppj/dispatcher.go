@@ -99,7 +99,7 @@ type DefaultClientDispatcher struct {
 }
 
 const (
-	defaultTimeoutTick    = 24 * time.Hour
+	defaultTimeoutTick    = 2 * time.Minute
 	defaultMessageTimeout = 30 * time.Second
 )
 
@@ -195,6 +195,9 @@ func (d *DefaultClientDispatcher) messagePump() {
 			if !ok {
 				continue
 			}
+			// if d == nil {
+			// 	continue // Dispatcher was stopped
+			// }
 			if d.pendingRequestState.HasPendingRequest() {
 				// Current request timed out. Removing request and triggering cancel callback
 				el := d.requestQueue.Peek()
@@ -235,16 +238,21 @@ func (d *DefaultClientDispatcher) dispatchNextRequest() {
 	el := d.requestQueue.Peek()
 	bundle, _ := el.(RequestBundle)
 	jsonMessage := bundle.Data
-	d.pendingRequestState.AddPendingRequest(bundle.Call.UniqueId, bundle.Call.Payload)
+	if !d.pendingRequestState.AddPendingRequest(bundle.Call.UniqueId, bundle.Call.Payload) {
+		log.Errorf("NOT dispatched request %s to server", bundle.Call.UniqueId)
+		return
+	}
 	// Attempt to send over network
 	err := d.network.Write(jsonMessage)
 	if err != nil {
+		log.Errorf("error sending JSON message to server: %s", string(jsonMessage))
 		// TODO: handle retransmission instead of skipping request altogether
 		d.CompleteRequest(bundle.Call.GetUniqueId())
 		if d.onRequestCancel != nil {
 			d.onRequestCancel(bundle.Call.UniqueId, bundle.Call.Payload,
 				ocpp.NewError(InternalError, err.Error(), bundle.Call.UniqueId))
 		}
+		return
 	}
 	log.Infof("dispatched request %s to server", bundle.Call.UniqueId)
 	log.Debugf("sent JSON message to server: %s", string(jsonMessage))

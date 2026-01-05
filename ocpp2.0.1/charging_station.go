@@ -476,7 +476,7 @@ func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, err
 	send := func() error {
 		return cs.client.SendRequest(request)
 	}
-	err := cs.callbacks.TryQueue("main", send, func(confirmation ocpp.Response, err error) {
+	err := cs.callbacks.TryQueue("main", callbackqueue.RequestType(request.GetFeatureName()), send, func(confirmation ocpp.Response, err error) {
 		asyncResponseC <- asyncResponse{r: confirmation, e: err}
 	})
 	if err != nil {
@@ -528,7 +528,7 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 	send := func() error {
 		return cs.client.SendRequest(request)
 	}
-	err := cs.callbacks.TryQueue("main", send, callback)
+	err := cs.callbacks.TryQueue("main", callbackqueue.RequestType(request.GetFeatureName()), send, callback)
 	return err
 }
 
@@ -537,14 +537,14 @@ func (cs *chargingStation) asyncCallbackHandler() {
 		select {
 		case confirmation := <-cs.responseHandler:
 			// Get and invoke callback
-			if callback, ok := cs.callbacks.Dequeue("main"); ok {
+			if callback, ok := cs.callbacks.Dequeue("main", callbackqueue.RequestType(confirmation.GetFeatureName())); ok {
 				callback(confirmation, nil)
 			} else {
 				cs.error(fmt.Errorf("no callback available for incoming response %v", confirmation.GetFeatureName()))
 			}
 		case protoError := <-cs.errorHandler:
 			// Get and invoke callback
-			if callback, ok := cs.callbacks.Dequeue("main"); ok {
+			if callback, ok := cs.callbacks.Dequeue("main", ""); ok {
 				callback(nil, protoError)
 			} else {
 				cs.error(fmt.Errorf("no callback available for incoming error %w", protoError))
