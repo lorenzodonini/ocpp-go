@@ -527,6 +527,9 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	}
 	// TODO: handle collisions?
 	uniqueId := messageIdGenerator()
+	if uniqueId == "" {
+		panic("message ID generator returned an empty string")
+	}
 	call := Call{
 		MessageTypeId: CALL,
 		UniqueId:      uniqueId,
