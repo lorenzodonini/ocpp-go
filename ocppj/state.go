@@ -57,8 +57,8 @@ func (s *clientState) AddPendingRequest(requestID string, req ocpp.Request) {
 }
 
 func (s *clientState) GetPendingRequest(requestID string) (ocpp.Request, bool) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 	if s.requestID != requestID {
 		return nil, false
 	}
@@ -81,8 +81,8 @@ func (s *clientState) ClearPendingRequests() {
 }
 
 func (s *clientState) HasPendingRequest() bool {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 	return s.requestID != ""
 }
 
@@ -153,8 +153,8 @@ func (d *serverState) AddPendingRequest(clientID string, requestID string, req o
 
 func (d *serverState) DeletePendingRequest(clientID string, requestID string) {
 	if d.mutex != nil {
-		d.mutex.Lock()
-		defer d.mutex.Unlock()
+		d.mutex.RLock()
+		defer d.mutex.RUnlock()
 	}
 	state, exists := d.pendingRequestState[clientID]
 	if !exists {
@@ -165,16 +165,25 @@ func (d *serverState) DeletePendingRequest(clientID string, requestID string) {
 
 func (d *serverState) GetClientState(clientID string) ClientState {
 	if d.mutex != nil {
+		// Fast path: state already exists, read lock is sufficient
+		d.mutex.RLock()
+		state, exists := d.pendingRequestState[clientID]
+		d.mutex.RUnlock()
+		if exists {
+			return state
+		}
+		// Slow path: need to create state, requires write lock
 		d.mutex.Lock()
 		defer d.mutex.Unlock()
+		return d.getOrCreateState(clientID)
 	}
 	return d.getOrCreateState(clientID)
 }
 
 func (d *serverState) HasPendingRequest(clientID string) bool {
 	if d.mutex != nil {
-		d.mutex.Lock()
-		defer d.mutex.Unlock()
+		d.mutex.RLock()
+		defer d.mutex.RUnlock()
 	}
 	state, exists := d.pendingRequestState[clientID]
 	return exists && state.HasPendingRequest()
@@ -182,8 +191,8 @@ func (d *serverState) HasPendingRequest(clientID string) bool {
 
 func (d *serverState) HasPendingRequests() bool {
 	if d.mutex != nil {
-		d.mutex.Lock()
-		defer d.mutex.Unlock()
+		d.mutex.RLock()
+		defer d.mutex.RUnlock()
 	}
 	for _, s := range d.pendingRequestState {
 		if s.HasPendingRequest() {

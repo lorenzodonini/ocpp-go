@@ -396,7 +396,7 @@ func NewDefaultServerDispatcher(queueMap ServerQueueMap) *DefaultServerDispatche
 		readyForDispatch: make(chan string, 1),
 		timeout:          defaultMessageTimeout,
 	}
-	d.pendingRequestState = NewServerState(&d.mutex)
+	d.pendingRequestState = NewServerState(&sync.RWMutex{})
 	return d
 }
 
@@ -544,7 +544,16 @@ func (d *DefaultServerDispatcher) messagePump() {
 					continue
 				}
 				bundle, _ := el.(RequestBundle)
-				d.CompleteRequest(clientID, bundle.Call.UniqueId)
+				// Complete the request inline instead of calling CompleteRequest,
+				// which sends to readyForDispatch. Since messagePump is the sole
+				// reader of that channel, sending to it here would self-deadlock
+				// if the buffer is already full from a previous iteration.
+				q.Pop()
+				d.pendingRequestState.DeletePendingRequest(clientID, bundle.Call.UniqueId)
+				log.Debugf("completed request %s for %s", bundle.Call.UniqueId, clientID)
+				// Mark this client as ready for its next queued request
+				clientQueue = q
+				rdy = true
 				log.Infof("request %v for %v timed out", bundle.Call.UniqueId, clientID)
 				if d.onRequestCancel != nil {
 					d.onRequestCancel(clientID, bundle.Call.UniqueId, bundle.Call.Payload,
@@ -621,10 +630,15 @@ func (d *DefaultServerDispatcher) waitForTimeout(clientID string, clientCtx clie
 	case <-clientCtx.ctx.Done():
 		err := clientCtx.ctx.Err()
 		if err == context.DeadlineExceeded {
-			// Timeout triggered, notifying messagePump
+			// Timeout triggered, notifying messagePump.
+			// Check running state under lock, but release before the channel
+			// send. Holding RLock during a potentially blocking send can cause
+			// a deadlock: if timerC is full, this goroutine blocks while
+			// holding RLock, preventing any Lock() caller from proceeding.
 			d.mutex.RLock()
-			defer d.mutex.RUnlock()
-			if d.running {
+			running := d.running
+			d.mutex.RUnlock()
+			if running {
 				d.timerC <- clientID
 			}
 		} else {
