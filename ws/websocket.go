@@ -286,26 +286,44 @@ func (w *webSocket) Write(data []byte) error {
 	return w.WriteManual(websocket.TextMessage, data)
 }
 
-func (w *webSocket) WriteManual(messageTyp int, data []byte) error {
+func (w *webSocket) WriteManual(messageTyp int, data []byte) (err error) {
 	msg := message{
 		typ:  messageTyp,
 		data: data,
 	}
 	w.mutex.RLock()
-	defer w.mutex.RUnlock()
 	if w.connection == nil {
+		w.mutex.RUnlock()
 		return fmt.Errorf("cannot write to closed connection %s", w.id)
 	}
+	w.mutex.RUnlock()
+	// Recover from a potential panic if outQueue was closed between the nil
+	// check above and the channel send below. This can happen when cleanup()
+	// runs concurrently.
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("cannot write to closed connection %s", w.id)
+		}
+	}()
 	w.outQueue <- msg
 	return nil
 }
 
-func (w *webSocket) Close(closeError websocket.CloseError) error {
+func (w *webSocket) Close(closeError websocket.CloseError) (err error) {
 	w.mutex.RLock()
-	defer w.mutex.RUnlock()
 	if w.connection == nil {
+		w.mutex.RUnlock()
 		return fmt.Errorf("cannot close already closed connection %s", w.id)
 	}
+	w.mutex.RUnlock()
+	// Recover from a potential panic if closeC was closed between the nil
+	// check above and the channel send below. This can happen when cleanup()
+	// runs concurrently.
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("cannot close already closed connection %s", w.id)
+		}
+	}()
 	w.closeC <- closeError
 	return nil
 }
