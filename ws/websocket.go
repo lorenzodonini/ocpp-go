@@ -357,9 +357,15 @@ func (w *webSocket) initPingPong() {
 func (w *webSocket) onPing(appData string) error {
 	conn := w.connection
 	w.log.Debugf("ping received from %s: %s", w.id, appData)
-	// Schedule pong message via dedicated channel
-	w.pingC <- []byte(appData)
-	w.log.Debugf("pong scheduled for %s", w.id)
+	// Schedule pong message via dedicated channel - check if channel is still open
+	select {
+	case w.pingC <- []byte(appData):
+		w.log.Debugf("pong scheduled for %s", w.id)
+	default:
+		// Channel is closed or blocked, connection is likely being cleaned up
+		w.log.Debugf("failed to schedule pong for %s: channel closed", w.id)
+		return fmt.Errorf("connection is being closed")
+	}
 	// Reset read interval after receiving a ping
 	return conn.SetReadDeadline(w.getReadTimeout())
 }
