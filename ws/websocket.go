@@ -357,6 +357,12 @@ func (w *webSocket) initPingPong() {
 func (w *webSocket) onPing(appData string) error {
 	conn := w.connection
 	w.log.Debugf("ping received from %s: %s", w.id, appData)
+	defer func() {
+		if r := recover(); r != nil {
+			// pingC was closed, websocket is shutting down
+			w.log.Debugf("recovered from panic in ping handler for %s: %v", w.id, r)
+		}
+	}()
 	// Schedule pong message via dedicated channel - check if channel is still open
 	select {
 	case w.pingC <- []byte(appData):
