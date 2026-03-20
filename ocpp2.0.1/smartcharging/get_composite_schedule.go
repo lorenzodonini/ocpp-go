@@ -29,9 +29,24 @@ func isValidGetCompositeScheduleStatus(fl validator.FieldLevel) bool {
 	}
 }
 
+// CompositeScheduleType as defined in the OCPP 2.0.1 specification.
 type CompositeSchedule struct {
-	StartDateTime    *types.DateTime         `json:"startDateTime,omitempty" validate:"omitempty"`
-	ChargingSchedule *types.ChargingSchedule `json:"chargingSchedule,omitempty" validate:"omitempty"`
+	EvseID                 int                          `json:"evseId" validate:"gte=0"`
+	Duration               int                          `json:"duration" validate:"gte=0"`
+	ScheduleStart          *types.DateTime              `json:"scheduleStart" validate:"required"`
+	ChargingRateUnit       types.ChargingRateUnitType   `json:"chargingRateUnit" validate:"required,chargingRateUnit201"`
+	ChargingSchedulePeriod []types.ChargingSchedulePeriod `json:"chargingSchedulePeriod" validate:"required,min=1"`
+}
+
+// Creates a new CompositeSchedule, containing all required fields.
+func NewCompositeSchedule(evseId int, duration int, scheduleStart *types.DateTime, chargingRateUnit types.ChargingRateUnitType, chargingSchedulePeriod ...types.ChargingSchedulePeriod) *CompositeSchedule {
+	return &CompositeSchedule{
+		EvseID:                 evseId,
+		Duration:               duration,
+		ScheduleStart:          scheduleStart,
+		ChargingRateUnit:       chargingRateUnit,
+		ChargingSchedulePeriod: chargingSchedulePeriod,
+	}
 }
 
 // The field definition of the GetCompositeSchedule request payload sent by the CSMS to the Charging System.
