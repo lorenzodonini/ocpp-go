@@ -3,6 +3,7 @@ package ocppj_test
 import (
 	"fmt"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -456,4 +457,88 @@ func (c *ClientDispatcherTestSuite) TestClientSendPausedDispatcher() {
 	time.Sleep(1 * time.Second)
 	assert.Equal(t, requestNumber, c.queue.Size())
 	assert.False(t, c.state.HasPendingRequest())
+}
+
+// TestServerDispatcherConcurrentTimeoutDeadlock demonstrates a deadlock in
+// DefaultServerDispatcher that occurs when many client request timeouts fire
+// simultaneously.
+//
+// Root cause: DefaultServerDispatcher shares its RWMutex with the ServerState
+// (via NewServerState(&d.mutex) in NewDefaultServerDispatcher). When more than
+// 10 timeouts fire at once:
+//
+//  1. waitForTimeout goroutines acquire RLock and try to send to timerC (buffer=10)
+//  2. Goroutines beyond the buffer capacity block on the channel send while holding RLock
+//  3. messagePump drains one item from timerC, then calls HasPendingRequest,
+//     which needs Lock (write lock) on the same shared mutex
+//  4. Lock blocks because the goroutines from step 2 still hold RLock
+//  5. Those goroutines can't release RLock because they're blocked on timerC
+//
+// Result: circular wait — a textbook deadlock. No further timeouts or messages
+// can be processed for ANY client.
+//
+// This is a standalone test (not part of ServerDispatcherTestSuite) because the
+// suite's SetupTest replaces the ServerState with one using a separate mutex,
+// which inadvertently avoids the shared-mutex deadlock path.
+func TestServerDispatcherConcurrentTimeoutDeadlock(t *testing.T) {
+	numClients := 15 // must exceed timerC buffer size of 10
+	requestTimeout := 50 * time.Millisecond
+
+	queueMap := ocppj.NewFIFOQueueMap(numClients)
+	dispatcher := ocppj.NewDefaultServerDispatcher(queueMap)
+	// Important: do NOT call SetPendingRequestState here. The default setup in
+	// NewDefaultServerDispatcher shares the dispatcher's own mutex with the
+	// ServerState — this is the production code path and the root cause.
+
+	mockServer := &MockWebsocketServer{}
+	mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	dispatcher.SetNetworkServer(mockServer)
+	dispatcher.SetTimeout(requestTimeout)
+
+	endpoint := ocppj.Server{}
+	mockProfile := ocpp.NewProfile("mock", &MockFeature{})
+	endpoint.AddProfile(mockProfile)
+
+	canceledC := make(chan string, numClients)
+	dispatcher.SetOnRequestCanceled(func(clientID string, requestID string, request ocpp.Request, err *ocpp.Error) {
+		canceledC <- clientID
+	})
+
+	dispatcher.Start()
+	// Note: we intentionally do not defer dispatcher.Stop() here, because if
+	// the deadlock occurs, Stop() itself will block on the same mutex.
+
+	// Create clients and send one request to each.
+	// All requests will be dispatched nearly simultaneously by messagePump,
+	// so all timeouts fire within a narrow window (~requestTimeout).
+	for i := 0; i < numClients; i++ {
+		clientID := fmt.Sprintf("client%d", i)
+		dispatcher.CreateClient(clientID)
+
+		req := newMockRequest("somevalue")
+		call, err := endpoint.CreateCall(req)
+		require.NoError(t, err)
+		data, err := call.MarshalJSON()
+		require.NoError(t, err)
+		bundle := ocppj.RequestBundle{Call: call, Data: data}
+		err = dispatcher.SendRequest(clientID, bundle)
+		require.NoError(t, err)
+	}
+
+	// All timeout callbacks should fire within 2 seconds.
+	// If the deadlock occurs, the messagePump freezes after processing at most
+	// one timeout, and the remaining callbacks never fire.
+	deadline := time.After(2 * time.Second)
+	received := 0
+	for received < numClients {
+		select {
+		case <-canceledC:
+			received++
+		case <-deadline:
+			t.Fatalf("deadlock detected: only %d/%d timeout callbacks fired within 2s", received, numClients)
+		}
+	}
+
+	// Only stop if we got here without deadlocking
+	dispatcher.Stop()
 }
