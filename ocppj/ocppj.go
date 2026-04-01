@@ -461,7 +461,10 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			log.Infof("No previous request %v sent. Discarding response message", uniqueId)
 			return nil, nil
 		}
-		profile, _ := endpoint.GetProfileForFeature(request.GetFeatureName())
+		profile, ok := endpoint.GetProfileForFeature(request.GetFeatureName())
+		if !ok {
+			return nil, ocpp.NewError(InternalError, fmt.Sprintf("no profile found for feature %v", request.GetFeatureName()), uniqueId)
+		}
 		confirmation, err := profile.ParseResponse(request.GetFeatureName(), arr[2], parseRawJsonConfirmation)
 		if err != nil {
 			return nil, ocpp.NewError(FormatErrorType(endpoint), err.Error(), uniqueId)

@@ -233,6 +233,14 @@ func (m *MockUnsupportedResponse) GetFeatureName() string {
 	return "SomeRandomFeature"
 }
 
+type MockUnsupportedRequest struct {
+	MockValue string `json:"mockValue" validate:"required,max=10"`
+}
+
+func (m *MockUnsupportedRequest) GetFeatureName() string {
+	return "SomeRandomFeature"
+}
+
 // ---------------------- COMMON UTILITY METHODS ----------------------
 
 func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) ws.Server {
@@ -681,6 +689,27 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallResult() {
 	// Both message and error should be nil
 	require.Nil(t, message)
 	require.NoError(t, err)
+}
+
+func (suite *OcppJTestSuite) TestParseMessageCallResultUnsupportedProfile() {
+	t := suite.T()
+	mockMessage := make([]interface{}, 3)
+	messageId := "12345"
+	mockConfirmation := newMockConfirmation("testValue")
+	// Add a pending request whose feature name has no registered profile
+	unsupportedRequest := &MockUnsupportedRequest{MockValue: "request"}
+	suite.chargePoint.RequestState.AddPendingRequest(messageId, unsupportedRequest)
+	mockMessage[0] = float64(ocppj.CALL_RESULT) // Message Type ID
+	mockMessage[1] = messageId                  // Unique ID
+	mockMessage[2] = mockConfirmation
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.Nil(t, message)
+	require.Error(t, err)
+	protoErr := err.(*ocpp.Error)
+	require.NotNil(t, protoErr)
+	assert.Equal(t, messageId, protoErr.MessageId)
+	assert.Equal(t, ocppj.InternalError, protoErr.Code)
+	assert.Equal(t, fmt.Sprintf("no profile found for feature %v", unsupportedRequest.GetFeatureName()), protoErr.Description)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
