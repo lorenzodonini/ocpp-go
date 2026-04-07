@@ -232,6 +232,7 @@ type webSocket struct {
 	pingC              chan []byte
 	closeC             chan websocket.CloseError // used to gracefully close a websocket connection.
 	forceCloseC        chan error                // used by the readPump to notify a forcefully closed connection to the writePump.
+	done               chan struct{}             // closed when cleanup begins, unblocking pending writes.
 	tlsConnectionState *tls.ConnectionState
 	cfg                WebSocketConfig
 	log                logging.Logger
@@ -253,6 +254,7 @@ func newWebSocket(id string, conn *websocket.Conn, tlsState *tls.ConnectionState
 		pingC:              make(chan []byte, 1),
 		closeC:             make(chan websocket.CloseError, 1),
 		forceCloseC:        make(chan error, 1),
+		done:               make(chan struct{}),
 		onClosed:           onClosed,
 		onError:            onError,
 		onMessage:          onMessage,
@@ -296,8 +298,12 @@ func (w *webSocket) WriteManual(messageTyp int, data []byte) error {
 	if w.connection == nil {
 		return fmt.Errorf("cannot write to closed connection %s", w.id)
 	}
-	w.outQueue <- msg
-	return nil
+	select {
+	case w.outQueue <- msg:
+		return nil
+	case <-w.done:
+		return fmt.Errorf("cannot write to closing connection %s", w.id)
+	}
 }
 
 func (w *webSocket) Close(closeError websocket.CloseError) error {
@@ -306,8 +312,12 @@ func (w *webSocket) Close(closeError websocket.CloseError) error {
 	if w.connection == nil {
 		return fmt.Errorf("cannot close already closed connection %s", w.id)
 	}
-	w.closeC <- closeError
-	return nil
+	select {
+	case w.closeC <- closeError:
+		return nil
+	case <-w.done:
+		return fmt.Errorf("cannot close already closing connection %s", w.id)
+	}
 }
 
 func (w *webSocket) updateConfig(cfg WebSocketConfig) {
@@ -372,6 +382,10 @@ func (w *webSocket) onPong(appData string) error {
 }
 
 func (w *webSocket) cleanup(err error) {
+	// Signal all pending writes/closes to abort before acquiring the exclusive lock.
+	// This prevents a deadlock where WriteManual holds RLock and blocks on outQueue
+	// while cleanup waits for RLock to be released.
+	close(w.done)
 	w.mutex.Lock()
 	// Properly close the connection
 	if e := w.connection.Close(); e != nil {
