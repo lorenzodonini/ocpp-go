@@ -344,8 +344,8 @@ func (s *server) stopConnections() {
 
 func (s *server) Write(webSocketId string, data []byte) error {
 	s.connMutex.RLock()
-	defer s.connMutex.RUnlock()
 	w, ok := s.connections[webSocketId]
+	s.connMutex.RUnlock()
 	if !ok {
 		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
 	}
