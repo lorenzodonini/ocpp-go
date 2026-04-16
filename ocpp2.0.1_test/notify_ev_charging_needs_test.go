@@ -46,7 +46,7 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingNeedsRequestValidation() {
 		{smartcharging.NotifyEVChargingNeedsRequest{MaxScheduleTuples: newInt(-1), EvseID: 1, ChargingNeeds: chargingNeeds}, false},
 		{smartcharging.NotifyEVChargingNeedsRequest{EvseID: 1, ChargingNeeds: smartcharging.ChargingNeeds{RequestedEnergyTransfer: "invalidEnergyTransferMode"}}, false},
 		{smartcharging.NotifyEVChargingNeedsRequest{EvseID: 1, ChargingNeeds: smartcharging.ChargingNeeds{RequestedEnergyTransfer: smartcharging.EnergyTransferModeAC3Phase, ACChargingParameters: &smartcharging.ACChargingParameters{EnergyAmount: -1}}}, false},
-		{smartcharging.NotifyEVChargingNeedsRequest{EvseID: 1, ChargingNeeds: smartcharging.ChargingNeeds{RequestedEnergyTransfer: smartcharging.EnergyTransferModeDC, DCChargingParameters: &smartcharging.DCChargingParameters{EVMaxCurrent: -1}}}, false},
+		{smartcharging.NotifyEVChargingNeedsRequest{EvseID: 1, ChargingNeeds: smartcharging.ChargingNeeds{RequestedEnergyTransfer: smartcharging.EnergyTransferModeDC, DCChargingParameters: &smartcharging.DCChargingParameters{EVMaxCurrent: -1, EVMaxVoltage: 0}}}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }

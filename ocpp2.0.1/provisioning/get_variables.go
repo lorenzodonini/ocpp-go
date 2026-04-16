@@ -39,11 +39,12 @@ type GetVariableData struct {
 }
 
 type GetVariableResult struct {
-	AttributeStatus GetVariableStatus `json:"attributeStatus" validate:"required,getVariableStatus"`
-	AttributeType   types.Attribute   `json:"attributeType,omitempty" validate:"omitempty,attribute"`
-	AttributeValue  string            `json:"attributeValue,omitempty" validate:"omitempty,max=1000"`
-	Component       types.Component   `json:"component" validate:"required"`
-	Variable        types.Variable    `json:"variable" validate:"required"`
+	AttributeStatus     GetVariableStatus  `json:"attributeStatus" validate:"required,getVariableStatus"`
+	AttributeStatusInfo *types.StatusInfo  `json:"attributeStatusInfo,omitempty"`
+	AttributeType       types.Attribute    `json:"attributeType,omitempty" validate:"omitempty,attribute"`
+	AttributeValue      string             `json:"attributeValue,omitempty" validate:"omitempty,max=2500"`
+	Component           types.Component    `json:"component" validate:"required"`
+	Variable            types.Variable     `json:"variable" validate:"required"`
 }
 
 // The field definition of the GetVariables request payload sent by the CSMS to the Charging Station.
