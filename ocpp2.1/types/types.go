@@ -737,7 +737,6 @@ const (
 	MeasurandPowerReactiveExport          Measurand = "Power.Reactive.Export"
 	MeasurandPowerReactiveImport          Measurand = "Power.Reactive.Import"
 	MeasurandSoC                          Measurand = "SoC"
-	MeasurandTemperature                  Measurand = "Temperature"
 	MeasurandVoltage                      Measurand = "Voltage"
 
 	// New 2.1 measurands
@@ -816,7 +815,7 @@ func isValidMeasurand(fl validator.FieldLevel) bool {
 		MeasurandEnergyApparentNet, MeasurandEnergyApparentImport, MeasurandEnergyApparentExport,
 		MeasurandFrequency, MeasurandPowerActiveExport, MeasurandPowerActiveImport,
 		MeasurandPowerFactor, MeasurandPowerOffered, MeasurandPowerReactiveExport,
-		MeasurandPowerReactiveImport, MeasurandSoC, MeasurandTemperature, MeasurandVoltage,
+		MeasurandPowerReactiveImport, MeasurandSoC, MeasurandVoltage,
 		// New 2.1 measurands
 		MeasurandCurrentExportOffered, MeasurandCurrentExportMinimum,
 		MeasurandCurrentImportOffered, MeasurandCurrentImportMinimum,
@@ -892,6 +891,376 @@ type MeterValue struct {
 	CustomData   *CustomDataType `json:"customData,omitempty" validate:"omitempty"`
 }
 
+// ChargingState represents the current charging state of a transaction.
+type ChargingState string
+
+const (
+	ChargingStateEVConnected   ChargingState = "EVConnected"
+	ChargingStateCharging      ChargingState = "Charging"
+	ChargingStateSuspendedEV   ChargingState = "SuspendedEV"
+	ChargingStateSuspendedEVSE ChargingState = "SuspendedEVSE"
+	ChargingStateIdle          ChargingState = "Idle"
+)
+
+func isValidChargingState(fl validator.FieldLevel) bool {
+	state := ChargingState(fl.Field().String())
+	switch state {
+	case ChargingStateEVConnected, ChargingStateCharging, ChargingStateSuspendedEV,
+		ChargingStateSuspendedEVSE, ChargingStateIdle:
+		return true
+	default:
+		return false
+	}
+}
+
+// TransactionEvent represents the type of a transaction event.
+type TransactionEvent string
+
+const (
+	TransactionEventEnded   TransactionEvent = "Ended"
+	TransactionEventStarted TransactionEvent = "Started"
+	TransactionEventUpdated TransactionEvent = "Updated"
+)
+
+func isValidTransactionEvent(fl validator.FieldLevel) bool {
+	event := TransactionEvent(fl.Field().String())
+	switch event {
+	case TransactionEventEnded, TransactionEventStarted, TransactionEventUpdated:
+		return true
+	default:
+		return false
+	}
+}
+
+// TriggerReason represents the reason for sending a TransactionEvent.
+type TriggerReason string
+
+const (
+	TriggerReasonAbnormalCondition    TriggerReason = "AbnormalCondition"
+	TriggerReasonAuthorized           TriggerReason = "Authorized"
+	TriggerReasonCablePluggedIn       TriggerReason = "CablePluggedIn"
+	TriggerReasonChargingRateChanged  TriggerReason = "ChargingRateChanged"
+	TriggerReasonChargingStateChanged TriggerReason = "ChargingStateChanged"
+	TriggerReasonCostLimitReached     TriggerReason = "CostLimitReached"
+	TriggerReasonDeauthorized         TriggerReason = "Deauthorized"
+	TriggerReasonEnergyLimitReached   TriggerReason = "EnergyLimitReached"
+	TriggerReasonEVCommunicationLost  TriggerReason = "EVCommunicationLost"
+	TriggerReasonEVConnectTimeout     TriggerReason = "EVConnectTimeout"
+	TriggerReasonEVDeparted           TriggerReason = "EVDeparted"
+	TriggerReasonEVDetected           TriggerReason = "EVDetected"
+	TriggerReasonLimitSet             TriggerReason = "LimitSet"
+	TriggerReasonMeterValueClock      TriggerReason = "MeterValueClock"
+	TriggerReasonMeterValuePeriodic   TriggerReason = "MeterValuePeriodic"
+	TriggerReasonOperationModeChanged TriggerReason = "OperationModeChanged"
+	TriggerReasonRemoteStart          TriggerReason = "RemoteStart"
+	TriggerReasonRemoteStop           TriggerReason = "RemoteStop"
+	TriggerReasonResetCommand         TriggerReason = "ResetCommand"
+	TriggerReasonRunningCost          TriggerReason = "RunningCost"
+	TriggerReasonSignedDataReceived   TriggerReason = "SignedDataReceived"
+	TriggerReasonSoCLimitReached      TriggerReason = "SoCLimitReached"
+	TriggerReasonStopAuthorized       TriggerReason = "StopAuthorized"
+	TriggerReasonTariffChanged        TriggerReason = "TariffChanged"
+	TriggerReasonTariffNotAccepted    TriggerReason = "TariffNotAccepted"
+	TriggerReasonTimeLimitReached     TriggerReason = "TimeLimitReached"
+	TriggerReasonTrigger              TriggerReason = "Trigger"
+	TriggerReasonTxResumed            TriggerReason = "TxResumed"
+	TriggerReasonUnlockCommand        TriggerReason = "UnlockCommand"
+)
+
+func isValidTriggerReason(fl validator.FieldLevel) bool {
+	reason := TriggerReason(fl.Field().String())
+	switch reason {
+	case TriggerReasonAbnormalCondition, TriggerReasonAuthorized, TriggerReasonCablePluggedIn,
+		TriggerReasonChargingRateChanged, TriggerReasonChargingStateChanged, TriggerReasonCostLimitReached,
+		TriggerReasonDeauthorized, TriggerReasonEnergyLimitReached, TriggerReasonEVCommunicationLost,
+		TriggerReasonEVConnectTimeout, TriggerReasonEVDeparted, TriggerReasonEVDetected,
+		TriggerReasonLimitSet, TriggerReasonMeterValueClock, TriggerReasonMeterValuePeriodic,
+		TriggerReasonOperationModeChanged, TriggerReasonRemoteStart, TriggerReasonRemoteStop,
+		TriggerReasonResetCommand, TriggerReasonRunningCost, TriggerReasonSignedDataReceived,
+		TriggerReasonSoCLimitReached, TriggerReasonStopAuthorized, TriggerReasonTariffChanged,
+		TriggerReasonTariffNotAccepted, TriggerReasonTimeLimitReached, TriggerReasonTrigger,
+		TriggerReasonTxResumed, TriggerReasonUnlockCommand:
+		return true
+	default:
+		return false
+	}
+}
+
+// StoppedReason represents the reason a transaction was stopped.
+type StoppedReason string
+
+const (
+	StoppedReasonDeAuthorized              StoppedReason = "DeAuthorized"
+	StoppedReasonEmergencyStop             StoppedReason = "EmergencyStop"
+	StoppedReasonEnergyLimitReached        StoppedReason = "EnergyLimitReached"
+	StoppedReasonEVDisconnected            StoppedReason = "EVDisconnected"
+	StoppedReasonGroundFault               StoppedReason = "GroundFault"
+	StoppedReasonImmediateReset            StoppedReason = "ImmediateReset"
+	StoppedReasonMasterPass                StoppedReason = "MasterPass"
+	StoppedReasonLocal                     StoppedReason = "Local"
+	StoppedReasonLocalOutOfCredit          StoppedReason = "LocalOutOfCredit"
+	StoppedReasonOther                     StoppedReason = "Other"
+	StoppedReasonOvercurrentFault          StoppedReason = "OvercurrentFault"
+	StoppedReasonPowerLoss                 StoppedReason = "PowerLoss"
+	StoppedReasonPowerQuality              StoppedReason = "PowerQuality"
+	StoppedReasonReboot                    StoppedReason = "Reboot"
+	StoppedReasonRemote                    StoppedReason = "Remote"
+	StoppedReasonSOCLimitReached           StoppedReason = "SOCLimitReached"
+	StoppedReasonStoppedByEV               StoppedReason = "StoppedByEV"
+	StoppedReasonTimeLimitReached          StoppedReason = "TimeLimitReached"
+	StoppedReasonTimeout                   StoppedReason = "Timeout"
+	StoppedReasonReqEnergyTransferRejected StoppedReason = "ReqEnergyTransferRejected"
+)
+
+func isValidStoppedReason(fl validator.FieldLevel) bool {
+	reason := StoppedReason(fl.Field().String())
+	switch reason {
+	case StoppedReasonDeAuthorized, StoppedReasonEmergencyStop, StoppedReasonEnergyLimitReached,
+		StoppedReasonEVDisconnected, StoppedReasonGroundFault, StoppedReasonImmediateReset,
+		StoppedReasonMasterPass, StoppedReasonLocal, StoppedReasonLocalOutOfCredit,
+		StoppedReasonOther, StoppedReasonOvercurrentFault, StoppedReasonPowerLoss,
+		StoppedReasonPowerQuality, StoppedReasonReboot, StoppedReasonRemote,
+		StoppedReasonSOCLimitReached, StoppedReasonStoppedByEV, StoppedReasonTimeLimitReached,
+		StoppedReasonTimeout, StoppedReasonReqEnergyTransferRejected:
+		return true
+	default:
+		return false
+	}
+}
+
+// PreconditioningStatus represents the preconditioning status of the EV battery.
+type PreconditioningStatus string
+
+const (
+	PreconditioningStatusUnknown         PreconditioningStatus = "Unknown"
+	PreconditioningStatusReady           PreconditioningStatus = "Ready"
+	PreconditioningStatusNotReady        PreconditioningStatus = "NotReady"
+	PreconditioningStatusPreconditioning PreconditioningStatus = "Preconditioning"
+)
+
+func isValidPreconditioningStatus(fl validator.FieldLevel) bool {
+	status := PreconditioningStatus(fl.Field().String())
+	switch status {
+	case PreconditioningStatusUnknown, PreconditioningStatusReady,
+		PreconditioningStatusNotReady, PreconditioningStatusPreconditioning:
+		return true
+	default:
+		return false
+	}
+}
+
+// TransactionLimit represents cost, energy, time or SoC limits for a transaction.
+type TransactionLimit struct {
+	MaxCost    *float64        `json:"maxCost,omitempty"`
+	MaxEnergy  *float64        `json:"maxEnergy,omitempty"`
+	MaxTime    *int            `json:"maxTime,omitempty"`
+	MaxSoC     *int            `json:"maxSoC,omitempty" validate:"omitempty,gte=0,lte=100"`
+	CustomData *CustomDataType `json:"customData,omitempty" validate:"omitempty"`
+}
+
+// Transaction contains information about a transaction.
+type Transaction struct {
+	TransactionID     string            `json:"transactionId" validate:"required,max=36"`
+	ChargingState     ChargingState     `json:"chargingState,omitempty" validate:"omitempty,chargingState21"`
+	TimeSpentCharging *int              `json:"timeSpentCharging,omitempty"`
+	StoppedReason     StoppedReason     `json:"stoppedReason,omitempty" validate:"omitempty,stoppedReason21"`
+	RemoteStartID     *int              `json:"remoteStartId,omitempty"`
+	OperationMode     OperationMode     `json:"operationMode,omitempty" validate:"omitempty,operationMode21"`
+	TariffID          string            `json:"tariffId,omitempty" validate:"omitempty,max=60"`
+	TransactionLimit  *TransactionLimit `json:"transactionLimit,omitempty" validate:"omitempty"`
+	CustomData        *CustomDataType   `json:"customData,omitempty" validate:"omitempty"`
+}
+
+// MessageTrigger represents the type of message to be triggered.
+type MessageTrigger string
+
+const (
+	MessageTriggerBootNotification                  MessageTrigger = "BootNotification"
+	MessageTriggerLogStatusNotification             MessageTrigger = "LogStatusNotification"
+	MessageTriggerFirmwareStatusNotification        MessageTrigger = "FirmwareStatusNotification"
+	MessageTriggerHeartbeat                         MessageTrigger = "Heartbeat"
+	MessageTriggerMeterValues                       MessageTrigger = "MeterValues"
+	MessageTriggerSignChargingStationCertificate    MessageTrigger = "SignChargingStationCertificate"
+	MessageTriggerSignV2GCertificate                MessageTrigger = "SignV2GCertificate"
+	MessageTriggerSignV2G20Certificate              MessageTrigger = "SignV2G20Certificate"
+	MessageTriggerStatusNotification                MessageTrigger = "StatusNotification"
+	MessageTriggerTransactionEvent                  MessageTrigger = "TransactionEvent"
+	MessageTriggerSignCombinedCertificate           MessageTrigger = "SignCombinedCertificate"
+	MessageTriggerPublishFirmwareStatusNotification MessageTrigger = "PublishFirmwareStatusNotification"
+	MessageTriggerCustomTrigger                     MessageTrigger = "CustomTrigger"
+)
+
+func isValidMessageTrigger(fl validator.FieldLevel) bool {
+	trigger := MessageTrigger(fl.Field().String())
+	switch trigger {
+	case MessageTriggerBootNotification, MessageTriggerLogStatusNotification,
+		MessageTriggerFirmwareStatusNotification, MessageTriggerHeartbeat,
+		MessageTriggerMeterValues, MessageTriggerSignChargingStationCertificate,
+		MessageTriggerSignV2GCertificate, MessageTriggerSignV2G20Certificate,
+		MessageTriggerStatusNotification, MessageTriggerTransactionEvent,
+		MessageTriggerSignCombinedCertificate, MessageTriggerPublishFirmwareStatusNotification,
+		MessageTriggerCustomTrigger:
+		return true
+	default:
+		return false
+	}
+}
+
+// TriggerMessageStatus indicates whether the Charging Station will send the requested notification.
+type TriggerMessageStatus string
+
+const (
+	TriggerMessageStatusAccepted       TriggerMessageStatus = "Accepted"
+	TriggerMessageStatusRejected       TriggerMessageStatus = "Rejected"
+	TriggerMessageStatusNotImplemented TriggerMessageStatus = "NotImplemented"
+)
+
+func isValidTriggerMessageStatus(fl validator.FieldLevel) bool {
+	status := TriggerMessageStatus(fl.Field().String())
+	switch status {
+	case TriggerMessageStatusAccepted, TriggerMessageStatusRejected, TriggerMessageStatusNotImplemented:
+		return true
+	default:
+		return false
+	}
+}
+
+// UnlockStatus indicates whether the Charging Station has unlocked the connector.
+type UnlockStatus string
+
+const (
+	UnlockStatusUnlocked                     UnlockStatus = "Unlocked"
+	UnlockStatusUnlockFailed                 UnlockStatus = "UnlockFailed"
+	UnlockStatusOngoingAuthorizedTransaction UnlockStatus = "OngoingAuthorizedTransaction"
+	UnlockStatusUnknownConnector             UnlockStatus = "UnknownConnector"
+)
+
+func isValidUnlockStatus(fl validator.FieldLevel) bool {
+	status := UnlockStatus(fl.Field().String())
+	switch status {
+	case UnlockStatusUnlocked, UnlockStatusUnlockFailed,
+		UnlockStatusOngoingAuthorizedTransaction, UnlockStatusUnknownConnector:
+		return true
+	default:
+		return false
+	}
+}
+
+// CostDimension represents the type of cost dimension.
+type CostDimension string
+
+const (
+	CostDimensionEnergy       CostDimension = "Energy"
+	CostDimensionMaxCurrent   CostDimension = "MaxCurrent"
+	CostDimensionMinCurrent   CostDimension = "MinCurrent"
+	CostDimensionMaxPower     CostDimension = "MaxPower"
+	CostDimensionMinPower     CostDimension = "MinPower"
+	CostDimensionIdleTime     CostDimension = "IdleTIme" // Note: schema typo preserved
+	CostDimensionChargingTime CostDimension = "ChargingTime"
+)
+
+func isValidCostDimension(fl validator.FieldLevel) bool {
+	dim := CostDimension(fl.Field().String())
+	switch dim {
+	case CostDimensionEnergy, CostDimensionMaxCurrent, CostDimensionMinCurrent,
+		CostDimensionMaxPower, CostDimensionMinPower, CostDimensionIdleTime,
+		CostDimensionChargingTime:
+		return true
+	default:
+		return false
+	}
+}
+
+// TariffCost represents the type of cost: normal, minimum or maximum.
+type TariffCost string
+
+const (
+	TariffCostNormal TariffCost = "NormalCost"
+	TariffCostMin    TariffCost = "MinCost"
+	TariffCostMax    TariffCost = "MaxCost"
+)
+
+func isValidTariffCost(fl validator.FieldLevel) bool {
+	cost := TariffCost(fl.Field().String())
+	switch cost {
+	case TariffCostNormal, TariffCostMin, TariffCostMax:
+		return true
+	default:
+		return false
+	}
+}
+
+// TaxRate represents a tax percentage.
+type TaxRate struct {
+	Type       string          `json:"type" validate:"required,max=20"`
+	Tax        float64         `json:"tax" validate:"required"`
+	Stack      *int            `json:"stack,omitempty" validate:"omitempty,gte=0"`
+	CustomData *CustomDataType `json:"customData,omitempty" validate:"omitempty"`
+}
+
+// Price represents a price with and without tax.
+type Price struct {
+	ExclTax    *float64        `json:"exclTax,omitempty"`
+	InclTax    *float64        `json:"inclTax,omitempty"`
+	TaxRates   []TaxRate       `json:"taxRates,omitempty" validate:"omitempty,min=1,max=5,dive"`
+	CustomData *CustomDataType `json:"customData,omitempty" validate:"omitempty"`
+}
+
+// TotalPrice represents the total cost with and without tax.
+type TotalPrice struct {
+	ExclTax    *float64        `json:"exclTax,omitempty"`
+	InclTax    *float64        `json:"inclTax,omitempty"`
+	CustomData *CustomDataType `json:"customData,omitempty" validate:"omitempty"`
+}
+
+// TotalUsage represents the calculated usage during a transaction.
+type TotalUsage struct {
+	Energy          float64         `json:"energy" validate:"required"`
+	ChargingTime    int             `json:"chargingTime" validate:"required"`
+	IdleTime        int             `json:"idleTime" validate:"required"`
+	ReservationTime *int            `json:"reservationTime,omitempty"`
+	CustomData      *CustomDataType `json:"customData,omitempty" validate:"omitempty"`
+}
+
+// TotalCost represents the cost calculated during a transaction.
+type TotalCost struct {
+	Currency         string          `json:"currency" validate:"required,max=3"`
+	TypeOfCost       TariffCost      `json:"typeOfCost,omitempty" validate:"omitempty,tariffCost21"`
+	Fixed            *Price          `json:"fixed,omitempty" validate:"omitempty"`
+	Energy           *Price          `json:"energy,omitempty" validate:"omitempty"`
+	ChargingTime     *Price          `json:"chargingTime,omitempty" validate:"omitempty"`
+	IdleTime         *Price          `json:"idleTime,omitempty" validate:"omitempty"`
+	ReservationTime  *Price          `json:"reservationTime,omitempty" validate:"omitempty"`
+	ReservationFixed *Price          `json:"reservationFixed,omitempty" validate:"omitempty"`
+	Total            *TotalPrice     `json:"total,omitempty" validate:"omitempty"`
+	CustomData       *CustomDataType `json:"customData,omitempty" validate:"omitempty"`
+}
+
+// CostDimensionValue represents the volume consumed of a cost dimension.
+type CostDimensionValue struct {
+	Type       CostDimension   `json:"type" validate:"required,costDimension21"`
+	Volume     float64         `json:"volume" validate:"required"`
+	CustomData *CustomDataType `json:"customData,omitempty" validate:"omitempty"`
+}
+
+// ChargingPeriod represents a period during charging with associated costs.
+type ChargingPeriod struct {
+	StartPeriod *DateTime            `json:"startPeriod" validate:"required"`
+	Dimensions  []CostDimensionValue `json:"dimensions,omitempty" validate:"omitempty,min=1,dive"`
+	TariffID    string               `json:"tariffId,omitempty" validate:"omitempty,max=60"`
+	CustomData  *CustomDataType      `json:"customData,omitempty" validate:"omitempty"`
+}
+
+// CostDetails represents the cost calculated by Charging Station based on a tariff.
+type CostDetails struct {
+	TotalCost          TotalCost        `json:"totalCost" validate:"required"`
+	TotalUsage         TotalUsage       `json:"totalUsage" validate:"required"`
+	ChargingPeriods    []ChargingPeriod `json:"chargingPeriods,omitempty" validate:"omitempty,min=1,dive"`
+	FailureToCalculate bool             `json:"failureToCalculate,omitempty"`
+	FailureReason      string           `json:"failureReason,omitempty" validate:"omitempty,max=500"`
+	CustomData         *CustomDataType  `json:"customData,omitempty" validate:"omitempty"`
+}
+
 // Validate is the validator used for all OCPP 2.1 messages.
 var Validate = ocppj.Validate
 
@@ -917,10 +1286,20 @@ func init() {
 	_ = Validate.RegisterValidation("remoteStartStopStatus21", isValidRemoteStartStopStatus)
 	_ = Validate.RegisterValidation("authorizeCertificateStatus21", isValidAuthorizeCertificateStatus)
 	_ = Validate.RegisterValidation("energyTransferMode21", isValidEnergyTransferMode)
+	_ = Validate.RegisterValidation("chargingState21", isValidChargingState)
+	_ = Validate.RegisterValidation("transactionEvent21", isValidTransactionEvent)
+	_ = Validate.RegisterValidation("triggerReason21", isValidTriggerReason)
+	_ = Validate.RegisterValidation("stoppedReason21", isValidStoppedReason)
+	_ = Validate.RegisterValidation("preconditioningStatus21", isValidPreconditioningStatus)
 	_ = Validate.RegisterValidation("readingContext21", isValidReadingContext)
 	_ = Validate.RegisterValidation("measurand21", isValidMeasurand)
 	_ = Validate.RegisterValidation("phase21", isValidPhase)
 	_ = Validate.RegisterValidation("location21", isValidLocation)
+	_ = Validate.RegisterValidation("messageTrigger21", isValidMessageTrigger)
+	_ = Validate.RegisterValidation("triggerMessageStatus21", isValidTriggerMessageStatus)
+	_ = Validate.RegisterValidation("unlockStatus21", isValidUnlockStatus)
+	_ = Validate.RegisterValidation("costDimension21", isValidCostDimension)
+	_ = Validate.RegisterValidation("tariffCost21", isValidTariffCost)
 
 	// Register struct validators
 	Validate.RegisterStructValidation(isValidIdToken, IdToken{})
