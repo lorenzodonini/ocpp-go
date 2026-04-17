@@ -157,9 +157,10 @@ func (suite *OcppV2TestSuite) TestSalesTariffEntryValidation() {
 	var testTable = []GenericTestEntry{
 		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(1200)}, ConsumptionCost: []types.ConsumptionCost{dummyCostType}}, true},
 		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500}}, true},
+		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 0}}, true},
+		{types.SalesTariffEntry{RelativeTimeInterval: types.RelativeTimeInterval{Start: 0}}, true},
+		{types.SalesTariffEntry{RelativeTimeInterval: types.RelativeTimeInterval{Start: 0}}, true},
 		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{}}, true},
-		{types.SalesTariffEntry{RelativeTimeInterval: types.RelativeTimeInterval{}}, true},
-		{types.SalesTariffEntry{}, true},
 		{types.SalesTariffEntry{EPriceLevel: newInt(-1), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(1200)}, ConsumptionCost: []types.ConsumptionCost{dummyCostType}}, false},
 		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(-1)}, ConsumptionCost: []types.ConsumptionCost{dummyCostType}}, false},
 		{types.SalesTariffEntry{EPriceLevel: newInt(8), RelativeTimeInterval: types.RelativeTimeInterval{Start: 500, Duration: newInt(1200)}, ConsumptionCost: []types.ConsumptionCost{dummyCostType, dummyCostType, dummyCostType, dummyCostType}}, false},
@@ -169,7 +170,7 @@ func (suite *OcppV2TestSuite) TestSalesTariffEntryValidation() {
 }
 
 func (suite *OcppV2TestSuite) TestSalesTariffValidation() {
-	dummySalesTariffEntry := types.SalesTariffEntry{}
+	dummySalesTariffEntry := types.SalesTariffEntry{RelativeTimeInterval: types.RelativeTimeInterval{Start: 0}}
 	var testTable = []GenericTestEntry{
 		{types.SalesTariff{ID: 1, SalesTariffDescription: "someDesc", NumEPriceLevels: newInt(1), SalesTariffEntry: []types.SalesTariffEntry{dummySalesTariffEntry}}, true},
 		{types.SalesTariff{ID: 1, NumEPriceLevels: newInt(1), SalesTariffEntry: []types.SalesTariffEntry{dummySalesTariffEntry}}, true},

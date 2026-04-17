@@ -155,7 +155,7 @@ type OCSPRequestDataType struct {
 	IssuerNameHash string            `json:"issuerNameHash" validate:"required,max=128"`
 	IssuerKeyHash  string            `json:"issuerKeyHash" validate:"required,max=128"`
 	SerialNumber   string            `json:"serialNumber" validate:"required,max=40"`
-	ResponderURL   string            `json:"responderURL,omitempty" validate:"max=512"`
+	ResponderURL   string            `json:"responderURL" validate:"required,max=512"`
 }
 
 // CertificateHashDataType
@@ -283,6 +283,7 @@ type IdTokenInfo struct {
 	ChargingPriority    int                 `json:"chargingPriority,omitempty" validate:"min=-9,max=9"`
 	Language1           string              `json:"language1,omitempty" validate:"max=8"`
 	Language2           string              `json:"language2,omitempty" validate:"max=8"`
+	EvseId              []int               `json:"evseId,omitempty" validate:"omitempty,min=1,dive,gte=0"`
 	GroupIdToken        *GroupIdToken       `json:"groupIdToken,omitempty"`
 	PersonalMessage     *MessageContent     `json:"personalMessage,omitempty"`
 }
@@ -386,7 +387,7 @@ type CostType struct {
 // Contains price information and/or alternative costs.
 type ConsumptionCost struct {
 	StartValue float64    `json:"startValue"`                          // The lowest level of consumption that defines the starting point of this consumption block
-	Cost       []CostType `json:"cost" validate:"required,max=3,dive"` // Contains the cost details.
+	Cost       []CostType `json:"cost" validate:"required,min=1,max=3,dive"` // Contains the cost details.
 }
 
 // NewConsumptionCost instantiates a new ConsumptionCost struct. No additional parameters need to be set.
@@ -401,7 +402,7 @@ func NewConsumptionCost(startValue float64, cost []CostType) ConsumptionCost {
 type SalesTariffEntry struct {
 	EPriceLevel          *int                 `json:"ePriceLevel,omitempty" validate:"omitempty,gte=0"`          // The price level of this SalesTariffEntry (referring to NumEPriceLevels). Small values for the EPriceLevel represent a cheaper TariffEntry.
 	RelativeTimeInterval RelativeTimeInterval `json:"relativeTimeInterval" validate:"required"`                  // The time interval the SalesTariffEntry is valid for, based upon relative times.
-	ConsumptionCost      []ConsumptionCost    `json:"consumptionCost,omitempty" validate:"omitempty,max=3,dive"` // Additional means for further relative price information and/or alternative costs.
+	ConsumptionCost      []ConsumptionCost    `json:"consumptionCost,omitempty" validate:"omitempty,min=1,max=3,dive"` // Additional means for further relative price information and/or alternative costs.
 }
 
 // Sales tariff associated with this charging schedule.
@@ -500,6 +501,7 @@ type ChargingSchedulePeriod struct {
 	StartPeriod  int     `json:"startPeriod" validate:"gte=0"`
 	Limit        float64 `json:"limit" validate:"gte=0"`
 	NumberPhases *int    `json:"numberPhases,omitempty" validate:"omitempty,gte=0"`
+	PhaseToUse   *int    `json:"phaseToUse,omitempty" validate:"omitempty,gte=1,lte=3"`
 }
 
 func NewChargingSchedulePeriod(startPeriod int, limit float64) ChargingSchedulePeriod {
