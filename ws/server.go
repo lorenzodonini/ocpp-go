@@ -19,6 +19,21 @@ import (
 
 type CheckClientHandler func(id string, r *http.Request) bool
 
+// SubprotocolSelector is a callback that allows the application to choose which subprotocol
+// to use for a connection when the client requests multiple subprotocols.
+//
+// Parameters:
+//   - id: The client identifier
+//   - requestedSubprotocols: All subprotocols requested by the client (parsed from Sec-WebSocket-Protocol header)
+//
+// Returns:
+//   - The selected subprotocol to use, or empty string to use default behavior (first match)
+//
+// This allows the application to implement custom logic for protocol selection,
+// such as preferring a specific version based on client ID or other criteria.
+// The selected protocol must be one that the server supports (registered via AddSupportedSubprotocol).
+type SubprotocolSelector func(id string, requestedSubprotocols []string) string
+
 // Server defines a websocket server, which passively listens for incoming connections on ws or wss protocol.
 // The offered API are of asynchronous nature, and each incoming connection/message is handled using callbacks.
 //
@@ -73,6 +88,11 @@ type Server interface {
 	// The callbacks accept a Channel and the received data.
 	// It is up to the callback receiver, to check the identifier of the channel, to determine the source of the message.
 	SetMessageHandler(handler MessageHandler)
+	// SetMessageHandlerForSubprotocol sets a callback function for incoming messages on connections
+	// using the specified subprotocol. This allows different handlers for different protocols
+	// (e.g., OCPP 1.6 vs OCPP 2.0.1) on the same server.
+	// If a subprotocol-specific handler is set, it takes precedence over the default handler.
+	SetMessageHandlerForSubprotocol(subprotocol string, handler MessageHandler)
 	// SetNewClientHandler sets a callback function for all new incoming client connections.
 	// It is recommended to store a reference to the Channel in the received entity, so that the Channel may be recognized later on.
 	//
@@ -117,6 +137,11 @@ type Server interface {
 	//
 	// Changes to the http request at runtime may lead to undefined behavior.
 	SetCheckClientHandler(handler CheckClientHandler)
+	// SetSubprotocolSelector sets a callback for custom subprotocol selection.
+	// When a client requests multiple subprotocols (e.g., "Sec-WebSocket-Protocol: ocpp2.0.1, ocpp1.6"),
+	// this callback allows the application to choose which protocol to use.
+	// If not set or returns empty string, the default behavior (first mutually-supported protocol) is used.
+	SetSubprotocolSelector(selector SubprotocolSelector)
 	// Addr gives the address on which the server is listening, useful if, for
 	// example, the port is system-defined (set to 0).
 	Addr() *net.TCPAddr
@@ -130,22 +155,26 @@ type Server interface {
 //
 // Use the NewServer function to create a new server.
 type server struct {
-	connections           map[string]*webSocket
-	httpServer            *http.Server
-	messageHandler        func(ws Channel, data []byte) error
-	chargePointIdResolver func(*http.Request) (string, error)
-	checkClientHandler    CheckClientHandler
-	newClientHandler      func(ws Channel)
-	disconnectedHandler   func(ws Channel)
-	basicAuthHandler      func(username string, password string) bool
-	tlsCertificatePath    string
-	tlsCertificateKey     string
-	timeoutConfig         ServerTimeoutConfig
-	upgrader              websocket.Upgrader
-	errC                  chan error
-	connMutex             sync.RWMutex
-	addr                  *net.TCPAddr
-	httpHandler           *mux.Router
+	connections                map[string]*webSocket
+	httpServer                 *http.Server
+	messageHandler             func(ws Channel, data []byte) error
+	subprotocolMessageHandlers map[string]func(ws Channel, data []byte) error
+	chargePointIdResolver      func(*http.Request) (string, error)
+	checkClientHandler         CheckClientHandler
+	subprotocolSelector        SubprotocolSelector
+	newClientHandler           func(ws Channel)
+	disconnectedHandler        func(ws Channel)
+	basicAuthHandler           func(username string, password string) bool
+	tlsCertificatePath         string
+	tlsCertificateKey          string
+	timeoutConfig              ServerTimeoutConfig
+	upgrader                   websocket.Upgrader
+	errC                       chan error
+	connMutex                  sync.RWMutex
+	addr                       *net.TCPAddr
+	httpHandler                *mux.Router
+	started                    bool
+	startMutex                 sync.Mutex
 }
 
 // ServerOpt is a function that can be used to set options on a server during creation.
@@ -183,10 +212,11 @@ func WithServerTLSConfig(certificatePath string, certificateKey string, tlsConfi
 func NewServer(opts ...ServerOpt) Server {
 	router := mux.NewRouter()
 	s := &server{
-		httpServer:    &http.Server{},
-		timeoutConfig: NewServerTimeoutConfig(),
-		upgrader:      websocket.Upgrader{Subprotocols: []string{}},
-		httpHandler:   router,
+		httpServer:                 &http.Server{},
+		timeoutConfig:              NewServerTimeoutConfig(),
+		upgrader:                   websocket.Upgrader{Subprotocols: []string{}},
+		httpHandler:                router,
+		subprotocolMessageHandlers: make(map[string]func(ws Channel, data []byte) error),
 		chargePointIdResolver: func(r *http.Request) (string, error) {
 			url := r.URL
 			return path.Base(url.Path), nil
@@ -200,6 +230,10 @@ func NewServer(opts ...ServerOpt) Server {
 
 func (s *server) SetMessageHandler(handler MessageHandler) {
 	s.messageHandler = handler
+}
+
+func (s *server) SetMessageHandlerForSubprotocol(subprotocol string, handler MessageHandler) {
+	s.subprotocolMessageHandlers[subprotocol] = handler
 }
 
 func (s *server) SetCheckClientHandler(handler CheckClientHandler) {
@@ -240,6 +274,17 @@ func (s *server) SetCheckOriginHandler(handler func(r *http.Request) bool) {
 	s.upgrader.CheckOrigin = handler
 }
 
+// SetSubprotocolSelector sets a callback for custom subprotocol selection.
+// When a client requests multiple subprotocols (e.g., "Sec-WebSocket-Protocol: ocpp2.0.1, ocpp1.6"),
+// this callback allows the application to choose which protocol to use instead of
+// using the default behavior (first mutually-supported protocol).
+//
+// If the callback returns an empty string, the default selection behavior is used.
+// If it returns a protocol not in the supported list, the connection will be rejected.
+func (s *server) SetSubprotocolSelector(selector SubprotocolSelector) {
+	s.subprotocolSelector = selector
+}
+
 func (s *server) error(err error) {
 	log.Error(err)
 	if s.errC != nil {
@@ -263,6 +308,15 @@ func (s *server) AddHttpHandler(listenPath string, handler func(w http.ResponseW
 }
 
 func (s *server) Start(port int, listenPath string) {
+	// Check if already started (idempotent)
+	s.startMutex.Lock()
+	if s.started {
+		s.startMutex.Unlock()
+		return
+	}
+	s.started = true
+	s.startMutex.Unlock()
+
 	s.connMutex.Lock()
 	s.connections = make(map[string]*webSocket)
 	s.connMutex.Unlock()
@@ -365,23 +419,42 @@ func (s *server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	// Negotiate sub-protocol
 	clientSubProtocols := websocket.Subprotocols(r)
 	negotiatedSubProtocol := ""
-out:
-	for _, requestedProto := range clientSubProtocols {
-		if len(s.upgrader.Subprotocols) == 0 {
-			// All subProtocols are accepted, pick first
-			negotiatedSubProtocol = requestedProto
-			break
-		}
-		// Check if requested suprotocol is supported by server
-		for _, supportedProto := range s.upgrader.Subprotocols {
-			if requestedProto == supportedProto {
-				negotiatedSubProtocol = requestedProto
-				break out
+
+	// Allow application to select subprotocol if selector is set
+	if s.subprotocolSelector != nil && len(clientSubProtocols) > 0 {
+		selected := s.subprotocolSelector(id, clientSubProtocols)
+		if selected != "" {
+			// Verify selected protocol is in supported list (unless all are supported)
+			if len(s.upgrader.Subprotocols) == 0 {
+				negotiatedSubProtocol = selected
+			} else {
+				for _, supported := range s.upgrader.Subprotocols {
+					if selected == supported {
+						negotiatedSubProtocol = selected
+						break
+					}
+				}
 			}
 		}
 	}
-	if negotiatedSubProtocol != "" {
-		responseHeader.Add("Sec-WebSocket-Protocol", negotiatedSubProtocol)
+
+	// Fall back to default behavior: first mutually-supported protocol
+	if negotiatedSubProtocol == "" {
+	out:
+		for _, requestedProto := range clientSubProtocols {
+			if len(s.upgrader.Subprotocols) == 0 {
+				// All subProtocols are accepted, pick first
+				negotiatedSubProtocol = requestedProto
+				break
+			}
+			// Check if requested subprotocol is supported by server
+			for _, supportedProto := range s.upgrader.Subprotocols {
+				if requestedProto == supportedProto {
+					negotiatedSubProtocol = requestedProto
+					break out
+				}
+			}
+		}
 	}
 	// Handle client authentication
 	if s.basicAuthHandler != nil {
@@ -407,7 +480,14 @@ out:
 	}
 
 	// Upgrade websocket
+	// Temporarily set the upgrader's subprotocols to only our selected one
+	// so gorilla negotiates to exactly that protocol
+	originalSubprotocols := s.upgrader.Subprotocols
+	if negotiatedSubProtocol != "" {
+		s.upgrader.Subprotocols = []string{negotiatedSubProtocol}
+	}
 	conn, err := s.upgrader.Upgrade(w, r, responseHeader)
+	s.upgrader.Subprotocols = originalSubprotocols // Restore immediately
 	if err != nil {
 		s.error(fmt.Errorf("upgrade failed: %w", err))
 		return
@@ -464,10 +544,15 @@ out:
 
 // --------- Internal callbacks webSocket -> server ---------
 func (s *server) handleMessage(w Channel, data []byte) error {
+	// Check for subprotocol-specific handler first
+	if handler, ok := s.subprotocolMessageHandlers[w.Subprotocol()]; ok {
+		return handler(w, data)
+	}
+	// Fall back to default handler
 	if s.messageHandler != nil {
 		return s.messageHandler(w, data)
 	}
-	return fmt.Errorf("no message handler set")
+	return fmt.Errorf("no message handler set for subprotocol %s", w.Subprotocol())
 }
 
 func (s *server) handleDisconnect(w Channel, _ error) {

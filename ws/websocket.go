@@ -153,6 +153,9 @@ type Channel interface {
 	TLSConnectionState() *tls.ConnectionState
 	// IsConnected returns true if the connection to the peer is active, false if it was closed already.
 	IsConnected() bool
+	// Subprotocol returns the negotiated websocket subprotocol for this channel.
+	// For OCPP, this is typically "ocpp1.6", "ocpp2.0.1", or "ocpp2.1".
+	Subprotocol() string
 }
 
 // WebSocketConfig is a utility config struct for a single webSocket.
@@ -274,6 +277,11 @@ func (w *webSocket) RemoteAddr() net.Addr {
 // Returns the TLS connection state of the connection, if any.
 func (w *webSocket) TLSConnectionState() *tls.ConnectionState {
 	return w.tlsConnectionState
+}
+
+// Subprotocol returns the negotiated websocket subprotocol for this channel.
+func (w *webSocket) Subprotocol() string {
+	return w.connection.Subprotocol()
 }
 
 func (w *webSocket) IsConnected() bool {

@@ -45,6 +45,10 @@ func (websocket MockWebSocket) IsConnected() bool {
 	return true
 }
 
+func (websocket MockWebSocket) Subprotocol() string {
+	return "ocpp1.6"
+}
+
 func NewMockWebSocket(id string) MockWebSocket {
 	return MockWebSocket{id: id}
 }
