@@ -12,11 +12,12 @@ import (
 	"time"
 
 	"github.com/lorenzodonini/ocpp-go/multiplex"
+	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	ocpp2 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	types2 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 // OCPP 1.6 handler
@@ -76,22 +77,30 @@ func (h *ocpp201Handler) OnNotifyReport(chargingStationId string, request *provi
 }
 
 func main() {
-	// Create multi-protocol server
-	server := multiplex.NewMultiProtocolServer()
+	// Create multiplex server with shared WebSocket server
+	mux := multiplex.NewServer()
+
+	// Create OCPP servers using the shared WebSocket server.
+	// You can create only the servers you need.
+	cs := ocpp16.NewCentralSystem(nil, mux.WebSocketServer())
+	csms := ocpp2.NewCSMS(nil, mux.WebSocketServer())
 
 	// Register OCPP 1.6 handlers
-	server.OCPP16Server().SetCoreHandler(&ocpp16Handler{})
-
-	// Register OCPP 2.0.1 handlers
-	server.OCPP201Server().SetProvisioningHandler(&ocpp201Handler{})
-
-	// Track connections and their protocol versions
-	server.SetNewClientHandler(func(channel ws.Channel) {
-		fmt.Printf("New client connected: %s (protocol: %s)\n", channel.ID(), channel.Subprotocol())
+	cs.SetCoreHandler(&ocpp16Handler{})
+	cs.SetNewChargePointHandler(func(cp ocpp16.ChargePointConnection) {
+		fmt.Printf("New OCPP 1.6 client connected: %s\n", cp.ID())
+	})
+	cs.SetChargePointDisconnectedHandler(func(cp ocpp16.ChargePointConnection) {
+		fmt.Printf("OCPP 1.6 client disconnected: %s\n", cp.ID())
 	})
 
-	server.SetDisconnectedClientHandler(func(channel ws.Channel) {
-		fmt.Printf("Client disconnected: %s\n", channel.ID())
+	// Register OCPP 2.0.1 handlers
+	csms.SetProvisioningHandler(&ocpp201Handler{})
+	csms.SetNewChargingStationHandler(func(station ocpp2.ChargingStationConnection) {
+		fmt.Printf("New OCPP 2.0.1 client connected: %s\n", station.ID())
+	})
+	csms.SetChargingStationDisconnectedHandler(func(station ocpp2.ChargingStationConnection) {
+		fmt.Printf("OCPP 2.0.1 client disconnected: %s\n", station.ID())
 	})
 
 	// Start listening on port 8080
@@ -101,5 +110,8 @@ func main() {
 	fmt.Println("Clients can connect with either protocol. The server will negotiate")
 	fmt.Println("based on the Sec-WebSocket-Protocol header.")
 
-	server.Start(8080, "/ocpp/{id}")
+	// Start both OCPP servers - ws.Server.Start() is idempotent,
+	// so only the first call actually starts the server
+	go cs.Start(8080, "/ocpp/{id}")
+	csms.Start(8080, "/ocpp/{id}")
 }

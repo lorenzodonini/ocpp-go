@@ -1,24 +1,10 @@
 // Package multiplex provides protocol multiplexing support for OCPP servers.
-// It allows a single WebSocket server to handle both OCPP 1.6 and OCPP 2.0.1 clients
+// It allows a single WebSocket server to handle multiple OCPP protocol versions
 // on the same port, using WebSocket subprotocol negotiation to route connections
 // to the appropriate handler.
 package multiplex
 
-import (
-	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
-	ocpp2 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
-	"github.com/lorenzodonini/ocpp-go/ws"
-)
-
-// ProtocolVersion represents an OCPP protocol version.
-type ProtocolVersion string
-
-const (
-	// V16 represents OCPP 1.6
-	V16 ProtocolVersion = "ocpp1.6"
-	// V201 represents OCPP 2.0.1
-	V201 ProtocolVersion = "ocpp2.0.1"
-)
+import "github.com/lorenzodonini/ocpp-go/ws"
 
 // Subprotocol constants for WebSocket negotiation.
 const (
@@ -55,47 +41,39 @@ const (
 //	})
 type SubprotocolSelector func(clientID string, requestedSubprotocols []string) string
 
-// MultiProtocolServer is a server that can handle both OCPP 1.6 and OCPP 2.0.1 clients
-// on a single port. It uses WebSocket subprotocol negotiation to determine which
-// protocol version each client uses.
-type MultiProtocolServer interface {
-	// Start begins listening for connections on the specified port and path.
-	// The function blocks until Stop is called.
-	//
-	// Example:
-	//   go server.Start(8080, "/ocpp/{id}")
-	Start(port int, listenPath string)
-
-	// Stop gracefully shuts down the server.
-	Stop()
-
-	// OCPP16Server returns the underlying OCPP 1.6 Central System.
-	// Use this to register handlers for OCPP 1.6 messages.
-	OCPP16Server() ocpp16.CentralSystem
-
-	// OCPP201Server returns the underlying OCPP 2.0.1 CSMS.
-	// Use this to register handlers for OCPP 2.0.1 messages.
-	OCPP201Server() ocpp2.CSMS
+// Server provides a shared WebSocket server for multiple OCPP protocol versions.
+// Create OCPP servers (CentralSystem, CSMS) using the shared WebSocketServer(),
+// then call Start() on each one. The ws.Server.Start() method is idempotent,
+// so only the first call actually starts the server.
+//
+// Example usage:
+//
+//	// Create multiplex server
+//	mux := multiplex.NewServer()
+//
+//	// Create only the OCPP servers you need
+//	cs := ocpp16.NewCentralSystem(nil, mux.WebSocketServer())
+//	csms := ocpp2.NewCSMS(nil, mux.WebSocketServer())
+//
+//	// Register handlers
+//	cs.SetCoreHandler(&myOCPP16Handler{})
+//	csms.SetProvisioningHandler(&myOCPP201Handler{})
+//
+//	// Start servers (ws.Server.Start is idempotent)
+//	go cs.Start(8080, "/ocpp/{id}")
+//	csms.Start(8080, "/ocpp/{id}")
+type Server interface {
+	// WebSocketServer returns the underlying ws.Server.
+	// Use this when creating OCPP servers to share the same WebSocket connection.
+	WebSocketServer() ws.Server
 
 	// SetSubprotocolSelector sets a custom callback for choosing which subprotocol
-	// to use when a client requests multiple subprotocols. This allows the application
-	// to implement custom protocol selection logic (e.g., prefer OCPP 2.0.1 over 1.6).
-	// If not set, the default behavior is used (first mutually-supported protocol).
+	// to use when a client requests multiple subprotocols.
 	SetSubprotocolSelector(selector SubprotocolSelector)
-
-	// SetNewClientHandler sets a callback for all new client connections,
-	// regardless of protocol version. The callback receives the WebSocket channel
-	// which can be used to determine the protocol via channel.Subprotocol().
-	SetNewClientHandler(handler func(channel ws.Channel))
-
-	// SetDisconnectedClientHandler sets a callback for all client disconnections,
-	// regardless of protocol version.
-	SetDisconnectedClientHandler(handler func(channel ws.Channel))
 
 	// SetBasicAuthHandler enables HTTP Basic Authentication for all connections.
 	SetBasicAuthHandler(handler func(username, password string) bool)
 
 	// SetCheckClientHandler sets a validation handler for incoming connections.
-	// Return false to reject the connection.
 	SetCheckClientHandler(handler ws.CheckClientHandler)
 }
