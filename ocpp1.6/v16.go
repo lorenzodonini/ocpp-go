@@ -359,6 +359,7 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) CentralSystem {
 			securefirmware.Profile,
 		)
 	}
+	endpoint.SetSubprotocol(types.V16Subprotocol)
 	cs := newCentralSystem(endpoint)
 	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {
 		cs.handleIncomingRequest(client, request, requestId, action)

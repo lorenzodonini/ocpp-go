@@ -1142,6 +1142,112 @@ func (s *WebSocketSuite) TestUnsupportedSubProtocol() {
 	}
 }
 
+func (s *WebSocketSuite) TestSubprotocolSelector() {
+	// Setup channels for synchronization
+	connectedC := make(chan string, 1)
+	selectorCalledC := make(chan []string, 1)
+
+	s.server.SetNewClientHandler(func(ws Channel) {
+		connectedC <- ws.Subprotocol()
+	})
+	s.server.SetDisconnectedClientHandler(func(ws Channel) {
+	})
+
+	// Add multiple supported subprotocols
+	s.server.AddSupportedSubprotocol("proto1")
+	s.server.AddSupportedSubprotocol("proto2")
+	s.server.AddSupportedSubprotocol("proto3")
+
+	// Set a selector that receives the client's requested protocols and chooses "proto2"
+	s.server.SetSubprotocolSelector(func(clientID string, requestedSubprotocols []string) string {
+		selectorCalledC <- requestedSubprotocols
+		// Choose proto2 even though client requested proto3 first
+		for _, p := range requestedSubprotocols {
+			if p == "proto2" {
+				return p
+			}
+		}
+		return ""
+	})
+
+	// Start server
+	go s.server.Start(serverPort, serverPath)
+	time.Sleep(100 * time.Millisecond)
+
+	// Setup client to request proto3 first, then proto2
+	s.client.AddOption(func(dialer *websocket.Dialer) {
+		dialer.Subprotocols = []string{"proto3", "proto2", "proto1"}
+	})
+	s.client.SetMessageHandler(func(data []byte) error {
+		return nil
+	})
+
+	// Connect
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	err := s.client.Start(u.String())
+	s.Require().NoError(err)
+
+	// Verify selector was called with correct protocols
+	select {
+	case requested := <-selectorCalledC:
+		s.Equal([]string{"proto3", "proto2", "proto1"}, requested)
+	case <-time.After(1 * time.Second):
+		s.Fail("timeout waiting for selector to be called")
+	}
+
+	// Verify the selected protocol (proto2) was used, not proto3
+	select {
+	case negotiated := <-connectedC:
+		s.Equal("proto2", negotiated)
+	case <-time.After(1 * time.Second):
+		s.Fail("timeout waiting for connection")
+	}
+}
+
+func (s *WebSocketSuite) TestSubprotocolSelectorDefaultBehavior() {
+	// Test that without a selector, default behavior picks the first mutually-supported protocol
+	connectedC := make(chan string, 1)
+
+	s.server.SetNewClientHandler(func(ws Channel) {
+		connectedC <- ws.Subprotocol()
+	})
+	s.server.SetDisconnectedClientHandler(func(ws Channel) {
+	})
+
+	// Server supports proto2 and proto3 (not proto1)
+	s.server.AddSupportedSubprotocol("proto2")
+	s.server.AddSupportedSubprotocol("proto3")
+
+	// No selector set - use default behavior
+
+	// Start server
+	go s.server.Start(serverPort, serverPath)
+	time.Sleep(100 * time.Millisecond)
+
+	// Client requests proto1 first (not supported), then proto3, then proto2
+	s.client.AddOption(func(dialer *websocket.Dialer) {
+		dialer.Subprotocols = []string{"proto1", "proto3", "proto2"}
+	})
+	s.client.SetMessageHandler(func(data []byte) error {
+		return nil
+	})
+
+	// Connect
+	host := fmt.Sprintf("localhost:%v", serverPort)
+	u := url.URL{Scheme: "ws", Host: host, Path: testPath}
+	err := s.client.Start(u.String())
+	s.Require().NoError(err)
+
+	// Default behavior should pick proto3 (first mutually-supported in client's order)
+	select {
+	case negotiated := <-connectedC:
+		s.Equal("proto3", negotiated)
+	case <-time.After(1 * time.Second):
+		s.Fail("timeout waiting for connection")
+	}
+}
+
 func (s *WebSocketSuite) TestSetServerTimeoutConfig() {
 	disconnected := make(chan struct{})
 	s.server.SetNewClientHandler(func(ws Channel) {

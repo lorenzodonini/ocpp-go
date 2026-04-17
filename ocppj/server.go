@@ -15,6 +15,7 @@ import (
 type Server struct {
 	Endpoint
 	server                    ws.Server
+	subprotocol               string
 	checkClientHandler        ws.CheckClientHandler
 	newClientHandler          ClientHandler
 	disconnectedClientHandler ClientHandler
@@ -65,6 +66,13 @@ func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler Ser
 		s.AddProfile(profile)
 	}
 	return &s
+}
+
+// SetSubprotocol sets the subprotocol this server handles.
+// When set, the server registers its message handler for this specific subprotocol,
+// allowing multiple OCPP servers to share the same WebSocket server.
+func (s *Server) SetSubprotocol(subprotocol string) {
+	s.subprotocol = subprotocol
 }
 
 // Registers a handler for incoming requests.
@@ -127,15 +135,19 @@ func (s *Server) SetDisconnectedClientHandler(handler ClientHandler) {
 //
 // An error may be returned, if the websocket server couldn't be started.
 func (s *Server) Start(listenPort int, listenPath string) {
-	// Set internal message handler
+	// Set internal handlers
 	s.server.SetCheckClientHandler(s.checkClientHandler)
 	s.server.SetNewClientHandler(s.onClientConnected)
 	s.server.SetDisconnectedClientHandler(s.onClientDisconnected)
-	s.server.SetMessageHandler(s.ocppMessageHandler)
+	// Register message handler - use subprotocol-specific if set
+	if s.subprotocol != "" {
+		s.server.SetMessageHandlerForSubprotocol(s.subprotocol, s.ocppMessageHandler)
+	} else {
+		s.server.SetMessageHandler(s.ocppMessageHandler)
+	}
 	s.dispatcher.Start()
 	// Serve & run
 	s.server.Start(listenPort, listenPath)
-	// TODO: return error?
 }
 
 // Stops the server.
@@ -145,6 +157,12 @@ func (s *Server) Stop() {
 	s.server.Stop()
 }
 
+// HandleMessage processes an incoming OCPP message from the given WebSocket channel.
+// This method is intended for use by multiplexing servers that need to route messages
+// to the appropriate protocol handler based on the negotiated subprotocol.
+//
+// The method parses the message, validates it against registered profiles, and invokes
+// the appropriate request/response/error handler.
 // Sends an OCPP Request to a client, identified by the clientID parameter.
 //
 // Returns an error in the following cases:

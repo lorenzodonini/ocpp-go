@@ -440,6 +440,7 @@ func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
 			transactions.Profile,
 		)
 	}
+	endpoint.SetSubprotocol(types.V201Subprotocol)
 	cs := newCSMS(endpoint)
 	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {
 		cs.handleIncomingRequest(client, request, requestId, action)
