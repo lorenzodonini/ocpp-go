@@ -11,28 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestReservationStatusUpdateRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{reservation.ReservationStatusUpdateRequest{ReservationID: 42, Status: reservation.ReservationUpdateStatusExpired}, true},
-		{reservation.ReservationStatusUpdateRequest{ReservationID: 42, Status: reservation.ReservationUpdateStatusRemoved}, true},
-		{reservation.ReservationStatusUpdateRequest{Status: reservation.ReservationUpdateStatusExpired}, true},
-		{reservation.ReservationStatusUpdateRequest{}, false},
-		{reservation.ReservationStatusUpdateRequest{ReservationID: 42}, false},
-		{reservation.ReservationStatusUpdateRequest{ReservationID: -1, Status: reservation.ReservationUpdateStatusExpired}, false},
-		{reservation.ReservationStatusUpdateRequest{ReservationID: 42, Status: "invalidReservationStatus"}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestReservationStatusUpdateConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{reservation.ReservationStatusUpdateResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestReservationStatusUpdateE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

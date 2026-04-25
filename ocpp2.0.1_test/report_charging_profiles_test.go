@@ -10,46 +10,10 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Tests
-func (suite *OcppV2TestSuite) TestReportChargingProfilesRequestValidation() {
-	t := suite.T()
-	chargingSchedule := types.ChargingSchedule{
-		ID:                     1,
-		StartSchedule:          types.NewDateTime(time.Now()),
-		Duration:               newInt(600),
-		ChargingRateUnit:       types.ChargingRateUnitWatts,
-		MinChargingRate:        newFloat(6.0),
-		ChargingSchedulePeriod: []types.ChargingSchedulePeriod{types.NewChargingSchedulePeriod(0, 10.0)},
-	}
-	chargingProfile := types.NewChargingProfile(1, 0, types.ChargingProfilePurposeTxDefaultProfile, types.ChargingProfileKindAbsolute, []types.ChargingSchedule{chargingSchedule})
-	var requestTable = []GenericTestEntry{
-		{smartcharging.ReportChargingProfilesRequest{RequestID: 42, ChargingLimitSource: types.ChargingLimitSourceCSO, Tbc: true, EvseID: 1, ChargingProfile: []types.ChargingProfile{*chargingProfile}}, true},
-		{smartcharging.ReportChargingProfilesRequest{RequestID: 42, ChargingLimitSource: types.ChargingLimitSourceCSO, EvseID: 1, ChargingProfile: []types.ChargingProfile{*chargingProfile}}, true},
-		{smartcharging.ReportChargingProfilesRequest{RequestID: 42, ChargingLimitSource: types.ChargingLimitSourceCSO, ChargingProfile: []types.ChargingProfile{*chargingProfile}}, true},
-		{smartcharging.ReportChargingProfilesRequest{ChargingLimitSource: types.ChargingLimitSourceCSO, ChargingProfile: []types.ChargingProfile{*chargingProfile}}, true},
-		{smartcharging.ReportChargingProfilesRequest{ChargingLimitSource: types.ChargingLimitSourceCSO, ChargingProfile: []types.ChargingProfile{}}, false},
-		{smartcharging.ReportChargingProfilesRequest{ChargingLimitSource: types.ChargingLimitSourceCSO}, false},
-		{smartcharging.ReportChargingProfilesRequest{ChargingProfile: []types.ChargingProfile{*chargingProfile}}, false},
-		{smartcharging.ReportChargingProfilesRequest{}, false},
-		{smartcharging.ReportChargingProfilesRequest{RequestID: -1, ChargingLimitSource: types.ChargingLimitSourceCSO, Tbc: true, EvseID: 1, ChargingProfile: []types.ChargingProfile{*chargingProfile}}, false},
-		{smartcharging.ReportChargingProfilesRequest{RequestID: 42, ChargingLimitSource: types.ChargingLimitSourceCSO, Tbc: true, EvseID: -1, ChargingProfile: []types.ChargingProfile{*chargingProfile}}, false},
-		{smartcharging.ReportChargingProfilesRequest{RequestID: 42, ChargingLimitSource: "invalidChargingLimitSource", Tbc: true, EvseID: 1, ChargingProfile: []types.ChargingProfile{*chargingProfile}}, false},
-		{smartcharging.ReportChargingProfilesRequest{RequestID: 42, ChargingLimitSource: types.ChargingLimitSourceCSO, Tbc: true, EvseID: 1, ChargingProfile: []types.ChargingProfile{
-			*types.NewChargingProfile(1, -1, types.ChargingProfilePurposeTxDefaultProfile, types.ChargingProfileKindAbsolute, []types.ChargingSchedule{chargingSchedule})}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestReportChargingProfilesResponseValidation() {
-	t := suite.T()
-	var responseTable = []GenericTestEntry{
-		{smartcharging.ReportChargingProfilesResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, responseTable)
-}
-
 func (suite *OcppV2TestSuite) TestReportChargingProfilesE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -62,9 +26,9 @@ func (suite *OcppV2TestSuite) TestReportChargingProfilesE2EMocked() {
 	chargingSchedule := types.ChargingSchedule{
 		ID:                     1,
 		StartSchedule:          types.NewDateTime(time.Now()),
-		Duration:               newInt(600),
+		Duration:               tests.NewInt(600),
 		ChargingRateUnit:       types.ChargingRateUnitWatts,
-		MinChargingRate:        newFloat(6.0),
+		MinChargingRate:        tests.NewFloat(6.0),
 		ChargingSchedulePeriod: []types.ChargingSchedulePeriod{types.NewChargingSchedulePeriod(0, 10.0)},
 	}
 	chargingProfile := types.ChargingProfile{
@@ -125,9 +89,9 @@ func (suite *OcppV2TestSuite) TestReportChargingProfilesInvalidEndpoint() {
 	tbc := false
 	chargingSchedule := types.ChargingSchedule{
 		StartSchedule:          types.NewDateTime(time.Now()),
-		Duration:               newInt(600),
+		Duration:               tests.NewInt(600),
 		ChargingRateUnit:       types.ChargingRateUnitWatts,
-		MinChargingRate:        newFloat(6.0),
+		MinChargingRate:        tests.NewFloat(6.0),
 		ChargingSchedulePeriod: []types.ChargingSchedulePeriod{types.NewChargingSchedulePeriod(0, 10.0)},
 	}
 	chargingProfile := types.ChargingProfile{

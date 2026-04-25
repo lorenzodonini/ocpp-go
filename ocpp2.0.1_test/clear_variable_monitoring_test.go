@@ -11,31 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestClearVariableMonitoringRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{diagnostics.ClearVariableMonitoringRequest{ID: []int{0, 2, 15}}, true},
-		{diagnostics.ClearVariableMonitoringRequest{ID: []int{0}}, true},
-		{diagnostics.ClearVariableMonitoringRequest{ID: []int{}}, false},
-		{diagnostics.ClearVariableMonitoringRequest{}, false},
-		{diagnostics.ClearVariableMonitoringRequest{ID: []int{-1}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestClearVariableMonitoringConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2, Status: diagnostics.ClearMonitoringStatusAccepted}}}, true},
-		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2}}}, false},
-		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{}}, false},
-		{diagnostics.ClearVariableMonitoringResponse{}, false},
-		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: -1, Status: diagnostics.ClearMonitoringStatusAccepted}}}, false},
-		{diagnostics.ClearVariableMonitoringResponse{ClearMonitoringResult: []diagnostics.ClearMonitoringResult{{ID: 2, Status: "invalidClearMonitoringStatus"}}}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestClearVariableMonitoringE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

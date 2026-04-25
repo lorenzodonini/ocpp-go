@@ -11,35 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetDisplayMessagesRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging, ID: []int{2, 3}}, true},
-		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging, ID: []int{}}, true},
-		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging}, true},
-		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront}, true},
-		{display.GetDisplayMessagesRequest{RequestID: 1, State: display.MessageStateCharging}, true},
-		{display.GetDisplayMessagesRequest{RequestID: 1}, true},
-		{display.GetDisplayMessagesRequest{}, true},
-		{display.GetDisplayMessagesRequest{RequestID: -1}, false},
-		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: "invalidMessagePriority", State: display.MessageStateCharging, ID: []int{2, 3}}, false},
-		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: "invalidMessageState", ID: []int{2, 3}}, false},
-		{display.GetDisplayMessagesRequest{RequestID: 1, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateCharging, ID: []int{-2, 3}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetDisplayMessagesConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{display.GetDisplayMessagesResponse{Status: display.MessageStatusAccepted}, true},
-		{display.GetDisplayMessagesResponse{Status: display.MessageStatusUnknown}, true},
-		{display.GetDisplayMessagesResponse{Status: "invalidMessageStatus"}, false},
-		{display.GetDisplayMessagesResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetDisplayMessagesE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

@@ -11,26 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestClearDisplayMessageRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{display.ClearDisplayRequest{ID: 42}, true},
-		{display.ClearDisplayRequest{}, true},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestClearDisplayMessageResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{display.ClearDisplayResponse{Status: display.ClearMessageStatusAccepted}, true},
-		{display.ClearDisplayResponse{Status: display.ClearMessageStatusUnknown}, true},
-		{display.ClearDisplayResponse{Status: "invalidClearMessageStatus"}, false},
-		{display.ClearDisplayResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestClearDisplayMessageE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

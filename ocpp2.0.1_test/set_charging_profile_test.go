@@ -13,36 +13,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestSetChargingProfileRequestValidation() {
-	t := suite.T()
-	schedule := types.NewChargingSchedule(1, types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 200.0))
-	chargingProfile := types.NewChargingProfile(
-		1,
-		0,
-		types.ChargingProfilePurposeChargingStationMaxProfile,
-		types.ChargingProfileKindAbsolute,
-		[]types.ChargingSchedule{*schedule})
-	var requestTable = []GenericTestEntry{
-		{smartcharging.SetChargingProfileRequest{EvseID: 1, ChargingProfile: chargingProfile}, true},
-		{smartcharging.SetChargingProfileRequest{ChargingProfile: chargingProfile}, true},
-		{smartcharging.SetChargingProfileRequest{}, false},
-		{smartcharging.SetChargingProfileRequest{EvseID: 1, ChargingProfile: types.NewChargingProfile(1, -1, types.ChargingProfilePurposeChargingStationMaxProfile, types.ChargingProfileKindAbsolute, []types.ChargingSchedule{*schedule})}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSetChargingProfileResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{smartcharging.SetChargingProfileResponse{Status: smartcharging.ChargingProfileStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{smartcharging.SetChargingProfileResponse{Status: smartcharging.ChargingProfileStatusAccepted}, true},
-		{smartcharging.SetChargingProfileResponse{}, false},
-		{smartcharging.SetChargingProfileResponse{Status: "invalidChargingProfileStatus"}, false},
-		{smartcharging.SetChargingProfileResponse{Status: smartcharging.ChargingProfileStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestSetChargingProfileE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

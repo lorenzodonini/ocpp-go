@@ -11,37 +11,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 )
 
-func (suite *OcppV2TestSuite) TestInstallCertificateRequestValidation() {
-	t := suite.T()
-	var testTable = []GenericTestEntry{
-		{iso15118.InstallCertificateRequest{CertificateType: types.V2GRootCertificate, Certificate: "0xdeadbeef"}, true},
-		{iso15118.InstallCertificateRequest{CertificateType: types.MORootCertificate, Certificate: "0xdeadbeef"}, true},
-		{iso15118.InstallCertificateRequest{CertificateType: types.CSOSubCA1, Certificate: "0xdeadbeef"}, true},
-		{iso15118.InstallCertificateRequest{CertificateType: types.CSOSubCA2, Certificate: "0xdeadbeef"}, true},
-		{iso15118.InstallCertificateRequest{CertificateType: types.CSMSRootCertificate, Certificate: "0xdeadbeef"}, true},
-		{iso15118.InstallCertificateRequest{CertificateType: types.ManufacturerRootCertificate, Certificate: "0xdeadbeef"}, true},
-		{iso15118.InstallCertificateRequest{CertificateType: types.ManufacturerRootCertificate}, false},
-		{iso15118.InstallCertificateRequest{Certificate: "0xdeadbeef"}, false},
-		{iso15118.InstallCertificateRequest{}, false},
-		{iso15118.InstallCertificateRequest{CertificateType: "invalidCertificateUse", Certificate: "0xdeadbeef"}, false},
-		{iso15118.InstallCertificateRequest{CertificateType: types.V2GRootCertificate, Certificate: newLongString(5501)}, false},
-	}
-	ExecuteGenericTestTable(t, testTable)
-}
-
-func (suite *OcppV2TestSuite) TestInstallCertificateConfirmationValidation() {
-	t := suite.T()
-	var testTable = []GenericTestEntry{
-		{iso15118.InstallCertificateResponse{Status: iso15118.CertificateStatusAccepted}, true},
-		{iso15118.InstallCertificateResponse{Status: iso15118.CertificateStatusRejected}, true},
-		{iso15118.InstallCertificateResponse{Status: iso15118.CertificateStatusFailed}, true},
-		{iso15118.InstallCertificateResponse{}, false},
-		{iso15118.InstallCertificateResponse{Status: "invalidInstallCertificateStatus"}, false},
-	}
-	ExecuteGenericTestTable(t, testTable)
-}
-
-// Test
 func (suite *OcppV2TestSuite) TestInstallCertificateE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

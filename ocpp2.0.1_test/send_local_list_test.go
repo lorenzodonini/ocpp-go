@@ -12,41 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestSendLocalListRequestValidation() {
-	t := suite.T()
-	authData := localauth.AuthorizationData{
-		IdToken: types.IdToken{
-			IdToken:        "token1",
-			Type:           types.IdTokenTypeKeyCode,
-			AdditionalInfo: nil,
-		},
-		IdTokenInfo: types.NewIdTokenInfo(types.AuthorizationStatusAccepted),
-	}
-	var requestTable = []GenericTestEntry{
-		{localauth.SendLocalListRequest{VersionNumber: 42, UpdateType: localauth.UpdateTypeDifferential, LocalAuthorizationList: []localauth.AuthorizationData{authData}}, true},
-		{localauth.SendLocalListRequest{VersionNumber: 42, UpdateType: localauth.UpdateTypeFull, LocalAuthorizationList: []localauth.AuthorizationData{authData}}, true},
-		{localauth.SendLocalListRequest{VersionNumber: 42, UpdateType: localauth.UpdateTypeDifferential, LocalAuthorizationList: []localauth.AuthorizationData{}}, true},
-		{localauth.SendLocalListRequest{VersionNumber: 42, UpdateType: localauth.UpdateTypeDifferential}, true},
-		{localauth.SendLocalListRequest{UpdateType: localauth.UpdateTypeDifferential}, true},
-		{localauth.SendLocalListRequest{}, false},
-		{localauth.SendLocalListRequest{VersionNumber: -1, UpdateType: localauth.UpdateTypeDifferential, LocalAuthorizationList: []localauth.AuthorizationData{authData}}, false},
-		{localauth.SendLocalListRequest{VersionNumber: 42, UpdateType: "invalidUpdateType", LocalAuthorizationList: []localauth.AuthorizationData{{IdToken: types.IdToken{IdToken: "tokenWithoutType"}}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSendLocalListResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{localauth.SendLocalListResponse{Status: localauth.SendLocalListStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{localauth.SendLocalListResponse{Status: localauth.SendLocalListStatusAccepted}, true},
-		{localauth.SendLocalListResponse{}, false},
-		{localauth.SendLocalListResponse{Status: "invalidStatus", StatusInfo: types.NewStatusInfo("200", "")}, false},
-		{localauth.SendLocalListResponse{Status: localauth.SendLocalListStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestSendLocalListE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

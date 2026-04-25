@@ -9,51 +9,19 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetMonitoringReportRequestValidation() {
-	t := suite.T()
-	componentVariables := []types.ComponentVariable{
-		{
-			Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}},
-			Variable:  types.Variable{Name: "variable1", Instance: "instance1"},
-		},
-	}
-	var requestTable = []GenericTestEntry{
-		{diagnostics.GetMonitoringReportRequest{RequestID: newInt(42), MonitoringCriteria: []diagnostics.MonitoringCriteriaType{diagnostics.MonitoringCriteriaThresholdMonitoring, diagnostics.MonitoringCriteriaDeltaMonitoring, diagnostics.MonitoringCriteriaPeriodicMonitoring}, ComponentVariable: componentVariables}, true},
-		{diagnostics.GetMonitoringReportRequest{RequestID: newInt(42), MonitoringCriteria: []diagnostics.MonitoringCriteriaType{}, ComponentVariable: componentVariables}, true},
-		{diagnostics.GetMonitoringReportRequest{RequestID: newInt(42), ComponentVariable: componentVariables}, true},
-		{diagnostics.GetMonitoringReportRequest{RequestID: newInt(42), ComponentVariable: []types.ComponentVariable{}}, true},
-		{diagnostics.GetMonitoringReportRequest{RequestID: newInt(42)}, true},
-		{diagnostics.GetMonitoringReportRequest{}, true},
-		{diagnostics.GetMonitoringReportRequest{RequestID: newInt(-1)}, false},
-		{diagnostics.GetMonitoringReportRequest{MonitoringCriteria: []diagnostics.MonitoringCriteriaType{diagnostics.MonitoringCriteriaThresholdMonitoring, diagnostics.MonitoringCriteriaDeltaMonitoring, diagnostics.MonitoringCriteriaPeriodicMonitoring, diagnostics.MonitoringCriteriaThresholdMonitoring}}, false},
-		{diagnostics.GetMonitoringReportRequest{MonitoringCriteria: []diagnostics.MonitoringCriteriaType{"invalidMonitoringCriteria"}}, false},
-		{diagnostics.GetMonitoringReportRequest{ComponentVariable: []types.ComponentVariable{{Variable: types.Variable{Name: "variable1", Instance: "instance1"}}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetMonitoringReportConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{diagnostics.GetMonitoringReportResponse{Status: types.GenericDeviceModelStatusAccepted}, true},
-		{diagnostics.GetMonitoringReportResponse{Status: "invalidDeviceModelStatus"}, false},
-		{diagnostics.GetMonitoringReportResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetMonitoringReportE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	requestID := newInt(42)
+	requestID := tests.NewInt(42)
 	monitoringCriteria := []diagnostics.MonitoringCriteriaType{diagnostics.MonitoringCriteriaThresholdMonitoring, diagnostics.MonitoringCriteriaPeriodicMonitoring}
 	componentVariable := types.ComponentVariable{
-		Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}},
+		Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: tests.NewInt(2)}},
 		Variable:  types.Variable{Name: "variable1", Instance: "instance1"},
 	}
 	componentVariables := []types.ComponentVariable{componentVariable}
@@ -106,10 +74,10 @@ func (suite *OcppV2TestSuite) TestGetMonitoringReportE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestGetMonitoringReportInvalidEndpoint() {
 	messageId := defaultMessageId
-	requestID := newInt(42)
+	requestID := tests.NewInt(42)
 	monitoringCriteria := []diagnostics.MonitoringCriteriaType{diagnostics.MonitoringCriteriaThresholdMonitoring, diagnostics.MonitoringCriteriaPeriodicMonitoring}
 	componentVariable := types.ComponentVariable{
-		Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}},
+		Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: tests.NewInt(2)}},
 		Variable:  types.Variable{Name: "variable1", Instance: "instance1"},
 	}
 	GetMonitoringReportRequest := diagnostics.NewGetMonitoringReportRequest()

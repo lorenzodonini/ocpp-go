@@ -4,35 +4,12 @@ import (
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestCancelReservationRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{reservation.CancelReservationRequest{ReservationID: 42}, true},
-		{reservation.CancelReservationRequest{}, true},
-		{reservation.CancelReservationRequest{ReservationID: -1}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestCancelReservationConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{reservation.CancelReservationResponse{Status: reservation.CancelReservationStatusAccepted, StatusInfo: types.NewStatusInfo("200", "ok")}, true},
-		{reservation.CancelReservationResponse{Status: reservation.CancelReservationStatusAccepted}, true},
-		{reservation.CancelReservationResponse{Status: "invalidCancelReservationStatus"}, false},
-		{reservation.CancelReservationResponse{}, false},
-		{reservation.CancelReservationResponse{Status: reservation.CancelReservationStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
 
 func (suite *OcppV2TestSuite) TestCancelReservationE2EMocked() {
 	t := suite.T()

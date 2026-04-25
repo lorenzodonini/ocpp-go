@@ -11,36 +11,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 )
 
-func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsRequestValidation() {
-	t := suite.T()
-	var testTable = []GenericTestEntry{
-		{iso15118.GetInstalledCertificateIdsRequest{CertificateTypes: []types.CertificateUse{types.V2GRootCertificate}}, true},
-		{iso15118.GetInstalledCertificateIdsRequest{CertificateTypes: []types.CertificateUse{types.MORootCertificate}}, true},
-		{iso15118.GetInstalledCertificateIdsRequest{CertificateTypes: []types.CertificateUse{types.CSOSubCA1}}, true},
-		{iso15118.GetInstalledCertificateIdsRequest{CertificateTypes: []types.CertificateUse{types.CSOSubCA2}}, true},
-		{iso15118.GetInstalledCertificateIdsRequest{CertificateTypes: []types.CertificateUse{types.CSMSRootCertificate}}, true},
-		{iso15118.GetInstalledCertificateIdsRequest{CertificateTypes: []types.CertificateUse{types.ManufacturerRootCertificate}}, true},
-		{iso15118.GetInstalledCertificateIdsRequest{}, true},
-		{iso15118.GetInstalledCertificateIdsRequest{CertificateTypes: []types.CertificateUse{"invalidCertificateUse"}}, false},
-	}
-	ExecuteGenericTestTable(t, testTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsConfirmationValidation() {
-	t := suite.T()
-	var testTable = []GenericTestEntry{
-		{iso15118.GetInstalledCertificateIdsResponse{Status: iso15118.GetInstalledCertificateStatusAccepted, CertificateHashDataChain: []types.CertificateHashDataChain{{CertificateType: types.CSMSRootCertificate, CertificateHashData: types.CertificateHashData{HashAlgorithm: types.SHA256, IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"}}}}, true},
-		{iso15118.GetInstalledCertificateIdsResponse{Status: iso15118.GetInstalledCertificateStatusNotFound, CertificateHashDataChain: []types.CertificateHashDataChain{{CertificateType: types.CSMSRootCertificate, CertificateHashData: types.CertificateHashData{HashAlgorithm: types.SHA256, IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"}}}}, true},
-		{iso15118.GetInstalledCertificateIdsResponse{Status: iso15118.GetInstalledCertificateStatusAccepted, CertificateHashDataChain: []types.CertificateHashDataChain{}}, true},
-		{iso15118.GetInstalledCertificateIdsResponse{Status: iso15118.GetInstalledCertificateStatusAccepted}, true},
-		{iso15118.GetInstalledCertificateIdsResponse{}, false},
-		{iso15118.GetInstalledCertificateIdsResponse{Status: "invalidGetInstalledCertificateStatus"}, false},
-		{iso15118.GetInstalledCertificateIdsResponse{Status: iso15118.GetInstalledCertificateStatusAccepted, CertificateHashDataChain: []types.CertificateHashDataChain{{CertificateType: types.CSMSRootCertificate, CertificateHashData: types.CertificateHashData{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "name0", IssuerKeyHash: "key0", SerialNumber: "serial0"}}}}, false},
-	}
-	ExecuteGenericTestTable(t, testTable)
-}
-
-// Test
 func (suite *OcppV2TestSuite) TestGetInstalledCertificateIdsE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

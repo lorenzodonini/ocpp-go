@@ -9,44 +9,10 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetChargingProfilesRequestValidation() {
-	t := suite.T()
-	validChargingProfileCriterion := smartcharging.ChargingProfileCriterion{
-		ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile,
-		StackLevel:             newInt(2),
-		ChargingProfileID:      []int{1, 2},
-		ChargingLimitSource:    []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS},
-	}
-	var requestTable = []GenericTestEntry{
-		{smartcharging.GetChargingProfilesRequest{RequestID: 42, EvseID: newInt(1), ChargingProfile: validChargingProfileCriterion}, true},
-		{smartcharging.GetChargingProfilesRequest{RequestID: 42, ChargingProfile: validChargingProfileCriterion}, true},
-		{smartcharging.GetChargingProfilesRequest{EvseID: newInt(1), ChargingProfile: validChargingProfileCriterion}, true},
-		{smartcharging.GetChargingProfilesRequest{ChargingProfile: validChargingProfileCriterion}, true},
-		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{}}, true},
-		{smartcharging.GetChargingProfilesRequest{}, true},
-		{smartcharging.GetChargingProfilesRequest{RequestID: 42, EvseID: newInt(-1), ChargingProfile: validChargingProfileCriterion}, false},
-		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: "invalidChargingProfilePurpose", StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS}}}, false},
-		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(-1), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS}}}, false},
-		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS, types.ChargingLimitSourceCSO, types.ChargingLimitSourceSO, types.ChargingLimitSourceOther, types.ChargingLimitSourceEMS}}}, false},
-		{smartcharging.GetChargingProfilesRequest{ChargingProfile: smartcharging.ChargingProfileCriterion{ChargingProfilePurpose: types.ChargingProfilePurposeTxDefaultProfile, StackLevel: newInt(2), ChargingProfileID: []int{1, 2}, ChargingLimitSource: []types.ChargingLimitSourceType{"invalidChargingLimitSource"}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetChargingProfilesConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{smartcharging.GetChargingProfilesResponse{Status: smartcharging.GetChargingProfileStatusAccepted}, true},
-		{smartcharging.GetChargingProfilesResponse{Status: smartcharging.GetChargingProfileStatusNoProfiles}, true},
-		{smartcharging.GetChargingProfilesResponse{Status: "invalidGetChargingProfilesStatus"}, false},
-		{smartcharging.GetChargingProfilesResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -56,7 +22,7 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesE2EMocked() {
 	evseID := 1
 	chargingProfileCriterion := smartcharging.ChargingProfileCriterion{
 		ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile,
-		StackLevel:             newInt(1),
+		StackLevel:             tests.NewInt(1),
 		ChargingProfileID:      []int{1, 2},
 		ChargingLimitSource:    []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS},
 	}
@@ -113,7 +79,7 @@ func (suite *OcppV2TestSuite) TestGetChargingProfilesInvalidEndpoint() {
 	evseID := 1
 	chargingProfileCriterion := smartcharging.ChargingProfileCriterion{
 		ChargingProfilePurpose: types.ChargingProfilePurposeChargingStationMaxProfile,
-		StackLevel:             newInt(1),
+		StackLevel:             tests.NewInt(1),
 		ChargingProfileID:      []int{1, 2},
 		ChargingLimitSource:    []types.ChargingLimitSourceType{types.ChargingLimitSourceEMS},
 	}

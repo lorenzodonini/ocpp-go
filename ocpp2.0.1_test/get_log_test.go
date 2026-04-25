@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lorenzodonini/ocpp-go/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -13,44 +14,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetLogRequestValidation() {
-	t := suite.T()
-	logParameters := diagnostics.LogParameters{
-		RemoteLocation:  "ftp://someurl/diagnostics/1",
-		OldestTimestamp: types.NewDateTime(time.Now().Add(-2 * time.Hour)),
-		LatestTimestamp: types.NewDateTime(time.Now()),
-	}
-	var requestTable = []GenericTestEntry{
-		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, RequestID: 1, Retries: newInt(5), RetryInterval: newInt(120), Log: logParameters}, true},
-		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, RequestID: 1, Retries: newInt(5), Log: logParameters}, true},
-		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, RequestID: 1, Log: logParameters}, true},
-		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, Log: logParameters}, true},
-		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics}, false},
-		{diagnostics.GetLogRequest{Log: logParameters}, false},
-		{diagnostics.GetLogRequest{}, false},
-		{diagnostics.GetLogRequest{LogType: "invalidLogType", RequestID: 1, Retries: newInt(5), RetryInterval: newInt(120), Log: logParameters}, false},
-		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, RequestID: -1, Retries: newInt(5), RetryInterval: newInt(120), Log: logParameters}, false},
-		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, RequestID: 1, Retries: newInt(-1), RetryInterval: newInt(120), Log: logParameters}, false},
-		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, RequestID: 1, Retries: newInt(5), RetryInterval: newInt(-1), Log: logParameters}, false},
-		{diagnostics.GetLogRequest{LogType: diagnostics.LogTypeDiagnostics, RequestID: 1, Retries: newInt(5), RetryInterval: newInt(120), Log: diagnostics.LogParameters{RemoteLocation: ".invalidUrl.", OldestTimestamp: nil, LatestTimestamp: nil}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetLogConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAccepted, Filename: "testFileName.log"}, true},
-		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAccepted}, true},
-		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusRejected}, true},
-		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAcceptedCanceled}, true},
-		{diagnostics.GetLogResponse{}, false},
-		{diagnostics.GetLogResponse{Status: "invalidLogStatus"}, false},
-		{diagnostics.GetLogResponse{Status: diagnostics.LogStatusAccepted, Filename: ">256............................................................................................................................................................................................................................................................."}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetLogE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -63,8 +26,8 @@ func (suite *OcppV2TestSuite) TestGetLogE2EMocked() {
 	}
 	logType := diagnostics.LogTypeDiagnostics
 	requestID := 42
-	retries := newInt(5)
-	retryInterval := newInt(120)
+	retries := tests.NewInt(5)
+	retryInterval := tests.NewInt(120)
 	status := diagnostics.LogStatusAccepted
 	filename := "someFileName.log"
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"logType":"%v","requestId":%v,"retries":%v,"retryInterval":%v,"log":{"remoteLocation":"%v","oldestTimestamp":"%v","latestTimestamp":"%v"}}]`,
@@ -118,8 +81,8 @@ func (suite *OcppV2TestSuite) TestGetLogInvalidEndpoint() {
 	}
 	logType := diagnostics.LogTypeDiagnostics
 	requestID := 42
-	retries := newInt(5)
-	retryInterval := newInt(120)
+	retries := tests.NewInt(5)
+	retryInterval := tests.NewInt(120)
 	getLogRequest := diagnostics.NewGetLogRequest(logType, requestID, logParameters)
 	getLogRequest.Retries = retries
 	getLogRequest.RetryInterval = retryInterval

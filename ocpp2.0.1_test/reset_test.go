@@ -9,43 +9,17 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestResetRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{provisioning.ResetRequest{Type: provisioning.ResetTypeImmediate, EvseID: newInt(42)}, true},
-		{provisioning.ResetRequest{Type: provisioning.ResetTypeOnIdle, EvseID: newInt(42)}, true},
-		{provisioning.ResetRequest{Type: provisioning.ResetTypeImmediate}, true},
-		{provisioning.ResetRequest{}, false},
-		{provisioning.ResetRequest{Type: provisioning.ResetTypeImmediate, EvseID: newInt(-1)}, false},
-		{provisioning.ResetRequest{Type: "invalidResetType", EvseID: newInt(42)}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestResetResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{provisioning.ResetResponse{Status: provisioning.ResetStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{provisioning.ResetResponse{Status: provisioning.ResetStatusRejected, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{provisioning.ResetResponse{Status: provisioning.ResetStatusScheduled, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{provisioning.ResetResponse{Status: provisioning.ResetStatusAccepted}, true},
-		{provisioning.ResetResponse{}, false},
-		{provisioning.ResetResponse{Status: provisioning.ResetStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
-		{provisioning.ResetResponse{Status: "invalidResetStatus", StatusInfo: types.NewStatusInfo("200", "")}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestResetE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	resetType := provisioning.ResetTypeImmediate
-	evseID := newInt(42)
+	evseID := tests.NewInt(42)
 	status := provisioning.ResetStatusAccepted
 	statusInfo := types.NewStatusInfo("200", "")
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"type":"%v","evseId":%v}]`,
@@ -87,7 +61,7 @@ func (suite *OcppV2TestSuite) TestResetE2EMocked() {
 func (suite *OcppV2TestSuite) TestResetInvalidEndpoint() {
 	messageId := defaultMessageId
 	resetType := provisioning.ResetTypeImmediate
-	evseID := newInt(42)
+	evseID := tests.NewInt(42)
 	resetRequest := provisioning.NewResetRequest(resetType)
 	resetRequest.EvseID = evseID
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"type":"%v","evseId":%v}]`,

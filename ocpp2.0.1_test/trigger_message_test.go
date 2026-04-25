@@ -12,30 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestTriggerMessageRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{remotecontrol.TriggerMessageRequest{RequestedMessage: remotecontrol.MessageTriggerStatusNotification, Evse: &types.EVSE{ID: 1}}, true},
-		{remotecontrol.TriggerMessageRequest{RequestedMessage: remotecontrol.MessageTriggerStatusNotification}, true},
-		{remotecontrol.TriggerMessageRequest{}, false},
-		{remotecontrol.TriggerMessageRequest{RequestedMessage: "invalidMessageTrigger", Evse: &types.EVSE{ID: 1}}, false},
-		{remotecontrol.TriggerMessageRequest{RequestedMessage: remotecontrol.MessageTriggerStatusNotification, Evse: &types.EVSE{ID: -1}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestTriggerMessageResponseValidation() {
-	t := suite.T()
-	var responseTable = []GenericTestEntry{
-		{remotecontrol.TriggerMessageResponse{Status: remotecontrol.TriggerMessageStatusAccepted, StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, true},
-		{remotecontrol.TriggerMessageResponse{Status: remotecontrol.TriggerMessageStatusAccepted}, true},
-		{remotecontrol.TriggerMessageResponse{}, false},
-		{remotecontrol.TriggerMessageResponse{Status: "invalidTriggerMessageStatus", StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, false},
-		{remotecontrol.TriggerMessageResponse{Status: remotecontrol.TriggerMessageStatusAccepted, StatusInfo: &types.StatusInfo{}}, false},
-	}
-	ExecuteGenericTestTable(t, responseTable)
-}
-
 func (suite *OcppV2TestSuite) TestTriggerMessageE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

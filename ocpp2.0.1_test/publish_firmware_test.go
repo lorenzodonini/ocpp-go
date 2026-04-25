@@ -9,51 +9,20 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestPublishFirmwareRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{firmware.NewPublishFirmwareRequest("https://someurl", "deadbeef", 42), true},
-		{firmware.PublishFirmwareRequest{Location: "http://someurl", Retries: newInt(5), Checksum: "deadbeef", RequestID: 42, RetryInterval: newInt(300)}, true},
-		{firmware.PublishFirmwareRequest{Location: "http://someurl", Retries: newInt(5), Checksum: "deadbeef", RequestID: 42}, true},
-		{firmware.PublishFirmwareRequest{Location: "http://someurl", Checksum: "deadbeef", RequestID: 42}, true},
-		{firmware.PublishFirmwareRequest{Location: "http://someurl", Checksum: "deadbeef"}, true},
-		{firmware.PublishFirmwareRequest{Location: "http://someurl"}, false},
-		{firmware.PublishFirmwareRequest{Checksum: "deadbeef"}, false},
-		{firmware.PublishFirmwareRequest{}, false},
-		{firmware.PublishFirmwareRequest{Location: "http://someurl", Retries: newInt(5), Checksum: "deadbeef", RequestID: 42, RetryInterval: newInt(-1)}, false},
-		{firmware.PublishFirmwareRequest{Location: "http://someurl", Retries: newInt(5), Checksum: "deadbeef", RequestID: -1, RetryInterval: newInt(300)}, false},
-		{firmware.PublishFirmwareRequest{Location: "http://someurl", Retries: newInt(5), Checksum: ">32..............................", RequestID: 42, RetryInterval: newInt(300)}, false},
-		{firmware.PublishFirmwareRequest{Location: "http://someurl", Retries: newInt(-1), Checksum: "deadbeef", RequestID: 42, RetryInterval: newInt(300)}, false},
-		{firmware.PublishFirmwareRequest{Location: ">512.............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", Retries: newInt(5), Checksum: "deadbeef", RequestID: 42, RetryInterval: newInt(300)}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestPublishFirmwareResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{firmware.PublishFirmwareResponse{Status: types.GenericStatusAccepted, StatusInfo: &types.StatusInfo{ReasonCode: "ok", AdditionalInfo: "someInfo"}}, true},
-		{firmware.PublishFirmwareResponse{Status: types.GenericStatusAccepted}, true},
-		{firmware.PublishFirmwareResponse{}, false},
-		{firmware.PublishFirmwareResponse{Status: "invalidStatus"}, false},
-		{firmware.PublishFirmwareResponse{Status: types.GenericStatusAccepted, StatusInfo: &types.StatusInfo{}}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestPublishFirmwareE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	location := "http://someUrl"
-	retries := newInt(5)
+	retries := tests.NewInt(5)
 	checksum := "deadc0d3"
 	requestID := 42
-	retryInterval := newInt(300)
+	retryInterval := tests.NewInt(300)
 	status := types.GenericStatusAccepted
 	statusInfo := types.StatusInfo{ReasonCode: "ok", AdditionalInfo: "someInfo"}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"location":"%v","retries":%v,"checksum":"%v","requestId":%v,"retryInterval":%v}]`,
@@ -102,10 +71,10 @@ func (suite *OcppV2TestSuite) TestPublishFirmwareE2EMocked() {
 func (suite *OcppV2TestSuite) TestPublishFirmwareInvalidEndpoint() {
 	messageId := defaultMessageId
 	location := "http://someUrl"
-	retries := newInt(5)
+	retries := tests.NewInt(5)
 	checksum := "deadc0d3"
 	requestID := 42
-	retryInterval := newInt(300)
+	retryInterval := tests.NewInt(300)
 	request := firmware.NewPublishFirmwareRequest(location, checksum, requestID)
 	request.Retries = retries
 	request.RetryInterval = retryInterval

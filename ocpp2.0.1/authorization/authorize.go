@@ -28,7 +28,9 @@ const (
 func isValidAuthorizeCertificateStatus(fl validator.FieldLevel) bool {
 	status := AuthorizeCertificateStatus(fl.Field().String())
 	switch status {
-	case CertificateStatusAccepted, CertificateStatusCertChainError, CertificateStatusCertificateExpired, CertificateStatusSignatureError, CertificateStatusNoCertificateAvailable, CertificateStatusCertificateRevoked, CertificateStatusContractCancelled:
+	case CertificateStatusAccepted, CertificateStatusCertChainError, CertificateStatusCertificateExpired,
+		CertificateStatusSignatureError, CertificateStatusNoCertificateAvailable, CertificateStatusCertificateRevoked,
+		CertificateStatusContractCancelled:
 		return true
 	default:
 		return false

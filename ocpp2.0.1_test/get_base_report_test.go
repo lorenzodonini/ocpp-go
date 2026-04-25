@@ -12,28 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetBaseReportRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{provisioning.GetBaseReportRequest{RequestID: 42, ReportBase: provisioning.ReportTypeConfigurationInventory}, true},
-		{provisioning.GetBaseReportRequest{ReportBase: provisioning.ReportTypeConfigurationInventory}, true},
-		{provisioning.GetBaseReportRequest{RequestID: 42}, false},
-		{provisioning.GetBaseReportRequest{}, false},
-		{provisioning.GetBaseReportRequest{RequestID: 42, ReportBase: "invalidReportType"}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetBaseReportConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{provisioning.GetBaseReportResponse{Status: types.GenericDeviceModelStatusAccepted}, true},
-		{provisioning.GetBaseReportResponse{Status: "invalidDeviceModelStatus"}, false},
-		{provisioning.GetBaseReportResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetBaseReportE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

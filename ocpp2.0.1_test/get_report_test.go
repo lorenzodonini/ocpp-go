@@ -9,51 +9,19 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetReportRequestValidation() {
-	t := suite.T()
-	componentVariables := []types.ComponentVariable{
-		{
-			Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}},
-			Variable:  types.Variable{Name: "variable1", Instance: "instance1"},
-		},
-	}
-	var requestTable = []GenericTestEntry{
-		{provisioning.GetReportRequest{RequestID: newInt(42), ComponentCriteria: []provisioning.ComponentCriterion{provisioning.ComponentCriterionActive, provisioning.ComponentCriterionEnabled, provisioning.ComponentCriterionAvailable, provisioning.ComponentCriterionProblem}, ComponentVariable: componentVariables}, true},
-		{provisioning.GetReportRequest{RequestID: newInt(42), ComponentCriteria: []provisioning.ComponentCriterion{provisioning.ComponentCriterionActive, provisioning.ComponentCriterionEnabled, provisioning.ComponentCriterionAvailable, provisioning.ComponentCriterionProblem}, ComponentVariable: []types.ComponentVariable{}}, true},
-		{provisioning.GetReportRequest{RequestID: newInt(42), ComponentCriteria: []provisioning.ComponentCriterion{provisioning.ComponentCriterionActive, provisioning.ComponentCriterionEnabled, provisioning.ComponentCriterionAvailable, provisioning.ComponentCriterionProblem}}, true},
-		{provisioning.GetReportRequest{RequestID: newInt(42), ComponentCriteria: []provisioning.ComponentCriterion{}}, true},
-		{provisioning.GetReportRequest{RequestID: newInt(42)}, true},
-		{provisioning.GetReportRequest{}, true},
-		{provisioning.GetReportRequest{RequestID: newInt(-1)}, false},
-		{provisioning.GetReportRequest{ComponentCriteria: []provisioning.ComponentCriterion{"invalidComponentCriterion"}}, false},
-		{provisioning.GetReportRequest{ComponentCriteria: []provisioning.ComponentCriterion{provisioning.ComponentCriterionActive, provisioning.ComponentCriterionEnabled, provisioning.ComponentCriterionAvailable, provisioning.ComponentCriterionProblem, provisioning.ComponentCriterionActive}}, false},
-		{provisioning.GetReportRequest{ComponentVariable: []types.ComponentVariable{{Variable: types.Variable{Name: "variable1", Instance: "instance1"}}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetReportConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{provisioning.GetReportResponse{Status: types.GenericDeviceModelStatusAccepted}, true},
-		{provisioning.GetReportResponse{Status: "invalidDeviceModelStatus"}, false},
-		{provisioning.GetReportResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetReportE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	requestID := newInt(42)
+	requestID := tests.NewInt(42)
 	componentCriteria := []provisioning.ComponentCriterion{provisioning.ComponentCriterionActive, provisioning.ComponentCriterionAvailable}
 	componentVariable := types.ComponentVariable{
-		Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}},
+		Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: tests.NewInt(2)}},
 		Variable:  types.Variable{Name: "variable1", Instance: "instance1"},
 	}
 	componentVariables := []types.ComponentVariable{componentVariable}
@@ -107,10 +75,10 @@ func (suite *OcppV2TestSuite) TestGetReportE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestGetReportInvalidEndpoint() {
 	messageId := defaultMessageId
-	requestID := newInt(42)
+	requestID := tests.NewInt(42)
 	componentCriteria := []provisioning.ComponentCriterion{provisioning.ComponentCriterionActive, provisioning.ComponentCriterionAvailable}
 	componentVariable := types.ComponentVariable{
-		Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}},
+		Component: types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: tests.NewInt(2)}},
 		Variable:  types.Variable{Name: "variable1", Instance: "instance1"},
 	}
 	componentVariables := []types.ComponentVariable{componentVariable}

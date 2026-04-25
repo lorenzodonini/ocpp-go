@@ -9,90 +9,10 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-
-func (suite *OcppV2TestSuite) TestVPNTypeValidation() {
-	var requestTable = []GenericTestEntry{
-		{provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}, true},
-		{provisioning.VPN{Server: "someServer", User: "user1", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}, true},
-		{provisioning.VPN{Server: "someServer", User: "user1", Password: "deadc0de", Key: "deadbeef"}, false},
-		{provisioning.VPN{Server: "someServer", User: "user1", Password: "deadc0de", Type: provisioning.VPNTypeIPSec}, false},
-		{provisioning.VPN{Server: "someServer", User: "user1", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}, false},
-		{provisioning.VPN{Server: "someServer", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}, false},
-		{provisioning.VPN{User: "user1", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}, false},
-		{provisioning.VPN{}, false},
-		{provisioning.VPN{Server: ">512.............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", User: "user1", Group: "group1", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}, false},
-		{provisioning.VPN{Server: "someServer", User: ">20..................", Group: "group1", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}, false},
-		{provisioning.VPN{Server: "someServer", User: "user1", Group: ">20..................", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}, false},
-		{provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: ">20..................", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}, false},
-		{provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: "deadc0de", Key: ">255............................................................................................................................................................................................................................................................", Type: provisioning.VPNTypeIPSec}, false},
-		{provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: "deadc0de", Key: "deadbeef", Type: "invalidType"}, false},
-	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestAPNTypeValidation() {
-	var requestTable = []GenericTestEntry{
-		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: true, APNAuthentication: provisioning.APNAuthenticationAuto}, true},
-		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", APNAuthentication: provisioning.APNAuthenticationAuto}, true},
-		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), APNAuthentication: provisioning.APNAuthenticationAuto}, true},
-		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", APNAuthentication: provisioning.APNAuthenticationAuto}, true},
-		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNAuthentication: provisioning.APNAuthenticationAuto}, true},
-		{provisioning.APN{APN: "internet.t-mobile", APNAuthentication: provisioning.APNAuthenticationAuto}, true},
-		{provisioning.APN{APN: "internet.t-mobile"}, false},
-		{provisioning.APN{APNAuthentication: provisioning.APNAuthenticationAuto}, false},
-		{provisioning.APN{APN: ">512.............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: true, APNAuthentication: provisioning.APNAuthenticationAuto}, false},
-		{provisioning.APN{APN: "internet.t-mobile", APNUsername: ">20..................", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: true, APNAuthentication: provisioning.APNAuthenticationAuto}, false},
-		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: ">20..................", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: true, APNAuthentication: provisioning.APNAuthenticationAuto}, false},
-		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(-1), PreferredNetwork: ">6.....", UseOnlyPreferredNetwork: true, APNAuthentication: provisioning.APNAuthenticationAuto}, false},
-		{provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: true, APNAuthentication: "invalidApnAuthentication"}, false},
-	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSetNetworkProfileRequestValidation() {
-	t := suite.T()
-	vpn := &provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}
-	apn := &provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: true, APNAuthentication: provisioning.APNAuthenticationAuto}
-	var requestTable = []GenericTestEntry{
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: vpn, APN: apn}}, true},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: vpn}}, true},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0}}, true},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, OCPPInterface: provisioning.OCPPInterfaceWired0}}, true},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", OCPPInterface: provisioning.OCPPInterfaceWired0}}, true},
-		{provisioning.SetNetworkProfileRequest{ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", OCPPInterface: provisioning.OCPPInterfaceWired0}}, true},
-		{provisioning.SetNetworkProfileRequest{ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767"}}, false},
-		{provisioning.SetNetworkProfileRequest{ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, OCPPInterface: provisioning.OCPPInterfaceWired0}}, false},
-		{provisioning.SetNetworkProfileRequest{ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, CSMSUrl: "http://someUrl:8767", OCPPInterface: provisioning.OCPPInterfaceWired0}}, false},
-		{provisioning.SetNetworkProfileRequest{ConnectionData: provisioning.NetworkConnectionProfile{OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", OCPPInterface: provisioning.OCPPInterfaceWired0}}, false},
-		{provisioning.SetNetworkProfileRequest{}, false},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: -1, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: vpn, APN: apn}}, false},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: "OCPP01", OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: vpn, APN: apn}}, false},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: "ProtoBuf", CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: vpn, APN: apn}}, false},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: ">512.............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: vpn, APN: apn}}, false},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: -2, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: vpn, APN: apn}}, false},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: "invalidInterface", VPN: vpn, APN: apn}}, false},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: &provisioning.VPN{}, APN: apn}}, false},
-		{provisioning.SetNetworkProfileRequest{ConfigurationSlot: 2, ConnectionData: provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: vpn, APN: &provisioning.APN{}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSetNetworkProfileResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{provisioning.SetNetworkProfileResponse{Status: provisioning.SetNetworkProfileStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{provisioning.SetNetworkProfileResponse{Status: provisioning.SetNetworkProfileStatusRejected, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{provisioning.SetNetworkProfileResponse{Status: provisioning.SetNetworkProfileStatusFailed, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{provisioning.SetNetworkProfileResponse{Status: provisioning.SetNetworkProfileStatusAccepted}, true},
-		{provisioning.SetNetworkProfileResponse{}, false},
-		{provisioning.SetNetworkProfileResponse{Status: provisioning.SetNetworkProfileStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
-		{provisioning.SetNetworkProfileResponse{Status: "invalidSetNetworkProfileStatus", StatusInfo: types.NewStatusInfo("200", "")}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
 
 func (suite *OcppV2TestSuite) TestSetNetworkProfileE2EMocked() {
 	t := suite.T()
@@ -101,7 +21,7 @@ func (suite *OcppV2TestSuite) TestSetNetworkProfileE2EMocked() {
 	wsUrl := "someUrl"
 	configurationSlot := 2
 	vpn := provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}
-	apn := provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: false, APNAuthentication: provisioning.APNAuthenticationAuto}
+	apn := provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: tests.NewInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: false, APNAuthentication: provisioning.APNAuthenticationAuto}
 	data := provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: &vpn, APN: &apn}
 	status := provisioning.SetNetworkProfileStatusAccepted
 	statusInfo := types.NewStatusInfo("200", "")
@@ -163,7 +83,7 @@ func (suite *OcppV2TestSuite) TestSetNetworkProfileInvalidEndpoint() {
 	messageId := defaultMessageId
 	configurationSlot := 2
 	vpn := provisioning.VPN{Server: "someServer", User: "user1", Group: "group1", Password: "deadc0de", Key: "deadbeef", Type: provisioning.VPNTypeIPSec}
-	apn := provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: newInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: false, APNAuthentication: provisioning.APNAuthenticationAuto}
+	apn := provisioning.APN{APN: "internet.t-mobile", APNUsername: "user1", APNPassword: "deadc0de", SimPin: tests.NewInt(1234), PreferredNetwork: "26201", UseOnlyPreferredNetwork: false, APNAuthentication: provisioning.APNAuthenticationAuto}
 	data := provisioning.NetworkConnectionProfile{OCPPVersion: provisioning.OCPPVersion20, OCPPTransport: provisioning.OCPPTransportJSON, CSMSUrl: "http://someUrl:8767", MessageTimeout: 30, SecurityProfile: 1, OCPPInterface: provisioning.OCPPInterfaceWired0, VPN: &vpn, APN: &apn}
 	request := provisioning.NewSetNetworkProfileRequest(configurationSlot, data)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"configurationSlot":%v,"connectionData":{"ocppVersion":"%v","ocppTransport":"%v","ocppCsmsUrl":"%v","messageTimeout":%v,"securityProfile":%v,"ocppInterface":"%v","vpn":{"server":"%v","user":"%v","group":"%v","password":"%v","key":"%v","type":"%v"},"apn":{"apn":"%v","apnUserName":"%v","apnPassword":"%v","simPin":%v,"preferredNetwork":"%v","apnAuthentication":"%v"}}}]`,

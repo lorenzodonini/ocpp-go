@@ -11,26 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestCostUpdatedRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{tariffcost.CostUpdatedRequest{TotalCost: 24.6, TransactionID: "1234"}, true},
-		{tariffcost.CostUpdatedRequest{TotalCost: 24.6}, false},
-		{tariffcost.CostUpdatedRequest{TransactionID: "1234"}, false},
-		{tariffcost.CostUpdatedRequest{}, false},
-		{tariffcost.CostUpdatedRequest{TotalCost: 24.6, TransactionID: ">36.................................."}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestCostUpdatedConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{tariffcost.CostUpdatedResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestCostUpdatedE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

@@ -11,32 +11,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 )
 
-func (suite *OcppV2TestSuite) TestCertificateSignedRequestValidation() {
-	t := suite.T()
-	var testTable = []GenericTestEntry{
-		{security.CertificateSignedRequest{CertificateChain: "sampleCert", TypeOfCertificate: types.ChargingStationCert}, true},
-		{security.CertificateSignedRequest{CertificateChain: "sampleCert"}, true},
-		{security.CertificateSignedRequest{CertificateChain: ""}, false},
-		{security.CertificateSignedRequest{}, false},
-		{security.CertificateSignedRequest{CertificateChain: newLongString(100001)}, false},
-		{security.CertificateSignedRequest{CertificateChain: "sampleCert", TypeOfCertificate: "invalidCertificateType"}, false},
-	}
-	ExecuteGenericTestTable(t, testTable)
-}
-
-func (suite *OcppV2TestSuite) TestCertificateSignedConfirmationValidation() {
-	t := suite.T()
-	var testTable = []GenericTestEntry{
-		{security.CertificateSignedResponse{Status: security.CertificateSignedStatusAccepted, StatusInfo: types.NewStatusInfo("200", "ok")}, true},
-		{security.CertificateSignedResponse{Status: security.CertificateSignedStatusAccepted}, true},
-		{security.CertificateSignedResponse{Status: security.CertificateSignedStatusRejected}, true},
-		{security.CertificateSignedResponse{Status: "invalidCertificateSignedStatus"}, false},
-		{security.CertificateSignedResponse{Status: security.CertificateSignedStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
-		{security.CertificateSignedResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, testTable)
-}
-
 // Test
 func (suite *OcppV2TestSuite) TestCertificateSignedE2EMocked() {
 	t := suite.T()

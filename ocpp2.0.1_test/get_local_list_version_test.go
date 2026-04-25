@@ -11,25 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetLocalListVersionRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{localauth.GetLocalListVersionRequest{}, true},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetLocalListVersionConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{localauth.GetLocalListVersionResponse{VersionNumber: 1}, true},
-		{localauth.GetLocalListVersionResponse{VersionNumber: 0}, true},
-		{localauth.GetLocalListVersionResponse{}, true},
-		{localauth.GetLocalListVersionResponse{VersionNumber: -1}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetLocalListVersionE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

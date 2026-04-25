@@ -9,29 +9,10 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Tests
-func (suite *OcppV2TestSuite) TestClearedChargingLimitRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{smartcharging.ClearedChargingLimitRequest{ChargingLimitSource: types.ChargingLimitSourceEMS, EvseID: newInt(0)}, true},
-		{smartcharging.ClearedChargingLimitRequest{ChargingLimitSource: types.ChargingLimitSourceEMS}, true},
-		{smartcharging.ClearedChargingLimitRequest{}, false},
-		{smartcharging.ClearedChargingLimitRequest{ChargingLimitSource: types.ChargingLimitSourceEMS, EvseID: newInt(-1)}, false},
-		{smartcharging.ClearedChargingLimitRequest{ChargingLimitSource: "invalidChargingLimitSource"}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestClearedChargingLimitConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{smartcharging.ClearedChargingLimitResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestClearedChargingLimitE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -59,7 +40,7 @@ func (suite *OcppV2TestSuite) TestClearedChargingLimitE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	confirmation, err := suite.chargingStation.ClearedChargingLimit(chargingLimitSource, func(request *smartcharging.ClearedChargingLimitRequest) {
-		request.EvseID = newInt(evseID)
+		request.EvseID = tests.NewInt(evseID)
 	})
 	require.Nil(t, err)
 	require.NotNil(t, confirmation)
@@ -70,7 +51,7 @@ func (suite *OcppV2TestSuite) TestClearedChargingLimitInvalidEndpoint() {
 	chargingLimitSource := types.ChargingLimitSourceEMS
 	evseID := 42
 	clearedChargingLimitRequest := smartcharging.NewClearedChargingLimitRequest(chargingLimitSource)
-	clearedChargingLimitRequest.EvseID = newInt(evseID)
+	clearedChargingLimitRequest.EvseID = tests.NewInt(evseID)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"chargingLimitSource":"%v","evseId":%v}]`, messageId, smartcharging.ClearedChargingLimitFeatureName, chargingLimitSource, evseID)
 	testUnsupportedRequestFromCentralSystem(suite, clearedChargingLimitRequest, requestJson, messageId)
 }

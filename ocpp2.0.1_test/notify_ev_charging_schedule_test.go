@@ -10,42 +10,8 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
-
-func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleRequestValidation() {
-	t := suite.T()
-	chargingSchedule := types.ChargingSchedule{
-		StartSchedule:          types.NewDateTime(time.Now()),
-		Duration:               newInt(600),
-		ChargingRateUnit:       types.ChargingRateUnitWatts,
-		MinChargingRate:        newFloat(6.0),
-		ChargingSchedulePeriod: []types.ChargingSchedulePeriod{types.NewChargingSchedulePeriod(0, 10.0)},
-	}
-	var requestTable = []GenericTestEntry{
-		// {ChargingRateUnit: "invalidStruct"}
-		{smartcharging.NotifyEVChargingScheduleRequest{TimeBase: types.NewDateTime(time.Now()), EvseID: 1, ChargingSchedule: chargingSchedule}, true},
-		{smartcharging.NotifyEVChargingScheduleRequest{TimeBase: types.NewDateTime(time.Now()), EvseID: 1}, false},
-		{smartcharging.NotifyEVChargingScheduleRequest{TimeBase: types.NewDateTime(time.Now()), ChargingSchedule: chargingSchedule}, false},
-		{smartcharging.NotifyEVChargingScheduleRequest{EvseID: 1}, false},
-		{smartcharging.NotifyEVChargingScheduleRequest{}, false},
-		{smartcharging.NotifyEVChargingScheduleRequest{TimeBase: types.NewDateTime(time.Now()), EvseID: -1, ChargingSchedule: chargingSchedule}, false},
-		{smartcharging.NotifyEVChargingScheduleRequest{TimeBase: types.NewDateTime(time.Now()), EvseID: -1, ChargingSchedule: types.ChargingSchedule{ChargingRateUnit: "invalidStruct"}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleResponseValidation() {
-	t := suite.T()
-	var responseTable = []GenericTestEntry{
-		{smartcharging.NotifyEVChargingScheduleResponse{Status: types.GenericStatusAccepted, StatusInfo: types.NewStatusInfo("ok", "someInfo")}, true},
-		{smartcharging.NotifyEVChargingScheduleResponse{Status: types.GenericStatusRejected, StatusInfo: types.NewStatusInfo("ok", "someInfo")}, true},
-		{smartcharging.NotifyEVChargingScheduleResponse{Status: types.GenericStatusAccepted}, true},
-		{smartcharging.NotifyEVChargingScheduleResponse{}, false},
-		{smartcharging.NotifyEVChargingScheduleResponse{Status: "invalidStatus"}, false},
-		{smartcharging.NotifyEVChargingScheduleResponse{Status: types.GenericStatusAccepted, StatusInfo: types.NewStatusInfo("", "invalidStatusInfo")}, false},
-	}
-	ExecuteGenericTestTable(t, responseTable)
-}
 
 func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleE2EMocked() {
 	t := suite.T()
@@ -57,9 +23,9 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleE2EMocked() {
 	chargingSchedule := types.ChargingSchedule{
 		ID:                     1,
 		StartSchedule:          types.NewDateTime(time.Now()),
-		Duration:               newInt(600),
+		Duration:               tests.NewInt(600),
 		ChargingRateUnit:       types.ChargingRateUnitWatts,
-		MinChargingRate:        newFloat(6.0),
+		MinChargingRate:        tests.NewFloat(6.0),
 		ChargingSchedulePeriod: []types.ChargingSchedulePeriod{types.NewChargingSchedulePeriod(0, 10.0)},
 	}
 	status := types.GenericStatusAccepted
@@ -110,9 +76,9 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleInvalidEndpoint() {
 	evseID := 42
 	chargingSchedule := types.ChargingSchedule{
 		StartSchedule:          types.NewDateTime(time.Now()),
-		Duration:               newInt(600),
+		Duration:               tests.NewInt(600),
 		ChargingRateUnit:       types.ChargingRateUnitWatts,
-		MinChargingRate:        newFloat(6.0),
+		MinChargingRate:        tests.NewFloat(6.0),
 		ChargingSchedulePeriod: []types.ChargingSchedulePeriod{types.NewChargingSchedulePeriod(0, 10.0)},
 	}
 	notifyEVChargingScheduleRequest := smartcharging.NewNotifyEVChargingScheduleRequest(timeBase, evseID, chargingSchedule)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -12,58 +13,13 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestSetVariableMonitoringRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{ID: newInt(2), Transaction: true, Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{Transaction: true, Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{Type: diagnostics.MonitorUpperThreshold, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, false},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{Type: diagnostics.MonitorUpperThreshold, Variable: types.Variable{Name: "variable1"}}}}, false},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{Type: diagnostics.MonitorUpperThreshold, Component: types.Component{Name: "component1"}}}}, false},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{}}}, false},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{}}, false},
-		{diagnostics.SetVariableMonitoringRequest{}, false},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{ID: newInt(2), Transaction: true, Value: 42.0, Type: "invalidType", Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, false},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{ID: newInt(2), Transaction: true, Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: -1, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, false},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{ID: newInt(2), Transaction: true, Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: 10, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, false},
-		{diagnostics.SetVariableMonitoringRequest{MonitoringData: []diagnostics.SetMonitoringData{{ID: newInt(2), Transaction: true, Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{}, Variable: types.Variable{}}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSetVariableMonitoringResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{ID: newInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, StatusInfo: types.NewStatusInfo("200", "")}}}, true},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{ID: newInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Component: types.Component{Name: "component1"}}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Variable: types.Variable{Name: "variable1"}}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{Status: diagnostics.SetMonitoringStatusAccepted, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{Type: diagnostics.MonitorUpperThreshold, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{ID: newInt(2), Status: "invalidStatus", Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, StatusInfo: types.NewStatusInfo("200", "")}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{ID: newInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: "invalidType", Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, StatusInfo: types.NewStatusInfo("200", "")}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{ID: newInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: -1, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, StatusInfo: types.NewStatusInfo("200", "")}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{ID: newInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: 10, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, StatusInfo: types.NewStatusInfo("200", "")}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{ID: newInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: ""}, Variable: types.Variable{Name: "variable1"}, StatusInfo: types.NewStatusInfo("200", "")}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{ID: newInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: ""}, StatusInfo: types.NewStatusInfo("200", "")}}}, false},
-		{diagnostics.SetVariableMonitoringResponse{MonitoringResult: []diagnostics.SetMonitoringResult{{ID: newInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, StatusInfo: types.NewStatusInfo("", "")}}}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestSetVariableMonitoringE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	monitoringData := diagnostics.SetMonitoringData{ID: newInt(2), Transaction: false, Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}
-	monitoringResult := diagnostics.SetMonitoringResult{ID: newInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, StatusInfo: types.NewStatusInfo("200", "")}
+	monitoringData := diagnostics.SetMonitoringData{ID: tests.NewInt(2), Transaction: false, Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}
+	monitoringResult := diagnostics.SetMonitoringResult{ID: tests.NewInt(2), Status: diagnostics.SetMonitoringStatusAccepted, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, StatusInfo: types.NewStatusInfo("200", "")}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"setMonitoringData":[{"id":%v,"value":%v,"type":"%v","severity":%v,"component":{"name":"%v"},"variable":{"name":"%v"}}]}]`,
 		messageId, diagnostics.SetVariableMonitoringFeatureName, *monitoringData.ID, monitoringData.Value, monitoringData.Type, monitoringData.Severity, monitoringData.Component.Name, monitoringData.Variable.Name)
 	responseJson := fmt.Sprintf(`[3,"%v",{"setMonitoringResult":[{"id":%v,"status":"%v","type":"%v","severity":%v,"component":{"name":"%v"},"variable":{"name":"%v"},"statusInfo":{"reasonCode":"%v"}}]}]`,
@@ -115,7 +71,7 @@ func (suite *OcppV2TestSuite) TestSetVariableMonitoringE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestSetVariableMonitoringInvalidEndpoint() {
 	messageId := defaultMessageId
-	monitoringData := diagnostics.SetMonitoringData{ID: newInt(2), Transaction: false, Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}
+	monitoringData := diagnostics.SetMonitoringData{ID: tests.NewInt(2), Transaction: false, Value: 42.0, Type: diagnostics.MonitorUpperThreshold, Severity: 5, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}
 	request := diagnostics.NewSetVariableMonitoringRequest([]diagnostics.SetMonitoringData{monitoringData})
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"setMonitoringData":[{"id":%v,"value":%v,"type":"%v","severity":%v,"component":{"name":"%v"},"variable":{"name":"%v"}}]}]`,
 		messageId, diagnostics.SetVariableMonitoringFeatureName, *monitoringData.ID, monitoringData.Value, monitoringData.Type, monitoringData.Severity, monitoringData.Component.Name, monitoringData.Variable.Name)

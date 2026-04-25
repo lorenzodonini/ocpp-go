@@ -11,28 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestUnpublishFirmwareRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{firmware.UnpublishFirmwareRequest{Checksum: "deadc0de"}, true},
-		{firmware.UnpublishFirmwareRequest{}, false},
-		{firmware.UnpublishFirmwareRequest{Checksum: ">32.............................."}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestUnpublishFirmwareResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{firmware.UnpublishFirmwareResponse{Status: firmware.UnpublishFirmwareStatusUnpublished}, true},
-		{firmware.UnpublishFirmwareResponse{Status: firmware.UnpublishFirmwareStatusNoFirmware}, true},
-		{firmware.UnpublishFirmwareResponse{Status: firmware.UnpublishFirmwareStatusDownloadOngoing}, true},
-		{firmware.UnpublishFirmwareResponse{}, false},
-		{firmware.UnpublishFirmwareResponse{Status: "invalidUnpublishFirmwareStatus"}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestUnpublishFirmwareE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

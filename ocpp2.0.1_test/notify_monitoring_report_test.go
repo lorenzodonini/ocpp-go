@@ -13,63 +13,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestNotifyMonitoringReportRequestValidation() {
-	t := suite.T()
-	validMonitoring := diagnostics.NewVariableMonitoring(1, false, 42.42, diagnostics.MonitorPeriodic, 0)
-	invalidMonitoring := diagnostics.NewVariableMonitoring(1, false, 42.42, "invalidMonitorType", 0)
-	monitoringData := diagnostics.MonitoringData{
-		Component:          types.Component{Name: "component1"},
-		Variable:           types.Variable{Name: "variable1"},
-		VariableMonitoring: []diagnostics.VariableMonitoring{validMonitoring},
-	}
-	var requestTable = []GenericTestEntry{
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, Tbc: true, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now()), Monitor: []diagnostics.MonitoringData{monitoringData}}, true},
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, Tbc: true, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now()), Monitor: []diagnostics.MonitoringData{}}, true},
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, Tbc: true, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now())}, true},
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now())}, true},
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, GeneratedAt: types.NewDateTime(time.Now())}, true},
-		{diagnostics.NotifyMonitoringReportRequest{GeneratedAt: types.NewDateTime(time.Now())}, true},
-		{diagnostics.NotifyMonitoringReportRequest{}, false},
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: -1, Tbc: true, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now()), Monitor: []diagnostics.MonitoringData{monitoringData}}, false},
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, Tbc: true, SeqNo: -1, GeneratedAt: types.NewDateTime(time.Now()), Monitor: []diagnostics.MonitoringData{monitoringData}}, false},
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, Tbc: true, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now()), Monitor: []diagnostics.MonitoringData{{Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, VariableMonitoring: []diagnostics.VariableMonitoring{invalidMonitoring}}}}, false},
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, Tbc: true, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now()), Monitor: []diagnostics.MonitoringData{{Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}, VariableMonitoring: []diagnostics.VariableMonitoring{}}}}, false},
-		{diagnostics.NotifyMonitoringReportRequest{RequestID: 42, Tbc: true, SeqNo: 0, GeneratedAt: types.NewDateTime(time.Now()), Monitor: []diagnostics.MonitoringData{{Component: types.Component{Name: "component1"}, Variable: types.Variable{}, VariableMonitoring: []diagnostics.VariableMonitoring{validMonitoring}}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestVariableMonitoringValidation() {
-	t := suite.T()
-	var table = []GenericTestEntry{
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodic, Severity: 0}, true},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodic, Severity: 9}, true},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodicClockAligned, Severity: 0}, true},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorUpperThreshold, Severity: 0}, true},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorLowerThreshold, Severity: 0}, true},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorDelta, Severity: 0}, true},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: -42.42, Type: diagnostics.MonitorPeriodic, Severity: 0}, true},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodic}, true},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Type: diagnostics.MonitorPeriodic}, true},
-		{diagnostics.VariableMonitoring{ID: 1, Type: diagnostics.MonitorPeriodic}, true},
-		{diagnostics.VariableMonitoring{Type: diagnostics.MonitorPeriodic}, true},
-		{diagnostics.VariableMonitoring{}, false},
-		{diagnostics.VariableMonitoring{ID: -1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodic, Severity: 0}, false},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodic, Severity: -1}, false},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: diagnostics.MonitorPeriodic, Severity: 10}, false},
-		{diagnostics.VariableMonitoring{ID: 1, Transaction: false, Value: 42.42, Type: "invalidMonitorType", Severity: 0}, false},
-	}
-	ExecuteGenericTestTable(t, table)
-}
-
-func (suite *OcppV2TestSuite) TestNotifyMonitoringReportResponseValidation() {
-	t := suite.T()
-	var responseTable = []GenericTestEntry{
-		{diagnostics.NotifyMonitoringReportResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, responseTable)
-}
-
 func (suite *OcppV2TestSuite) TestNotifyMonitoringReportE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

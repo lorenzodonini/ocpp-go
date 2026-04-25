@@ -12,29 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestSignCertificateRequestValidation() {
-	var requestTable = []GenericTestEntry{
-		{security.SignCertificateRequest{CSR: "deadc0de", CertificateType: types.ChargingStationCert}, true},
-		{security.SignCertificateRequest{CSR: "deadc0de", CertificateType: types.V2GCertificate}, true},
-		{security.SignCertificateRequest{CSR: "deadc0de"}, true},
-		{security.SignCertificateRequest{}, false},
-		{security.SignCertificateRequest{CSR: "deadc0de", CertificateType: "invalidType"}, false},
-	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSignCertificateConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{security.SignCertificateResponse{Status: types.GenericStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{security.SignCertificateResponse{Status: types.GenericStatusAccepted}, true},
-		{security.SignCertificateResponse{}, false},
-		{security.SignCertificateResponse{Status: types.GenericStatusAccepted, StatusInfo: types.NewStatusInfo("", "")}, false},
-		{security.SignCertificateResponse{Status: "invalidStatus", StatusInfo: types.NewStatusInfo("200", "")}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestSignCertificateE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

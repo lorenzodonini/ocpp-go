@@ -12,28 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestDeleteCertificateRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{iso15118.DeleteCertificateRequest{CertificateHashData: types.CertificateHashData{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, true},
-		{iso15118.DeleteCertificateRequest{}, false},
-		{iso15118.DeleteCertificateRequest{CertificateHashData: types.CertificateHashData{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestDeleteCertificateConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{iso15118.DeleteCertificateResponse{Status: iso15118.DeleteCertificateStatusAccepted}, true},
-		{iso15118.DeleteCertificateResponse{Status: iso15118.DeleteCertificateStatusFailed}, true},
-		{iso15118.DeleteCertificateResponse{Status: iso15118.DeleteCertificateStatusNotFound}, true},
-		{iso15118.DeleteCertificateResponse{Status: "invalidDeleteCertificateStatus"}, false},
-		{iso15118.DeleteCertificateResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

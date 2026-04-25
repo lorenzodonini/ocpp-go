@@ -13,29 +13,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestNotifyDisplayMessagesRequestValidation() {
-	t := suite.T()
-	messageInfo := display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}
-	var requestTable = []GenericTestEntry{
-		{display.NotifyDisplayMessagesRequest{RequestID: 42, Tbc: false, MessageInfo: []display.MessageInfo{messageInfo}}, true},
-		{display.NotifyDisplayMessagesRequest{RequestID: 42, Tbc: false, MessageInfo: []display.MessageInfo{}}, true},
-		{display.NotifyDisplayMessagesRequest{RequestID: 42, Tbc: false}, true},
-		{display.NotifyDisplayMessagesRequest{RequestID: 42}, true},
-		{display.NotifyDisplayMessagesRequest{}, true},
-		{display.NotifyDisplayMessagesRequest{RequestID: -1}, false},
-		{display.NotifyDisplayMessagesRequest{RequestID: 42, MessageInfo: []display.MessageInfo{{ID: 42, Priority: "invalidPriority", State: display.MessageStateIdle, Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestNotifyDisplayMessagesConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{display.NotifyDisplayMessagesResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestNotifyDisplayMessagesE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

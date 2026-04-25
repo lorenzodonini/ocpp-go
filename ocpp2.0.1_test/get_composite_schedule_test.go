@@ -10,46 +10,10 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/smartcharging"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetCompositeScheduleRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{smartcharging.GetCompositeScheduleRequest{Duration: 600, EvseID: 1, ChargingRateUnit: types.ChargingRateUnitWatts}, true},
-		{smartcharging.GetCompositeScheduleRequest{Duration: 600, EvseID: 1}, true},
-		{smartcharging.GetCompositeScheduleRequest{EvseID: 1}, true},
-		{smartcharging.GetCompositeScheduleRequest{}, true},
-		{smartcharging.GetCompositeScheduleRequest{Duration: 600, EvseID: -1, ChargingRateUnit: types.ChargingRateUnitWatts}, false},
-		{smartcharging.GetCompositeScheduleRequest{Duration: -1, EvseID: 1, ChargingRateUnit: types.ChargingRateUnitWatts}, false},
-		{smartcharging.GetCompositeScheduleRequest{Duration: 600, EvseID: 1, ChargingRateUnit: "invalidChargingRateUnit"}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetCompositeScheduleConfirmationValidation() {
-	t := suite.T()
-	chargingSchedule := types.NewChargingSchedule(1, types.ChargingRateUnitWatts, types.NewChargingSchedulePeriod(0, 10.0))
-	chargingSchedule.Duration = newInt(600)
-	chargingSchedule.MinChargingRate = newFloat(6.0)
-	chargingSchedule.StartSchedule = types.NewDateTime(time.Now())
-	compositeSchedule := smartcharging.CompositeSchedule{
-		StartDateTime:    types.NewDateTime(time.Now()),
-		ChargingSchedule: chargingSchedule,
-	}
-	var confirmationTable = []GenericTestEntry{
-		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, StatusInfo: types.NewStatusInfo("reasoncode", ""), Schedule: &compositeSchedule}, true},
-		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, StatusInfo: types.NewStatusInfo("reasoncode", ""), Schedule: &smartcharging.CompositeSchedule{}}, true},
-		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, StatusInfo: types.NewStatusInfo("reasoncode", "")}, true},
-		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted}, true},
-		{smartcharging.GetCompositeScheduleResponse{}, false},
-		{smartcharging.GetCompositeScheduleResponse{Status: "invalidGetCompositeScheduleStatus"}, false},
-		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, StatusInfo: types.NewStatusInfo("invalidreasoncodeasitslongerthan20", "")}, false},
-		{smartcharging.GetCompositeScheduleResponse{Status: smartcharging.GetCompositeScheduleStatusAccepted, StatusInfo: types.NewStatusInfo("", ""), Schedule: &smartcharging.CompositeSchedule{StartDateTime: types.NewDateTime(time.Now()), ChargingSchedule: types.NewChargingSchedule(1, "invalidChargingRateUnit")}}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetCompositeScheduleE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -61,11 +25,11 @@ func (suite *OcppV2TestSuite) TestGetCompositeScheduleE2EMocked() {
 	status := smartcharging.GetCompositeScheduleStatusAccepted
 	scheduleStart := types.NewDateTime(time.Now())
 	chargingSchedulePeriod := types.NewChargingSchedulePeriod(0, 10.0)
-	chargingSchedulePeriod.NumberPhases = newInt(3)
+	chargingSchedulePeriod.NumberPhases = tests.NewInt(3)
 	chargingSchedule := types.NewChargingSchedule(1, chargingRateUnit, chargingSchedulePeriod)
-	chargingSchedule.Duration = newInt(600)
+	chargingSchedule.Duration = tests.NewInt(600)
 	chargingSchedule.StartSchedule = types.NewDateTime(time.Now())
-	chargingSchedule.MinChargingRate = newFloat(6.0)
+	chargingSchedule.MinChargingRate = tests.NewFloat(6.0)
 	statusInfo := types.NewStatusInfo("reasonCode", "")
 	compositeSchedule := smartcharging.CompositeSchedule{StartDateTime: scheduleStart, ChargingSchedule: chargingSchedule}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"duration":%v,"chargingRateUnit":"%v","evseId":%v}]`,
@@ -74,6 +38,7 @@ func (suite *OcppV2TestSuite) TestGetCompositeScheduleE2EMocked() {
 		messageId, status, statusInfo.ReasonCode, compositeSchedule.StartDateTime.FormatTimestamp(), chargingSchedule.ID, chargingSchedule.StartSchedule.FormatTimestamp(), *chargingSchedule.Duration, chargingSchedule.ChargingRateUnit, *chargingSchedule.MinChargingRate, chargingSchedulePeriod.StartPeriod, chargingSchedulePeriod.Limit, *chargingSchedulePeriod.NumberPhases)
 	getCompositeScheduleConfirmation := smartcharging.NewGetCompositeScheduleResponse(status)
 	getCompositeScheduleConfirmation.Schedule = &compositeSchedule
+	getCompositeScheduleConfirmation.StatusInfo = statusInfo
 	channel := NewMockWebSocket(wsId)
 
 	handler := &MockChargingStationSmartChargingHandler{}

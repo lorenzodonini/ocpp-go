@@ -12,30 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestUnlockConnectorRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{remotecontrol.UnlockConnectorRequest{EvseID: 2, ConnectorID: 1}, true},
-		{remotecontrol.UnlockConnectorRequest{EvseID: 2}, true},
-		{remotecontrol.UnlockConnectorRequest{}, true},
-		{remotecontrol.UnlockConnectorRequest{EvseID: -1, ConnectorID: 1}, false},
-		{remotecontrol.UnlockConnectorRequest{EvseID: 2, ConnectorID: -1}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestUnlockConnectorResponseValidation() {
-	t := suite.T()
-	var responseTable = []GenericTestEntry{
-		{remotecontrol.UnlockConnectorResponse{Status: remotecontrol.UnlockStatusUnlocked, StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, true},
-		{remotecontrol.UnlockConnectorResponse{Status: remotecontrol.UnlockStatusUnlocked}, true},
-		{remotecontrol.UnlockConnectorResponse{}, false},
-		{remotecontrol.UnlockConnectorResponse{Status: "invalidUnlockStatus", StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, false},
-		{remotecontrol.UnlockConnectorResponse{Status: remotecontrol.UnlockStatusUnlocked, StatusInfo: &types.StatusInfo{}}, false},
-	}
-	ExecuteGenericTestTable(t, responseTable)
-}
-
 func (suite *OcppV2TestSuite) TestUnlockConnectorE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

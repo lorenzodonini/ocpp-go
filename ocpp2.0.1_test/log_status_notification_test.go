@@ -11,33 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestLogStatusNotificationRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusUploading, RequestID: 42}, true},
-		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusUploadFailure, RequestID: 42}, true},
-		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusUploaded, RequestID: 42}, true},
-		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusPermissionDenied, RequestID: 42}, true},
-		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusNotSupportedOp, RequestID: 42}, true},
-		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusIdle, RequestID: 42}, true},
-		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusBadMessage, RequestID: 42}, true},
-		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusIdle}, true},
-		{diagnostics.LogStatusNotificationRequest{RequestID: 42}, false},
-		{diagnostics.LogStatusNotificationRequest{}, false},
-		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusIdle, RequestID: -1}, false},
-		{diagnostics.LogStatusNotificationRequest{Status: "invalidUploadLogStatus", RequestID: 42}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestLogStatusNotificationConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{diagnostics.LogStatusNotificationResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestLogStatusNotificationE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

@@ -5,6 +5,7 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/remotecontrol"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -12,62 +13,12 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestRequestStartTransactionRequestValidation() {
-	t := suite.T()
-	chargingProfile := types.ChargingProfile{
-		ID:                     1,
-		StackLevel:             0,
-		ChargingProfilePurpose: types.ChargingProfilePurposeTxProfile,
-		ChargingProfileKind:    types.ChargingProfileKindAbsolute,
-		ChargingSchedule: []types.ChargingSchedule{
-			{
-				ChargingRateUnit: types.ChargingRateUnitAmperes,
-				ChargingSchedulePeriod: []types.ChargingSchedulePeriod{
-					{
-						StartPeriod: 0,
-						Limit:       16.0,
-					},
-				},
-			},
-		},
-	}
-	var requestTable = []GenericTestEntry{
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, true},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile}, true},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
-		{remotecontrol.RequestStartTransactionRequest{RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
-		{remotecontrol.RequestStartTransactionRequest{IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}}, true},
-		{remotecontrol.RequestStartTransactionRequest{}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(0), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: -1, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: "invalidIdToken"}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &types.ChargingProfile{}, GroupIdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeISO15693}}, false},
-		{remotecontrol.RequestStartTransactionRequest{EvseID: newInt(1), RemoteStartID: 42, IDToken: types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}, ChargingProfile: &chargingProfile, GroupIdToken: &types.IdToken{IdToken: "1234", Type: "invalidGroupIdToken"}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestRequestStartTransactionConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, TransactionID: "12345", StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, true},
-		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, TransactionID: "12345"}, true},
-		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted}, true},
-		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusRejected}, true},
-		{remotecontrol.RequestStartTransactionResponse{}, false},
-		{remotecontrol.RequestStartTransactionResponse{Status: "invalidRequestStartStopStatus", TransactionID: "12345", StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, false},
-		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, TransactionID: ">36..................................", StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, false},
-		{remotecontrol.RequestStartTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, TransactionID: "12345", StatusInfo: &types.StatusInfo{}}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	evseId := newInt(1)
+	evseId := tests.NewInt(1)
 	remoteStartID := 42
 	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
 	schedule := []types.ChargingSchedule{
@@ -150,7 +101,7 @@ func (suite *OcppV2TestSuite) TestRequestStartTransactionE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestRequestStartTransactionInvalidEndpoint() {
 	messageId := defaultMessageId
-	evseId := newInt(1)
+	evseId := tests.NewInt(1)
 	remoteStartID := 42
 	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
 	schedule := []types.ChargingSchedule{

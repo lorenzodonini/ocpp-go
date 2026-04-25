@@ -12,37 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestSetMonitoringLevelRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{diagnostics.SetMonitoringLevelRequest{Severity: 0}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 1}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 2}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 3}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 4}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 5}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 6}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 7}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 8}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 9}, true},
-		{diagnostics.SetMonitoringLevelRequest{}, true},
-		{diagnostics.SetMonitoringLevelRequest{Severity: -1}, false},
-		{diagnostics.SetMonitoringLevelRequest{Severity: 10}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSetMonitoringLevelConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{diagnostics.SetMonitoringLevelResponse{Status: types.GenericDeviceModelStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{diagnostics.SetMonitoringLevelResponse{Status: types.GenericDeviceModelStatusAccepted}, true},
-		{diagnostics.SetMonitoringLevelResponse{Status: "invalidDeviceModelStatus"}, false},
-		{diagnostics.SetMonitoringLevelResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestSetMonitoringLevelE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

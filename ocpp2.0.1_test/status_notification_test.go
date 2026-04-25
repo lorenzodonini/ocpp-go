@@ -13,30 +13,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestStatusNotificationRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: availability.ConnectorStatusAvailable, EvseID: 1, ConnectorID: 1}, true},
-		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: availability.ConnectorStatusAvailable, EvseID: 1}, true},
-		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: availability.ConnectorStatusAvailable}, true},
-		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now())}, false},
-		{availability.StatusNotificationRequest{ConnectorStatus: availability.ConnectorStatusAvailable}, false},
-		{availability.StatusNotificationRequest{}, false},
-		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: "invalidConnectorStatus", EvseID: 1, ConnectorID: 1}, false},
-		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: availability.ConnectorStatusAvailable, EvseID: -1, ConnectorID: 1}, false},
-		{availability.StatusNotificationRequest{Timestamp: types.NewDateTime(time.Now()), ConnectorStatus: availability.ConnectorStatusAvailable, EvseID: 1, ConnectorID: -1}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestStatusNotificationResponseValidation() {
-	t := suite.T()
-	var responseTable = []GenericTestEntry{
-		{availability.StatusNotificationResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, responseTable)
-}
-
 func (suite *OcppV2TestSuite) TestStatusNotificationE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

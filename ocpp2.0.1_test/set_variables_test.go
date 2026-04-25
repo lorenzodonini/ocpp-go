@@ -9,62 +9,17 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestSetVariablesRequestValidation() {
-	t := suite.T()
-	component := types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}
-	variable := types.Variable{Name: "variable1", Instance: "instance1"}
-
-	var requestTable = []GenericTestEntry{
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeType: types.AttributeTarget, AttributeValue: "dummyValue", Component: component, Variable: variable}}}, true},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Component: component, Variable: variable}}}, true},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Component: types.Component{Name: "component1"}, Variable: variable}}}, true},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Component: component, Variable: types.Variable{Name: "variable1"}}}}, true},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{Component: component, Variable: variable}}}, false},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Variable: variable}}}, false},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeValue: "dummyValue", Component: component}}}, false},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{}}, false},
-		{provisioning.SetVariablesRequest{}, false},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeType: "invalidAttribute", AttributeValue: "dummyValue", Component: component, Variable: variable}}}, false},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeType: types.AttributeTarget, AttributeValue: ">1000....................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", Component: component, Variable: variable}}}, false},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeType: types.AttributeTarget, AttributeValue: "dummyValue", Variable: variable}}}, false},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeType: types.AttributeTarget, AttributeValue: "dummyValue", Component: component}}}, false},
-		{provisioning.SetVariablesRequest{SetVariableData: []provisioning.SetVariableData{{AttributeType: types.AttributeTarget, AttributeValue: "dummyValue", Component: types.Component{Name: "component1", EVSE: &types.EVSE{ID: -1}}, Variable: variable}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSetVariablesResponseValidation() {
-	t := suite.T()
-	component := types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}
-	variable := types.Variable{Name: "variable1", Instance: "instance1"}
-	var confirmationTable = []GenericTestEntry{
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeType: types.AttributeTarget, AttributeStatus: provisioning.SetVariableStatusAccepted, Component: component, Variable: variable, StatusInfo: types.NewStatusInfo("200", "")}}}, true},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeType: types.AttributeTarget, AttributeStatus: provisioning.SetVariableStatusAccepted, Component: component, Variable: variable}}}, true},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeStatus: provisioning.SetVariableStatusAccepted, Component: component, Variable: variable}}}, true},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{Component: component, Variable: variable}}}, false},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeStatus: provisioning.SetVariableStatusAccepted, Variable: variable}}}, false},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeStatus: provisioning.SetVariableStatusAccepted, Component: component}}}, false},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{}}, false},
-		{provisioning.SetVariablesResponse{}, false},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeType: "invalidAttribute", AttributeStatus: provisioning.SetVariableStatusAccepted, Component: component, Variable: variable}}}, false},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeType: types.AttributeTarget, AttributeStatus: "invalidStatus", Component: component, Variable: variable}}}, false},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeType: types.AttributeTarget, AttributeStatus: provisioning.SetVariableStatusAccepted, Component: types.Component{}, Variable: variable}}}, false},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeType: types.AttributeTarget, AttributeStatus: provisioning.SetVariableStatusAccepted, Component: component, Variable: types.Variable{}}}}, false},
-		{provisioning.SetVariablesResponse{SetVariableResult: []provisioning.SetVariableResult{{AttributeType: types.AttributeTarget, AttributeStatus: provisioning.SetVariableStatusAccepted, Component: component, Variable: variable, StatusInfo: types.NewStatusInfo("", "")}}}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestSetVariablesE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
 	attributeType := types.AttributeTarget
-	component := types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}
+	component := types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: tests.NewInt(2)}}
 	variable := types.Variable{Name: "variable1", Instance: "instance1"}
 	variableData := provisioning.SetVariableData{
 		AttributeType:  attributeType,
@@ -133,7 +88,7 @@ func (suite *OcppV2TestSuite) TestSetVariablesE2EMocked() {
 func (suite *OcppV2TestSuite) TestSetVariablesInvalidEndpoint() {
 	messageId := defaultMessageId
 	attributeType := types.AttributeTarget
-	component := types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: newInt(2)}}
+	component := types.Component{Name: "component1", Instance: "instance1", EVSE: &types.EVSE{ID: 2, ConnectorID: tests.NewInt(2)}}
 	variable := types.Variable{Name: "variable1", Instance: "instance1"}
 	variableData := provisioning.SetVariableData{
 		AttributeType:  attributeType,

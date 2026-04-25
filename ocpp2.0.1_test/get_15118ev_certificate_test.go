@@ -12,36 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGet15118EVCertificateRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{iso15118.Get15118EVCertificateRequest{SchemaVersion: "1.0", Action: iso15118.CertificateActionInstall, ExiRequest: "deadbeef"}, true},
-		{iso15118.Get15118EVCertificateRequest{SchemaVersion: "1.0", Action: iso15118.CertificateActionUpdate, ExiRequest: "deadbeef"}, true},
-		{iso15118.Get15118EVCertificateRequest{SchemaVersion: "1.0", Action: iso15118.CertificateActionInstall}, false},
-		{iso15118.Get15118EVCertificateRequest{ExiRequest: "deadbeef"}, false},
-		{iso15118.Get15118EVCertificateRequest{}, false},
-		{iso15118.Get15118EVCertificateRequest{SchemaVersion: ">50................................................", Action: iso15118.CertificateActionInstall, ExiRequest: "deadbeef"}, false},
-		{iso15118.Get15118EVCertificateRequest{SchemaVersion: "1.0", Action: "invalidCertificateAction", ExiRequest: "deadbeef"}, false},
-		{iso15118.Get15118EVCertificateRequest{SchemaVersion: "1.0", Action: iso15118.CertificateActionInstall, ExiRequest: newLongString(5601)}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGet15118EVCertificateConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", StatusInfo: types.NewStatusInfo("200", "ok")}, true},
-		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef"}, true},
-		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted}, false},
-		{iso15118.Get15118EVCertificateResponse{ExiResponse: "deadbeef"}, false},
-		{iso15118.Get15118EVCertificateResponse{}, false},
-		{iso15118.Get15118EVCertificateResponse{Status: "invalidCertificateStatus", ExiResponse: "deadbeef", StatusInfo: types.NewStatusInfo("200", "ok")}, false},
-		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: newLongString(5601), StatusInfo: types.NewStatusInfo("200", "ok")}, false},
-		{iso15118.Get15118EVCertificateResponse{Status: types.Certificate15188EVStatusAccepted, ExiResponse: "deadbeef", StatusInfo: types.NewStatusInfo("", "")}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGet15118EVCertificateE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

@@ -3,6 +3,7 @@ package ocpp2_test
 import (
 	"fmt"
 
+	"github.com/lorenzodonini/ocpp-go/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -11,26 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetTransactionStatusRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{transactions.GetTransactionStatusRequest{}, true},
-		{transactions.GetTransactionStatusRequest{TransactionID: "12345"}, true},
-		{transactions.GetTransactionStatusRequest{TransactionID: ">36.................................."}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetTransactionStatusResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{transactions.GetTransactionStatusResponse{OngoingIndicator: newBool(true), MessagesInQueue: true}, true},
-		{transactions.GetTransactionStatusResponse{MessagesInQueue: true}, true},
-		{transactions.GetTransactionStatusResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetTransactionStatusE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -38,7 +19,7 @@ func (suite *OcppV2TestSuite) TestGetTransactionStatusE2EMocked() {
 	wsUrl := "someUrl"
 	transactionID := "12345"
 	messagesInQueue := false
-	ongoingIndicator := newBool(true)
+	ongoingIndicator := tests.NewBool(true)
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"transactionId":"%v"}]`, messageId, transactions.GetTransactionStatusFeatureName, transactionID)
 	responseJson := fmt.Sprintf(`[3,"%v",{"ongoingIndicator":%v,"messagesInQueue":%v}]`, messageId, *ongoingIndicator, messagesInQueue)
 	getTransactionStatusResponse := transactions.NewGetTransactionStatusResponse(messagesInQueue)

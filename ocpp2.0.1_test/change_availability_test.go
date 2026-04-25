@@ -5,37 +5,12 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-func (suite *OcppV2TestSuite) TestChangeAvailabilityRequestValidation() {
-	t := suite.T()
-	var testTable = []GenericTestEntry{
-		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusOperative, Evse: &types.EVSE{ID: 1, ConnectorID: newInt(1)}}, true},
-		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusInoperative, Evse: &types.EVSE{ID: 1}}, true},
-		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusInoperative}, true},
-		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusOperative}, true},
-		{availability.ChangeAvailabilityRequest{}, false},
-		{availability.ChangeAvailabilityRequest{OperationalStatus: "invalidAvailabilityType"}, false},
-		{availability.ChangeAvailabilityRequest{OperationalStatus: availability.OperationalStatusOperative, Evse: &types.EVSE{ID: -1}}, false},
-	}
-	ExecuteGenericTestTable(t, testTable)
-}
-
-func (suite *OcppV2TestSuite) TestChangeAvailabilityConfirmationValidation() {
-	t := suite.T()
-	var testTable = []GenericTestEntry{
-		{availability.ChangeAvailabilityResponse{Status: availability.ChangeAvailabilityStatusAccepted}, true},
-		{availability.ChangeAvailabilityResponse{Status: availability.ChangeAvailabilityStatusRejected}, true},
-		{availability.ChangeAvailabilityResponse{Status: availability.ChangeAvailabilityStatusScheduled}, true},
-		{availability.ChangeAvailabilityResponse{Status: "invalidAvailabilityStatus"}, false},
-		{availability.ChangeAvailabilityResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, testTable)
-}
 
 // Test
 func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
@@ -43,7 +18,7 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
 	wsId := "test_id"
 	messageId := defaultMessageId
 	wsUrl := "someUrl"
-	evse := types.EVSE{ID: 1, ConnectorID: newInt(1)}
+	evse := types.EVSE{ID: 1, ConnectorID: tests.NewInt(1)}
 	operationalStatus := availability.OperationalStatusOperative
 	status := availability.ChangeAvailabilityStatusAccepted
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"operationalStatus":"%v","evse":{"id":%v,"connectorId":%v}}]`,
@@ -83,7 +58,7 @@ func (suite *OcppV2TestSuite) TestChangeAvailabilityE2EMocked() {
 
 func (suite *OcppV2TestSuite) TestChangeAvailabilityInvalidEndpoint() {
 	messageId := defaultMessageId
-	evse := types.EVSE{ID: 1, ConnectorID: newInt(1)}
+	evse := types.EVSE{ID: 1, ConnectorID: tests.NewInt(1)}
 	operationalStatus := availability.OperationalStatusOperative
 	changeAvailabilityRequest := availability.NewChangeAvailabilityRequest(operationalStatus)
 	changeAvailabilityRequest.Evse = &evse

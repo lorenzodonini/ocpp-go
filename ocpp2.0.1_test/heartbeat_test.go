@@ -13,23 +13,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestHeartbeatRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{availability.HeartbeatRequest{}, true},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestHeartbeatResponseValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{availability.HeartbeatResponse{CurrentTime: *types.NewDateTime(time.Now())}, true},
-		{availability.HeartbeatResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestHeartbeatE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

@@ -11,32 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestDataTransferRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{data.DataTransferRequest{VendorID: "12345"}, true},
-		{data.DataTransferRequest{VendorID: "12345", MessageID: "6789"}, true},
-		{data.DataTransferRequest{VendorID: "12345", MessageID: "6789", Data: "mockData"}, true},
-		{data.DataTransferRequest{}, false},
-		{data.DataTransferRequest{VendorID: ">255............................................................................................................................................................................................................................................................"}, false},
-		{data.DataTransferRequest{VendorID: "12345", MessageID: ">50................................................"}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestDataTransferConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{data.DataTransferResponse{Status: data.DataTransferStatusAccepted}, true},
-		{data.DataTransferResponse{Status: data.DataTransferStatusRejected}, true},
-		{data.DataTransferResponse{Status: data.DataTransferStatusUnknownMessageId}, true},
-		{data.DataTransferResponse{Status: data.DataTransferStatusUnknownVendorId}, true},
-		{data.DataTransferResponse{Status: "invalidDataTransferStatus"}, false},
-		{data.DataTransferResponse{Status: data.DataTransferStatusAccepted, Data: "mockData"}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

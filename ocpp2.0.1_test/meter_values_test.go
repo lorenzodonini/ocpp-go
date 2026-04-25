@@ -10,28 +10,10 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/meter"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestMeterValuesRequestValidation() {
-	var requestTable = []GenericTestEntry{
-		{meter.MeterValuesRequest{EvseID: 1, MeterValue: []types.MeterValue{{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}}}, true},
-		{meter.MeterValuesRequest{MeterValue: []types.MeterValue{{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}}}, true},
-		{meter.MeterValuesRequest{EvseID: 1, MeterValue: []types.MeterValue{}}, false},
-		{meter.MeterValuesRequest{EvseID: 1}, false},
-		{meter.MeterValuesRequest{EvseID: 1, MeterValue: []types.MeterValue{{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{{Value: 3.14, Context: "invalidContext", Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}}}, false},
-		{meter.MeterValuesRequest{EvseID: -1, MeterValue: []types.MeterValue{{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: []types.SampledValue{{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody}}}}}, false},
-	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestMeterValuesConfirmationValidation() {
-	var responseTable = []GenericTestEntry{
-		{meter.MeterValuesResponse{}, true},
-	}
-	ExecuteGenericTestTable(suite.T(), responseTable)
-}
-
 func (suite *OcppV2TestSuite) TestMeterValuesE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -39,7 +21,7 @@ func (suite *OcppV2TestSuite) TestMeterValuesE2EMocked() {
 	wsUrl := "someUrl"
 	evseId := 1
 	signedMeterValue := types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message", PublicKey: "0xd34dc0de"}
-	unitOfMeasure := types.UnitOfMeasure{Unit: "kW", Multiplier: newInt(0)}
+	unitOfMeasure := types.UnitOfMeasure{Unit: "kW", Multiplier: tests.NewInt(0)}
 	sampledValue := types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, SignedMeterValue: &signedMeterValue, UnitOfMeasure: &unitOfMeasure}
 	sampledValues := []types.SampledValue{sampledValue}
 	meterValue := types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: sampledValues}
@@ -88,7 +70,7 @@ func (suite *OcppV2TestSuite) TestMeterValuesInvalidEndpoint() {
 	connectorId := 1
 	evseId := 1
 	signedMeterValue := types.SignedMeterValue{SignedMeterData: "0xdeadbeef", SigningMethod: "ECDSAP256SHA256", EncodingMethod: "DLMS Message", PublicKey: "0xd34dc0de"}
-	unitOfMeasure := types.UnitOfMeasure{Unit: "kW", Multiplier: newInt(0)}
+	unitOfMeasure := types.UnitOfMeasure{Unit: "kW", Multiplier: tests.NewInt(0)}
 	sampledValue := types.SampledValue{Value: 3.14, Context: types.ReadingContextTransactionEnd, Measurand: types.MeasurandPowerActiveExport, Phase: types.PhaseL2, Location: types.LocationBody, SignedMeterValue: &signedMeterValue, UnitOfMeasure: &unitOfMeasure}
 	sampledValues := []types.SampledValue{sampledValue}
 	meterValue := types.MeterValue{Timestamp: types.DateTime{Time: time.Now()}, SampledValue: sampledValues}

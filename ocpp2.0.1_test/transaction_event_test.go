@@ -10,77 +10,10 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestTransactionInfoValidation() {
-	var requestTable = []GenericTestEntry{
-		{transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: newInt(100), StoppedReason: transactions.ReasonLocal, RemoteStartID: newInt(7)}, true},
-		{transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: newInt(100), StoppedReason: transactions.ReasonLocal}, true},
-		{transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: newInt(100)}, true},
-		{transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV}, true},
-		{transactions.Transaction{TransactionID: "42"}, true},
-		{transactions.Transaction{}, false},
-		{transactions.Transaction{TransactionID: ">36..................................", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: newInt(100), StoppedReason: transactions.ReasonLocal, RemoteStartID: newInt(7)}, false},
-		{transactions.Transaction{TransactionID: "42", ChargingState: "invalidChargingState", TimeSpentCharging: newInt(100), StoppedReason: transactions.ReasonLocal, RemoteStartID: newInt(7)}, false},
-		{transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: newInt(100), StoppedReason: "invalidReason", RemoteStartID: newInt(7)}, false},
-	}
-	ExecuteGenericTestTable(suite.T(), requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestTransactionEventRequestValidation() {
-	t := suite.T()
-	transactionInfo := transactions.Transaction{TransactionID: "42"}
-	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
-	meterValue := types.MeterValue{Timestamp: *types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: 64.0}}}
-	var requestTable = []GenericTestEntry{
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{meterValue}}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{}}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: 1}}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), TransactionInfo: transactionInfo}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), TransactionInfo: transactionInfo}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, TransactionInfo: transactionInfo}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, TransactionInfo: transactionInfo}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, TransactionInfo: transactionInfo}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, TransactionInfo: transactionInfo, IDToken: &types.IdToken{Type: types.IdTokenTypeNoAuthorization}}, true},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, TransactionInfo: transactionInfo, IDToken: &types.IdToken{Type: types.IdTokenTypeKeyCode}}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TransactionInfo: transactionInfo}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, TriggerReason: transactions.TriggerReasonAuthorized, TransactionInfo: transactionInfo}, false},
-		{transactions.TransactionEventRequest{Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, TransactionInfo: transactionInfo}, false},
-		{transactions.TransactionEventRequest{}, false},
-		{transactions.TransactionEventRequest{EventType: "invalidEventType", Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{meterValue}}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: "invalidTriggerReason", SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{meterValue}}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: -1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{meterValue}}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(-1), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{meterValue}}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactions.Transaction{}, IDToken: &idToken, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{meterValue}}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &types.IdToken{}, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{meterValue}}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: -1}, MeterValue: []types.MeterValue{meterValue}}, false},
-		{transactions.TransactionEventRequest{EventType: transactions.TransactionEventStarted, Timestamp: types.NewDateTime(time.Now()), TriggerReason: transactions.TriggerReasonAuthorized, SequenceNo: 1, Offline: true, NumberOfPhasesUsed: newInt(3), CableMaxCurrent: newInt(20), ReservationID: newInt(42), TransactionInfo: transactionInfo, IDToken: &idToken, Evse: &types.EVSE{ID: 1}, MeterValue: []types.MeterValue{{}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestTransactionEventResponseValidation() {
-	t := suite.T()
-	messageContent := types.MessageContent{Format: types.MessageFormatUTF8, Content: "dummyContent"}
-	var responseTable = []GenericTestEntry{
-		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(2), IDTokenInfo: types.NewIdTokenInfo(types.AuthorizationStatusAccepted), UpdatedPersonalMessage: &messageContent}, true},
-		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(2), IDTokenInfo: types.NewIdTokenInfo(types.AuthorizationStatusAccepted)}, true},
-		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(2)}, true},
-		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42)}, true},
-		{transactions.TransactionEventResponse{}, true},
-		{transactions.TransactionEventResponse{TotalCost: newFloat(-1.0), ChargingPriority: newInt(2), IDTokenInfo: types.NewIdTokenInfo(types.AuthorizationStatusAccepted), UpdatedPersonalMessage: &messageContent}, false},
-		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(-10), IDTokenInfo: types.NewIdTokenInfo(types.AuthorizationStatusAccepted), UpdatedPersonalMessage: &messageContent}, false},
-		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(10), IDTokenInfo: types.NewIdTokenInfo(types.AuthorizationStatusAccepted), UpdatedPersonalMessage: &messageContent}, false},
-		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(2), IDTokenInfo: types.NewIdTokenInfo("invalidAuthorizationStatus"), UpdatedPersonalMessage: &messageContent}, false},
-		{transactions.TransactionEventResponse{TotalCost: newFloat(8.42), ChargingPriority: newInt(2), IDTokenInfo: types.NewIdTokenInfo(types.AuthorizationStatusAccepted), UpdatedPersonalMessage: &types.MessageContent{}}, false},
-	}
-	ExecuteGenericTestTable(t, responseTable)
-}
-
 func (suite *OcppV2TestSuite) TestTransactionEventE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -91,15 +24,15 @@ func (suite *OcppV2TestSuite) TestTransactionEventE2EMocked() {
 	triggerReason := transactions.TriggerReasonEVDeparted
 	seqNo := 10
 	offline := false
-	phases := newInt(3)
-	cableMaxCurrent := newInt(20)
-	reservationID := newInt(55)
-	info := transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: newInt(1000), StoppedReason: transactions.ReasonLocal, RemoteStartID: newInt(69)}
+	phases := tests.NewInt(3)
+	cableMaxCurrent := tests.NewInt(20)
+	reservationID := tests.NewInt(55)
+	info := transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: tests.NewInt(1000), StoppedReason: transactions.ReasonLocal, RemoteStartID: tests.NewInt(69)}
 	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
 	evse := types.EVSE{ID: 1}
 	meterValue := types.MeterValue{Timestamp: *types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: 64.0}}}
-	totalCost := newFloat(8.42)
-	chargingPriority := newInt(2)
+	totalCost := tests.NewFloat(8.42)
+	chargingPriority := tests.NewInt(2)
 	idTokenInfo := types.NewIdTokenInfo(types.AuthorizationStatusAccepted)
 	messageContent := types.MessageContent{Format: types.MessageFormatUTF8, Content: "dummyContent"}
 	requestJson := fmt.Sprintf(`[2,"%v","%v",{"eventType":"%v","timestamp":"%v","triggerReason":"%v","seqNo":%v,"numberOfPhasesUsed":%v,"cableMaxCurrent":%v,"reservationId":%v,"transactionInfo":{"transactionId":"%v","chargingState":"%v","timeSpentCharging":%v,"stoppedReason":"%v","remoteStartId":%v},"idToken":{"idToken":"%v","type":"%v"},"evse":{"id":%v},"meterValue":[{"timestamp":"%v","sampledValue":[{"value":%v}]}]}]`,
@@ -174,10 +107,10 @@ func (suite *OcppV2TestSuite) TestTransactionEventInvalidEndpoint() {
 	eventType := transactions.TransactionEventEnded
 	triggerReason := transactions.TriggerReasonEVDeparted
 	seqNo := 10
-	phases := newInt(3)
-	cableMaxCurrent := newInt(20)
-	reservationID := newInt(55)
-	info := transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: newInt(1000), StoppedReason: transactions.ReasonLocal, RemoteStartID: newInt(69)}
+	phases := tests.NewInt(3)
+	cableMaxCurrent := tests.NewInt(20)
+	reservationID := tests.NewInt(55)
+	info := transactions.Transaction{TransactionID: "42", ChargingState: transactions.ChargingStateSuspendedEV, TimeSpentCharging: tests.NewInt(1000), StoppedReason: transactions.ReasonLocal, RemoteStartID: tests.NewInt(69)}
 	idToken := types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode}
 	evse := types.EVSE{ID: 1}
 	meterValue := types.MeterValue{Timestamp: *types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{{Value: 64.0}}}

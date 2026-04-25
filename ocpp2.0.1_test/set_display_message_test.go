@@ -13,32 +13,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestSetDisplayMessageRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{display.SetDisplayMessageRequest{Message: display.MessageInfo{ID: 42, Priority: display.MessagePriorityAlwaysFront, State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}}, true},
-		{display.SetDisplayMessageRequest{}, false},
-		{display.SetDisplayMessageRequest{Message: display.MessageInfo{ID: 42, Priority: "invalidPriority", State: display.MessageStateIdle, StartDateTime: types.NewDateTime(time.Now()), Message: types.MessageContent{Format: types.MessageFormatUTF8, Content: "hello world"}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSetDisplayMessageConfirmationValidation() {
-	t := suite.T()
-	var responseTable = []GenericTestEntry{
-		{display.SetDisplayMessageResponse{Status: display.DisplayMessageStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{display.SetDisplayMessageResponse{Status: display.DisplayMessageStatusAccepted}, true},
-		{display.SetDisplayMessageResponse{Status: display.DisplayMessageStatusNotSupportedMessageFormat}, true},
-		{display.SetDisplayMessageResponse{Status: display.DisplayMessageStatusNotSupportedState}, true},
-		{display.SetDisplayMessageResponse{Status: display.DisplayMessageStatusNotSupportedPriority}, true},
-		{display.SetDisplayMessageResponse{Status: display.DisplayMessageStatusRejected}, true},
-		{display.SetDisplayMessageResponse{Status: display.DisplayMessageStatusUnknownTransaction}, true},
-		{display.SetDisplayMessageResponse{Status: "invalidDisplayMessageStatus"}, false},
-		{display.SetDisplayMessageResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, responseTable)
-}
-
 func (suite *OcppV2TestSuite) TestSetDisplayMessageE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

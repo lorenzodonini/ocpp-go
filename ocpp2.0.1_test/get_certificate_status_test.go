@@ -12,29 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestGetCertificateStatusRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{iso15118.GetCertificateStatusRequest{OcspRequestData: types.OCSPRequestDataType{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}}, true},
-		{iso15118.GetCertificateStatusRequest{}, false},
-		{iso15118.GetCertificateStatusRequest{OcspRequestData: types.OCSPRequestDataType{HashAlgorithm: "invalidHashAlgorithm", IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0", ResponderURL: "http://someUrl"}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestGetCertificateStatusConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted, OcspResult: "deadbeef"}, true},
-		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted}, true},
-		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusRejected}, true},
-		{iso15118.GetCertificateStatusResponse{Status: "invalidGenericStatus"}, false},
-		{iso15118.GetCertificateStatusResponse{Status: types.GenericStatusAccepted, OcspResult: newLongString(5501)}, false},
-		{iso15118.GetCertificateStatusResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestGetCertificateStatusE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

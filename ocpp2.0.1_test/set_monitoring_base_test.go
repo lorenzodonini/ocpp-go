@@ -12,29 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestSetMonitoringBaseRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{diagnostics.SetMonitoringBaseRequest{MonitoringBase: diagnostics.MonitoringBaseAll}, true},
-		{diagnostics.SetMonitoringBaseRequest{MonitoringBase: diagnostics.MonitoringBaseFactoryDefault}, true},
-		{diagnostics.SetMonitoringBaseRequest{MonitoringBase: diagnostics.MonitoringBaseHardWiredOnly}, true},
-		{diagnostics.SetMonitoringBaseRequest{MonitoringBase: "invalidMonitoringBase"}, false},
-		{diagnostics.SetMonitoringBaseRequest{}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSetMonitoringBaseConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{diagnostics.SetMonitoringBaseResponse{Status: types.GenericDeviceModelStatusAccepted, StatusInfo: types.NewStatusInfo("200", "")}, true},
-		{diagnostics.SetMonitoringBaseResponse{Status: types.GenericDeviceModelStatusAccepted}, true},
-		{diagnostics.SetMonitoringBaseResponse{Status: "invalidDeviceModelStatus"}, false},
-		{diagnostics.SetMonitoringBaseResponse{}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestSetMonitoringBaseE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

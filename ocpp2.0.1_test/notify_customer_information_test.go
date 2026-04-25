@@ -13,31 +13,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestNotifyCustomerInformationRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", Tbc: false, SeqNo: 0, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: 42}, true},
-		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", Tbc: true, SeqNo: 0, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: 42}, true},
-		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", SeqNo: 0, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: 42}, true},
-		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: 42}, true},
-		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", GeneratedAt: types.DateTime{Time: time.Now()}}, true},
-		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData"}, true},
-		{diagnostics.NotifyCustomerInformationRequest{}, false},
-		{diagnostics.NotifyCustomerInformationRequest{Data: ">512.............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", Tbc: false, SeqNo: 0, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: 42}, false},
-		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", Tbc: false, SeqNo: -1, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: 42}, false},
-		{diagnostics.NotifyCustomerInformationRequest{Data: "dummyData", Tbc: false, SeqNo: 0, GeneratedAt: types.DateTime{Time: time.Now()}, RequestID: -1}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestNotifyCustomerInformationConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{diagnostics.NotifyCustomerInformationResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestNotifyCustomerInformationE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

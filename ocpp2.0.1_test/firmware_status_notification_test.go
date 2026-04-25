@@ -11,27 +11,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{firmware.FirmwareStatusNotificationRequest{Status: firmware.FirmwareStatusDownloaded, RequestID: newInt(42)}, true},
-		{firmware.FirmwareStatusNotificationRequest{Status: firmware.FirmwareStatusDownloaded}, true},
-		{firmware.FirmwareStatusNotificationRequest{RequestID: newInt(42)}, false},
-		{firmware.FirmwareStatusNotificationRequest{}, false},
-		{firmware.FirmwareStatusNotificationRequest{Status: firmware.FirmwareStatusDownloaded, RequestID: newInt(-1)}, false},
-		{firmware.FirmwareStatusNotificationRequest{Status: "invalidFirmwareStatus"}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{firmware.FirmwareStatusNotificationResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

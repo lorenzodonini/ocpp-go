@@ -13,28 +13,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestSecurityEventNotificationRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{security.SecurityEventNotificationRequest{Type: "type1", Timestamp: types.NewDateTime(time.Now()), TechInfo: "someTechInfo"}, true},
-		{security.SecurityEventNotificationRequest{Type: "type1", Timestamp: types.NewDateTime(time.Now())}, true},
-		{security.SecurityEventNotificationRequest{Type: "type1"}, false},
-		{security.SecurityEventNotificationRequest{}, false},
-		{security.SecurityEventNotificationRequest{Type: "", Timestamp: types.NewDateTime(time.Now()), TechInfo: "someTechInfo"}, false},
-		{security.SecurityEventNotificationRequest{Type: ">50................................................", Timestamp: types.NewDateTime(time.Now()), TechInfo: "someTechInfo"}, false},
-		{security.SecurityEventNotificationRequest{Type: "type1", Timestamp: types.NewDateTime(time.Now()), TechInfo: ">255............................................................................................................................................................................................................................................................"}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestSecurityEventNotificationConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{security.SecurityEventNotificationResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestSecurityEventNotificationE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

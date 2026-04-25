@@ -12,29 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestRequestStopTransactionRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{remotecontrol.RequestStopTransactionRequest{TransactionID: "12345"}, true},
-		{remotecontrol.RequestStopTransactionRequest{}, false},
-		{remotecontrol.RequestStopTransactionRequest{TransactionID: ">36.................................."}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestRequestStopTransactionConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{remotecontrol.RequestStopTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, true},
-		{remotecontrol.RequestStopTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted}, true},
-		{remotecontrol.RequestStopTransactionResponse{Status: remotecontrol.RequestStartStopStatusRejected}, true},
-		{remotecontrol.RequestStopTransactionResponse{}, false},
-		{remotecontrol.RequestStopTransactionResponse{Status: "invalidRequestStartStopStatus", StatusInfo: &types.StatusInfo{ReasonCode: "200"}}, false},
-		{remotecontrol.RequestStopTransactionResponse{Status: remotecontrol.RequestStartStopStatusAccepted, StatusInfo: &types.StatusInfo{}}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestRequestStopTransactionE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"

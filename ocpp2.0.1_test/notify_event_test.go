@@ -10,78 +10,10 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/tests"
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestNotifyEventRequestValidation() {
-	t := suite.T()
-	eventData := diagnostics.EventData{
-		EventID:               1,
-		Timestamp:             types.NewDateTime(time.Now()),
-		Trigger:               diagnostics.EventTriggerAlerting,
-		Cause:                 newInt(42),
-		ActualValue:           "someValue",
-		TechCode:              "742",
-		TechInfo:              "stacktrace",
-		Cleared:               false,
-		TransactionID:         "1234",
-		VariableMonitoringID:  newInt(99),
-		EventNotificationType: diagnostics.EventPreconfiguredMonitor,
-		Component:             types.Component{Name: "component1"},
-		Variable:              types.Variable{Name: "variable1"},
-	}
-	var requestTable = []GenericTestEntry{
-		{diagnostics.NotifyEventRequest{GeneratedAt: types.NewDateTime(time.Now()), SeqNo: 0, Tbc: false, EventData: []diagnostics.EventData{eventData, eventData}}, true},
-		{diagnostics.NotifyEventRequest{GeneratedAt: types.NewDateTime(time.Now()), SeqNo: 0, Tbc: false, EventData: []diagnostics.EventData{eventData}}, true},
-		{diagnostics.NotifyEventRequest{GeneratedAt: types.NewDateTime(time.Now()), SeqNo: 0, EventData: []diagnostics.EventData{eventData}}, true},
-		{diagnostics.NotifyEventRequest{GeneratedAt: types.NewDateTime(time.Now()), EventData: []diagnostics.EventData{eventData}}, true},
-		{diagnostics.NotifyEventRequest{EventData: []diagnostics.EventData{eventData}}, false},
-		{diagnostics.NotifyEventRequest{}, false},
-		{diagnostics.NotifyEventRequest{GeneratedAt: types.NewDateTime(time.Now()), SeqNo: -1, Tbc: false, EventData: []diagnostics.EventData{eventData}}, false},
-		{diagnostics.NotifyEventRequest{GeneratedAt: types.NewDateTime(time.Now()), SeqNo: 0, Tbc: false, EventData: []diagnostics.EventData{}}, false},
-		{diagnostics.NotifyEventRequest{GeneratedAt: types.NewDateTime(time.Now()), SeqNo: 0, Tbc: false}, false},
-		{diagnostics.NotifyEventRequest{GeneratedAt: types.NewDateTime(time.Now()), SeqNo: 0, Tbc: false, EventData: []diagnostics.EventData{{Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestNotifyEventDataValidation() {
-	t := suite.T()
-	var table = []GenericTestEntry{
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: "stacktrace", Cleared: false, TransactionID: "1234", VariableMonitoringID: newInt(99), EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, true},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: "stacktrace", Cleared: false, TransactionID: "1234", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, true},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: "stacktrace", Cleared: false, EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, true},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: "stacktrace", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, true},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, true},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, true},
-		{diagnostics.EventData{Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, true},
-		{diagnostics.EventData{Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, ActualValue: "someValue", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, true},
-		{diagnostics.EventData{Trigger: diagnostics.EventTriggerAlerting, ActualValue: "someValue", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{Timestamp: types.NewDateTime(time.Now()), ActualValue: "someValue", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}}, false},
-		{diagnostics.EventData{Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", EventNotificationType: diagnostics.EventPreconfiguredMonitor, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{EventID: -1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: "stacktrace", Cleared: false, TransactionID: "1234", VariableMonitoringID: newInt(99), EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: "invalidEventTrigger", Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: "stacktrace", Cleared: false, TransactionID: "1234", VariableMonitoringID: newInt(99), EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: ">2500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", TechCode: "742", TechInfo: "stacktrace", Cleared: false, TransactionID: "1234", VariableMonitoringID: newInt(99), EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: ">50................................................", TechInfo: "stacktrace", Cleared: false, TransactionID: "1234", VariableMonitoringID: newInt(99), EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: ">500.................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", Cleared: false, TransactionID: "1234", VariableMonitoringID: newInt(99), EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: "stacktrace", Cleared: false, TransactionID: ">36..................................", VariableMonitoringID: newInt(99), EventNotificationType: "invalidEventNotification", Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: "stacktrace", Cleared: false, TransactionID: "1234", VariableMonitoringID: newInt(99), EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: ">50................................................"}, Variable: types.Variable{Name: "variable1"}}, false},
-		{diagnostics.EventData{EventID: 1, Timestamp: types.NewDateTime(time.Now()), Trigger: diagnostics.EventTriggerAlerting, Cause: newInt(42), ActualValue: "someValue", TechCode: "742", TechInfo: "stacktrace", Cleared: false, TransactionID: "1234", VariableMonitoringID: newInt(99), EventNotificationType: diagnostics.EventPreconfiguredMonitor, Component: types.Component{Name: "component1"}, Variable: types.Variable{Name: ">50................................................"}}, false},
-	}
-	ExecuteGenericTestTable(t, table)
-}
-
-func (suite *OcppV2TestSuite) TestNotifyEventResponseValidation() {
-	t := suite.T()
-	var responseTable = []GenericTestEntry{
-		{diagnostics.NotifyEventResponse{}, true},
-	}
-	ExecuteGenericTestTable(t, responseTable)
-}
-
 func (suite *OcppV2TestSuite) TestNotifyEventE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
@@ -94,13 +26,13 @@ func (suite *OcppV2TestSuite) TestNotifyEventE2EMocked() {
 		EventID:               1,
 		Timestamp:             types.NewDateTime(time.Now()),
 		Trigger:               diagnostics.EventTriggerAlerting,
-		Cause:                 newInt(42),
+		Cause:                 tests.NewInt(42),
 		ActualValue:           "someValue",
 		TechCode:              "742",
 		TechInfo:              "stacktrace",
 		Cleared:               true,
 		TransactionID:         "1234",
-		VariableMonitoringID:  newInt(99),
+		VariableMonitoringID:  tests.NewInt(99),
 		EventNotificationType: diagnostics.EventPreconfiguredMonitor,
 		Component:             types.Component{Name: "component1"},
 		Variable:              types.Variable{Name: "variable1"},
@@ -155,13 +87,13 @@ func (suite *OcppV2TestSuite) TestNotifyEventInvalidEndpoint() {
 		EventID:               1,
 		Timestamp:             types.NewDateTime(time.Now()),
 		Trigger:               diagnostics.EventTriggerAlerting,
-		Cause:                 newInt(42),
+		Cause:                 tests.NewInt(42),
 		ActualValue:           "someValue",
 		TechCode:              "742",
 		TechInfo:              "stacktrace",
 		Cleared:               true,
 		TransactionID:         "1234",
-		VariableMonitoringID:  newInt(99),
+		VariableMonitoringID:  tests.NewInt(99),
 		EventNotificationType: diagnostics.EventPreconfiguredMonitor,
 		Component:             types.Component{Name: "component1"},
 		Variable:              types.Variable{Name: "variable1"},

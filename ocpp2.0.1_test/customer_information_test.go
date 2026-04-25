@@ -12,35 +12,6 @@ import (
 )
 
 // Test
-func (suite *OcppV2TestSuite) TestCustomerInformationRequestValidation() {
-	t := suite.T()
-	var requestTable = []GenericTestEntry{
-		{diagnostics.CustomerInformationRequest{RequestID: 42, Report: true, Clear: true, CustomerIdentifier: "0001", IdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: nil}, CustomerCertificate: &types.CertificateHashData{HashAlgorithm: types.SHA256, IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, true},
-		{diagnostics.CustomerInformationRequest{RequestID: 42, Report: true, Clear: true, CustomerIdentifier: "0001", IdToken: &types.IdToken{IdToken: "1234", Type: types.IdTokenTypeKeyCode, AdditionalInfo: nil}}, true},
-		{diagnostics.CustomerInformationRequest{RequestID: 42, Report: true, Clear: true, CustomerIdentifier: "0001"}, true},
-		{diagnostics.CustomerInformationRequest{RequestID: 42, Report: true, Clear: true}, true},
-		{diagnostics.CustomerInformationRequest{RequestID: 42, Report: true}, true},
-		{diagnostics.CustomerInformationRequest{RequestID: 42, Clear: true}, true},
-		{diagnostics.CustomerInformationRequest{Report: true, Clear: true}, true},
-		{diagnostics.CustomerInformationRequest{}, true},
-		{diagnostics.CustomerInformationRequest{RequestID: -1, Report: true, Clear: true}, false},
-		{diagnostics.CustomerInformationRequest{RequestID: 42, Report: true, Clear: true, CustomerIdentifier: ">64.............................................................."}, false},
-		{diagnostics.CustomerInformationRequest{RequestID: 42, Report: true, Clear: true, IdToken: &types.IdToken{IdToken: "1234", Type: "invalidTokenType", AdditionalInfo: nil}}, false},
-		{diagnostics.CustomerInformationRequest{RequestID: 42, Report: true, Clear: true, CustomerCertificate: &types.CertificateHashData{HashAlgorithm: "invalidHasAlgorithm", IssuerNameHash: "hash00", IssuerKeyHash: "hash01", SerialNumber: "serial0"}}, false},
-	}
-	ExecuteGenericTestTable(t, requestTable)
-}
-
-func (suite *OcppV2TestSuite) TestCustomerInformationConfirmationValidation() {
-	t := suite.T()
-	var confirmationTable = []GenericTestEntry{
-		{diagnostics.CustomerInformationResponse{Status: diagnostics.CustomerInformationStatusAccepted}, true},
-		{diagnostics.CustomerInformationResponse{}, false},
-		{diagnostics.CustomerInformationResponse{Status: "invalidCustomerInformationStatus"}, false},
-	}
-	ExecuteGenericTestTable(t, confirmationTable)
-}
-
 func (suite *OcppV2TestSuite) TestCustomerInformationE2EMocked() {
 	t := suite.T()
 	wsId := "test_id"
