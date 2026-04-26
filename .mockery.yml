@@ -1,0 +1,188 @@
+all: true
+dir: 'gen/mocks/{{.InterfaceDirRelative}}'
+filename: '{{.InterfaceName | lower | snakecase}}_mock.go'
+structname: '{{.InterfaceName}}{{.Mock}}'
+pkgname: '{{.SrcPackageName}}_mocks'
+template: testify
+template-data:
+  unroll-variadic: true
+packages:
+  github.com/lorenzodonini/ocpp-go/ocpp1.6:
+    interfaces:
+      CentralSystem: {}
+      ChargePoint: {}
+      ChargePointConnection: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates:
+    config:
+      structname: MockCertificates{{.InterfaceName}}
+    interfaces:
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/core:
+    config:
+      structname: MockCore{{.InterfaceName}}
+    interfaces:
+      CentralSystemHandler: {}
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/extendedtriggermessage:
+    config:
+      structname: MockExtendedTriggerMessage{{.InterfaceName}}
+    interfaces:
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware:
+    config:
+      structname: MockFirmware{{.InterfaceName}}
+    interfaces:
+      CentralSystemHandler: {}
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth:
+    config:
+      structname: MockLocalAuthList{{.InterfaceName}}
+    interfaces:
+      CentralSystemHandler: {}
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/logging:
+    config:
+      structname: MockLog{{.InterfaceName}}
+    interfaces:
+      CentralSystemHandler: {}
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger:
+    config:
+      structname: MockRemoteTrigger{{.InterfaceName}}
+    interfaces:
+      CentralSystemHandler: {}
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation:
+    config:
+      structname: MockReservation{{.InterfaceName}}
+    interfaces:
+      CentralSystemHandler: {}
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware:
+    config:
+      structname: MockSecureFirmware{{.InterfaceName}}
+    interfaces:
+      CentralSystemHandler: {}
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/security:
+    config:
+      structname: MockSecurity{{.InterfaceName}}
+    interfaces:
+      CentralSystemHandler: {}
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging:
+    config:
+      structname: MockSmartCharging{{.InterfaceName}}
+    interfaces:
+      CentralSystemHandler: {}
+      ChargePointHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1:
+    interfaces:
+      ChargingStation: {}
+      ChargingStationConnection: {}
+      CSMS: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/authorization:
+    config:
+      structname: MockAuthorization{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability:
+    config:
+      structname: MockAvailability{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/data:
+    config:
+      structname: MockData{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics:
+    config:
+      structname: MockDiagnostics{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/display:
+    config:
+      structname: MockDisplay{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/firmware:
+    config:
+      structname: MockFirmware{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/iso15118:
+    config:
+      structname: MockIso15118{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth:
+    config:
+      structname: MockLocalAuth{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/meter:
+    config:
+      structname: MockMeter{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning:
+    config:
+      structname: MockProvisioning{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/remotecontrol:
+    config:
+      structname: MockRemoteControl{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation:
+    config:
+      structname: MockReservation{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/security:
+    config:
+      structname: MockSecurity{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/smartcharging:
+    config:
+      structname: MockSmartCharging{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/tariffcost:
+    config:
+      structname: MockTariffCost{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions:
+    config:
+      structname: MockTransactions{{.InterfaceName}}
+    interfaces:
+      CSMSHandler: {}
+      ChargingStationHandler: {}
+  github.com/lorenzodonini/ocpp-go/ocppj:
+    interfaces:
+      RequestQueue: {}
+      ServerQueueMap: {}
+  github.com/lorenzodonini/ocpp-go/ws:
+    interfaces:
+      Channel: {}
+      Client: {}
+      Server: {}
