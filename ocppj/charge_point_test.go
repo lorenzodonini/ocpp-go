@@ -63,7 +63,7 @@ func (suite *OcppJTestSuite) TestClientStoppedError() {
 	// Send message. Expected error
 	time.Sleep(20 * time.Millisecond)
 	call.Return(false)
-	assert.False(t, suite.clientDispatcher.IsRunning())
+	suite.False(suite.clientDispatcher.IsRunning())
 	req := newMockRequest("somevalue")
 	err = suite.chargePoint.SendRequest(req)
 	assert.Error(t, err, "ocppj client is not started, couldn't send request")
@@ -198,7 +198,7 @@ func (suite *OcppJTestSuite) TestChargePointSendRequestFailed() {
 	// Assert that pending request was removed
 	time.Sleep(500 * time.Millisecond)
 	_, ok := suite.chargePoint.RequestState.GetPendingRequest(callID)
-	assert.False(t, ok)
+	suite.False(ok)
 }
 
 // ----------------- SendResponse tests -----------------
@@ -657,7 +657,7 @@ func (suite *OcppJTestSuite) TestClientDisconnected() {
 	}
 	// Wait for trigger disconnect after a few responses were returned
 	<-triggerC
-	assert.False(t, suite.clientDispatcher.IsPaused())
+	suite.False(suite.clientDispatcher.IsPaused())
 	suite.mockClient.DisconnectedHandler(disconnectError)
 	time.Sleep(200 * time.Millisecond)
 	// Not all messages were sent, some are still in queue
@@ -716,7 +716,7 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 	}()
 	// Get the pending request state struct
 	state := suite.chargePoint.RequestState
-	assert.False(t, state.HasPendingRequest())
+	suite.False(state.HasPendingRequest())
 	// Send some messages
 	for i := 0; i < messagesToQueue; i++ {
 		req := newMockRequest(fmt.Sprintf("%v", i))
@@ -730,22 +730,22 @@ func (suite *OcppJTestSuite) TestClientReconnected() {
 	// One message was sent, but all others are still in queue
 	time.Sleep(200 * time.Millisecond)
 	assert.True(t, suite.clientDispatcher.IsPaused())
-	assert.False(t, suite.chargePoint.IsConnected())
+	suite.False(suite.chargePoint.IsConnected())
 	// Wait for some more time and then reconnect
 	time.Sleep(500 * time.Millisecond)
 	isConnectedCall.Return(true)
 	suite.mockClient.ReconnectedHandler()
-	assert.False(t, suite.clientDispatcher.IsPaused())
+	suite.False(suite.clientDispatcher.IsPaused())
 	assert.True(t, suite.clientDispatcher.IsRunning())
-	assert.False(t, suite.clientRequestQueue.IsEmpty())
+	suite.False(suite.clientRequestQueue.IsEmpty())
 	assert.True(t, suite.chargePoint.IsConnected())
 	// Wait until remaining messages are sent
 	<-triggerC
-	assert.False(t, suite.clientDispatcher.IsPaused())
+	suite.False(suite.clientDispatcher.IsPaused())
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.Equal(t, messagesToQueue, sentMessages)
 	assert.True(t, suite.clientRequestQueue.IsEmpty())
-	assert.False(t, state.HasPendingRequest())
+	suite.False(state.HasPendingRequest())
 	assert.True(t, suite.chargePoint.IsConnected())
 }
 
@@ -782,7 +782,7 @@ func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	// Wait for request to be enqueued, then check state
 	time.Sleep(50 * time.Millisecond)
 	state := suite.chargePoint.RequestState
-	assert.False(t, suite.clientRequestQueue.IsEmpty())
+	suite.False(suite.clientRequestQueue.IsEmpty())
 	assert.True(t, suite.clientDispatcher.IsRunning())
 	assert.Equal(t, 1, suite.clientRequestQueue.Size())
 	assert.True(t, state.HasPendingRequest())
@@ -790,7 +790,7 @@ func (suite *OcppJTestSuite) TestClientResponseTimeout() {
 	<-timeoutC
 	assert.True(t, suite.clientRequestQueue.IsEmpty())
 	assert.True(t, suite.clientDispatcher.IsRunning())
-	assert.False(t, state.HasPendingRequest())
+	suite.False(state.HasPendingRequest())
 }
 
 func (suite *OcppJTestSuite) TestStopDisconnectedClient() {
@@ -812,15 +812,15 @@ func (suite *OcppJTestSuite) TestStopDisconnectedClient() {
 	time.Sleep(100 * time.Millisecond)
 	// Dispatcher should be paused
 	assert.True(t, suite.clientDispatcher.IsPaused())
-	assert.False(t, suite.chargePoint.IsConnected())
+	suite.False(suite.chargePoint.IsConnected())
 	// Stop client while reconnecting
 	suite.chargePoint.Stop()
 	time.Sleep(50 * time.Millisecond)
 	assert.True(t, suite.clientDispatcher.IsPaused())
-	assert.False(t, suite.chargePoint.IsConnected())
+	suite.False(suite.chargePoint.IsConnected())
 	// Attempt stopping client again
 	suite.chargePoint.Stop()
 	time.Sleep(50 * time.Millisecond)
 	assert.True(t, suite.clientDispatcher.IsPaused())
-	assert.False(t, suite.chargePoint.IsConnected())
+	suite.False(suite.chargePoint.IsConnected())
 }

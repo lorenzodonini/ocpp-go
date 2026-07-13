@@ -285,6 +285,38 @@ func (c *ClientDispatcherTestSuite) TestClientSendRequest() {
 
 }
 
+func (c *ClientDispatcherTestSuite) TestClientSendEvent() {
+	// Setup
+	sent := make(chan bool, 1)
+	c.websocketClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
+		sent <- true
+	}).Return(nil)
+	c.dispatcher.Start()
+	c.Require().True(c.dispatcher.IsRunning())
+
+	// Create and send mock request
+	req := newMockRequest("somevalue")
+
+	call, err := c.endpoint.CreateSend(req)
+	c.Require().NoError(err)
+
+	data, err := call.MarshalJSON()
+	c.Require().NoError(err)
+
+	bundle := ocppj.RequestBundle{Call: (*ocppj.Call)(call), Data: data}
+	err = c.dispatcher.SendRequest(bundle)
+	c.Require().NoError(err)
+
+	// Check underlying queue
+	c.False(c.queue.IsEmpty())
+	c.Equal(1, c.queue.Size())
+
+	// Wait for websocket to send message
+	_, ok := <-sent
+	c.True(ok)
+	c.True(c.state.HasPendingRequest())
+}
+
 func (c *ClientDispatcherTestSuite) TestClientRequestCanceled() {
 	t := c.T()
 	// Setup

@@ -44,6 +44,8 @@ body:
           required: false
         - label: "OCPP 2.0.1"
           required: false
+        - label: "OCPP 2.1"
+          required: false
   - type: checkboxes
     id: ocpp-extensions
     attributes:

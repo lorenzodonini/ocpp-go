@@ -286,6 +286,19 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			if s.errorHandler != nil {
 				s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
 			}
+		case CALL_RESULT_ERROR:
+			callResultError := message.(*CallResultError)
+			log.Debugf("handling incoming CALL RESULT ERROR [%s] from %s", callResultError.UniqueId, wsChannel.ID())
+			// Nothing to complete s.dispatcher.CompleteRequest(wsChannel.ID(), callResultError.GetUniqueId())
+			if s.errorHandler != nil {
+				s.errorHandler(wsChannel, ocpp.NewError(callResultError.ErrorCode, callResultError.ErrorDescription, callResultError.UniqueId), callResultError.ErrorDetails)
+			}
+		case SEND:
+			send := message.(*Send)
+			log.Debugf("handling incoming SEND [%s, %s] from %s", send.UniqueId, send.Action, wsChannel.ID())
+			if s.requestHandler != nil {
+				s.requestHandler(wsChannel, send.Payload, send.UniqueId, send.Action)
+			}
 		}
 	}
 	return nil
@@ -315,6 +328,7 @@ func (s *Server) HandleFailedResponseError(clientID string, requestID string, er
 		// Unknown error
 		responseErr = ocpp.NewError(GenericError, err.Error(), requestID)
 	}
+
 	// Send an OCPP error to the target, since no regular response could be sent
 	_ = s.SendError(clientID, requestID, responseErr.Code, responseErr.Description, nil)
 }

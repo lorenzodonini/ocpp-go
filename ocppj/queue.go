@@ -12,6 +12,13 @@ type RequestBundle struct {
 	Data []byte
 }
 
+// EventBundle is a convenience struct for passing a send object struct and the
+// raw byte data into the queue containing outgoing requests.
+type EventBundle struct {
+	Send *Send
+	Data []byte
+}
+
 // RequestQueue can be arbitrarily implemented, as long as it conforms to the Queue interface.
 //
 // A RequestQueue is used by ocppj client and server to manage outgoing requests.

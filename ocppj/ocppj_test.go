@@ -225,49 +225,20 @@ func newMockConfirmation(value string) *MockConfirmation {
 	return &MockConfirmation{MockValue: value}
 }
 
+type MockStream struct {
+	MockValue string `json:"mockValue" validate:"required,min=5"`
+}
+
+func (m *MockStream) GetFeatureName() string {
+	return "MockStream"
+}
+
 type MockUnsupportedResponse struct {
 	MockValue string `json:"mockValue" validate:"required,min=5"`
 }
 
 func (m *MockUnsupportedResponse) GetFeatureName() string {
 	return "SomeRandomFeature"
-}
-
-// ---------------------- COMMON UTILITY METHODS ----------------------
-
-func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) ws.Server {
-	wsServer := ws.NewServer()
-	wsServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
-		assert.NotNil(t, ws)
-		assert.NotNil(t, data)
-		if onMessage != nil {
-			response, err := onMessage(data)
-			assert.Nil(t, err)
-			if response != nil {
-				err = wsServer.Write(ws.ID(), data)
-				assert.Nil(t, err)
-			}
-		}
-		return nil
-	})
-	return wsServer
-}
-
-func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) ws.Client {
-	wsClient := ws.NewClient()
-	wsClient.SetMessageHandler(func(data []byte) error {
-		assert.NotNil(t, data)
-		if onMessage != nil {
-			response, err := onMessage(data)
-			assert.Nil(t, err)
-			if response != nil {
-				err = wsClient.Write(data)
-				assert.Nil(t, err)
-			}
-		}
-		return nil
-	})
-	return wsClient
 }
 
 func ParseCall(endpoint *ocppj.Endpoint, state ocppj.ClientState, json string, t *testing.T) *ocppj.Call {
@@ -285,6 +256,15 @@ func ParseCall(endpoint *ocppj.Endpoint, state ocppj.ClientState, json string, t
 
 func CheckCall(call *ocppj.Call, t *testing.T, expectedAction string, expectedId string) {
 	assert.Equal(t, ocppj.CALL, call.GetMessageTypeId())
+	assert.Equal(t, expectedAction, call.Action)
+	assert.Equal(t, expectedId, call.GetUniqueId())
+	assert.NotNil(t, call.Payload)
+	err := Validate.Struct(call)
+	assert.Nil(t, err)
+}
+
+func CheckSend(call *ocppj.Send, t *testing.T, expectedAction string, expectedId string) {
+	assert.Equal(t, ocppj.SEND, call.GetMessageTypeId())
 	assert.Equal(t, expectedAction, call.Action)
 	assert.Equal(t, expectedId, call.GetUniqueId())
 	assert.NotNil(t, call.Payload)
@@ -328,6 +308,16 @@ func ParseCallError(endpoint *ocppj.Endpoint, state ocppj.ClientState, json stri
 
 func CheckCallError(t *testing.T, callError *ocppj.CallError, expectedId string, expectedError ocpp.ErrorCode, expectedDescription string, expectedDetails interface{}) {
 	assert.Equal(t, ocppj.CALL_ERROR, callError.GetMessageTypeId())
+	assert.Equal(t, expectedId, callError.GetUniqueId())
+	assert.Equal(t, expectedError, callError.ErrorCode)
+	assert.Equal(t, expectedDescription, callError.ErrorDescription)
+	assert.Equal(t, expectedDetails, callError.ErrorDetails)
+	err := Validate.Struct(callError)
+	assert.Nil(t, err)
+}
+
+func CheckCallResultError(t *testing.T, callError *ocppj.CallResultError, expectedId string, expectedError ocpp.ErrorCode, expectedDescription string, expectedDetails interface{}) {
+	assert.Equal(t, ocppj.CALL_RESULT_ERROR, callError.GetMessageTypeId())
 	assert.Equal(t, expectedId, callError.GetUniqueId())
 	assert.Equal(t, expectedError, callError.ErrorCode)
 	assert.Equal(t, expectedDescription, callError.ErrorDescription)
@@ -496,6 +486,23 @@ func (suite *OcppJTestSuite) TestCreateCall() {
 	assert.Nil(t, pendingRequest)
 }
 
+func (suite *OcppJTestSuite) TestCreateSend() {
+	t := suite.T()
+	mockValue := "somevalue"
+	request := newMockRequest(mockValue)
+	call, err := suite.chargePoint.CreateSend(request)
+	suite.NoError(err)
+	CheckSend(call, t, MockFeatureName, call.UniqueId)
+	message, ok := call.Payload.(*MockRequest)
+	assert.True(t, ok)
+	assert.NotNil(t, message)
+	assert.Equal(t, mockValue, message.MockValue)
+	// Check that request was not yet stored as pending request
+	pendingRequest, exists := suite.chargePoint.RequestState.GetPendingRequest(call.UniqueId)
+	suite.False(exists)
+	suite.Nil(t, pendingRequest)
+}
+
 func (suite *OcppJTestSuite) TestCreateCallResult() {
 	t := suite.T()
 	mockValue := "someothervalue"
@@ -523,6 +530,21 @@ func (suite *OcppJTestSuite) TestCreateCallError() {
 	assert.Nil(t, err)
 	assert.NotNil(t, callError)
 	CheckCallError(t, callError, mockUniqueId, ocppj.GenericError, mockDescription, mockDetails)
+}
+
+func (suite *OcppJTestSuite) TestCreateCallResultError() {
+	t := suite.T()
+	mockUniqueId := "123456"
+	mockDescription := "somedescription"
+	mockDetailString := "somedetailstring"
+	type MockDetails struct {
+		DetailString string
+	}
+	mockDetails := MockDetails{DetailString: mockDetailString}
+	callError, err := suite.chargePoint.CreateCallResultError(mockUniqueId, ocppj.GenericError, mockDescription, mockDetails)
+	assert.Nil(t, err)
+	assert.NotNil(t, callError)
+	CheckCallResultError(t, callError, mockUniqueId, ocppj.GenericError, mockDescription, mockDetails)
 }
 
 func (suite *OcppJTestSuite) TestParseMessageInvalidLength() {

@@ -40,6 +40,12 @@ type ClientDispatcher interface {
 	//
 	// If no network client was set, or the request couldn't be processed, an error is returned.
 	SendRequest(req RequestBundle) error
+
+	// Dispatches a send event. Depending on the implementation, this may first queue a request
+	// and process it later, asynchronously, or write it directly to the networking layer.
+	//
+	// If no network client was set, or the request couldn't be processed, an error is returned.
+	SendEvent(req EventBundle) error
 	// Notifies the dispatcher that a request has been completed (i.e. a response was received).
 	// The dispatcher takes care of removing the request marked by the requestID from
 	// the pending requests. It will then attempt to process the next queued request.
@@ -160,6 +166,19 @@ func (d *DefaultClientDispatcher) SetPendingRequestState(state ClientState) {
 func (d *DefaultClientDispatcher) SendRequest(req RequestBundle) error {
 	if d.network == nil {
 		return fmt.Errorf("cannot SendRequest, no network client was set")
+	}
+	if err := d.requestQueue.Push(req); err != nil {
+		return err
+	}
+	d.mutex.RLock()
+	d.requestChannel <- true
+	d.mutex.RUnlock()
+	return nil
+}
+
+func (d *DefaultClientDispatcher) SendEvent(req EventBundle) error {
+	if d.network == nil {
+		return fmt.Errorf("cannot SendEvent, no network client was set")
 	}
 	if err := d.requestQueue.Push(req); err != nil {
 		return err
@@ -319,6 +338,11 @@ type ServerDispatcher interface {
 	//
 	// If no network server was set, or the request couldn't be processed, an error is returned.
 	SendRequest(clientID string, req RequestBundle) error
+	// Dispatches a SEND request for a specific client. Depending on the implementation, this may first queue
+	// a request and process it later (asynchronously), or write it directly to the networking layer.
+	//
+	// If no network server was set, or the request couldn't be processed, an error is returned.
+	SendEvent(clientID string, req EventBundle) error
 	// Notifies the dispatcher that a request has been completed (i.e. a response was received),
 	// for a specific client.
 	// The dispatcher takes care of removing the request marked by the requestID from
@@ -471,6 +495,23 @@ func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle
 	return nil
 }
 
+func (d *DefaultServerDispatcher) SendEvent(clientID string, req EventBundle) error {
+	if d.network == nil {
+		return fmt.Errorf("cannot send event %v, no network server was set", req.Send.UniqueId)
+	}
+	q, ok := d.queueMap.Get(clientID)
+	if !ok {
+		return fmt.Errorf("cannot send event %s, no client %s exists", req.Send.UniqueId, clientID)
+	}
+	if err := q.Push(req); err != nil {
+		return err
+	}
+	d.mutex.RLock()
+	d.requestChannel <- clientID
+	d.mutex.RUnlock()
+	return nil
+}
+
 // requestPump processes new outgoing requests for each client and makes sure they are processed sequentially.
 // This method is executed by a dedicated coroutine as soon as the server is started and runs indefinitely.
 func (d *DefaultServerDispatcher) messagePump() {
@@ -543,13 +584,40 @@ func (d *DefaultServerDispatcher) messagePump() {
 					log.Error("dispatcher timeout for client %s triggered, but no pending request found", clientID)
 					continue
 				}
-				bundle, _ := el.(RequestBundle)
-				d.CompleteRequest(clientID, bundle.Call.UniqueId)
-				log.Infof("request %v for %v timed out", bundle.Call.UniqueId, clientID)
-				if d.onRequestCancel != nil {
-					d.onRequestCancel(clientID, bundle.Call.UniqueId, bundle.Call.Payload,
-						ocpp.NewError(GenericError, "Request timed out", bundle.Call.UniqueId))
+
+				switch el.(type) {
+				case RequestBundle:
+					bundle, _ := el.(RequestBundle)
+
+					if bundle.Call == nil {
+						log.Errorf("invalid request bundle for client %s: Call field is nil", clientID)
+						continue
+					}
+
+					d.CompleteRequest(clientID, bundle.Call.UniqueId)
+
+					log.Infof("request %v for %v timed out", bundle.Call.UniqueId, clientID)
+					if d.onRequestCancel != nil {
+						d.onRequestCancel(clientID, bundle.Call.UniqueId, bundle.Call.Payload,
+							ocpp.NewError(GenericError, "Request timed out", bundle.Call.UniqueId))
+					}
+
+				case EventBundle:
+					bundle, _ := el.(EventBundle)
+					if bundle.Send == nil {
+						log.Errorf("invalid event bundle for client %s: Send field is nil", clientID)
+						continue
+					}
+
+					d.CompleteRequest(clientID, bundle.Send.GetUniqueId())
+
+					log.Infof("request %v for %v timed out", bundle.Send.GetUniqueId(), clientID)
+					if d.onRequestCancel != nil {
+						d.onRequestCancel(clientID, bundle.Send.GetUniqueId(), bundle.Send.Payload,
+							ocpp.NewError(GenericError, "Request timed out", bundle.Send.GetUniqueId()))
+					}
 				}
+
 			}
 		case clientID = <-d.readyForDispatch:
 			// Cancel previous timeout (if any)

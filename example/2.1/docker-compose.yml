@@ -1,0 +1,31 @@
+version: '3'
+services:
+  csms:
+    build:
+      context: ../..
+      dockerfile: csms/Dockerfile
+    image: ldonini/ocpp2.0.1-csms:latest
+    container_name: csms
+    environment:
+      - SERVER_LISTEN_PORT=8887
+    ports:
+      - "8887:8887"
+    networks:
+      - sim
+    tty: true
+  charging-station:
+    build:
+      context: ../..
+      dockerfile: chargingstation/Dockerfile
+    image: ldonini/ocpp2.0.1-chargingstation:latest
+    container_name: charging-station
+    environment:
+      - CLIENT_ID=chargingStationSim
+      - CSMS_URL=ws://csms:8887
+    networks:
+      - sim
+    tty: true
+
+networks:
+  sim:
+    driver: bridge
