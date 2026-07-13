@@ -169,7 +169,7 @@ func isValidEncodingMethod(fl validator.FieldLevel) bool {
 var Validate = ocppj.Validate
 
 func init() {
-	_ = Validate.RegisterValidation("idTokenType21", isValidIdTokenType)
+	_ = Validate.RegisterValidation("idTokenType21", isValidIdTokenType21)
 	_ = Validate.RegisterValidation("genericDeviceModelStatus21", isValidGenericDeviceModelStatus)
 	_ = Validate.RegisterValidation("genericStatus21", isValidGenericStatus)
 	_ = Validate.RegisterValidation("hashAlgorithm21", isValidHashAlgorithmType)
@@ -192,7 +192,7 @@ func init() {
 	_ = Validate.RegisterValidation("certificateUse21", isValidCertificateUse)
 	_ = Validate.RegisterValidation("15118EVCertificate21", isValidCertificate15118EVStatus)
 	_ = Validate.RegisterValidation("costKind21", isValidCostKind)
-	_ = Validate.RegisterValidation("operationMode21", isValidOperationMode)
+	_ = Validate.RegisterValidation("operationMode21", isValidOperationMode21)
 	_ = Validate.RegisterValidation("tariffCost21", isValidTariffCost)
 	_ = Validate.RegisterValidation("costDimension21", isValidCostDimensionType)
 

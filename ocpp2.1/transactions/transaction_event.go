@@ -17,14 +17,14 @@ type Transaction struct {
 	TimeSpentCharging *int                `json:"timeSpentCharging,omitempty" validate:"omitempty"` // Contains the total time that energy flowed from EVSE to EV during the transaction (in seconds).
 	StoppedReason     Reason              `json:"stoppedReason,omitempty" validate:"omitempty,stoppedReason21"`
 	RemoteStartID     *int                `json:"remoteStartId,omitempty" validate:"omitempty"`
-	OperationMode     types.OperationMode `json:"operationMode,omitempty" validate:"omitempty,operationMode"`
+	OperationMode     types.OperationMode `json:"operationMode,omitempty" validate:"omitempty,operationMode21"`
 	TariffId          *string             `json:"tariffId,omitempty" validate:"omitempty,max=60"`
 	TransactionLimit  *TransactionLimit   `json:"transactionLimit,omitempty" validate:"omitempty,dive"`
 }
 
 // The field definition of the TransactionEvent request payload sent by the Charging Station to the CSMS.
 type TransactionEventRequest struct {
-	EventType             TransactionEvent       `json:"eventType" validate:"required,transactionEven21"`
+	EventType             TransactionEvent       `json:"eventType" validate:"required,transactionEvent21"`
 	Timestamp             *types.DateTime        `json:"timestamp" validate:"required"`
 	TriggerReason         TriggerReason          `json:"triggerReason" validate:"required,triggerReason21"`
 	SequenceNo            int                    `json:"seqNo" validate:"gte=0"`
@@ -91,7 +91,7 @@ func NewTransactionEventResponse() *TransactionEventResponse {
 }
 
 func init() {
-	_ = types.Validate.RegisterValidation("transactionEvent21", isValidTransactionEvent)
+	_ = types.Validate.RegisterValidation("transactionEvent21", isValidTransactionEvent21)
 	_ = types.Validate.RegisterValidation("triggerReason21", isValidTriggerReason)
 	_ = types.Validate.RegisterValidation("chargingState21", isValidChargingState)
 	_ = types.Validate.RegisterValidation("stoppedReason21", isValidReason)

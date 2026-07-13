@@ -76,7 +76,7 @@ const (
 	ReasonTxResumed            Reason = "TxResumed"            // Transaction has resumed after reset or power outage.
 )
 
-func isValidTransactionEvent(fl validator.FieldLevel) bool {
+func isValidTransactionEvent21(fl validator.FieldLevel) bool {
 	status := TransactionEvent(fl.Field().String())
 	switch status {
 	case TransactionEventStarted, TransactionEventUpdated, TransactionEventEnded:

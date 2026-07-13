@@ -44,7 +44,7 @@ const (
 	OperationModeLocalLoadBalancing OperationMode = "LocalLoadBalancing"
 )
 
-func isValidOperationMode(fl validator.FieldLevel) bool {
+func isValidOperationMode21(fl validator.FieldLevel) bool {
 	operationMode := OperationMode(fl.Field().String())
 	switch operationMode {
 	case OperationModeIdle, OperationModeChargingOnly, OperationModeCentralSetpoint, OperationModeExternalSetpoint,

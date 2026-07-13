@@ -41,7 +41,7 @@ const (
 	IdTokenTypeNoAuthorization IdTokenType = "NoAuthorization"
 )
 
-func isValidIdTokenType(fl validator.FieldLevel) bool {
+func isValidIdTokenType21(fl validator.FieldLevel) bool {
 	tokenType := IdTokenType(fl.Field().String())
 	switch tokenType {
 	case IdTokenTypeCentral, IdTokenTypeEMAID, IdTokenTypeISO14443, IdTokenTypeISO15693, IdTokenTypeKeyCode, IdTokenTypeLocal, IdTokenTypeMacAddress, IdTokenTypeNoAuthorization:
@@ -63,13 +63,13 @@ func isValidIdToken(sl validator.StructLevel) {
 }
 
 type AdditionalInfo struct {
-	AdditionalIdToken string `json:"additionalIdToken" validate:"required,max=255"`
+	AdditionalIdToken string `json:"additionalIdToken" validate:"required,max=36"`
 	Type              string `json:"type" validate:"required,max=50"`
 }
 
 type IdToken struct {
 	IdToken        string           `json:"idToken" validate:"max=255"`
-	Type           IdTokenType      `json:"type" validate:"required,idTokenType,max=20"`
+	Type           IdTokenType      `json:"type" validate:"required,idTokenType21,max=20"`
 	AdditionalInfo []AdditionalInfo `json:"additionalInfo,omitempty" validate:"omitempty,dive"`
 }
 
