@@ -12,7 +12,7 @@ const NotifyCustomerInformationFeatureName = "NotifyCustomerInformation"
 
 // The field definition of the NotifyCustomerInformation request payload sent by a Charging Station to the CSMS.
 type NotifyCustomerInformationRequest struct {
-	Data        string         `json:"data" validate:"required,max=512"`   // (Part of) the requested data. No format specified in which the data is returned. Should be human readable.
+	Data        string         `json:"data" validate:"max=512"`            // (Part of) the requested data. No format specified in which the data is returned. Should be human readable.
 	Tbc         bool           `json:"tbc,omitempty" validate:"omitempty"` // “to be continued” indicator. Indicates whether another part of the monitoringData follows in an upcoming notifyMonitoringReportRequest message. Default value when omitted is false.
 	SeqNo       int            `json:"seqNo" validate:"gte=0"`             // Sequence number of this message. First message starts at 0.
 	GeneratedAt types.DateTime `json:"generatedAt" validate:"required"`    // Timestamp of the moment this message was generated at the Charging Station.
