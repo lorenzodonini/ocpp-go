@@ -1,4 +1,4 @@
-module github.com/pxc-smart-business/ocpp-go
+module github.com/lorenzodonini/ocpp-go
 
 go 1.16
 
