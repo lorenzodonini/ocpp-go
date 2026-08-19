@@ -33,7 +33,7 @@ func isValidConfigurationStatus(fl validator.FieldLevel) bool {
 // The field definition of the ChangeConfiguration request payload sent by the Central System to the Charge Point.
 type ChangeConfigurationRequest struct {
 	Key   string `json:"key" validate:"required,max=50"`
-	Value string `json:"value" validate:"required,max=500"`
+	Value string `json:"value" validate:"max=500"`
 }
 
 // This field definition of the ChangeConfiguration confirmation payload, sent by the Charge Point to the Central System in response to a ChangeConfigurationRequest.
