@@ -14,6 +14,7 @@ import (
 func (suite *OcppV2TestSuite) TestLogStatusNotificationRequestValidation() {
 	t := suite.T()
 	var requestTable = []GenericTestEntry{
+		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusAcceptedCanceled, RequestID: 42}, true},
 		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusUploading, RequestID: 42}, true},
 		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusUploadFailure, RequestID: 42}, true},
 		{diagnostics.LogStatusNotificationRequest{Status: diagnostics.UploadLogStatusUploaded, RequestID: 42}, true},

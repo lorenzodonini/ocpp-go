@@ -15,6 +15,7 @@ const LogStatusNotificationFeatureName = "LogStatusNotification"
 type UploadLogStatus string
 
 const (
+	UploadLogStatusAcceptedCanceled UploadLogStatus = "AcceptedCanceled"
 	UploadLogStatusBadMessage       UploadLogStatus = "BadMessage"            // A badly formatted packet or other protocol incompatibility was detected.
 	UploadLogStatusIdle             UploadLogStatus = "Idle"                  // The Charging Station is not uploading a log file. Idle SHALL only be used when the message was triggered by a TriggerMessageRequest.
 	UploadLogStatusNotSupportedOp   UploadLogStatus = "NotSupportedOperation" // The server does not support the operation.
@@ -27,7 +28,7 @@ const (
 func isValidUploadLogStatus(fl validator.FieldLevel) bool {
 	status := UploadLogStatus(fl.Field().String())
 	switch status {
-	case UploadLogStatusBadMessage, UploadLogStatusIdle, UploadLogStatusNotSupportedOp, UploadLogStatusPermissionDenied, UploadLogStatusUploaded, UploadLogStatusUploadFailure, UploadLogStatusUploading:
+	case UploadLogStatusAcceptedCanceled, UploadLogStatusBadMessage, UploadLogStatusIdle, UploadLogStatusNotSupportedOp, UploadLogStatusPermissionDenied, UploadLogStatusUploaded, UploadLogStatusUploadFailure, UploadLogStatusUploading:
 		return true
 	default:
 		return false
