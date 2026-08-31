@@ -12,7 +12,7 @@ const StartTransactionFeatureName = "StartTransaction"
 // This field definition of the StartTransactionRequest payload sent by the Charge Point to the Central System.
 type StartTransactionRequest struct {
 	ConnectorId   int             `json:"connectorId" validate:"gt=0"`
-	IdTag         string          `json:"idTag" validate:"required,max=20"`
+	IdTag         string          `json:"idTag" validate:"max=20"`
 	MeterStart    int             `json:"meterStart" validate:"gte=0"`
 	ReservationId *int            `json:"reservationId,omitempty" validate:"omitempty"`
 	Timestamp     *types.DateTime `json:"timestamp" validate:"required"`
