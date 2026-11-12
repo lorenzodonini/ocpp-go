@@ -1028,8 +1028,9 @@ func (cs *csms) handleIncomingResponse(chargingStation ChargingStationConnection
 	}
 }
 
-func (cs *csms) handleIncomingError(chargingStation ChargingStationConnection, err *ocpp.Error, details interface{}) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargingStation.ID(), ""); ok {
+// handleIncomingError hands a CALLERROR to the callback of the request it answers.
+func (cs *csms) handleIncomingError(chargingStation ChargingStationConnection, err *ocpp.Error, action string, details interface{}) {
+	if callback, ok := cs.callbackQueue.Dequeue(chargingStation.ID(), callbackqueue.RequestType(action)); ok {
 		// Execute in separate goroutine, so the caller goroutine is available
 		go callback(nil, err)
 	} else {

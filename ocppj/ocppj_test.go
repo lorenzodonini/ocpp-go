@@ -703,6 +703,22 @@ func (suite *OcppJTestSuite) TestParseMessageInvalidCallError() {
 	assert.Equal(t, "Invalid Call Error message. Expected array length >= 4", protoErr.Description)
 }
 
+// A CALLERROR carries the action of the request it answers, so the error can be
+// handed to that request's callback and not to any other pending one.
+func (suite *OcppJTestSuite) TestParseMessageCallErrorCarriesAction() {
+	t := suite.T()
+	messageId := "12345"
+	pendingRequest := newMockRequest("request")
+	mockMessage := []interface{}{float64(ocppj.CALL_ERROR), messageId, string(ocppj.NotImplemented), "", map[string]interface{}{}}
+	suite.chargePoint.RequestState.AddPendingRequest(messageId, pendingRequest)
+	message, err := suite.chargePoint.ParseMessage(mockMessage, suite.chargePoint.RequestState)
+	require.NoError(t, err)
+	callError, ok := message.(*ocppj.CallError)
+	require.True(t, ok)
+	assert.Equal(t, ocppj.NotImplemented, callError.ErrorCode)
+	assert.Equal(t, pendingRequest.GetFeatureName(), callError.Action)
+}
+
 func (suite *OcppJTestSuite) TestParseMessageInvalidRawErrorCode() {
 	t := suite.T()
 	mockMessage := make([]interface{}, 5)

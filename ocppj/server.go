@@ -21,6 +21,7 @@ type Server struct {
 	requestHandler            RequestHandler
 	responseHandler           ResponseHandler
 	errorHandler              ErrorHandler
+	errorActionHandler        ErrorActionHandler
 	invalidMessageHook        InvalidMessageHook
 	dispatcher                ServerDispatcher
 	RequestState              ServerState
@@ -30,6 +31,10 @@ type ClientHandler func(client ws.Channel)
 type RequestHandler func(client ws.Channel, request ocpp.Request, requestId string, action string)
 type ResponseHandler func(client ws.Channel, response ocpp.Response, requestId string)
 type ErrorHandler func(client ws.Channel, err *ocpp.Error, details interface{})
+
+// ErrorActionHandler is an ErrorHandler that also receives the action (feature name)
+// of the request the error answers, so the caller can match it to that request.
+type ErrorActionHandler func(client ws.Channel, err *ocpp.Error, action string, details interface{})
 type InvalidMessageHook func(client ws.Channel, err *ocpp.Error, rawJson string, parsedFields []interface{}) *ocpp.Error
 
 // Creates a new Server endpoint.
@@ -80,6 +85,14 @@ func (s *Server) SetResponseHandler(handler ResponseHandler) {
 // Registers a handler for incoming error messages.
 func (s *Server) SetErrorHandler(handler ErrorHandler) {
 	s.errorHandler = handler
+	s.errorActionHandler = nil // the handler set last wins
+}
+
+// Registers a handler for incoming error messages that also receives the action of the
+// request the error answers. Replaces a handler set with SetErrorHandler (the handler set last wins).
+func (s *Server) SetErrorActionHandler(handler ErrorActionHandler) {
+	s.errorActionHandler = handler
+	s.errorHandler = nil
 }
 
 // SetInvalidMessageHook registers an optional hook for incoming messages that couldn't be parsed.
@@ -281,10 +294,13 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			}
 		case CALL_ERROR:
 			callError := message.(*CallError)
-			log.Debugf("handling incoming CALL RESULT [%s] from %s", callError.UniqueId, wsChannel.ID())
+			log.Debugf("handling incoming CALL ERROR [%s, %s] from %s", callError.UniqueId, callError.Action, wsChannel.ID())
 			s.dispatcher.CompleteRequest(wsChannel.ID(), callError.GetUniqueId())
-			if s.errorHandler != nil {
-				s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
+			ocppErr := ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId)
+			if s.errorActionHandler != nil {
+				s.errorActionHandler(wsChannel, ocppErr, callError.Action, callError.ErrorDetails)
+			} else if s.errorHandler != nil {
+				s.errorHandler(wsChannel, ocppErr, callError.ErrorDetails)
 			}
 		}
 	}

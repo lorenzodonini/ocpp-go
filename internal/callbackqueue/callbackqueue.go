@@ -28,9 +28,13 @@ func (cq *CallbackQueue) TryQueue(id string, requestType RequestType, try func()
 	cq.callbacks[id][requestType] = append(cq.callbacks[id][requestType], callback)
 
 	if err := try(); err != nil {
-		// pop off our element
+		// pop off our element (the last one appended), keep other pending callbacks of this type
 		if callbacks, ok := cq.callbacks[id]; ok {
-			delete(callbacks, requestType)
+			if n := len(callbacks[requestType]); n > 1 {
+				callbacks[requestType] = callbacks[requestType][:n-1]
+			} else {
+				delete(callbacks, requestType)
+			}
 		}
 		if len(cq.callbacks[id]) == 0 {
 			delete(cq.callbacks, id)

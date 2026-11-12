@@ -704,8 +704,10 @@ func (cs *centralSystem) handleIncomingConfirmation(chargePoint ChargePointConne
 	}
 }
 
-func (cs *centralSystem) handleIncomingError(chargePoint ChargePointConnection, err *ocpp.Error, details interface{}) {
-	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID(), ""); ok {
+// handleIncomingError hands a CALLERROR to the callback of the request it answers.
+// Dequeuing without the action would take the callback of any pending request type.
+func (cs *centralSystem) handleIncomingError(chargePoint ChargePointConnection, err *ocpp.Error, action string, details interface{}) {
+	if callback, ok := cs.callbackQueue.Dequeue(chargePoint.ID(), callbackqueue.RequestType(action)); ok {
 		// Execute in separate goroutine, so the caller goroutine is available
 		go callback(nil, err)
 	} else {
