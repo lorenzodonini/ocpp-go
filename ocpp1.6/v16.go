@@ -366,8 +366,8 @@ func NewCentralSystem(endpoint *ocppj.Server, server ws.Server) CentralSystem {
 	cs.server.SetResponseHandler(func(client ws.Channel, response ocpp.Response, requestId string) {
 		cs.handleIncomingConfirmation(client, response, requestId)
 	})
-	cs.server.SetErrorHandler(func(client ws.Channel, err *ocpp.Error, details interface{}) {
-		cs.handleIncomingError(client, err, details)
+	cs.server.SetErrorActionHandler(func(client ws.Channel, err *ocpp.Error, action string, details interface{}) {
+		cs.handleIncomingError(client, err, action, details)
 	})
 	cs.server.SetCanceledRequestHandler(func(clientID string, requestID string, request ocpp.Request, err *ocpp.Error) {
 		cs.handleCanceledRequest(clientID, request, err)

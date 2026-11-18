@@ -12,7 +12,7 @@ type ClientState interface {
 	// Sets a Request as pending on the endpoint. Requests are considered pending until a response was received.
 	// The function expects a unique message ID and the Request.
 	// If an element with the same requestID exists, the new one will be ignored.
-	AddPendingRequest(requestID string, req ocpp.Request)
+	AddPendingRequest(requestID string, req ocpp.Request) bool
 	// Retrieves a pending Request, using the message ID.
 	// If no request for the passed message ID is found, a false flag is returned.
 	GetPendingRequest(requestID string) (ocpp.Request, bool)
@@ -45,7 +45,7 @@ func NewClientState() ClientState {
 	return &clientState{}
 }
 
-func (s *clientState) AddPendingRequest(requestID string, req ocpp.Request) {
+func (s *clientState) AddPendingRequest(requestID string, req ocpp.Request) bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if requestID != "" && s.requestID == "" {
@@ -53,7 +53,9 @@ func (s *clientState) AddPendingRequest(requestID string, req ocpp.Request) {
 		s.pendingRequest = pendingRequest{
 			request: req,
 		}
+		return true
 	}
+	return false
 }
 
 func (s *clientState) GetPendingRequest(requestID string) (ocpp.Request, bool) {

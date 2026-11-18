@@ -299,7 +299,7 @@ func isValidUnitOfMeasure(fl validator.FieldLevel) bool {
 }
 
 type SampledValue struct {
-	Value     string         `json:"value" validate:"required"`
+	Value     string         `json:"value" validate:"omitempty,required"`
 	Context   ReadingContext `json:"context,omitempty" validate:"omitempty,readingContext16"`
 	Format    ValueFormat    `json:"format,omitempty" validate:"omitempty,valueFormat"`
 	Measurand Measurand      `json:"measurand,omitempty" validate:"omitempty,measurand16"`
@@ -310,7 +310,7 @@ type SampledValue struct {
 
 type MeterValue struct {
 	Timestamp    *DateTime      `json:"timestamp" validate:"required"`
-	SampledValue []SampledValue `json:"sampledValue" validate:"required,min=1,dive"`
+	SampledValue []SampledValue `json:"sampledValue" validate:"required,min=0,dive"`
 }
 
 // Initialize validator

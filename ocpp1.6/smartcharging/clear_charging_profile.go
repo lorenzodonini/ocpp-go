@@ -15,14 +15,15 @@ const ClearChargingProfileFeatureName = "ClearChargingProfile"
 type ClearChargingProfileStatus string
 
 const (
-	ClearChargingProfileStatusAccepted ClearChargingProfileStatus = "Accepted"
-	ClearChargingProfileStatusUnknown  ClearChargingProfileStatus = "Unknown"
+	ClearChargingProfileStatusAccepted     ClearChargingProfileStatus = "Accepted"
+	ClearChargingProfileStatusUnknown      ClearChargingProfileStatus = "Unknown"
+	ClearChargingProfileStatusNotSupported ClearChargingProfileStatus = "NotSupported"
 )
 
 func isValidClearChargingProfileStatus(fl validator.FieldLevel) bool {
 	status := ClearChargingProfileStatus(fl.Field().String())
 	switch status {
-	case ClearChargingProfileStatusAccepted, ClearChargingProfileStatusUnknown:
+	case ClearChargingProfileStatusAccepted, ClearChargingProfileStatusUnknown, ClearChargingProfileStatusNotSupported:
 		return true
 	default:
 		return false

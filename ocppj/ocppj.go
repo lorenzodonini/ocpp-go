@@ -159,6 +159,8 @@ type CallError struct {
 	ErrorCode        ocpp.ErrorCode `json:"errorCode" validate:"errorCode"`
 	ErrorDescription string         `json:"errorDescription" validate:"omitempty"`
 	ErrorDetails     interface{}    `json:"errorDetails" validate:"omitempty"`
+	// Action of the request this error answers (not part of the wire format).
+	Action string `json:"-"`
 }
 
 func (callError *CallError) GetMessageTypeId() MessageType {
@@ -477,7 +479,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 		}
 		return &callResult, nil
 	} else if typeId == CALL_ERROR {
-		_, ok := pendingRequestState.GetPendingRequest(uniqueId)
+		request, ok := pendingRequestState.GetPendingRequest(uniqueId)
 		if !ok {
 			log.Infof("No previous request %v sent. Discarding error message", uniqueId)
 			return nil, nil
@@ -504,6 +506,7 @@ func (endpoint *Endpoint) ParseMessage(arr []interface{}, pendingRequestState Cl
 			ErrorCode:        errorCode,
 			ErrorDescription: errorDescription,
 			ErrorDetails:     details,
+			Action:           request.GetFeatureName(),
 		}
 		err := Validate.Struct(callError)
 		if err != nil {
@@ -527,6 +530,9 @@ func (endpoint *Endpoint) CreateCall(request ocpp.Request) (*Call, error) {
 	}
 	// TODO: handle collisions?
 	uniqueId := messageIdGenerator()
+	if uniqueId == "" {
+		panic("message ID generator returned an empty string")
+	}
 	call := Call{
 		MessageTypeId: CALL,
 		UniqueId:      uniqueId,
